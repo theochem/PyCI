@@ -39,16 +39,19 @@ using hashmap = phmap::parallel_flat_hash_map<
     Mutex>;
 
 
-struct DOCIWfn {
-public:
+struct DOCIWfn
+{
+    typedef hashmap<int_t, int_t> hashmap_type;
+
     int_t nword, nbasis, nocc, nvir, ndet;
     std::vector<uint_t> dets;
-    hashmap<int_t, int_t> dict;
-public:
+    hashmap_type dict;
+
     DOCIWfn();
     DOCIWfn(const int_t, const int_t);
     DOCIWfn(const char *);
     ~DOCIWfn();
+
     void init(const int_t, const int_t);
     void from_file(const char *);
     void to_file(const char *) const;
@@ -63,13 +66,13 @@ public:
 };
 
 
-void doci_rdms(const DOCIWfn &, const double *, double *, double *);
+void compute_rdms(const DOCIWfn &, const double *, double *, double *);
 
 
-double doci_energy(const DOCIWfn &, const double *, const double *, const double *, const double *);
+double compute_energy(const DOCIWfn &, const double *, const double *, const double *, const double *);
 
 
-int_t doci_hci(DOCIWfn &, const double *, const double *, const double);
+int_t run_hci(DOCIWfn &, const double *, const double *, const double);
 
 
 void solve_sparse(const DOCIWfn &, const double *, const double *, const double *, const double *,
@@ -92,7 +95,7 @@ void fill_det(const int_t, const int_t *, uint_t *);
 void fill_occs(const int_t, const uint_t *, int_t *);
 
 
-void fill_virs(const int_t, const int_t, const uint_t *, int_t *);
+void fill_virs(const int_t, int_t, const uint_t *, int_t *);
 
 
 void excite_det(const int_t, const int_t, uint_t *);

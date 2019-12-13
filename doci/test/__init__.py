@@ -13,19 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with DOCI. If not, see <http://www.gnu.org/licenses/>.
 
-r'''
+r"""
 DOCI test module.
 
-'''
-
-from __future__ import absolute_import, division, unicode_literals
+"""
 
 from os import path
-from sys import version_info
 
 
 __all__ = [
-    'unicode_str',
     'datafile',
     ]
 
@@ -33,37 +29,19 @@ __all__ = [
 DATAPATH = path.join(path.abspath(path.dirname(__file__)), 'data/')
 
 
-def unicode_str(x):
-    r"""
-    Return a unicode string (for Python 2 compatibility).
-
-    Parameters
-    ----------
-    x : str
-
-    Returns
-    -------
-    y : unicode
-
-    """
-    if version_info.major == 2:
-        return unicode(x)
-    else:
-        return str(x)
-
-
-
-def datafile(filename):
+def datafile(name):
     r"""
     Return the full path of a DOCI test data file.
 
     Parameters
     ----------
-    filename : str
+    name : str
+        Name of data file.
 
     Returns
     -------
     filename : str
+        Path to file.
 
     """
-    return path.abspath(path.join(DATAPATH, filename))
+    return path.abspath(path.join(DATAPATH, name))

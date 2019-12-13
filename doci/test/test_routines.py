@@ -13,15 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with DOCI. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import, unicode_literals
-
 from nose.tools import assert_raises
 
 import numpy as np
 import numpy.testing as npt
 
 from doci import comb, dociham, dociwfn, solve_ci, compute_rdms, compute_energy, run_hci
-from doci.test import unicode_str, datafile
+from doci.test import datafile
 
 
 class TestRoutines:
@@ -53,9 +51,8 @@ class TestRoutines:
             yield self.run_compute_energy, filename
 
     def test_run_hci(self):
-        # prepare problem
         nocc, energy = self.CASES['h2o_ccpvdz']
-        ham = dociham.from_file(unicode_str(datafile('h2o_ccpvdz.fcidump')))
+        ham = dociham.from_file(datafile('h2o_ccpvdz.fcidump'))
         wfn = dociwfn(ham.nbasis, nocc)
         wfn.reserve(comb(wfn.nbasis, wfn.nocc))
         wfn.add_hartreefock_det()
@@ -77,43 +74,35 @@ class TestRoutines:
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
     def run_solve_ci_sparse(self, filename):
-        # prepare problem
         nocc, energy = self.CASES[filename]
-        ham = dociham.from_file(unicode_str(datafile('{0:s}.fcidump'.format(filename))))
+        ham = dociham.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = dociwfn(ham.nbasis, nocc)
         wfn.add_all_dets()
-        # test solve_ci sparse
         es, cs = solve_ci(ham, wfn, n=1, ncv=30, tol=1.0e-6, mode='sparse')
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
     def run_solve_ci_direct(self, filename):
-        # prepare problem
         nocc, energy = self.CASES[filename]
-        ham = dociham.from_file(unicode_str(datafile('{0:s}.fcidump'.format(filename))))
+        ham = dociham.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = dociwfn(ham.nbasis, nocc)
         wfn.add_all_dets()
-        # test solve_ci direct
         es, cs = solve_ci(ham, wfn, n=1, ncv=30, tol=1.0e-6, mode='direct')
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
     def run_compute_rdms(self, filename):
-        # prepare problem
         nocc, energy = self.CASES[filename]
-        ham = dociham.from_file(unicode_str(datafile('{0:s}.fcidump'.format(filename))))
+        ham = dociham.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = dociwfn(ham.nbasis, nocc)
         wfn.add_all_dets()
         es, cs = solve_ci(ham, wfn, n=1, ncv=30, tol=1.0e-6, mode='sparse')
-        # test compute_rdms
         d0, d2 = compute_rdms(wfn, cs[0])
         npt.assert_allclose(np.trace(d0), wfn.nocc, rtol=0, atol=1.0e-9)
         npt.assert_allclose(np.sum(d2), wfn.nocc * (wfn.nocc - 1), rtol=0, atol=1.0e-9)
 
     def run_compute_energy(self, filename):
-        # prepare problem
         nocc, energy = self.CASES[filename]
-        ham = dociham.from_file(unicode_str(datafile('{0:s}.fcidump'.format(filename))))
+        ham = dociham.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = dociwfn(ham.nbasis, nocc)
         wfn.add_all_dets()
         es, cs = solve_ci(ham, wfn, n=1, ncv=30, tol=1.0e-6, mode='sparse')
-        # test compute_energy
         npt.assert_allclose(compute_energy(ham, wfn, cs[0]), energy, rtol=0.0, atol=1.0e-9)

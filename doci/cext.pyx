@@ -20,22 +20,18 @@ DOCI C extension module.
 
 """
 
-from __future__ import absolute_import, unicode_literals
-
-from ctypes import c_int64, c_uint64, c_double as c_double_
-from sys import version_info
-
-import numpy as np
 cimport numpy as np
+import numpy as np
 
-from doci.fcidump import read as read_fcidump, write as write_fcidump
-from doci.cext cimport int_t, uint_t, dociham, dociwfn, DOCIWfn
-from doci.cext cimport doci_rdms, doci_energy, doci_hci, solve_sparse, solve_direct
+from doci.cext cimport int_t, uint_t, DOCIWfn, dociham, dociwfn
+from doci.cext cimport solve_sparse, solve_direct, compute_rdms_, compute_energy_, run_hci_
 from doci.cext cimport binomial, fill_det, fill_occs, fill_virs
 from doci.cext cimport excite_det, setbit_det, clearbit_det, popcnt_det, ctz_det, hash_det
+from doci.fcidump import read as read_fcidump, write as write_fcidump
 
 
 __all__ = [
+    'get_version',
     'comb',
     'dociham',
     'dociwfn',
@@ -46,23 +42,24 @@ __all__ = [
     ]
 
 
-# Python 2 compatibility hack
-cdef type pyrange
-cdef type pymap
-if version_info.major == 2:
-    from itertools import imap
-    pyrange = xrange
-    pymap = imap
-else:
-    pyrange = range
-    pymap = map
+cdef np.dtype c_int = np.dtype(np.int64)
+
+cdef np.dtype c_uint = np.dtype(np.uint64)
+
+cdef np.dtype c_double = np.dtype(np.double)
 
 
-cdef np.dtype c_int = np.dtype(c_int64)
+def get_version():
+    r"""
+    Return the version number string from the C extension.
 
-cdef np.dtype c_uint = np.dtype(c_uint64)
+    Returns
+    -------
+    version : str
+        Version number string.
 
-cdef np.dtype c_double = np.dtype(c_double_)
+    """
+    return DOCI_VERSION
 
 
 def comb(int_t n, int_t k):
@@ -72,13 +69,18 @@ def comb(int_t n, int_t k):
     Parameters
     ----------
     n : int
+        :math:`n`.
     k : int
+        :math:`k`.
 
     Returns
     -------
     comb : int
+        :math:`{n}\choose{k}`.
 
     """
+    if n < 0 or k < 0:
+        raise ValueError('n and k must be non-negative integers')
     return binomial(n, k)
 
 
@@ -151,15 +153,16 @@ cdef class dociham:
             raise ValueError('(one_mo, two_mo) shapes are incompatible')
         cdef double[:] h = np.copy(np.diagonal(one_mo))
         cdef double[:, :] v = np.copy(np.diagonal(np.diagonal(two_mo)))
-        cdef double[:, :] w = np.diagonal(np.diagonal(np.transpose(two_mo, axes=(0, 2, 3, 1)))) * 2 \
-                            - np.diagonal(np.diagonal(np.transpose(two_mo, axes=(0, 3, 2, 1))))
+        cdef double[:, :] w = np.diagonal(np.diagonal(np.transpose(two_mo, axes=(0, 2, 3, 1)))) * 2
+        cdef np.ndarray w_array = np.asarray(w)
+        w_array -= np.diagonal(np.diagonal(np.transpose(two_mo, axes=(0, 3, 2, 1))))
         if not keep_mo:
             one_mo = None
             two_mo = None
         return cls(ecore, h, v, w, one_mo=one_mo, two_mo=two_mo)
 
     @classmethod
-    def from_file(cls, str filename not None, bint keep_mo=True):
+    def from_file(cls, object filename not None, bint keep_mo=True):
         r"""
         Return a dociham instance by loading an FCIDUMP file.
 
@@ -181,7 +184,7 @@ cdef class dociham:
     @property
     def nbasis(self):
         r"""
-        Return the number of orbital basis functions.
+        Number of orbital basis functions.
 
         """
         return self._nbasis
@@ -189,7 +192,7 @@ cdef class dociham:
     @property
     def ecore(self):
         r"""
-        Return the constant/"zero-electron" integral.
+        Constant/"zero-electron" integral.
 
         """
         return self._ecore
@@ -197,7 +200,7 @@ cdef class dociham:
     @property
     def h(self):
         r"""
-        Return the seniority-zero one-electron integrals.
+        Seniority-zero one-electron integrals.
 
         """
         return np.asarray(self._h)
@@ -205,7 +208,7 @@ cdef class dociham:
     @property
     def v(self):
         r"""
-        Return the seniority-zero two-electron integrals.
+        Seniority-zero two-electron integrals.
 
         """
         return np.asarray(self._v)
@@ -213,7 +216,7 @@ cdef class dociham:
     @property
     def w(self):
         r"""
-        Return the seniority-two two-electron integrals.
+        Seniority-two two-electron integrals.
 
         """
         return np.asarray(self._w)
@@ -221,7 +224,7 @@ cdef class dociham:
     @property
     def one_mo(self):
         r"""
-        Return the full one-electron integral array.
+        Full one-electron integral array.
 
         """
         if self._one_mo is None:
@@ -231,7 +234,7 @@ cdef class dociham:
     @property
     def two_mo(self):
         r"""
-        Return the full two-electron integral array.
+        Full two-electron integral array.
 
         """
         if self._two_mo is None:
@@ -269,7 +272,7 @@ cdef class dociham:
         self._one_mo = one_mo
         self._two_mo = two_mo
 
-    def to_file(self, str filename not None, int_t nelec=0, int_t ms2=0):
+    def to_file(self, object filename not None, int_t nelec=0, int_t ms2=0):
         r"""
         Write a dociham instance to an FCIDUMP file.
 
@@ -291,7 +294,7 @@ cdef class dociham:
 
         Parameters
         ----------
-        occs : list-like of ints
+        occs : np.ndarray(c_int(nocc))
             Indices of occupied electron pairs in determinant.
 
         Returns
@@ -300,13 +303,14 @@ cdef class dociham:
             Hamiltonian element.
 
         """
-        cdef int_t i, j, k
+        cdef int_t nocc = occs.shape[0], i, j, k
         cdef double elem1 = 0.0, elem2 = 0.0
-        for i, j in enumerate(occs):
+        for i in range(nocc):
+            j = occs[i]
             elem1 += self._v[j, j]
             elem2 += self._h[j]
-            for k in occs[i + 1:]:
-                elem2 += self._w[j, k]
+            for k in range(i):
+                elem2 += self._w[j, occs[k]]
         return elem1 + elem2 * 2
 
     def elem_double(self, int_t i, int_t a):
@@ -336,7 +340,7 @@ cdef class dociwfn:
     Attributes
     ----------
     nword : int
-        Number of words (unsigned long ints) per determinant.
+        Number of words (unsigned 64-bit ints) per determinant.
     nbasis : int
         Number of orbital basis functions.
     nocc : int
@@ -347,7 +351,7 @@ cdef class dociwfn:
     """
 
     @classmethod
-    def from_file(cls, str filename not None):
+    def from_file(cls, object filename not None):
         r"""
         Return a dociwfn instance by loading a DOCI file.
 
@@ -363,13 +367,13 @@ cdef class dociwfn:
 
         """
         cdef dociwfn wfn = cls(2, 1)
-        wfn._obj.from_file(filename.encode('utf-8'))
+        wfn._obj.from_file(filename.encode())
         return wfn
 
     @property
     def nword(self):
         r"""
-        Return the number of words (unsigned long ints) per determinant.
+        Number of words (unsigned 64-bit ints) per determinant.
 
         """
         return self._obj.nword
@@ -377,7 +381,7 @@ cdef class dociwfn:
     @property
     def nbasis(self):
         r"""
-        Return the number of orbital basis functions.
+        Number of orbital basis functions.
 
         """
         return self._obj.nbasis
@@ -385,7 +389,7 @@ cdef class dociwfn:
     @property
     def nocc(self):
         r"""
-        Return the number of occupied indices.
+        Number of occupied indices.
 
         """
         return self._obj.nocc
@@ -393,7 +397,7 @@ cdef class dociwfn:
     @property
     def nvir(self):
         r"""
-        Return the number of virtual indices.
+        Number of virtual indices.
 
         """
         return self._obj.nvir
@@ -441,11 +445,12 @@ cdef class dociwfn:
             Determinant.
 
         """
-        if index >= self._obj.ndet:
+        if index < 0 or index >= self._obj.ndet:
             raise IndexError('index out of range')
-        cdef uint_t[:] det = np.empty(self._obj.nword, dtype=c_uint)
+        cdef np.ndarray det_array = np.empty(self._obj.nword, dtype=c_uint)
+        cdef uint_t[:] det = det_array
         self._obj.copy_det(index, <uint_t *>(&det[0]))
-        return np.asarray(det)
+        return det_array
 
     def __iter__(self):
         r"""
@@ -457,9 +462,16 @@ cdef class dociwfn:
             Determinant.
 
         """
-        return pymap(self.getitem_unchecked, pyrange(self._obj.ndet))
+        cdef int_t ndet = self._obj.ndet, i
+        cdef np.ndarray det_array
+        cdef uint_t[:] det
+        for i in range(ndet):
+            det_array = np.empty(self._obj.nword, dtype=c_uint)
+            det = det_array
+            self._obj.copy_det(i, <uint_t *>(&det[0]))
+            yield det_array
 
-    def to_file(self, str filename not None):
+    def to_file(self, object filename not None):
         r"""
         Write a dociwfn instance to a DOCI file.
 
@@ -469,26 +481,7 @@ cdef class dociwfn:
             Name of DOCI file to write.
 
         """
-        self._obj.to_file(filename.encode('utf-8'))
-
-    def getitem_unchecked(self, int_t index):
-        r""""
-        Return the specified determinant from the wave function (no address checks performed).
-
-        Parameters
-        ----------
-        index : int
-            Index of determinant to return.
-
-        Returns
-        -------
-        det : np.ndarray(c_uint(nword))
-            Determinant.
-
-        """
-        cdef uint_t[:] det = np.empty(self._obj.nword, dtype=c_uint)
-        self._obj.copy_det(index, <uint_t *>(&det[0]))
-        return np.asarray(det)
+        self._obj.to_file(filename.encode())
 
     def index_det(self, uint_t[::1] det not None):
         r"""
@@ -568,19 +561,22 @@ cdef class dociwfn:
 
         """
         # check excitation levels
-        cdef int_t[::1] excv = np.array(list(set(exc)), dtype=c_int)
-        cdef int_t e, emax = min(self._obj.nocc, self._obj.nvir), nexc = 0
-        if min(excv) < 0 or max(excv) > emax:
-            raise ValueError('invalid excitation order e < 0 or e > min(nocc, nvir)')
+        cdef int_t emax = min(self._obj.nocc, self._obj.nvir), ndet = 0, i, e, nexc
+        cdef int_t[:] excv = np.array(list(set(exc)), dtype=c_int)
+        nexc = excv.shape[0]
+        for i in range(nexc):
+            e = excv[i]
+            if e < 0 or e > emax:
+                raise ValueError('invalid excitation order e < 0 or e > min(nocc, nvir)')
+            ndet += binomial(self._obj.nocc, e) * binomial(self._obj.nvir, e)
         # default determinant is hartree-fock determinant
         if det is None:
             det = self.det_from_occs(np.arange(self._obj.nocc, dtype=c_int))
         # reserve space for determinants
-        for e in excv:
-            nexc += binomial(self._obj.nocc, e) * binomial(self._obj.nvir, e)
-        self._obj.reserve(nexc)
-        for e in excv:
-            self._obj.add_excited_dets(&det[0], e)
+        self._obj.reserve(ndet)
+        # add determinants
+        for i in range(nexc):
+            self._obj.add_excited_dets(&det[0], excv[i])
 
     def reserve(self, int_t n):
         r"""
@@ -589,7 +585,7 @@ cdef class dociwfn:
         Parameters
         ----------
         n : int
-            Number of elements to reseve.
+            Number of elements for which to reserve space.
 
         """
         self._obj.reserve(n)
@@ -618,9 +614,10 @@ cdef class dociwfn:
             Determinant.
 
         """
-        cdef uint_t[:] det = np.zeros(self._obj.nword, dtype=c_uint)
+        cdef np.ndarray det_array = np.zeros(self._obj.nword, dtype=c_uint)
+        cdef uint_t[:] det = det_array
         fill_det(self._obj.nocc, <int_t *>(&occs[0]), <uint_t *>(&det[0]))
-        return np.asarray(det)
+        return det_array
 
     def occs_from_det(self, uint_t[::1] det not None):
         r"""
@@ -637,9 +634,10 @@ cdef class dociwfn:
             Indices of occupied electron pairs in determinant.
 
         """
-        cdef int_t[:] occs = np.empty(self._obj.nocc, dtype=c_int)
+        cdef np.ndarray occs_array = np.empty(self._obj.nocc, dtype=c_int)
+        cdef int_t[:] occs = occs_array
         fill_occs(self._obj.nword, <uint_t *>(&det[0]), <int_t *>(&occs[0]))
-        return np.asarray(occs)
+        return occs_array
 
     def virs_from_det(self, uint_t[::1] det not None):
         r"""
@@ -656,9 +654,10 @@ cdef class dociwfn:
             Indices without occupied electron pairs in determinant.
 
         """
-        cdef int_t[:] virs = np.empty(self._obj.nvir, dtype=c_int)
+        cdef np.ndarray virs_array = np.empty(self._obj.nvir, dtype=c_int)
+        cdef int_t[:] virs = virs_array
         fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[0]), <int_t *>(&virs[0]))
-        return np.asarray(virs)
+        return virs_array
 
     def excite_det(self, int_t i, int_t a, uint_t[::1] det not None):
         r"""
@@ -679,13 +678,14 @@ cdef class dociwfn:
             Excited determinant.
 
         """
-        cdef uint_t[:] newdet = np.copy(det)
+        cdef np.ndarray newdet_array = np.copy(det)
+        cdef uint_t[:] newdet = newdet_array
         excite_det(i, a, <uint_t *>(&newdet[0]))
-        return np.asarray(newdet)
+        return newdet_array
 
     def setbit_det(self, int_t i, uint_t[::1] det not None):
         r"""
-        Set a bit in a determinant.
+        Return the determinant with bit :math:`i` set.
 
         Parameters
         ----------
@@ -700,13 +700,14 @@ cdef class dociwfn:
             New determinant.
 
         """
-        cdef uint_t[:] newdet = np.copy(det)
+        cdef np.ndarray newdet_array = np.copy(det)
+        cdef uint_t[:] newdet = newdet_array
         setbit_det(i, <uint_t *>(&newdet[0]))
-        return np.asarray(newdet)
+        return newdet_array
 
     def clearbit_det(self, int_t i, uint_t[::1] det not None):
         r"""
-        Clear a bit in a determinant.
+        Return the determinant with bit :math:`i` cleared.
 
         Parameters
         ----------
@@ -721,9 +722,54 @@ cdef class dociwfn:
             New determinant.
 
         """
-        cdef uint_t[:] newdet = np.copy(det)
+        cdef np.ndarray newdet_array = np.copy(det)
+        cdef uint_t[:] newdet = newdet_array
         clearbit_det(i, <uint_t *>(&newdet[0]))
-        return np.asarray(newdet)
+        return newdet_array
+
+    def excite_det_inplace(self, int_t i, int_t a, uint_t[::1] det not None):
+        r"""
+        Excite a determinant from pair index :math:`i` to pair index :math:`a` in-place.
+
+        Parameters
+        ----------
+        i : int
+            Electron pair "hole" index.
+        a : int
+            Electron pair "particle" index.
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        excite_det(i, a, <uint_t *>(&det[0]))
+
+    def setbit_det_inplace(self, int_t i, uint_t[::1] det not None):
+        r"""
+        Set a bit in a determinant in-place.
+
+        Parameters
+        ----------
+        i : int
+            Bit to set.
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        setbit_det(i, <uint_t *>(&det[0]))
+
+    def clearbit_det_inplace(self, int_t i, uint_t[::1] det not None):
+        r"""
+        Clear a bit in a determinant in-place.
+
+        Parameters
+        ----------
+        i : int
+            Bit to clear.
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        clearbit_det(i, <uint_t *>(&det[0]))
 
     def popcnt_det(self, uint_t[::1] det not None):
         r"""
@@ -780,12 +826,17 @@ cdef class dociwfn:
         r"""
         Return a new determinant with all bits set to zero.
 
+        Returns
+        -------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
         """
         return np.zeros(self._obj.nword, dtype=c_uint)
 
 
 def solve_ci(dociham ham not None, dociwfn wfn not None, int_t n=1, int_t ncv=20, double[::1] c0=None,
-    int_t maxiter=-1, double tol=1.0e-6, str mode='sparse'):
+    int_t maxiter=-1, double tol=1.0e-6, object mode='sparse'):
     r"""
     Solve the CI problem for the energy/energies and coefficient vector(s).
 
@@ -825,11 +876,11 @@ def solve_ci(dociham ham not None, dociwfn wfn not None, int_t n=1, int_t ncv=20
     elif wfn._obj.ndet == 0:
         raise ValueError('wfn must contain at least one determinant')
     # handle ndet = 1 case
-    elif wfn._obj.ndet == 1:
+    if wfn._obj.ndet == 1:
         return (np.full(1, ham.elem_diag(wfn.occs_from_det(wfn[0])) + ham._ecore, dtype=c_double),
                 np.ones((1, 1), dtype=c_double))
-    # set number of lanczos vectors n < len(c0)
-    ncv = min(ncv, wfn._obj.ndet)
+    # set number of lanczos vectors n < ncv <= len(c0)
+    ncv = max(n + 1, min(ncv, wfn._obj.ndet))
     # default initial guess c = [1, 0, ..., 0]
     if c0 is None:
         c0 = np.zeros(wfn._obj.ndet, dtype=c_double)
@@ -840,8 +891,10 @@ def solve_ci(dociham ham not None, dociwfn wfn not None, int_t n=1, int_t ncv=20
     if maxiter == -1:
         maxiter = 1000 * n
     # solve eigenproblem
-    cdef double[:] evals = np.empty(n, dtype=c_double)
-    cdef double[:, :] evecs = np.empty((n, wfn._obj.ndet), dtype=c_double)
+    cdef np.ndarray evals_array = np.empty(n, dtype=c_double)
+    cdef np.ndarray evecs_array = np.empty((n, wfn._obj.ndet), dtype=c_double)
+    cdef double[:] evals = evals_array
+    cdef double[:, :] evecs = evecs_array
     if mode == 'sparse':
         solve_sparse(wfn._obj, <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]), <double *>(&ham._w[0, 0]),
                      <double *>(&c0[0]), n, ncv, maxiter, tol, <double *>(&evals[0]), <double *>(&evecs[0, 0]))
@@ -850,8 +903,6 @@ def solve_ci(dociham ham not None, dociwfn wfn not None, int_t n=1, int_t ncv=20
                      <double *>(&c0[0]), n, ncv, maxiter, tol, <double *>(&evals[0]), <double *>(&evecs[0, 0]))
     else:
         raise ValueError('\'mode\' option must be either \'sparse\' or \'direct\'')
-    cdef np.ndarray evals_array = np.asarray(evals)
-    cdef np.ndarray evecs_array = np.asarray(evecs)
     evals_array += ham._ecore
     return evals_array, evecs_array
 
@@ -880,15 +931,24 @@ def compute_rdms(dociwfn wfn not None, double[::1] coeffs not None):
     coeffs : np.ndarray(c_double(len(wfn)))
         Coefficient vector.
 
+    Returns
+    -------
+    d0 : np.ndarray(c_double(wfn.nbasis, wfn.nbasis))
+        :math:`D_0` matrix.
+    d2 : np.ndarray(c_double(wfn.nbasis, wfn.nbasis))
+        :math:`D_2` matrix.
+
     """
     if wfn._obj.ndet != coeffs.shape[0]:
         raise ValueError('dimensions of wfn, coeffs do not match')
     elif wfn._obj.ndet == 0:
         raise ValueError('wfn must contain at least one determinant')
-    cdef double[:, :] d0 = np.zeros((wfn._obj.nbasis, wfn._obj.nbasis), dtype=c_double)
-    cdef double[:, :] d2 = np.zeros((wfn._obj.nbasis, wfn._obj.nbasis), dtype=c_double)
-    doci_rdms(wfn._obj, <double *>(&coeffs[0]), <double *>(&d0[0, 0]), <double *>(&d2[0, 0]))
-    return np.asarray(d0), np.asarray(d2)
+    cdef np.ndarray d0_array = np.zeros((wfn._obj.nbasis, wfn._obj.nbasis), dtype=c_double)
+    cdef np.ndarray d2_array = np.zeros((wfn._obj.nbasis, wfn._obj.nbasis), dtype=c_double)
+    cdef double[:, :] d0 = d0_array
+    cdef double[:, :] d2 = d2_array
+    compute_rdms_(wfn._obj, <double *>(&coeffs[0]), <double *>(&d0[0, 0]), <double *>(&d2[0, 0]))
+    return d0_array, d2_array
 
 
 def compute_energy(dociham ham not None, dociwfn wfn not None, double[::1] coeffs not None):
@@ -916,8 +976,8 @@ def compute_energy(dociham ham not None, dociwfn wfn not None, double[::1] coeff
         raise ValueError('wfn must contain at least one determinant')
     elif wfn._obj.nbasis != ham._nbasis:
         raise ValueError('dimensions of wfn, ham do not match')
-    return doci_energy(wfn._obj, <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]),
-                       <double *>(&ham._w[0, 0]), <double *>(&coeffs[0])) + ham._ecore
+    return compute_energy_(wfn._obj, <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]),
+                           <double *>(&ham._w[0, 0]), <double *>(&coeffs[0])) + ham._ecore
 
 
 def run_hci(dociham ham not None, dociwfn wfn not None, double[::1] coeffs not None, double eps):
@@ -951,4 +1011,4 @@ def run_hci(dociham ham not None, dociwfn wfn not None, double[::1] coeffs not N
         raise ValueError('wfn must contain at least one determinant')
     elif wfn._obj.nbasis != ham._nbasis:
         raise ValueError('dimensions of wfn, ham do not match')
-    return doci_hci(wfn._obj, <double *>(&ham._v[0, 0]), <double *>(&coeffs[0]), eps)
+    return run_hci_(wfn._obj, <double *>(&ham._v[0, 0]), <double *>(&coeffs[0]), eps)

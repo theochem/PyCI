@@ -30,7 +30,7 @@ try:
 except ImportError:
     from urllib import urlretrieve
 
-from setuptools import setup, Extension
+from setuptools import setup
 
 import numpy
 
@@ -67,16 +67,9 @@ install_requires = [
 
 
 extras_require = {
-    'build': [
-        'cython',
-        ],
-    'test': [
-        'nose',
-        ],
-    'doc': [
-        'sphinx',
-        'sphinx_rtd_theme',
-        ],
+    'build': ['cython'],
+    'test': ['nose'],
+    'doc': ['sphinx', 'sphinx_rtd_theme'],
     }
 
 
@@ -86,38 +79,45 @@ packages = [
     ]
 
 
+package_data = {
+    'doci': ['doci.h', 'doci.cpp', 'cext.pxd', 'cext.pyx', 'cext.cpp'],
+    'doci.test': ['data/*.fcidump'],
+    }
+
+
+include_dirs = [
+    'parallel-hashmap',
+    'eigen',
+    'spectra/include',
+    numpy.get_include(),
+    ]
+
+
+compile_args = [
+    '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
+    '-Wall',
+    '-fopenmp',
+    '-O3',
+    ]
+
+
 cext = {
     'name': 'doci.cext',
     'language': 'c++',
-    'sources': [
-        'doci/cext.cpp',
-        'doci/doci.cpp'
-        ],
-    'include_dirs': [
-        'parallel-hashmap',
-        'eigen',
-        'spectra/include',
-        numpy.get_include(),
-        ],
-    'extra_compile_args': [
-        '-Wall',
-        '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
-        '-fopenmp',
-        '-O3',
-        ],
-    'extra_link_args': [
-        '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
-        '-fopenmp',
-        '-O3',
-        ],
+    'sources': ['doci/cext.cpp', 'doci/doci.cpp'],
+    'include_dirs': include_dirs,
+    'extra_compile_args': compile_args,
+    'extra_link_args': compile_args,
     }
 
 
 try:
-    from Cython.Distutils import build_ext
+    from Cython.Distutils import build_ext, Extension
     cext['sources'] = ['doci/cext.pyx', 'doci/doci.cpp']
+    cext['cython_compile_time_env'] = dict(DOCI_VERSION=str(version))
 except ImportError:
     from setuptools.command.build_ext import build_ext
+    from setuptools import Extension
 
 
 class BuildExtCommand(build_ext):
@@ -168,6 +168,8 @@ if __name__ == '__main__':
         install_requires=install_requires,
         extras_require=extras_require,
         packages=packages,
+        package_data=package_data,
+        include_package_data=True,
         ext_modules=[Extension(**cext)],
         cmdclass={'build_ext': BuildExtCommand},
         )

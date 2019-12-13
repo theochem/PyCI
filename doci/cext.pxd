@@ -26,12 +26,12 @@ from libc.stdint cimport int64_t, uint64_t
 __all__ = [
     'int_t',
     'uint_t',
+    'DOCIWfn',
     'dociham',
     'dociwfn',
-    'DOCIWfn',
-    'doci_rdms',
-    'doci_energy',
-    'doci_hci',
+    'compute_rdms_',
+    'compute_energy_',
+    'run_hci_',
     'solve_sparse',
     'solve_direct',
     'binomial',
@@ -52,7 +52,7 @@ ctypedef int64_t int_t
 ctypedef uint64_t uint_t
 
 
-cdef extern from "doci.h" namespace "doci":
+cdef extern from 'doci.h' namespace 'doci':
 
     cdef cppclass DOCIWfn:
         int_t nword, nbasis, nocc, nvir, ndet
@@ -66,22 +66,23 @@ cdef extern from "doci.h" namespace "doci":
         int_t copy_det(const int_t, uint_t *)
         int_t add_det(const uint_t *) except +
         int_t add_det_from_occs(const int_t *) except +
-        int_t add_all_dets() nogil except +
+        int_t add_all_dets() except +
         int_t add_excited_dets(const uint_t *, const int_t) except +
         void reserve(const int_t) except +
         void squeeze()
 
-    void doci_rdms(const DOCIWfn &, const double *, double *, double *) except +
+    void compute_rdms_ 'compute_rdms' (const DOCIWfn &, const double *, double *, double *) except +
 
-    double doci_energy(const DOCIWfn &, const double *, const double *, const double *, const double *) nogil except +
+    double compute_energy_ 'compute_energy' (const DOCIWfn &, const double *, const double *, const double *,
+        const double *) except +
 
-    int_t doci_hci(DOCIWfn &, const double *, const double *, const double) nogil except +
+    int_t run_hci_ 'run_hci' (DOCIWfn &, const double *, const double *, const double) except +
 
     void solve_sparse(const DOCIWfn &, const double *, const double *, const double *, const double *,
-        const int_t, const int_t, const int_t, const double, double *, double *) nogil except +
+        const int_t, const int_t, const int_t, const double, double *, double *) except +
 
     void solve_direct(const DOCIWfn &, const double *, const double *, const double *, const double *,
-        const int_t, const int_t, const int_t, const double, double *, double *) nogil except +
+        const int_t, const int_t, const int_t, const double, double *, double *) except +
 
     int_t binomial(int_t, int_t) except +
 
@@ -89,7 +90,7 @@ cdef extern from "doci.h" namespace "doci":
 
     void fill_occs(const int_t, const uint_t *, int_t *)
 
-    void fill_virs(const int_t, const int_t, const uint_t *, int_t *)
+    void fill_virs(const int_t, int_t, const uint_t *, int_t *)
 
     void excite_det(const int_t, const int_t, uint_t *)
 

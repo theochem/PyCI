@@ -52,7 +52,7 @@
 namespace doci {
 
 
-DOCIWfn::DOCIWfn() {
+DOCIWfn::DOCIWfn() : nword(1), nbasis(2), nocc(1), nvir(1), ndet(0) {
     return;
 };
 
@@ -122,7 +122,7 @@ void DOCIWfn::to_file(const char *filename) const {
 
 
 int_t DOCIWfn::index_det(const uint_t *det) const {
-    hashmap<int_t, int_t>::const_iterator search = dict.find(hash_det(nbasis, nocc, det));
+    DOCIWfn::hashmap_type::const_iterator search = dict.find(hash_det(nbasis, nocc, det));
     return (search == dict.end()) ? -1 : search->second;
 }
 
@@ -266,10 +266,9 @@ void DOCIWfn::squeeze() {
 }
 
 
-void doci_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2) {
+void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2) {
     int_t idet, jdet, i, j, k, l;
     double val1, val2;
-    // iterate over determinants
     std::vector<uint_t> det(wfn.nword);
     std::vector<int_t> occs(wfn.nocc);
     std::vector<int_t> virs(wfn.nvir);
@@ -305,7 +304,7 @@ void doci_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2)
 }
 
 
-double doci_energy(const DOCIWfn &wfn, const double *h, const double *v, const double *w, const double *coeffs) {
+double compute_energy(const DOCIWfn &wfn, const double *h, const double *v, const double *w, const double *coeffs) {
     int_t nthread = omp_get_max_threads();
     int_t chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
     double val = 0.0;
@@ -316,7 +315,6 @@ double doci_energy(const DOCIWfn &wfn, const double *h, const double *v, const d
         int_t start = chunk * chunksize;
         int_t end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
         double val1, val2, val3;
-        // iterate over determinants
         std::vector<uint_t> det(wfn.nword);
         std::vector<int_t> occs(wfn.nocc);
         std::vector<int_t> virs(wfn.nvir);
@@ -351,9 +349,9 @@ double doci_energy(const DOCIWfn &wfn, const double *h, const double *v, const d
 }
 
 
-int_t doci_hci(DOCIWfn &wfn, const double *v, const double *coeffs, const double eps) {
-    int_t ndet = wfn.ndet;
-    int_t nthread = omp_get_max_threads();
+int_t run_hci(DOCIWfn &wfn, const double *v, const double *coeffs, const double eps) {
+    /*
+    int_t ndet = wfn.ndet, nthread = omp_get_max_threads();
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     #pragma omp parallel
     {
@@ -361,26 +359,28 @@ int_t doci_hci(DOCIWfn &wfn, const double *v, const double *coeffs, const double
         int_t chunk = omp_get_thread_num();
         int_t start = chunk * chunksize;
         int_t end = (start + chunksize < ndet) ? start + chunksize : ndet;
-        // iterate over determinants
-        std::vector<uint_t> det(wfn.nword);
-        std::vector<int_t> occs(wfn.nocc);
-        std::vector<int_t> virs(wfn.nvir);
         for (idet = start; idet < end; ++idet) {
-            wfn.copy_det(idet, &det[0]);
-            fill_occs(wfn.nword, &det[0], &occs[0]);
-            fill_virs(wfn.nword, wfn.nbasis, &det[0], &virs[0]);
-            // pair excitation elements
-            for (i = 0; i < wfn.nocc; ++i) {
-                k = occs[i];
-                for (j = 0; j < wfn.nvir; ++j) {
-                    l = virs[j];
-                    excite_det(k, l, &det[0]);
-                    // add determinant if |H*c| > eps
-                    if (std::abs(v[k * wfn.nbasis + l] * coeffs[idet]) > eps)
-                        #pragma omp critical
-                        wfn.add_det(&det[0]);
-                    wfn.copy_det(idet, &det[0]);
-                }
+        ... with a mutex or #pragma omp critical
+    }
+    */
+    int_t ndet = wfn.ndet, idet, i, j, k, l;
+    std::vector<uint_t> det(wfn.nword);
+    std::vector<int_t> occs(wfn.nocc);
+    std::vector<int_t> virs(wfn.nvir);
+    for (idet = 0; idet < ndet; ++idet) {
+        wfn.copy_det(idet, &det[0]);
+        fill_occs(wfn.nword, &det[0], &occs[0]);
+        fill_virs(wfn.nword, wfn.nbasis, &det[0], &virs[0]);
+        // pair excitation elements
+        for (i = 0; i < wfn.nocc; ++i) {
+            k = occs[i];
+            for (j = 0; j < wfn.nvir; ++j) {
+                l = virs[j];
+                excite_det(k, l, &det[0]);
+                // add determinant if |H*c| > eps
+                if (std::abs(v[k * wfn.nbasis + l] * coeffs[idet]) > eps)
+                    wfn.add_det(&det[0]);
+                wfn.copy_det(idet, &det[0]);
             }
         }
     }
@@ -396,9 +396,9 @@ struct SparseOp {
     std::vector<int_t> indices;
     std::vector<int_t> indptr;
     inline SparseOp (const DOCIWfn &wfn_) : nrow(wfn_.ndet) {};
-    inline int_t rows() { return nrow; }
-    inline int_t cols() { return nrow; }
-    void perform_op(const double *, double *);
+    inline int_t rows() const { return nrow; }
+    inline int_t cols() const { return nrow; }
+    void perform_op(const double *, double *) const;
 };
 
 }
@@ -412,9 +412,9 @@ struct DirectOp {
     const DOCIWfn &wfn;
     std::vector<double> data;
     inline DirectOp (const DOCIWfn &wfn_, const double *v_) : nrow(wfn_.ndet), v(v_), wfn(wfn_) {};
-    inline int_t rows() { return nrow; }
-    inline int_t cols() { return nrow; }
-    void perform_op(const double *, double *);
+    inline int_t rows() const { return nrow; }
+    inline int_t cols() const { return nrow; }
+    void perform_op(const double *, double *) const;
 };
 
 }
@@ -436,7 +436,6 @@ void prepare_matvec_sparse(const DOCIWfn &wfn, SparseOp& op, const double *h, co
     op.indices.reserve(wfn.ndet + 1);
     op.indptr.reserve(wfn.ndet + 1);
     op.indptr.push_back(0);
-    // iterate over determinants
     for (idet = 0; idet < wfn.ndet; ++idet) {
         wfn.copy_det(idet, &det[0]);
         fill_occs(wfn.nword, &det[0], &occs[0]);
@@ -491,7 +490,6 @@ void prepare_matvec_direct(const DOCIWfn &wfn, DirectOp &op, const double *h, co
         int_t start = chunk * chunksize;
         int_t end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
         double val1, val2;
-        // iterate over determinants
         std::vector<int_t> occs(wfn.nocc);
         for (idet = start; idet < end; ++idet) {
             fill_occs(wfn.nword, &wfn.dets[idet * wfn.nword], &occs[0]);
@@ -515,7 +513,7 @@ void prepare_matvec_direct(const DOCIWfn &wfn, DirectOp &op, const double *h, co
 
 namespace {
 
-void SparseOp::perform_op(const double *x, double *y) {
+void SparseOp::perform_op(const double *x, double *y) const {
     int_t nthread = omp_get_max_threads();
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     #pragma omp parallel
@@ -542,7 +540,7 @@ void SparseOp::perform_op(const double *x, double *y) {
 
 namespace {
 
-void DirectOp::perform_op(const double *x, double *y) {
+void DirectOp::perform_op(const double *x, double *y) const {
     int_t nthread = omp_get_max_threads();
     int_t chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
     #pragma omp parallel
@@ -552,7 +550,6 @@ void DirectOp::perform_op(const double *x, double *y) {
         int_t start = chunk * chunksize;
         int_t end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
         double val;
-        // iterate over determinants
         std::vector<uint_t> det(wfn.nword);
         std::vector<int_t> occs(wfn.nocc);
         std::vector<int_t> virs(wfn.nvir);
@@ -658,11 +655,11 @@ void fill_occs(const int_t nword, const uint_t *det, int_t *occs) {
 }
 
 
-void fill_virs(const int_t nword, const int_t nbasis, const uint_t *det, int_t *virs) {
-    int_t p, n = nbasis, j = 0, offset = 0;
+void fill_virs(const int_t nword, int_t nbasis, const uint_t *det, int_t *virs) {
+    int_t p, j = 0, offset = 0;
     uint_t word, mask;
     for (int_t i = 0; i < nword; ++i) {
-        mask = (n < DOCI_UINT_SIZE) ? ((DOCI_UINT_ONE << n) - 1) : DOCI_UINT_MAX;
+        mask = (nbasis < DOCI_UINT_SIZE) ? ((DOCI_UINT_ONE << nbasis) - 1) : DOCI_UINT_MAX;
         word = det[i] ^ mask;
         while (word) {
             p = DOCI_CTZ(word);
@@ -670,7 +667,7 @@ void fill_virs(const int_t nword, const int_t nbasis, const uint_t *det, int_t *
             word &= ~(DOCI_UINT_ONE << p);
         }
         offset += DOCI_UINT_SIZE;
-        n -= DOCI_UINT_SIZE;
+        nbasis -= DOCI_UINT_SIZE;
     }
 }
 

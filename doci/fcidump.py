@@ -18,11 +18,7 @@ DOCI FCIDUMP module.
 
 """
 
-from __future__ import absolute_import, division, unicode_literals
-
-from ctypes import c_double
 from io import open
-from sys import version_info
 
 import numpy as np
 
@@ -31,11 +27,6 @@ __all__ = [
     'read',
     'write',
     ]
-
-
-# Python 2 compatibility hack
-if version_info.major == 2:
-    range = xrange
 
 
 def read(filename):
@@ -83,8 +74,8 @@ def read(filename):
                 break
         # read integrals
         ecore = 0.0
-        one_mo = np.zeros((nbasis, nbasis), dtype=np.dtype(c_double))
-        two_mo = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.dtype(c_double))
+        one_mo = np.zeros((nbasis, nbasis), dtype=np.double)
+        two_mo = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
         for line in f:
             fields = line.split()
             if len(fields) != 5:
@@ -136,11 +127,11 @@ def write(filename, ecore, one_mo, two_mo, nelec=0, ms2=0, tol=1.0e-18):
 
     """
     nbasis = one_mo.shape[0]
-    fmt = ' {0:> .16E} {1:>Xd} {2:>Xd} {3:>Xd} {4:>Xd}\n'.replace('X', str(len(str(nbasis))))
+    fmt = u' {0:> .16E} {1:>Xd} {2:>Xd} {3:>Xd} {4:>Xd}\n'.replace('X', str(len(str(nbasis))))
     with open(filename, 'w', encoding='utf-8') as f:
         # write header
-        f.write(' &FCI NORB={0:d},NELEC={1:d},MS2={2:d},\n'.format(nbasis, nelec, ms2))
-        f.write('  ORBSYM={0:s}\n  ISYM=1\n &END\n'.format('1,' * nbasis))
+        f.write(u' &FCI NORB={0:d},NELEC={1:d},MS2={2:d},\n'.format(nbasis, nelec, ms2))
+        f.write(u'  ORBSYM={0:s}\n  ISYM=1\n &END\n'.format('1,' * nbasis))
         # write two-electron integrals
         for i in range(nbasis):
             for j in range(i + 1):

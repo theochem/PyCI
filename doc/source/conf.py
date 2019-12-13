@@ -15,6 +15,8 @@
 
 import sphinx_rtd_theme
 
+import doci
+
 
 project = 'DOCI'
 
@@ -22,7 +24,7 @@ copyright = '2019, Michael Richer'
 
 author = 'Michael Richer'
 
-release = '0.1.0'
+release = doci.__version__
 
 
 extensions = [

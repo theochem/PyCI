@@ -2,14 +2,6 @@ include LICENSE
 
 include README.rst
 
-include doci/doci.h
-include doci/doci.cpp
-include doci/cext.cpp
-include doci/cext.pxd
-include doci/cext.pyx
-
-include doci/test/data/*.fcidump
-
 include doc/Makefile
 include doc/source/conf.py
 include doc/source/*.rst

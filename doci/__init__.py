@@ -18,13 +18,10 @@ DOCI module.
 
 """
 
-from __future__ import absolute_import, unicode_literals
+import numpy as np
 
-from ctypes import c_int64, c_uint64, c_double as c_double_
-
-from numpy import dtype
-
-from doci.cext import comb, dociham, dociwfn, solve_ci, compute_rdms, compute_energy, run_hci
+from doci.cext import get_version, comb, dociham, dociwfn
+from doci.cext import solve_ci, compute_rdms, compute_energy, run_hci
 
 
 __all__ = [
@@ -42,29 +39,29 @@ __all__ = [
     ]
 
 
-__version__ = '0.1.0'
+__version__ = get_version()
 r"""
 DOCI version number.
 
 """
 
 
-c_int = dtype(c_int64)
+c_int = np.dtype(np.int64)
 r"""
-C signed int dtype.
+C extension signed 64-bit int dtype.
 
 """
 
 
-c_uint = dtype(c_uint64)
+c_uint = np.dtype(np.uint64)
 r"""
-C unsigned int dtype.
+C extension unsigned 64-bit int dtype.
 
 """
 
 
-c_double = dtype(c_double_)
+c_double = np.dtype(np.double)
 r"""
-C double-precision floating point dtype.
+C extension double-precision floating point dtype.
 
 """

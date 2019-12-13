@@ -13,9 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with DOCI. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import, unicode_literals
-
-import filecmp
+from filecmp import cmp as compare
 from tempfile import NamedTemporaryFile
 
 from nose.tools import assert_raises
@@ -23,7 +21,6 @@ from nose.tools import assert_raises
 import numpy as np
 
 from doci import comb, dociwfn
-from doci.test import unicode_str
 
 
 class TestDOCIWfn:
@@ -52,10 +49,10 @@ class TestDOCIWfn:
         file2 = NamedTemporaryFile()
         wfn1 = dociwfn(nbasis, nocc)
         wfn1.add_all_dets()
-        wfn1.to_file(unicode_str(file1.name))
-        wfn2 = dociwfn.from_file(unicode_str(file1.name))
-        wfn2.to_file(unicode_str(file2.name))
-        assert filecmp.cmp(file1.name, file2.name, shallow=False)
+        wfn1.to_file(file1.name)
+        wfn2 = dociwfn.from_file(file1.name)
+        wfn2.to_file(file2.name)
+        assert compare(file1.name, file2.name, shallow=False)
 
     def run_add_all_dets(self, nbasis, nocc):
         wfn = dociwfn(nbasis, nocc)
