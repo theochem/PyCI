@@ -21,7 +21,7 @@ DOCI module.
 import numpy as np
 
 from doci.cext import get_version, comb, dociham, dociwfn
-from doci.cext import solve_ci, compute_rdms, compute_energy, run_hci
+from doci.cext import solve_ci, compute_rdms, compute_energy, run_hci, generate_rdms
 
 
 __all__ = [
@@ -36,6 +36,7 @@ __all__ = [
     'compute_rdms',
     'compute_energy',
     'run_hci',
+    'generate_rdms',
     ]
 
 

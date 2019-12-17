@@ -18,7 +18,7 @@ from nose.tools import assert_raises
 import numpy as np
 import numpy.testing as npt
 
-from doci import comb, dociham, dociwfn, solve_ci, compute_rdms, compute_energy, run_hci
+from doci import comb, dociham, dociwfn, solve_ci, compute_rdms, compute_energy, run_hci, generate_rdms
 from doci.test import datafile
 
 
@@ -98,6 +98,20 @@ class TestRoutines:
         d0, d2 = compute_rdms(wfn, cs[0])
         npt.assert_allclose(np.trace(d0), wfn.nocc, rtol=0, atol=1.0e-9)
         npt.assert_allclose(np.sum(d2), wfn.nocc * (wfn.nocc - 1), rtol=0, atol=1.0e-9)
+        k0 = ham.reduced_v(nocc)
+        k2 = ham.reduced_w(nocc)
+        energy = ham.ecore
+        energy += np.einsum('ij,ij', k0, d0)
+        energy += np.einsum('ij,ij', k2, d2)
+        npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
+        rdm1, rdm2 = generate_rdms(d0, d2)
+        with np.load(datafile('{0:s}_spinres.npz'.format(filename))) as f:
+            one_mo = f['one_mo']
+            two_mo = f['two_mo']
+        energy = ham.ecore
+        energy += np.einsum('ij,ij', one_mo, rdm1)
+        energy += 0.25 * np.einsum('ijkl,ijkl', two_mo, rdm2)
+        npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
 
     def run_compute_energy(self, filename):
         nocc, energy = self.CASES[filename]

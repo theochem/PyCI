@@ -81,7 +81,7 @@ packages = [
 
 package_data = {
     'doci': ['doci.h', 'doci.cpp', 'cext.pxd', 'cext.pyx', 'cext.cpp'],
-    'doci.test': ['data/*.fcidump'],
+    'doci.test': ['data/*.fcidump', 'data/*.npz'],
     }
 
 

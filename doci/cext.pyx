@@ -39,6 +39,7 @@ __all__ = [
     'compute_rdms',
     'compute_energy',
     'run_hci',
+    'generate_rdms',
     ]
 
 
@@ -287,6 +288,63 @@ cdef class dociham:
 
         """
         write_fcidump(filename, self._ecore, self._one_mo, self._two_mo, nelec=nelec, ms2=ms2)
+
+    def reduced_v(self, int_t nocc):
+        r"""
+        Generate the reduced seniority-zero molecular orbital integrals.
+
+        Returns the matrix
+
+        .. math::
+
+            K^0_{ab} = \left(\frac{2}{N_\text{elec} - 1}\right) h_{ab} \delta_{ab} + v_{ab}.
+
+        Parameters
+        ----------
+        nocc : int
+            Number of occupied indices.
+
+        Returns
+        -------
+        v : np.ndarray(c_double(nbasis, nbasis))
+            Reduced seniority-zero molecular orbital integrals.
+
+        """
+        cdef np.ndarray v_array = np.diag(self._h)
+        v_array *= 2.0 / (2.0 * nocc - 1.0)
+        v_array += self._v
+        return v_array
+
+    def reduced_w(self, int_t nocc):
+        r"""
+        Generate the reduced seniority-two molecular orbital integrals.
+
+        Returns the matrix
+
+        .. math::
+
+            K^2_{ab} = \left(\frac{2}{N_\text{elec} - 1}\right) \left(h_{aa} + h_{bb}\right) + w_{ab}.
+
+        Parameters
+        ----------
+        nocc : int
+            Number of occupied indices.
+
+        Returns
+        -------
+        w : np.ndarray(c_double(nbasis, nbasis))
+            Reduced seniority-two molecular orbital integrals.
+
+        """
+        cdef int_t i, j
+        cdef np.ndarray w_array = np.empty_like(self._v)
+        cdef double[:, :] w = w_array
+        for i in range(self._nbasis):
+            for j in range(self._nbasis):
+                w[i, j] = self._h[i] + self._h[j]
+        w_array *= 2.0 / (2.0 * nocc - 1.0)
+        w_array += self._w
+        return w_array
 
     def elem_diag(self, int_t[::1] occs not None):
         r"""
@@ -1012,3 +1070,51 @@ def run_hci(dociham ham not None, dociwfn wfn not None, double[::1] coeffs not N
     elif wfn._obj.nbasis != ham._nbasis:
         raise ValueError('dimensions of wfn, ham do not match')
     return run_hci_(wfn._obj, <double *>(&ham._v[0, 0]), <double *>(&coeffs[0]), eps)
+
+
+def generate_rdms(double[:, ::1] d0 not None, double[:, ::1] d2 not None):
+    r"""
+    Generate full one- and two- particle RDMs from the :math:`D_0` and :math:`D_2` matrices.
+
+    Parameters
+    ----------
+    d0 : np.ndarray(c_double(nbasis, nbasis))
+        :math:`D_0` matrix.
+    d2 : np.ndarray(c_double(nbasis, nbasis))
+        :math:`D_2` matrix.
+
+    Returns
+    -------
+    rdm1 : np.ndarray(c_double(2 * nbasis, 2 * nbasis))
+        One-particle RDM.
+    rdm2 : np.ndarray(c_double(2 * nbasis, 2 * nbasis, 2 * nbasis, 2 * nbasis))
+        Two-particle RDM.
+
+    """
+    if not (d0.shape[0] == d0.shape[1] == d2.shape[0] == d2.shape[1]):
+        raise ValueError('dimensions of d0, d2 do not match')
+    cdef int_t nbasis = d0.shape[0]
+    cdef int_t nspin = nbasis * 2
+    cdef int_t p, q
+    cdef np.ndarray rdm1_array = np.zeros((nspin, nspin), dtype=c_double)
+    cdef np.ndarray rdm2_array = np.zeros((nspin, nspin, nspin, nspin), dtype=c_double)
+    cdef double[:, :] rdm1_a = rdm1_array[:nbasis, :nbasis]
+    cdef double[:, :] rdm1_b = rdm1_array[nbasis:, nbasis:]
+    cdef double[:, :, :, :] rdm2_abab = rdm2_array[:nbasis, nbasis:, :nbasis, nbasis:]
+    cdef double[:, :, :, :] rdm2_baba = rdm2_array[nbasis:, :nbasis, nbasis:, :nbasis]
+    cdef double[:, :, :, :] rdm2_aaaa = rdm2_array[:nbasis, :nbasis, :nbasis, :nbasis]
+    cdef double[:, :, :, :] rdm2_bbbb = rdm2_array[nbasis:, nbasis:, nbasis:, nbasis:]
+    for p in range(nbasis):
+        rdm1_a[p, p] += d0[p, p]
+        rdm1_b[p, p] += d0[p, p]
+        for q in range(nbasis):
+            rdm2_abab[p, p, q, q] += d0[p, q]
+            rdm2_baba[p, p, q, q] += d0[p, q]
+            rdm2_aaaa[p, q, p, q] += d2[p, q]
+            rdm2_bbbb[p, q, p, q] += d2[p, q]
+            rdm2_abab[p, q, p, q] += d2[p, q]
+            rdm2_baba[p, q, p, q] += d2[p, q]
+    rdm2_array -= np.transpose(rdm2_array, axes=(1, 0, 2, 3))
+    rdm2_array -= np.transpose(rdm2_array, axes=(0, 1, 3, 2))
+    rdm2_array *= 0.5
+    return rdm1_array, rdm2_array

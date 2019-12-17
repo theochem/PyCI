@@ -48,6 +48,8 @@ Reduced density matrices
 
 .. autofunction:: doci.compute_rdms
 
+.. autofunction:: doci.generate_rdms
+
 Compute energy
 --------------
 
