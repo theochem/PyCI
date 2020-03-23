@@ -1,61 +1,84 @@
 ..
-    : This file is part of DOCI.
+    : This file is part of PyCI.
     :
-    : DOCI is free software: you can redistribute it and/or modify it under
+    : PyCI is free software: you can redistribute it and/or modify it under
     : the terms of the GNU General Public License as published by the Free
     : Software Foundation, either version 3 of the License, or (at your
     : option) any later version.
     :
-    : DOCI is distributed in the hope that it will be useful, but WITHOUT
+    : PyCI is distributed in the hope that it will be useful, but WITHOUT
     : ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     : FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
     : for more details.
     :
     : You should have received a copy of the GNU General Public License
-    : along with DOCI. If not, see <http://www.gnu.org/licenses/>.
+    : along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-DOCI API Documentation
+PyCI API Documentation
 ======================
 
 NumPy dtypes
 ------------
 
-.. autodata:: doci.c_int
+.. autodata:: pyci.c_int
 
-.. autodata:: doci.c_uint
+.. autodata:: pyci.c_uint
 
-.. autodata:: doci.c_double
+.. autodata:: pyci.c_double
+
+Constants
+---------
+
+.. autodata:: pyci.fullci.SPIN_UP
+
+.. autodata:: pyci.fullci.SPIN_DN
 
 DOCI Hamiltonian
 ----------------
 
-.. autoclass:: doci.dociham
+.. autoclass:: pyci.doci.ham
+
+.. autoclass:: pyci.cext.doci_ham
     :members:
 
 DOCI wave function
 ------------------
 
-.. autoclass:: doci.dociwfn
+.. autoclass:: pyci.doci.wfn
+
+.. autoclass:: pyci.cext.doci_wfn
     :members:
 
-DOCI solver
------------
+DOCI routines
+-------------
 
-.. autofunction:: doci.solve_ci
+.. autofunction:: pyci.doci.solve_ci
 
-Reduced density matrices
-------------------------
+.. autofunction:: pyci.doci.compute_rdms
 
-.. autofunction:: doci.compute_rdms
+.. autofunction:: pyci.doci.generate_rdms
 
-.. autofunction:: doci.generate_rdms
+.. autofunction:: pyci.doci.compute_energy
 
-Compute energy
---------------
+.. autofunction:: pyci.doci.run_hci
 
-.. autofunction:: doci.compute_energy
+FullCI Hamiltonian
+------------------
 
-Heat-bath CI
-------------
+.. autoclass:: pyci.fullci.ham
 
-.. autofunction:: doci.run_hci
+.. autoclass:: pyci.cext.fullci_ham
+    :members:
+
+FullCI wave function
+--------------------
+
+.. autoclass:: pyci.fullci.wfn
+
+.. autoclass:: pyci.cext.fullci_wfn
+    :members:
+
+FullCI routines
+---------------
+
+WIP.

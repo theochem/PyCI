@@ -1,40 +1,40 @@
 ..
-    : This file is part of DOCI.
+    : This file is part of PyCI.
     :
-    : DOCI is free software: you can redistribute it and/or modify it under
+    : PyCI is free software: you can redistribute it and/or modify it under
     : the terms of the GNU General Public License as published by the Free
     : Software Foundation, either version 3 of the License, or (at your
     : option) any later version.
     :
-    : DOCI is distributed in the hope that it will be useful, but WITHOUT
+    : PyCI is distributed in the hope that it will be useful, but WITHOUT
     : ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     : FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
     : for more details.
     :
     : You should have received a copy of the GNU General Public License
-    : along with DOCI. If not, see <http://www.gnu.org/licenses/>.
+    : along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
 |Python 2.7| |Python 3.8|
 
-DOCI
+PyCI
 ====
 
-DOCI is a flexible *ab-initio* quantum chemistry library for seniority-zero configuration
-interaction, or DOCI, consisting of a C++ library and a Python package.
+PyCI is a flexible *ab-initio* quantum chemistry library for Configuration
+Interaction consisting of a C++ library and a Python package.
 
-DOCI is distributed under the GNU General Public License version 3 (GPLv3+).
+PyCI is distributed under the GNU General Public License version 3 (GPLv3+).
 
 See http://www.gnu.org/licenses/ for more information.
 
 Dependencies
 ------------
 
-The following programs/libraries are required to run DOCI:
+The following programs/libraries are required to run PyCI:
 
 -  Python_ (≥3.x or ≥2.7)
 -  NumPy_ (≥1.13)
 
-The following programs/libraries are required to build DOCI:
+The following programs/libraries are required to build PyCI:
 
 -  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
 -  Python_ (≥3.x or ≥2.7, including system headers)
@@ -42,14 +42,14 @@ The following programs/libraries are required to build DOCI:
 -  Cython_ (≥0.24)
 -  Nosetests_ (optional: to run tests)
 
-The following programs/libraries are required to build the DOCI documentation:
+The following programs/libraries are required to build the PyCI documentation:
 
 -  Sphinx_
 -  `Read the Docs Sphinx Theme`__
 
 __ Sphinx-RTD-Theme_
 
-The following header-only libraries are downloaded by the ``setup.py`` script:
+The following header-only libraries are included as git submodules:
 
 -  `Parallel Hashmap`__
 -  Eigen_
@@ -63,13 +63,13 @@ Installation
 Basic Compilation and Install
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run the following in your shell to download DOCI via git:
+Run the following in your shell to download PyCI and its submodules via git:
 
 .. code:: shell
 
-    git clone https://github.com/msricher/doci.git
+    git clone --recursive https://github.com/msricher/pyci.git
 
-Then, run the following to build and install DOCI:
+Then, run the following to build and install PyCI:
 
 .. code:: shell
 
@@ -93,17 +93,19 @@ Full seniority-zero CI
 
 .. code:: python
 
-    import doci
+    from pyci import doci
 
     # Load Hamiltonian from FCIDUMP file
-    ham = doci.dociham.from_file('Ne.FCIDUMP')
+    ham = doci.ham.from_file('Ne.FCIDUMP')
 
     # Generate full wave function with 5 electron pairs
-    wfn = doci.dociwfn(ham.nbasis, 5)
+    wfn = doci.wfn(ham.nbasis, 5)
     wfn.add_all_dets()
 
     # Solve CI problem and compute RDMs
     evals, evecs = doci.solve_ci(ham, wfn, n=1)
+    op = doci.sparse_op(ham, wfn)
+    evals, evecs = op.solve(n=1)
     rdm0, rdm2 = doci.compute_rdms(wfn, evecs[0])
 
 CI pairs singles and doubles
@@ -112,11 +114,12 @@ CI pairs singles and doubles
 .. code:: python
 
     # Generate CI pairs singles and doubles wave function
-    wfn = doci.dociwfn(ham.nbasis, 5)
+    wfn = doci.wfn(ham.nbasis, 5)
     wfn.add_excited_dets(0, 1, 2)
 
     # Solve CI problem and compute RDMs
-    evals, evecs = doci.solve_ci(ham, wfn, n=1)
+    op = doci.sparse_op(ham, wfn)
+    evals, evecs = op.solve(n=1)
     rdm0, rdm2 = doci.compute_rdms(wfn, evecs[0])
 
 Seniority-zero Heat-Bath CI
@@ -125,18 +128,20 @@ Seniority-zero Heat-Bath CI
 .. code:: python
 
     # Generate Hartree-Fock wave function
-    wfn = doci.dociwfn(ham.nbasis, 5)
+    wfn = doci.wfn(ham.nbasis, 5)
     wfn.add_hartreefock_det()
 
     # Solve initial CI problem
-    evals, evecs = doci.solve_ci(ham, wfn, n=1)
+    op = doci.sparse_op(ham, wfn)
+    evals, evecs = op.solve(n=1)
 
     # Run HCI iterations at epsilon=1.0e-5 until no more determinants are added
     epsilon = 1.0e-5
     dets_added = 1
     while dets_added:
         dets_added = doci.run_hci(ham, wfn, evecs[0], epsilon)
-        evals, evecs = doci.solve_ci(ham, wfn, n=1)
+        op = doci.sparse_op(ham, wfn)
+        evals, evecs = op.solve(n=1)
 
     # Compute RDMs
     rdm0, rdm2 = doci.compute_rdms(wfn, evecs[0])
@@ -147,7 +152,8 @@ Excited states
 .. code:: python
 
     # Solve CI problem for three lowest-energy states
-    evals, evecs = doci.solve_ci(ham, wfn, n=3)
+    op = doci.sparse_op(ham, wfn)
+    evals, evecs = op.solve(n=3)
 
     # Compute RDMs of ground state and first two excited states
     e0_rdm0, e0_rdm2 = doci.compute_rdms(wfn, evecs[0])

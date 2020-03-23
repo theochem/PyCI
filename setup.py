@@ -1,20 +1,20 @@
-# This file is part of DOCI.
+# This file is part of PyCI.
 #
-# DOCI is free software: you can redistribute it and/or modify it under
+# PyCI is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your
 # option) any later version.
 #
-# DOCI is distributed in the hope that it will be useful, but WITHOUT
+# PyCI is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 # for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with DOCI. If not, see <http://www.gnu.org/licenses/>.
+# along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
 r"""
-DOCI setup script.
+PyCI setup script.
 
 Run `python setup.py --help` for help.
 
@@ -35,7 +35,7 @@ from setuptools import setup
 import numpy
 
 
-name = 'doci'
+name = 'pyci'
 
 version = '0.1.0'
 
@@ -45,7 +45,7 @@ author = 'Michael Richer'
 
 author_email = 'richerm@mcmaster.ca'
 
-url = 'https://github.com/msricher/doci'
+url = 'https://github.com/msricher/pyci'
 
 description = 'A flexible seniority-zero configuraion interaction libary.'
 
@@ -74,14 +74,14 @@ extras_require = {
 
 
 packages = [
-    'doci',
-    'doci.test',
+    'pyci',
+    'pyci.test',
     ]
 
 
 package_data = {
-    'doci': ['doci.h', 'doci.cpp', 'cext.pxd', 'cext.pyx', 'cext.cpp'],
-    'doci.test': ['data/*.fcidump', 'data/*.npz'],
+    'pyci': ['*.h', '*.cpp', '*.pxd', '*.pyx'],
+    'pyci.test': ['data/*.fcidump', 'data/*.npz'],
     }
 
 
@@ -90,6 +90,7 @@ include_dirs = [
     'eigen',
     'spectra/include',
     numpy.get_include(),
+    path.abspath(path.dirname(__file__)),
     ]
 
 
@@ -102,9 +103,10 @@ compile_args = [
 
 
 cext = {
-    'name': 'doci.cext',
+    'name': 'pyci.cext',
     'language': 'c++',
-    'sources': ['doci/cext.cpp', 'doci/doci.cpp'],
+    'sources':
+        ['pyci/common.cpp', 'pyci/doci.cpp', 'pyci/fullci.cpp', 'pyci/solve.cpp', 'pyci/cext.cpp'],
     'include_dirs': include_dirs,
     'extra_compile_args': compile_args,
     'extra_link_args': compile_args,
@@ -113,44 +115,12 @@ cext = {
 
 try:
     from Cython.Distutils import build_ext, Extension
-    cext['sources'] = ['doci/cext.pyx', 'doci/doci.cpp']
-    cext['cython_compile_time_env'] = dict(DOCI_VERSION=str(version))
+    cext['sources'].remove('pyci/cext.cpp')
+    cext['sources'].append('pyci/cext.pyx')
+    cext['cython_compile_time_env'] = dict(PYCI_VERSION=str(version))
 except ImportError:
     from setuptools.command.build_ext import build_ext
     from setuptools import Extension
-
-
-class BuildExtCommand(build_ext):
-    r"""
-    Custom "build_ext" command that downloads C++ header libraries prior to building extensions.
-
-    """
-    header_libraries = {
-        'parallel-hashmap':
-            ('parallel-hashmap-master',
-             'https://github.com/greg7mdp/parallel-hashmap/archive/master.zip'),
-        'eigen':
-            ('eigen-master',
-             'https://gitlab.com/libeigen/eigen/-/archive/master/eigen-master.zip'),
-        'spectra':
-            ('spectra-master',
-             'https://github.com/yixuan/spectra/archive/master.zip'),
-        }
-
-    def run(self):
-        r"""
-        Download header libraries and build extensions.
-
-        """
-        self.announce('checking for C++ header libraries', level=2)
-        for lib, (dirname, url) in self.header_libraries.items():
-            if path.exists(lib):
-                self.announce('found {0:s}'.format(lib), level=2)
-            else:
-                self.announce('downloading {0:s}'.format(lib), level=2)
-                ZipFile(urlretrieve(url, NamedTemporaryFile().name)[0], 'r').extractall()
-                rename(dirname, lib)
-        build_ext.run(self)
 
 
 if __name__ == '__main__':
@@ -171,5 +141,5 @@ if __name__ == '__main__':
         package_data=package_data,
         include_package_data=True,
         ext_modules=[Extension(**cext)],
-        cmdclass={'build_ext': BuildExtCommand},
+        cmdclass={'build_ext': build_ext},
         )

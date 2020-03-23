@@ -84,8 +84,3 @@ tags
 .spyderproject
 .spyproject
 .vscode/
-
-# Header Libraries
-parallel-hashmap/
-eigen/
-spectra/

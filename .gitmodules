@@ -1,0 +1,9 @@
+[submodule "parallel-hashmap"]
+	path = parallel-hashmap
+	url = https://github.com/greg7mdp/parallel-hashmap.git
+[submodule "eigen"]
+	path = eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "spectra"]
+	path = spectra
+	url = https://github.com/yixuan/spectra.git

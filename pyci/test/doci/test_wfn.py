@@ -1,17 +1,17 @@
-# This file is part of DOCI.
+# This file is part of PyCI.
 #
-# DOCI is free software: you can redistribute it and/or modify it under
+# PyCI is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your
 # option) any later version.
 #
-# DOCI is distributed in the hope that it will be useful, but WITHOUT
+# PyCI is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 # for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with DOCI. If not, see <http://www.gnu.org/licenses/>.
+# along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
 from filecmp import cmp as compare
 from tempfile import NamedTemporaryFile
@@ -20,7 +20,8 @@ from nose.tools import assert_raises
 
 import numpy as np
 
-from doci import comb, dociwfn
+from pyci import doci, comb
+from pyci.test import datafile
 
 
 class TestDOCIWfn:
@@ -28,9 +29,9 @@ class TestDOCIWfn:
     CASES = [(16, 8), (64, 1), (64, 4), (65, 1), (65, 4), (129, 3)]
 
     def test_raises(self):
-        assert_raises(ValueError, dociwfn, 10, 11)
-        assert_raises(ValueError, dociwfn, 10, 0)
-        assert_raises(RuntimeError, dociwfn, 100000, 10000)
+        assert_raises(ValueError, doci.wfn, 10, 11)
+        assert_raises(ValueError, doci.wfn, 10, 0)
+        assert_raises(RuntimeError, doci.wfn, 100000, 10000)
 
     def test_to_from_file(self):
         for nbasis, nocc in self.CASES:
@@ -47,22 +48,22 @@ class TestDOCIWfn:
     def run_to_from_file(self, nbasis, nocc):
         file1 = NamedTemporaryFile()
         file2 = NamedTemporaryFile()
-        wfn1 = dociwfn(nbasis, nocc)
+        wfn1 = doci.wfn(nbasis, nocc)
         wfn1.add_all_dets()
         wfn1.to_file(file1.name)
-        wfn2 = dociwfn.from_file(file1.name)
+        wfn2 = doci.wfn.from_file(file1.name)
         wfn2.to_file(file2.name)
         assert compare(file1.name, file2.name, shallow=False)
 
     def run_add_all_dets(self, nbasis, nocc):
-        wfn = dociwfn(nbasis, nocc)
+        wfn = doci.wfn(nbasis, nocc)
         wfn.add_all_dets()
         for det in wfn:
             assert wfn.popcnt_det(det) == wfn.nocc
         assert len(wfn) == comb(wfn.nbasis, wfn.nocc)
 
     def run_add_excited_dets(self, nbasis, nocc):
-        wfn = dociwfn(nbasis, nocc)
+        wfn = doci.wfn(nbasis, nocc)
         wfn.reserve(comb(wfn.nbasis, wfn.nocc))
         assert_raises(ValueError, wfn.add_excited_dets, -1)
         assert_raises(ValueError, wfn.add_excited_dets, 100)

@@ -1,0 +1,2123 @@
+# cython : language_level=3, boundscheck=False, wraparound=False, initializedcheck=False
+#
+# This file is part of PyCI.
+#
+# PyCI is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# PyCI is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyCI. If not, see <http://www.gnu.org/licenses/>.
+
+r"""
+PyCI C extension module.
+
+"""
+
+from libc.stdint cimport int64_t, uint64_t
+
+cimport numpy as np
+import numpy as np
+
+from pyci.common cimport binomial, fill_det, fill_occs, fill_virs
+from pyci.common cimport nword_det, excite_det, setbit_det, clearbit_det, popcnt_det, ctz_det
+from pyci.common cimport phase_single_det, phase_double_det, rank_det
+from pyci.doci cimport DOCIWfn, doci_compute_rdms_, doci_compute_energy_, doci_run_hci_
+from pyci.fullci cimport FullCIWfn
+from pyci.solve cimport SparseOp#doci_solve_sparse_, doci_solve_direct_
+
+from pyci import fcidump
+
+
+__all__ = [
+    'SpinLabel',
+    'SPIN_UP',
+    'SPIN_DN',
+    '_get_version',
+    'comb',
+    'base_ham',
+    'doci_ham',
+    'fullci_ham',
+    'base_wfn',
+    'doci_wfn',
+    'fullci_wfn',
+    'sparse_op',
+    #'doci_solve_ci',
+    'doci_compute_rdms',
+    'doci_compute_energy',
+    'doci_run_hci',
+    'doci_generate_rdms',
+    ]
+
+
+ctypedef int64_t int_t
+
+
+ctypedef uint64_t uint_t
+
+
+cdef np.dtype c_int = np.dtype(np.int64)
+
+
+cdef np.dtype c_uint = np.dtype(np.uint64)
+
+
+cdef np.dtype c_double = np.dtype(np.double)
+
+
+cpdef enum SpinLabel:
+    SPIN_UP = 0
+    SPIN_DN = 1
+
+
+def _get_version():
+    r"""
+    Return the version number string from the C extension.
+
+    Returns
+    -------
+    version : str
+        Version number string.
+
+    """
+    return PYCI_VERSION
+
+
+def comb(int_t n, int_t k):
+    r"""
+    Compute the binomial coefficient :math:`{n}\choose{k}`.
+
+    Parameters
+    ----------
+    n : int
+        :math:`n`.
+    k : int
+        :math:`k`.
+
+    Returns
+    -------
+    nck : int
+        :math:`{n}\choose{k}`.
+
+    """
+    if n < 0 or k < 0:
+        raise ValueError('n and k must be non-negative integers')
+    return binomial(n, k)
+
+
+cdef class base_ham:
+    r"""
+    Base Hamiltonian class.
+
+    """
+    cdef int_t _nword, _nbasis
+    cdef double _ecore
+
+    @property
+    def nbasis(self):
+        r"""
+        Number of orbital basis functions.
+
+        """
+        return self._nbasis
+
+    @property
+    def ecore(self):
+        r"""
+        Constant/"zero-electron" integral.
+
+        """
+        return self._ecore
+
+    def __init__(self, int_t nbasis, double ecore):
+        r"""
+        Initialize a base_ham instance.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        ecore : float
+            Constant/"zero-electron" integral.
+
+        """
+        if nbasis < 1:
+            raise ValueError('\'nbasis\' must be positive')
+        self._nword = nword_det(nbasis)
+        self._nbasis = nbasis
+        self._ecore = ecore
+
+
+cdef class doci_ham(base_ham):
+    r"""
+    DOCI Hamiltonian class.
+
+    .. math::
+
+        H = \sum_{p}{ h_p N_p } + \sum_{p \neq q}{ v_{pq} P^\dagger_p P_q } + \sum_{pq}{ w_{pq} N_p N_q }
+
+    where
+
+    .. math::
+
+        h_{p} = \left<p|T|p\right>
+
+    .. math::
+
+        v_{pq} = \left<pp|V|qq\right>
+
+    .. math::
+
+        w_{pq} = 2 \left<pq|V|pq\right> - \left<pq|V|qp\right>
+
+    Attributes
+    ----------
+    nbasis : int
+        Number of orbital basis functions.
+    ecore : float
+        Constant/"zero-electron" integral.
+    h : np.ndarray(c_double(nbasis))
+        Seniority-zero one-electron integrals.
+    v : np.ndarray(c_double(nbasis, nbasis))
+        Seniority-zero two-electron integrals.
+    w : np.ndarray(c_double(nbasis, nbasis))
+        Seniority-two two-electron integrals.
+    one_mo : np.ndarray(c_double(nbasis, nbasis))
+        Full one-electron integral array.
+    two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+        Full two-electron integral array.
+
+    """
+    cdef double[::1] _h
+    cdef double[:, ::1] _v
+    cdef double[:, ::1] _w
+    cdef double[:, ::1] _one_mo
+    cdef double[:, :, :, ::1] _two_mo
+
+    @classmethod
+    def from_mo_arrays(cls, double ecore, double[:, ::1] one_mo not None, double[:, :, :, ::1] two_mo not None,
+        bint keep_mo=True):
+        r"""
+        Return a doci_ham instance from input molecular orbital arrays.
+
+        Parameters
+        ----------
+        ecore : float
+            Constant/"zero-electron" integral.
+        one_mo : np.ndarray(c_double(nbasis, nbasis))
+            Full one-electron integral array.
+        two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            Full two-electron integral array.
+        keep_mo : bool, default=True
+            Whether to keep full MO arrays in memory.
+
+        Returns
+        -------
+        ham : doci_ham
+            DOCI Hamiltonian object.
+
+        """
+        if not (one_mo.shape[0] == one_mo.shape[1] == two_mo.shape[0] == \
+                two_mo.shape[1] == two_mo.shape[2] == two_mo.shape[3]):
+            raise ValueError('(one_mo, two_mo) shapes are incompatible')
+        cdef double[:] h = np.copy(np.diagonal(one_mo))
+        cdef double[:, :] v = np.copy(np.diagonal(np.diagonal(two_mo)))
+        cdef double[:, :] w = np.diagonal(np.diagonal(np.transpose(two_mo, axes=(0, 2, 3, 1)))) * 2
+        cdef np.ndarray w_array = np.asarray(w)
+        w_array -= np.diagonal(np.diagonal(np.transpose(two_mo, axes=(0, 3, 2, 1))))
+        if not keep_mo:
+            one_mo = None
+            two_mo = None
+        return cls(ecore, h, v, w, one_mo=one_mo, two_mo=two_mo)
+
+    @classmethod
+    def from_file(cls, object filename not None, bint keep_mo=True):
+        r"""
+        Return a doci_ham instance by loading an FCIDUMP file.
+
+        Parameters
+        ----------
+        filename : str
+            FCIDUMP file from which to load integrals.
+        keep_mo : bool, default=True
+            Whether to keep full MO arrays in memory.
+
+        Returns
+        -------
+        ham : doci_ham
+            DOCI Hamiltonian object.
+
+        """
+        return cls.from_mo_arrays(*fcidump.read(filename)[:3], keep_mo=keep_mo)
+
+    @property
+    def h(self):
+        r"""
+        Seniority-zero one-electron integrals.
+
+        """
+        return np.asarray(self._h)
+
+    @property
+    def v(self):
+        r"""
+        Seniority-zero two-electron integrals.
+
+        """
+        return np.asarray(self._v)
+
+    @property
+    def w(self):
+        r"""
+        Seniority-two two-electron integrals.
+
+        """
+        return np.asarray(self._w)
+
+    @property
+    def one_mo(self):
+        r"""
+        Full one-electron integral array.
+
+        """
+        if self._one_mo is None:
+            raise AttributeError('one_mo was not passed to doci_ham instance')
+        return np.asarray(self._one_mo)
+
+    @property
+    def two_mo(self):
+        r"""
+        Full two-electron integral array.
+
+        """
+        if self._two_mo is None:
+            raise AttributeError('two_mo was not passed to doci_ham instance')
+        return np.asarray(self._two_mo)
+
+    def __init__(self, double ecore, double[::1] h not None, double[:, ::1] v not None, double[:, ::1] w not None,
+        double[:, ::1] one_mo=None, double[:, :, :, ::1] two_mo=None):
+        """
+        Initialize a doci_ham instance.
+
+        Parameters
+        ----------
+        ecore : float
+            Constant/"zero-electron" integral.
+        h : np.ndarray(c_double(nbasis))
+            Seniority-zero one-electron integrals.
+        v : np.ndarray(c_double(nbasis, nbasis))
+            Seniority-zero two-electron integrals.
+        w : np.ndarray(c_double(nbasis, nbasis))
+            Seniority-two two-electron integrals.
+        one_mo : np.ndarray(c_double(nbasis, nbasis)), optional
+            Full one-electron integral array.
+        two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis)), optional
+            Full two-electron integral array.
+
+        """
+        if not (h.shape[0] == v.shape[0] == v.shape[1] == w.shape[0] == w.shape[1]):
+            raise ValueError('(h, v, w) shapes are incompatible')
+        super().__init__(h.shape[0], ecore)
+        self._h = h
+        self._v = v
+        self._w = w
+        self._one_mo = one_mo
+        self._two_mo = two_mo
+
+    def to_file(self, object filename not None, int_t nelec=0, int_t ms2=0):
+        r"""
+        Write a doci_ham instance to an FCIDUMP file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of FCIDUMP file to write.
+        nelec : int, default=0
+            Electron number to write to FCIDUMP file.
+        ms2 : int, default=0
+            Spin number to write to FCIDUMP file.
+
+        """
+        fcidump.write(filename, self._ecore, self._one_mo, self._two_mo, nelec=nelec, ms2=ms2)
+
+    def reduced_v(self, int_t nocc):
+        r"""
+        Generate the reduced seniority-zero molecular orbital integrals.
+
+        Returns the matrix
+
+        .. math::
+
+            K^0_{ab} = \left(\frac{2}{N_\text{elec} - 1}\right) h_{ab} \delta_{ab} + v_{ab}.
+
+        Parameters
+        ----------
+        nocc : int
+            Number of occupied indices.
+
+        Returns
+        -------
+        v : np.ndarray(c_double(nbasis, nbasis))
+            Reduced seniority-zero molecular orbital integrals.
+
+        """
+        cdef np.ndarray v_array = np.diag(self._h)
+        v_array *= 2.0 / (2.0 * nocc - 1.0)
+        v_array += self._v
+        return v_array
+
+    def reduced_w(self, int_t nocc):
+        r"""
+        Generate the reduced seniority-two molecular orbital integrals.
+
+        Returns the matrix
+
+        .. math::
+
+            K^2_{ab} = \left(\frac{2}{N_\text{elec} - 1}\right) \left(h_{aa} + h_{bb}\right) + w_{ab}.
+
+        Parameters
+        ----------
+        nocc : int
+            Number of occupied indices.
+
+        Returns
+        -------
+        w : np.ndarray(c_double(nbasis, nbasis))
+            Reduced seniority-two molecular orbital integrals.
+
+        """
+        cdef int_t i, j
+        cdef np.ndarray w_array = np.empty_like(self._v)
+        cdef double[:, :] w = w_array
+        for i in range(self._nbasis):
+            for j in range(self._nbasis):
+                w[i, j] = self._h[i] + self._h[j]
+        w_array *= 2.0 / (2.0 * nocc - 1.0)
+        w_array += self._w
+        return w_array
+
+    def elem_diag(self, int_t[::1] occs not None):
+        r"""
+        Compute Hamiltonian element :math:`\left<d|H|d\right>` for determinant :math:`d`.
+
+        Parameters
+        ----------
+        occs : np.ndarray(c_int(nocc))
+            Indices of occupied electron pairs in determinant.
+
+        Returns
+        -------
+        elem : float
+            Hamiltonian element.
+
+        """
+        cdef int_t nocc = occs.shape[0], i, j, k
+        cdef double elem1 = 0.0, elem2 = 0.0
+        for i in range(nocc):
+            j = occs[i]
+            elem1 += self._v[j, j]
+            elem2 += self._h[j]
+            for k in range(i):
+                elem2 += self._w[j, occs[k]]
+        return elem1 + elem2 * 2
+
+    def elem_double(self, int_t i, int_t a):
+        r"""
+        Compute Hamiltonian element :math:`\left<f|H|d\right>` for determinants :math:`d` and :math:`f = P^\dagger_a P_i d`.
+
+        Parameters
+        ----------
+        i : int
+            Electron pair "hole" index.
+        a : int
+            Electron pair "particle" index.
+
+        Returns
+        -------
+        elem : float
+            Hamiltonian element.
+
+        """
+        return self._v[i, a]
+
+
+cdef class fullci_ham(base_ham):
+    r"""
+    FullCI Hamiltonian class.
+
+    .. math::
+
+        H = \sum_{pq}{ h_{pq} a^\dagger_p a_q } + \sum_{pqrs}{ g_{pqrs} a^\dagger_p a^\dagger_q a_s a_r }
+
+    where
+
+    .. math::
+
+        h_{pq} = \left<p|T|q\right>
+
+    .. math::
+
+        g_{pqrs} = \left<pq|V|rs\right>
+
+    Attributes
+    ----------
+    nbasis : int
+        Number of orbital basis functions.
+    ecore : float
+        Constant/"zero-electron" integral.
+    one_mo : np.ndarray(c_double(nbasis, nbasis))
+        Full one-electron integral array.
+    two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+        Full two-electron integral array.
+
+    """
+    cdef double[:, ::1] _one_mo
+    cdef double[:, :, :, ::1] _two_mo
+
+    @classmethod
+    def from_mo_arrays(cls, double ecore, double[:, ::1] one_mo not None, double[:, :, :, ::1] two_mo not None):
+        r"""
+        Return a fullci_ham instance from input molecular orbital arrays.
+
+        Parameters
+        ----------
+        ecore : float
+            Constant/"zero-electron" integral.
+        one_mo : np.ndarray(c_double(nbasis, nbasis))
+            Full one-electron integral array.
+        two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            Full two-electron integral array.
+
+        Returns
+        -------
+        ham : fullci_ham
+            FullCI Hamiltonian object.
+
+        """
+        return cls(ecore, one_mo, two_mo)
+
+    @classmethod
+    def from_file(cls, object filename not None):
+        r"""
+        Return a fullci_ham instance by loading an FCIDUMP file.
+
+        Parameters
+        ----------
+        filename : str
+            FCIDUMP file from which to load integrals.
+
+        Returns
+        -------
+        ham : fullci_ham
+            FullCI Hamiltonian object.
+
+        """
+        return cls(*fcidump.read(filename)[:3])
+
+    @property
+    def one_mo(self):
+        r"""
+        Full one-electron integral array.
+
+        """
+        return np.asarray(self._one_mo)
+
+    @property
+    def two_mo(self):
+        r"""
+        Full two-electron integral array.
+
+        """
+        return np.asarray(self._two_mo)
+
+    def __init__(self, double ecore, double[:, ::1] one_mo not None, double[:, :, :, ::1] two_mo not None):
+        """
+        Initialize a fullci_ham instance.
+
+        Parameters
+        ----------
+        ecore : float
+            Constant/"zero-electron" integral.
+        one_mo : np.ndarray(c_double(nbasis, nbasis)), optional
+            Full one-electron integral array.
+        two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis)), optional
+            Full two-electron integral array.
+
+        """
+        if not (one_mo.shape[0] == one_mo.shape[1] == two_mo.shape[0] == \
+                two_mo.shape[1] == two_mo.shape[2] == two_mo.shape[3]):
+            raise ValueError('(one_mo, two_mo) shapes are incompatible')
+        super().__init__(one_mo.shape[0], ecore)
+        self._one_mo = one_mo
+        self._two_mo = two_mo
+
+    def to_file(self, object filename not None, int_t nelec=0, int_t ms2=0):
+        r"""
+        Write a fullci_ham instance to an FCIDUMP file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of FCIDUMP file to write.
+        nelec : int, default=0
+            Electron number to write to FCIDUMP file.
+        ms2 : int, default=0
+            Spin number to write to FCIDUMP file.
+
+        """
+        fcidump.write(filename, self._ecore, self._one_mo, self._two_mo, nelec=nelec, ms2=ms2)
+
+    def elem_diag(self, int_t[::1] occs_up not None, int_t[::1] occs_dn not None):
+        r"""
+        Compute Hamiltonian element :math:`\left<d|H|d\right>` for determinant :math:`d`.
+
+        Parameters
+        ----------
+        occs_up : np.ndarray(c_int(nocc_up))
+            Indices of occupied spin-up electrons in determinant.
+        occs_dn : np.ndarray(c_int(nocc_dn))
+            Indices of occupied spin-down electrons in determinant.
+
+        Returns
+        -------
+        elem : float
+            Hamiltonian element.
+
+        """
+        cdef int_t nocc_up = occs_up.shape[0], nocc_dn = occs_dn.shape[0], i, j, k, l
+        cdef double elem = 0.0
+        for i in range(nocc_up):
+            j = occs_up[i]
+            elem += self._one_mo[j, j]
+            for k in range(i):
+                l = occs_up[i]
+                elem += self._two_mo[j, l, j, l] - self._two_mo[j, l, l, j]
+            for k in range(nocc_dn):
+                l = occs_dn[k]
+                elem += self._two_mo[j, l, j, l]
+        for i in range(nocc_dn):
+            j = occs_dn[i]
+            elem += self._one_mo[j, j]
+            for k in range(i):
+                l = occs_dn[i]
+                elem += self._two_mo[j, l, j, l] - self._two_mo[j, l, l, j]
+        return elem
+
+    def elem_single(self, uint_t[::1] det not None, int_t[::1] occs_up not None, int_t[::1] occs_dn not None,
+        int_t i, int_t a, SpinLabel spin):
+        if <bint>spin:
+            return self.elem_single_dn(det, occs_up, occs_dn, i, a)
+        else:
+            return self.elem_single_up(det, occs_up, occs_dn, i, a)
+
+    def elem_double(self, uint_t[::1] det not None, int_t i, int_t j, int_t a, int_t b,
+        SpinLabel spin1, SpinLabel spin2):
+        if <bint>spin1:
+            if <bint>spin2:
+                return self.elem_double_dn_dn(det, i, j, a, b)
+            else:
+                return self.elem_double_up_dn(det, j, i, b, a)
+        else:
+            if <bint>spin2:
+                return self.elem_double_up_dn(det, i, j, a, b)
+            else:
+                return self.elem_double_up_up(det, i, j, a, b)
+
+    def elem_single_up(self, uint_t[::1] det not None, int_t[::1] occs_up not None, int_t[::1] occs_dn not None,
+        int_t i, int_t a):
+        cdef int_t nocc_up = occs_up.shape[0], nocc_dn = occs_dn.shape[0], j, k
+        cdef double elem = self._one_mo[i, a]
+        for j in range(nocc_up):
+            k = occs_up[j]
+            elem += self._two_mo[i, k, a, k] - self._two_mo[i, k, k, a]
+        for j in range(nocc_dn):
+            k = occs_dn[j]
+            elem += self._two_mo[i, k, a, k]
+        return elem * phase_single_det(self._nword, i, a, &det[0])
+
+    def elem_single_dn(self, uint_t[::1] det not None, int_t[::1] occs_up not None, int_t[::1] occs_dn not None,
+        int_t i, int_t a):
+        cdef int_t nocc_up = occs_up.shape[0], nocc_dn = occs_dn.shape[0], j, k
+        cdef double elem = self._one_mo[i, a]
+        for j in range(nocc_up):
+            k = occs_up[j]
+            elem += self._two_mo[i, k, a, k]
+        for j in range(nocc_dn):
+            k = occs_dn[j]
+            elem += self._two_mo[i, k, a, k] - self._two_mo[i, k, k, a]
+        return elem * phase_single_det(self._nword, i, a, &det[self._nword])
+
+    def elem_double_up_up(self, uint_t[::1] det not None, int_t i, int_t j, int_t a, int_t b):
+        return (self._two_mo[i, j, a, b] - self._two_mo[i, j, b, a]) \
+            * phase_double_det(self._nword, i, j, a, b, &det[0])
+
+    def elem_double_dn_dn(self, uint_t[::1] det not None, int_t i, int_t j, int_t a, int_t b):
+        return (self._two_mo[i, j, a, b] - self._two_mo[i, j, b, a]) \
+            * phase_double_det(self._nword, i, j, a, b, &det[self._nword])
+
+    def elem_double_up_dn(self, uint_t[::1] det not None, int_t i, int_t j, int_t a, int_t b):
+        return self._two_mo[i, j, a, b] * phase_single_det(self._nword, i, a, &det[0]) \
+            * phase_single_det(self._nword, j, b, &det[self._nword])
+
+
+cdef class base_wfn:
+    r"""
+    Base wave function class.
+
+    """
+    pass
+
+
+cdef class doci_wfn(base_wfn):
+    r"""
+    DOCI wave function class.
+
+    Attributes
+    ----------
+    nword : int
+        Number of words (unsigned 64-bit ints) per determinant.
+    nbasis : int
+        Number of orbital basis functions.
+    nocc : int
+        Number of occupied indices.
+    nvir : int
+        Number of virtual indices.
+
+    """
+    cdef DOCIWfn _obj
+
+    @classmethod
+    def from_file(cls, object filename not None):
+        r"""
+        Return a doci_wfn instance by loading a DOCI file.
+
+        Parameters
+        ----------
+        filename : str
+            DOCI file from which to load determinants.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        cdef doci_wfn wfn = cls(2, 1)
+        wfn._obj.from_file(filename.encode())
+        return wfn
+
+    @property
+    def nword(self):
+        r"""
+        Number of words (unsigned 64-bit ints) per determinant.
+
+        """
+        return self._obj.nword
+
+    @property
+    def nbasis(self):
+        r"""
+        Number of orbital basis functions.
+
+        """
+        return self._obj.nbasis
+
+    @property
+    def nocc(self):
+        r"""
+        Number of occupied indices.
+
+        """
+        return self._obj.nocc
+
+    @property
+    def nvir(self):
+        r"""
+        Number of virtual indices.
+
+        """
+        return self._obj.nvir
+
+    def __init__(self, int_t nbasis, int_t nocc):
+        r"""
+        Initialize a doci_wfn instance.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+
+        """
+        if nbasis <= nocc or nocc < 1:
+            raise ValueError('failed check: nbasis > nocc > 0')
+        self._obj.init(nbasis, nocc)
+
+    def __len__(self):
+        r"""
+        Return the number of determinants in the wave function.
+
+        Returns
+        -------
+        ndet : int
+            Number of determinants in the wave function.
+
+        """
+        return self._obj.ndet
+
+    def __getitem__(self, int_t index):
+        r""""
+        Return the specified determinant from the wave function.
+
+        Parameters
+        ----------
+        index : int
+            Index of determinant to return.
+
+        Returns
+        -------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        if index < 0 or index >= self._obj.ndet:
+            raise IndexError('index out of range')
+        cdef np.ndarray det_array = np.empty(self._obj.nword, dtype=c_uint)
+        cdef uint_t[:] det = det_array
+        self._obj.copy_det(index, <uint_t *>(&det[0]))
+        return det_array
+
+    def __iter__(self):
+        r"""
+        Return an iterator over all determinants in the wave function.
+
+        Yields
+        -------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        cdef int_t ndet = self._obj.ndet, i
+        cdef np.ndarray det_array
+        cdef uint_t[:] det
+        for i in range(ndet):
+            det_array = np.empty(self._obj.nword, dtype=c_uint)
+            det = det_array
+            self._obj.copy_det(i, <uint_t *>(&det[0]))
+            yield det_array
+
+    def to_file(self, object filename not None):
+        r"""
+        Write a doci_wfn instance to a DOCI file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of DOCI file to write.
+
+        """
+        self._obj.to_file(filename.encode())
+
+    def index_det(self, uint_t[::1] det not None):
+        r"""
+        Return the index of the determinant in the wave function, or -1 if not found.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        index : int
+            Index of determinant, or -1 if not found.
+
+        """
+        return self._obj.index_det(<uint_t *>(&det[0]))
+
+    def add_det(self, uint_t[::1] det not None):
+        r"""
+        Add a determinant to the wavefunction.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        result : int
+            Index of determinant, or -1 if addition fails.
+
+        """
+        return self._obj.add_det(<uint_t *>(&det[0]))
+
+    def add_det_from_occs(self, int_t[::1] occs not None):
+        r"""
+        Add a determinant to the wavefunction from an array of occupied indices.
+
+        Parameters
+        ----------
+        occs : np.ndarray(c_int(nocc))
+            Indices of occupied electron pairs in determinant.
+
+        Returns
+        -------
+        result : int
+            Index of determinant, or -1 if addition fails.
+
+        """
+        return self._obj.add_det_from_occs(<int_t *>(&occs[0]))
+
+    def add_hartreefock_det(self):
+        r"""
+        Add the Hartree-Fock determinant to the wave function.
+
+        """
+        self.add_det_from_occs(np.arange(self._obj.nocc, dtype=c_int))
+
+    def add_all_dets(self):
+        r"""
+        Add all determinants to the wave function.
+
+        """
+        self._obj.add_all_dets()
+
+    def add_excited_dets(self, *exc, uint_t[::1] det=None):
+        r"""
+        Add pair-excited determinants from a reference determinant to the wave function.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword)), default=hartreefock_determinant
+            Reference determinant. If not provided, the Hartree-Fock determinant is used.
+        exc : ints
+            Excitation levels to add. Zero corresponds to no excitation.
+
+        """
+        # check excitation levels
+        cdef int_t emax = min(self._obj.nocc, self._obj.nvir), ndet = 0, i, e, nexc
+        cdef int_t[:] excv = np.array(list(set(exc)), dtype=c_int)
+        nexc = excv.shape[0]
+        for i in range(nexc):
+            e = excv[i]
+            if e < 0 or e > emax:
+                raise ValueError('invalid excitation order e < 0 or e > min(nocc, nvir)')
+            ndet += binomial(self._obj.nocc, e) * binomial(self._obj.nvir, e)
+        # default determinant is hartree-fock determinant
+        if det is None:
+            det = self.det_from_occs(np.arange(self._obj.nocc, dtype=c_int))
+        # reserve space for determinants
+        self._obj.reserve(ndet)
+        # add determinants
+        for i in range(nexc):
+            self._obj.add_excited_dets(&det[0], excv[i])
+
+    def reserve(self, int_t n):
+        r"""
+        Reserve space in memory for :math:`n` elements in the doci_wfn instance.
+
+        Parameters
+        ----------
+        n : int
+            Number of elements for which to reserve space.
+
+        """
+        self._obj.reserve(n)
+
+    def squeeze(self):
+        r"""
+        Free up any unused memory reserved by the doci_wfn instance.
+
+        This can help reduce memory usage if many determinants are individually added.
+
+        """
+        self._obj.squeeze()
+
+    def det_from_occs(self, int_t[::1] occs not None):
+        r"""
+        Convert an array of occupied indices to a determinant.
+
+        Parameters
+        ----------
+        occs : np.ndarray(c_int(nocc))
+            Indices of occupied electron pairs in determinant.
+
+        Returns
+        -------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        cdef np.ndarray det_array = np.zeros(self._obj.nword, dtype=c_uint)
+        cdef uint_t[:] det = det_array
+        fill_det(self._obj.nocc, <int_t *>(&occs[0]), <uint_t *>(&det[0]))
+        return det_array
+
+    def occs_from_det(self, uint_t[::1] det not None):
+        r"""
+        Convert a determinant to an array of occupied indices.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        occs : np.ndarray(c_int(nocc))
+            Indices of occupied electron pairs in determinant.
+
+        """
+        cdef np.ndarray occs_array = np.empty(self._obj.nocc, dtype=c_int)
+        cdef int_t[:] occs = occs_array
+        fill_occs(self._obj.nword, <uint_t *>(&det[0]), <int_t *>(&occs[0]))
+        return occs_array
+
+    def virs_from_det(self, uint_t[::1] det not None):
+        r"""
+        Convert a determinant to an array of virtual indices.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        virs : np.ndarray(c_int(nvir))
+            Indices without occupied electron pairs in determinant.
+
+        """
+        cdef np.ndarray virs_array = np.empty(self._obj.nvir, dtype=c_int)
+        cdef int_t[:] virs = virs_array
+        fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[0]), <int_t *>(&virs[0]))
+        return virs_array
+
+    def excite_det(self, int_t i, int_t a, uint_t[::1] det not None):
+        r"""
+        Return the excitation of a determinant from pair index :math:`i` to pair index :math:`a`.
+
+        Parameters
+        ----------
+        i : int
+            Electron pair "hole" index.
+        a : int
+            Electron pair "particle" index.
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        newdet : np.ndarray(c_uint(nword))
+            Excited determinant.
+
+        """
+        cdef np.ndarray newdet_array = np.copy(det)
+        cdef uint_t[:] newdet = newdet_array
+        excite_det(i, a, <uint_t *>(&newdet[0]))
+        return newdet_array
+
+    def setbit_det(self, int_t i, uint_t[::1] det not None):
+        r"""
+        Return the determinant with bit :math:`i` set.
+
+        Parameters
+        ----------
+        i : int
+            Bit to set.
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        newdet : np.ndarray(c_uint(nword))
+            New determinant.
+
+        """
+        cdef np.ndarray newdet_array = np.copy(det)
+        cdef uint_t[:] newdet = newdet_array
+        setbit_det(i, <uint_t *>(&newdet[0]))
+        return newdet_array
+
+    def clearbit_det(self, int_t i, uint_t[::1] det not None):
+        r"""
+        Return the determinant with bit :math:`i` cleared.
+
+        Parameters
+        ----------
+        i : int
+            Bit to clear.
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        newdet : np.ndarray(c_uint(nword))
+            New determinant.
+
+        """
+        cdef np.ndarray newdet_array = np.copy(det)
+        cdef uint_t[:] newdet = newdet_array
+        clearbit_det(i, <uint_t *>(&newdet[0]))
+        return newdet_array
+
+    def excite_det_inplace(self, int_t i, int_t a, uint_t[::1] det not None):
+        r"""
+        Excite a determinant from pair index :math:`i` to pair index :math:`a` in-place.
+
+        Parameters
+        ----------
+        i : int
+            Electron pair "hole" index.
+        a : int
+            Electron pair "particle" index.
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        excite_det(i, a, <uint_t *>(&det[0]))
+
+    def setbit_det_inplace(self, int_t i, uint_t[::1] det not None):
+        r"""
+        Set a bit in a determinant in-place.
+
+        Parameters
+        ----------
+        i : int
+            Bit to set.
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        setbit_det(i, <uint_t *>(&det[0]))
+
+    def clearbit_det_inplace(self, int_t i, uint_t[::1] det not None):
+        r"""
+        Clear a bit in a determinant in-place.
+
+        Parameters
+        ----------
+        i : int
+            Bit to clear.
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        clearbit_det(i, <uint_t *>(&det[0]))
+
+    def popcnt_det(self, uint_t[::1] det not None):
+        r"""
+        Count the set bits in a determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        popcnt : int
+            Number of set bits.
+
+        """
+        return popcnt_det(self._obj.nword, <uint_t *>(&det[0]))
+
+    def ctz_det(self, uint_t[::1] det not None):
+        r"""
+        Count the number of trailing zeros in a determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        ctz : int
+            Number of trailing zeros.
+
+        """
+        return ctz_det(self._obj.nword, <uint_t *>(&det[0]))
+
+    def rank_det(self, uint_t[::1] det not None):
+        r"""
+        Compute the rank of a determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        Returns
+        -------
+        rank : int
+            Rank value.
+
+        """
+        return rank_det(self._obj.nbasis, self._obj.nocc, <uint_t *>(&det[0]))
+
+    def new_det(self):
+        r"""
+        Return a new determinant with all bits set to zero.
+
+        Returns
+        -------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+
+        """
+        return np.zeros(self._obj.nword, dtype=c_uint)
+
+
+cdef class fullci_wfn(base_wfn):
+    r"""
+    FullCI wave function class.
+
+    Attributes
+    ----------
+    nword : int
+        Number of words (unsigned 64-bit ints) per determinant.
+    nbasis : int
+        Number of orbital basis functions.
+    nocc_up : int
+        Number of occupied spin-up indices.
+    nocc_dn : int
+        Number of occupied spin-down indices.
+    nvir_up : int
+        Number of virtual spin-up indices.
+    nvir_dn : int
+        Number of virtual spin-down indices.
+
+    """
+    cdef FullCIWfn _obj
+
+    @classmethod
+    def from_file(cls, object filename not None):
+        r"""
+        Return a fullci_wfn instance by loading a FullCI file.
+
+        Parameters
+        ----------
+        filename : str
+            FullCI file from which to load determinants.
+
+        Returns
+        -------
+        wfn : fullci_wfn
+            FullCI wave function object.
+
+        """
+        cdef fullci_wfn wfn = cls(2, 1, 1)
+        wfn._obj.from_file(filename.encode())
+        return wfn
+
+    @property
+    def nword(self):
+        r"""
+        Number of words (unsigned 64-bit ints) per determinant.
+
+        """
+        return self._obj.nword
+
+    @property
+    def nbasis(self):
+        r"""
+        Number of orbital basis functions.
+
+        """
+        return self._obj.nbasis
+
+    @property
+    def nocc_up(self):
+        r"""
+        Number of spin-up occupied indices.
+
+        """
+        return self._obj.nocc_up
+
+    @property
+    def nocc_dn(self):
+        r"""
+        Number of spin-down occupied indices.
+
+        """
+        return self._obj.nocc_dn
+
+    @property
+    def nvir_up(self):
+        r"""
+        Number of spin-up virtual indices.
+
+        """
+        return self._obj.nvir_up
+
+    @property
+    def nvir_dn(self):
+        r"""
+        Number of spin-down virtual indices.
+
+        """
+        return self._obj.nvir_dn
+
+    def __init__(self, int_t nbasis, int_t nocc_up, int_t nocc_dn):
+        r"""
+        Initialize a doci_wfn instance.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc_up : int
+            Number of spin-up occupied indices.
+        nocc_dn : int
+            Number of spin-down occupied indices.
+
+        """
+        if nbasis < nocc_up or nbasis <= nocc_dn or nocc_up <= 0 or nocc_dn < 0 or nocc_up < nocc_dn:
+            raise ValueError('failed check: nbasis >= nocc_up > 0, nbasis > nocc_dn >= 0, nocc_up >= nocc_dn')
+        self._obj.init(nbasis, nocc_up, nocc_dn)
+
+    def __len__(self):
+        r"""
+        Return the number of determinants in the wave function.
+
+        Returns
+        -------
+        ndet : int
+            Number of determinants in the wave function.
+
+        """
+        return self._obj.ndet
+
+    def __getitem__(self, int_t index):
+        r""""
+        Return the specified determinant from the wave function.
+
+        Parameters
+        ----------
+        index : int
+            Index of determinant to return.
+
+        Returns
+        -------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+
+        """
+        if index < 0 or index >= self._obj.ndet:
+            raise IndexError('index out of range')
+        cdef np.ndarray det_array = np.empty((2, self._obj.nword), dtype=c_uint)
+        cdef uint_t[:, :] det = det_array
+        self._obj.copy_det(index, <uint_t *>(&det[0, 0]))
+        return det_array
+
+    def __iter__(self):
+        r"""
+        Return an iterator over all determinants in the wave function.
+
+        Yields
+        -------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+
+        """
+        cdef int_t ndet = self._obj.ndet, i
+        cdef np.ndarray det_array
+        cdef uint_t[:, :] det
+        for i in range(ndet):
+            det_array = np.empty((2, self._obj.nword), dtype=c_uint)
+            det = det_array
+            self._obj.copy_det(i, <uint_t *>(&det[0, 0]))
+            yield det_array
+
+    def to_file(self, object filename not None):
+        r"""
+        Write a fullci_wfn instance to a FullCI file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of FullCI file to write.
+
+        """
+        self._obj.to_file(filename.encode())
+
+    def index_det(self, uint_t[:, ::1] det not None):
+        r"""
+        Return the index of the determinant in the wave function, or -1 if not found.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+
+        Returns
+        -------
+        index : int
+            Index of determinant, or -1 if not found.
+
+        """
+        return self._obj.index_det(<uint_t *>(&det[0, 0]))
+
+    def add_det(self, uint_t[:, ::1] det not None):
+        r"""
+        Add a determinant to the wavefunction.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+
+        Returns
+        -------
+        result : int
+            Index of determinant, or -1 if addition fails.
+
+        """
+        return self._obj.add_det(<uint_t *>(&det[0, 0]))
+
+    def add_det_from_occs(self, int_t[::1] occs_up not None, int_t[::1] occs_dn not None):
+        r"""
+        Add a determinant to the wavefunction from an array of occupied indices.
+
+        Parameters
+        ----------
+        occs_up : np.ndarray(c_int(nocc_up))
+            Indices of occupied spin-up electrons in determinant.
+        occs_up : np.ndarray(c_int(nocc_dn))
+            Indices of occupied spin-down electrons in determinant.
+
+        Returns
+        -------
+        result : int
+            Index of determinant, or -1 if addition fails.
+
+        """
+        return self._obj.add_det_from_occs(<int_t *>(&occs_up[0]), <int_t *>(&occs_dn[0]))
+
+    def add_hartreefock_det(self):
+        r"""
+        Add the Hartree-Fock determinant to the wave function.
+
+        """
+        self.add_det_from_occs(np.arange(self._obj.nocc_up, dtype=c_int),
+                               np.arange(self._obj.nocc_dn, dtype=c_int))
+
+    def add_all_dets(self):
+        r"""
+        Add all determinants to the wave function.
+
+        """
+        self._obj.add_all_dets()
+
+    def add_excited_dets(self, *exc, uint_t[:, ::1] det=None):
+        r"""
+        Add excited determinants from a reference determinant to the wave function.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword)), default=hartreefock_determinant
+            Reference determinant. If not provided, the Hartree-Fock determinant is used.
+        exc : ints
+            Excitation levels to add. Zero corresponds to no excitation.
+
+        """
+        # check excitation levels
+        cdef int_t emax = min(self._obj.nocc_up + self._obj.nocc_dn, self._obj.nvir_up + self._obj.nvir_dn)
+        cdef int_t emax_up = min(self._obj.nocc_up, self._obj.nvir_up)
+        cdef int_t emax_dn = min(self._obj.nocc_dn, self._obj.nvir_dn)
+        cdef int_t ndet = 0, i, nexc, e, a, b
+        cdef int_t[:] excv = np.array(list(set(exc)), dtype=c_int)
+        nexc = excv.shape[0]
+        for i in range(nexc):
+            e = excv[i]
+            if e < 0 or e > emax:
+                raise ValueError('invalid excitation order e < 0 or e > min(nocc, nvir)')
+            a = min(e, self._obj.nocc_up, self._obj.nvir_up)
+            b = e - a
+            while (a >= 0) and (b <= emax_dn):
+                ndet += binomial(self._obj.nocc_up, a) * binomial(self._obj.nvir_up, a) \
+                      * binomial(self._obj.nocc_dn, b) * binomial(self._obj.nvir_dn, b)
+                a -= 1
+                b += 1
+        # default determinant is hartree-fock determinant
+        if det is None:
+            det = self.det_from_occs(np.arange(self._obj.nocc_up, dtype=c_int),
+                                     np.arange(self._obj.nocc_dn, dtype=c_int))
+        # reserve space for determinants
+        self._obj.reserve(ndet)
+        # add determinants
+        for i in range(nexc):
+            e = excv[i]
+            a = min(e, self._obj.nocc_up, self._obj.nvir_up)
+            b = e - a
+            self._obj.add_excited_dets(&det[0, 0], a, b)
+
+    def reserve(self, int_t n):
+        r"""
+        Reserve space in memory for :math:`n` elements in the doci_wfn instance.
+
+        Parameters
+        ----------
+        n : int
+            Number of elements for which to reserve space.
+
+        """
+        self._obj.reserve(n)
+
+    def squeeze(self):
+        r"""
+        Free up any unused memory reserved by the doci_wfn instance.
+
+        This can help reduce memory usage if many determinants are individually added.
+
+        """
+        self._obj.squeeze()
+
+    def det_from_occs(self, int_t[::1] occs_up not None, int_t[::1] occs_dn not None):
+        r"""
+        Convert an array of occupied indices to a determinant.
+
+        Parameters
+        ----------
+        occs_up : np.ndarray(c_int(nocc_up))
+            Indices of spin-up occupied electrons in determinant.
+        occs_dn : np.ndarray(c_int(nocc_dn))
+            Indices of spin-dn occupied electrons in determinant.
+
+        Returns
+        -------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+
+        """
+        cdef np.ndarray det_array = np.zeros((2, self._obj.nword), dtype=c_uint)
+        cdef uint_t[:, :] det = det_array
+        fill_det(self._obj.nocc_up, <int_t *>(&occs_up[0]), <uint_t *>(&det[0, 0]))
+        fill_det(self._obj.nocc_dn, <int_t *>(&occs_dn[0]), <uint_t *>(&det[1, 0]))
+        return det_array
+
+    def occs_from_det(self, uint_t[:, ::1] det not None):
+        r"""
+        Convert a determinant to an array of occupied indices.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+
+        Returns
+        -------
+        occs_up : np.ndarray(c_int(nocc_up))
+            Indices of spin-up occupied electrons in determinant.
+        occs_dn : np.ndarray(c_int(nocc_dn))
+            Indices of spin-down occupied electrons in determinant.
+
+        """
+        cdef np.ndarray occs_up_array = np.empty(self._obj.nocc_up, dtype=c_int)
+        cdef np.ndarray occs_dn_array = np.empty(self._obj.nocc_dn, dtype=c_int)
+        cdef int_t[:] occs_up = occs_up_array
+        cdef int_t[:] occs_dn = occs_dn_array
+        fill_occs(self._obj.nword, <uint_t *>(&det[0, 0]), <int_t *>(&occs_up[0]))
+        fill_occs(self._obj.nword, <uint_t *>(&det[1, 0]), <int_t *>(&occs_dn[0]))
+        return occs_up_array, occs_dn_array
+
+    def virs_from_det(self, uint_t[:, ::1] det not None):
+        r"""
+        Convert a determinant to an array of virtual indices.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+
+        Returns
+        -------
+        virs_up : np.ndarray(c_int(2, nvir_up))
+            Spin-up indices without occupied electrons in determinant.
+        virs_dn : np.ndarray(c_int(2, nvir_dn))
+            Spin-down indices without occupied electrons in determinant.
+
+        """
+        cdef np.ndarray virs_up_array = np.empty((2, self._obj.nvir_up), dtype=c_int)
+        cdef np.ndarray virs_dn_array = np.empty((2, self._obj.nvir_dn), dtype=c_int)
+        cdef int_t[:] virs_up = virs_up_array
+        cdef int_t[:] virs_dn = virs_dn_array
+        fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[0, 0]), <int_t *>(&virs_up[0]))
+        fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[1, 0]), <int_t *>(&virs_dn[0]))
+        return virs_up_array, virs_dn_array
+
+    def excite_det(self, int_t i, int_t a, uint_t[:, ::1] det not None, SpinLabel spin):
+        r"""
+        Return the excitation of a determinant from index :math:`i` to index :math:`a`.
+
+        Parameters
+        ----------
+        i : int
+            Electron "hole" index.
+        a : int
+            Electron "particle" index.
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        spin : (SPIN_UP | SPIN_DN)
+            Which spin upon which to perform the oepration.
+
+        Returns
+        -------
+        newdet : np.ndarray(c_uint(2, nword))
+            Excited determinant.
+
+        """
+        cdef np.ndarray newdet_array = np.copy(det)
+        cdef uint_t[:, :] newdet = newdet_array
+        excite_det(i, a, <uint_t *>(&newdet[<int_t>spin, 0]))
+        return newdet_array
+
+    def setbit_det(self, int_t i, uint_t[:, ::1] det not None, SpinLabel spin):
+        r"""
+        Return the determinant with bit :math:`i` set.
+
+        Parameters
+        ----------
+        i : int
+            Bit to set.
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        spin : (SPIN_UP | SPIN_DN)
+            Which spin upon which to perform the oepration.
+
+        Returns
+        -------
+        newdet : np.ndarray(c_uint(2, nword))
+            New determinant.
+
+        """
+        cdef np.ndarray newdet_array = np.copy(det)
+        cdef uint_t[:, :] newdet = newdet_array
+        setbit_det(i, <uint_t *>(&newdet[<int_t>spin, 0]))
+        return newdet_array
+
+    def clearbit_det(self, int_t i, uint_t[:, ::1] det not None, SpinLabel spin):
+        r"""
+        Return the determinant with bit :math:`i` cleared.
+
+        Parameters
+        ----------
+        i : int
+            Bit to clear.
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        spin : (SPIN_UP | SPIN_DN)
+            Which spin upon which to perform the oepration.
+
+        Returns
+        -------
+        newdet : np.ndarray(c_uint(2, nword))
+            New determinant.
+
+        """
+        cdef np.ndarray newdet_array = np.copy(det)
+        cdef uint_t[:, :] newdet = newdet_array
+        clearbit_det(i, <uint_t *>(&newdet[<int_t>spin, 0]))
+        return newdet_array
+
+    def excite_det_inplace(self, int_t i, int_t a, uint_t[:, ::1] det not None, SpinLabel spin):
+        r"""
+        Excite a determinant from index :math:`i` to index :math:`a` in-place.
+
+        Parameters
+        ----------
+        i : int
+            Electron "hole" index.
+        a : int
+            Electron "particle" index.
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        spin : (SPIN_UP | SPIN_DN)
+            Which spin upon which to perform the oepration.
+
+        """
+        excite_det(i, a, <uint_t *>(&det[<int_t>spin, 0]))
+
+    def setbit_det_inplace(self, int_t i, uint_t[:, ::1] det not None, SpinLabel spin):
+        r"""
+        Set a bit in a determinant in-place.
+
+        Parameters
+        ----------
+        i : int
+            Bit to set.
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        spin : (SPIN_UP | SPIN_DN)
+            Which spin upon which to perform the oepration.
+
+        """
+        setbit_det(i, <uint_t *>(&det[<int_t>spin, 0]))
+
+    def clearbit_det_inplace(self, int_t i, uint_t[:, ::1] det not None, SpinLabel spin):
+        r"""
+        Clear a bit in a determinant in-place.
+
+        Parameters
+        ----------
+        i : int
+            Bit to clear.
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        spin : (SPIN_UP | SPIN_DN)
+            Which spin upon which to perform the oepration.
+
+        """
+        clearbit_det(i, <uint_t *>(&det[<int_t>spin, 0]))
+
+    def popcnt_det(self, uint_t[:, ::1] det not None, SpinLabel spin):
+        r"""
+        Count the set bits in a determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        spin : (SPIN_UP | SPIN_DN)
+            Which spin upon which to perform the oepration.
+
+        Returns
+        -------
+        popcnt : int
+            Number of set bits.
+
+        """
+        return popcnt_det(self._obj.nword, <uint_t *>(&det[<int_t>spin, 0]))
+
+    def ctz_det(self, uint_t[:, ::1] det not None, SpinLabel spin):
+        r"""
+        Count the number of trailing zeros in a determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        spin : (SPIN_UP | SPIN_DN)
+            Which spin upon which to perform the oepration.
+
+        Returns
+        -------
+        ctz : int
+            Number of trailing zeros.
+
+        """
+        return ctz_det(self._obj.nword, <uint_t *>(&det[<int_t>spin, 0]))
+
+    def phase_single_det(self, uint_t[:, ::1] det not None, int_t i, int_t a, SpinLabel spin):
+        r"""
+        Compute the phase factor of a reference determinant with a singly-excited determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        i : int
+            Electron "hole" index.
+        a : int
+            Electron "particle" index.
+        spin : (SPIN_UP | SPIN_DN)
+            Which spin upon which to perform the oepration.
+
+        Returns
+        -------
+        phase : (+1 | -1)
+            Phase factor.
+
+        """
+        return phase_single_det(self._obj.nword, i, a, <uint_t *>(&det[<int_t>spin, 0]))
+
+    def phase_double_det(self, uint_t[:, ::1] det not None, int_t i, int_t j, int_t a, int_t b,
+        SpinLabel spin1, SpinLabel spin2):
+        r"""
+        Compute the phase factor of a reference determinant with a doubly-excited determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+        i : int
+            Electron "hole" index.
+        j : int
+            Electron "hole" index.
+        a : int
+            Electron "particle" index.
+        b : int
+            Electron "particle" index.
+
+        Returns
+        -------
+        phase : (+1 | -1)
+            Phase factor.
+
+        """
+        if spin1 == spin2:
+            return phase_double_det(self._obj.nword, i, j, a, b, <uint_t *>(&det[<int_t>spin1, 0]))
+        else:
+            return phase_single_det(self._obj.nword, i, a, <uint_t *>(&det[<int_t>spin1, 0])) * \
+                   phase_single_det(self._obj.nword, j, b, <uint_t *>(&det[<int_t>spin2, 0]))
+
+    def rank_det(self, uint_t[:, ::1] det not None):
+        r"""
+        Compute the rank of a determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+
+        Returns
+        -------
+        rank : int
+            Rank value.
+
+        """
+        return rank_det(self._obj.nbasis, self._obj.nocc_up, <uint_t *>(&det[0, 0])) * self._obj.maxdet_dn \
+             + rank_det(self._obj.nbasis, self._obj.nocc_dn, <uint_t *>(&det[1, 0]))
+
+    def new_det(self):
+        r"""
+        Return a new determinant with all bits set to zero.
+
+        Returns
+        -------
+        det : np.ndarray(c_uint(2, nword))
+            Determinant.
+
+        """
+        return np.zeros((2, self._obj.nword), dtype=c_uint)
+
+
+cdef class sparse_op:
+    r"""
+    """
+    cdef SparseOp _obj
+    cdef tuple _shape
+    cdef double _ecore
+    cdef double _ref_elem
+
+    @property
+    def shape(self):
+        r"""
+        """
+        return self._shape
+
+    @property
+    def ecore(self):
+        r"""
+        """
+        return self._ecore
+
+    def __init__(self, doci_ham ham not None, doci_wfn wfn not None, int_t nrow=-1):
+        r"""
+        """
+        # check inputs
+        if ham._nbasis != wfn._obj.nbasis:
+            raise ValueError('dimension of ham, wfn do not match')
+        elif wfn._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
+        # intialize object
+        self._obj.init(wfn._obj, &ham._h[0], &ham._v[0, 0], &ham._w[0, 0], nrow)
+        self._shape = self._obj.nrow, self._obj.ncol
+        self._ecore = ham._ecore
+        self._ref_elem = ham.elem_diag(wfn.occs_from_det(wfn[0]))
+
+    def dot(self, double[::1] x not None, double[::1] out=None):
+        r"""
+        Compute the dot product of the sparse operator :math:`A` with a vector :math:`x`.
+
+        Parameters
+        ----------
+        x : np.ndarray(c_double(n))
+            Operand vector.
+        out : np.ndarray(c_double(n)), optional
+            Output parameter, as in NumPy (e.g., numpy.dot).
+
+        Returns
+        -------
+        y : np.ndarray(c_double(n))
+           Result vector.
+
+        """
+        cdef np.ndarray y
+        if out is None:
+            y = np.empty_like(x)
+            out = y
+        else:
+            if x.size != out.size:
+                raise ValueError('Dimensions of arrays \'x\' and \'y\' do not match')
+            y = np.asarray(out)
+        self._obj.perform_op(&x[0], &out[0])
+        return y
+
+    def solve(self, int_t n=1, int_t ncv=20, double[::1] c0=None, int_t maxiter=-1, double tol=1.0e-6):
+        r"""
+        """
+        if self._shape[0] != self._shape[1]:
+            raise ValueError('cannot solve for a rectangular operator')
+        cdef int_t ndet = self._shape[0]
+        # handle ndet = 1 case
+        if ndet == 1:
+            return (np.full(1, self._ref_elem + self._ecore, dtype=c_double),
+                    np.ones((1, 1), dtype=c_double))
+        # set number of lanczos vectors n < ncv <= len(c0)
+        ncv = max(n + 1, min(ncv, ndet))
+        # default initial guess c = [1, 0, ..., 0]
+        if c0 is None:
+            c0 = np.zeros(ndet, dtype=c_double)
+            c0[0] = 1.0
+        elif ndet != c0.shape[0]:
+            raise ValueError('dimension of wfn, c0 do not match')
+        # default maxiter = 1000 * n
+        if maxiter == -1:
+            maxiter = 1000 * n
+        # solve eigenproblem
+        cdef np.ndarray evals_array = np.empty(n, dtype=c_double)
+        cdef np.ndarray evecs_array = np.empty((n, ndet), dtype=c_double)
+        cdef double[:] evals = evals_array
+        cdef double[:, :] evecs = evecs_array
+        self._obj.solve(<double *>(&c0[0]), n, ncv, maxiter, tol,
+                        <double *>(&evals[0]), <double *>(&evecs[0, 0]))
+        evals_array += self._ecore
+        return evals_array, evecs_array
+
+
+#def doci_solve_ci(doci_ham ham not None, doci_wfn wfn not None, int_t n=1, int_t ncv=20, double[::1] c0=None,
+#    int_t maxiter=-1, double tol=1.0e-6, object mode='sparse'):
+#    r"""
+#    Solve the CI problem for the energy/energies and coefficient vector(s).
+#
+#    Parameters
+#    ----------
+#    ham : doci_ham
+#        DOCI Hamiltonian object.
+#    wfn : doci_wfn
+#        DOCI wave function object.
+#    n : int, default=1
+#        Number of lowest-energy solutions for which to solve.
+#    ncv : int, default=20
+#        Number of Lanczos vectors to use for eigensolver.
+#        More is generally faster and more reliably convergent.
+#    c0 : np.ndarray(c_double(len(wfn))), optional
+#        Initial guess for lowest-energy coefficient vector.
+#        If not provided, the default is [1, 0, 0, ..., 0, 0].
+#    maxiter : int, default=1000*n
+#        Maximum number of iterations for eigensolver to run.
+#    tol : float, default=1.0e-6
+#        Convergence tolerance for eigensolver.
+#    mode : ('sparse' | 'direct'), default='sparse'
+#        Whether to use the sparse matrix or direct CI eigensolver.
+#        'direct' mode is much slower, but uses much less memory than 'sparse' mode.
+#
+#    Returns
+#    -------
+#    evals : np.ndarray(c_double(n))
+#        Energies.
+#    evecs : np.ndarray(c_double(n, len(wfn)))
+#        Coefficient vectors.
+#
+#    """
+#    # check inputs
+#    if ham._nbasis != wfn._obj.nbasis:
+#        raise ValueError('dimension of ham, wfn do not match')
+#    elif wfn._obj.ndet == 0:
+#        raise ValueError('wfn must contain at least one determinant')
+#    # handle ndet = 1 case
+#    if wfn._obj.ndet == 1:
+#        return (np.full(1, ham.elem_diag(wfn.occs_from_det(wfn[0])) + ham._ecore, dtype=c_double),
+#                np.ones((1, 1), dtype=c_double))
+#    # set number of lanczos vectors n < ncv <= len(c0)
+#    ncv = max(n + 1, min(ncv, wfn._obj.ndet))
+#    # default initial guess c = [1, 0, ..., 0]
+#    if c0 is None:
+#        c0 = np.zeros(wfn._obj.ndet, dtype=c_double)
+#        c0[0] = 1.0
+#    elif wfn._obj.ndet != c0.shape[0]:
+#        raise ValueError('dimension of wfn, c0 do not match')
+#    # default maxiter = 1000 * n
+#    if maxiter == -1:
+#        maxiter = 1000 * n
+#    # solve eigenproblem
+#    cdef np.ndarray evals_array = np.empty(n, dtype=c_double)
+#    cdef np.ndarray evecs_array = np.empty((n, wfn._obj.ndet), dtype=c_double)
+#    cdef double[:] evals = evals_array
+#    cdef double[:, :] evecs = evecs_array
+#    if mode == 'sparse':
+#        doci_solve_sparse_(wfn._obj, <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]), <double *>(&ham._w[0, 0]),
+#                           <double *>(&c0[0]), n, ncv, maxiter, tol, <double *>(&evals[0]), <double *>(&evecs[0, 0]))
+#    elif mode == 'direct':
+#        doci_solve_direct_(wfn._obj, <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]), <double *>(&ham._w[0, 0]),
+#                           <double *>(&c0[0]), n, ncv, maxiter, tol, <double *>(&evals[0]), <double *>(&evecs[0, 0]))
+#    else:
+#        raise ValueError('\'mode\' option must be either \'sparse\' or \'direct\'')
+#    evals_array += ham._ecore
+#    return evals_array, evecs_array
+
+
+def doci_compute_rdms(doci_wfn wfn not None, double[::1] coeffs not None):
+    r"""
+    Compute the 2-particle reduced density matrix (RDM) of a wave function.
+
+    This method returns two nbasis-by-nbasis matrices, which include the unique
+    seniority-zero and seniority-two terms from the full 2-RDMs:
+
+    .. math::
+
+        D_0 = \left<pp|qq\right>
+
+    .. math::
+
+        D_2 = \left<pq|pq\right>
+
+    The diagonal elements of :math:`D_0` are equal to the 1-RDM elements :math:`\left<p|p\right>`.
+
+    Parameters
+    ----------
+    wfn : doci_wfn
+        DOCI wave function object.
+    coeffs : np.ndarray(c_double(len(wfn)))
+        Coefficient vector.
+
+    Returns
+    -------
+    d0 : np.ndarray(c_double(wfn.nbasis, wfn.nbasis))
+        :math:`D_0` matrix.
+    d2 : np.ndarray(c_double(wfn.nbasis, wfn.nbasis))
+        :math:`D_2` matrix.
+
+    """
+    if wfn._obj.ndet != coeffs.shape[0]:
+        raise ValueError('dimensions of wfn, coeffs do not match')
+    elif wfn._obj.ndet == 0:
+        raise ValueError('wfn must contain at least one determinant')
+    cdef np.ndarray d0_array = np.zeros((wfn._obj.nbasis, wfn._obj.nbasis), dtype=c_double)
+    cdef np.ndarray d2_array = np.zeros((wfn._obj.nbasis, wfn._obj.nbasis), dtype=c_double)
+    cdef double[:, :] d0 = d0_array
+    cdef double[:, :] d2 = d2_array
+    doci_compute_rdms_(wfn._obj, <double *>(&coeffs[0]), <double *>(&d0[0, 0]), <double *>(&d2[0, 0]))
+    return d0_array, d2_array
+
+
+def doci_compute_energy(doci_ham ham not None, doci_wfn wfn not None, double[::1] coeffs not None):
+    r"""
+    Compute the energy of a wave function from the Hamiltonian and coefficients.
+
+    Parameters
+    ----------
+    ham : doci_ham
+        DOCI Hamiltonian object.
+    wfn : doci_wfn
+        DOCI wave function object.
+    coeffs : np.ndarray(c_double(len(wfn)))
+        Coefficient vector.
+
+    Returns
+    -------
+    energy : float
+        Energy.
+
+    """
+    if wfn._obj.ndet != coeffs.shape[0]:
+        raise ValueError('dimensions of wfn, coeffs do not match')
+    elif wfn._obj.ndet == 0:
+        raise ValueError('wfn must contain at least one determinant')
+    elif wfn._obj.nbasis != ham._nbasis:
+        raise ValueError('dimensions of wfn, ham do not match')
+    return doci_compute_energy_(wfn._obj, <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]),
+                                <double *>(&ham._w[0, 0]), <double *>(&coeffs[0])) + ham._ecore
+
+
+def doci_run_hci(doci_ham ham not None, doci_wfn wfn not None, double[::1] coeffs not None, double eps):
+    r"""
+    Run an iteration of seniority-zero heat-bath CI.
+
+    Adds all determinants connected to determinants currently in the wave function,
+    if they satisfy the criteria
+    :math:`|\left<f|H|d\right> c_d| > \epsilon` for :math:`f = P^\dagger_i P_a d`.
+
+    Parameters
+    ----------
+    ham : doci_ham
+        DOCI Hamiltonian object.
+    wfn : doci_wfn
+        DOCI wave function object.
+    coeffs : np.ndarray(c_double(len(wfn)))
+        Coefficient vector.
+    eps : float
+        Threshold value for which determinants to include.
+
+    Returns
+    -------
+    n : int
+        Number of determinants added to wave function.
+
+    """
+    if wfn._obj.ndet != coeffs.shape[0]:
+        raise ValueError('dimensions of wfn, coeffs do not match')
+    elif wfn._obj.ndet == 0:
+        raise ValueError('wfn must contain at least one determinant')
+    elif wfn._obj.nbasis != ham._nbasis:
+        raise ValueError('dimensions of wfn, ham do not match')
+    return doci_run_hci_(wfn._obj, <double *>(&ham._v[0, 0]), <double *>(&coeffs[0]), eps)
+
+
+def doci_generate_rdms(double[:, ::1] d0 not None, double[:, ::1] d2 not None):
+    r"""
+    Generate full one- and two- particle RDMs from the :math:`D_0` and :math:`D_2` matrices.
+
+    Parameters
+    ----------
+    d0 : np.ndarray(c_double(nbasis, nbasis))
+        :math:`D_0` matrix.
+    d2 : np.ndarray(c_double(nbasis, nbasis))
+        :math:`D_2` matrix.
+
+    Returns
+    -------
+    rdm1 : np.ndarray(c_double(2 * nbasis, 2 * nbasis))
+        One-particle RDM.
+    rdm2 : np.ndarray(c_double(2 * nbasis, 2 * nbasis, 2 * nbasis, 2 * nbasis))
+        Two-particle RDM.
+
+    """
+    if not (d0.shape[0] == d0.shape[1] == d2.shape[0] == d2.shape[1]):
+        raise ValueError('dimensions of d0, d2 do not match')
+    cdef int_t nbasis = d0.shape[0]
+    cdef int_t nspin = nbasis * 2
+    cdef int_t p, q
+    cdef np.ndarray rdm1_array = np.zeros((nspin, nspin), dtype=c_double)
+    cdef np.ndarray rdm2_array = np.zeros((nspin, nspin, nspin, nspin), dtype=c_double)
+    cdef double[:, :] rdm1_a = rdm1_array[:nbasis, :nbasis]
+    cdef double[:, :] rdm1_b = rdm1_array[nbasis:, nbasis:]
+    cdef double[:, :, :, :] rdm2_abab = rdm2_array[:nbasis, nbasis:, :nbasis, nbasis:]
+    cdef double[:, :, :, :] rdm2_baba = rdm2_array[nbasis:, :nbasis, nbasis:, :nbasis]
+    cdef double[:, :, :, :] rdm2_aaaa = rdm2_array[:nbasis, :nbasis, :nbasis, :nbasis]
+    cdef double[:, :, :, :] rdm2_bbbb = rdm2_array[nbasis:, nbasis:, nbasis:, nbasis:]
+    for p in range(nbasis):
+        rdm1_a[p, p] += d0[p, p]
+        rdm1_b[p, p] += d0[p, p]
+        for q in range(nbasis):
+            rdm2_abab[p, p, q, q] += d0[p, q]
+            rdm2_baba[p, p, q, q] += d0[p, q]
+            rdm2_aaaa[p, q, p, q] += d2[p, q]
+            rdm2_bbbb[p, q, p, q] += d2[p, q]
+            rdm2_abab[p, q, p, q] += d2[p, q]
+            rdm2_baba[p, q, p, q] += d2[p, q]
+    rdm2_array -= np.transpose(rdm2_array, axes=(1, 0, 2, 3))
+    rdm2_array -= np.transpose(rdm2_array, axes=(0, 1, 3, 2))
+    rdm2_array *= 0.5
+    return rdm1_array, rdm2_array

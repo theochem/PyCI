@@ -13,52 +13,28 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-import sphinx_rtd_theme
+r"""
+PyCI DOCI module.
 
-import pyci
+"""
+
+import numpy as np
+
+from pyci.cext import doci_ham as ham
+from pyci.cext import doci_wfn as wfn
+from pyci.cext import sparse_op
+from pyci.cext import doci_compute_rdms as compute_rdms
+from pyci.cext import doci_compute_energy as compute_energy
+from pyci.cext import doci_run_hci as run_hci
+from pyci.cext import doci_generate_rdms as generate_rdms
 
 
-project = 'PyCI'
-
-
-copyright = '2019, Michael Richer'
-
-
-author = 'Michael Richer'
-
-
-release = pyci.__version__
-
-
-extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.mathjax',
+__all__ = [
+    'ham',
+    'wfn',
+    'sparse_op',
+    'compute_rdms',
+    'compute_energy',
+    'run_hci',
+    'generate_rdms',
     ]
-
-
-templates_path = [
-    '_templates',
-    ]
-
-
-exclude_patterns = [
-    ]
-
-
-html_theme = 'sphinx_rtd_theme'
-
-
-html_static_path = [
-    '_static',
-    ]
-
-
-mathjax_path = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js'
-
-
-mathjax_config = {
-    'extensions': ['tex2jax.js'],
-    'jax': ['input/TeX', 'output/HTML-CSS'],
-    }
