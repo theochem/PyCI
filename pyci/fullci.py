@@ -23,10 +23,6 @@ import numpy as np
 from pyci.cext import SpinLabel as _SpinLabel, SPIN_UP as _SPIN_UP, SPIN_DN as _SPIN_DN
 from pyci.cext import fullci_ham as ham
 from pyci.cext import fullci_wfn as wfn
-#from pyci.cext import fullci_solve_ci as solve_ci
-#from pyci.cext import fullci_compute_rdms as compute_rdms
-#from pyci.cext import fullci_compute_energy as compute_energy
-#from pyci.cext import fullci_run_hci as run_hci
 
 
 __all__ = [
@@ -35,10 +31,6 @@ __all__ = [
     'SPIN_DN',
     'ham',
     'wfn',
-    #'solve_ci',
-    #'compute_rdms',
-    #'compute_energy',
-    #'run_hci',
     ]
 
 

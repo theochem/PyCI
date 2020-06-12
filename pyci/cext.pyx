@@ -30,7 +30,7 @@ from pyci.common cimport nword_det, excite_det, setbit_det, clearbit_det, popcnt
 from pyci.common cimport phase_single_det, phase_double_det, rank_det
 from pyci.doci cimport DOCIWfn, doci_compute_rdms_, doci_compute_energy_, doci_run_hci_
 from pyci.fullci cimport FullCIWfn
-from pyci.solve cimport SparseOp#doci_solve_sparse_, doci_solve_direct_
+from pyci.solve cimport SparseOp
 
 from pyci import fcidump
 
@@ -48,7 +48,6 @@ __all__ = [
     'doci_wfn',
     'fullci_wfn',
     'sparse_op',
-    #'doci_solve_ci',
     'doci_compute_rdms',
     'doci_compute_energy',
     'doci_run_hci',
@@ -1804,6 +1803,15 @@ cdef class fullci_wfn(base_wfn):
 
 cdef class sparse_op:
     r"""
+    Sparse matrix operator class.
+
+    Attributes
+    ----------
+    shape : (int, int)
+        Shape of matrix operator.
+    ecore : float
+        Constant/"zero-electron" integral.
+
     """
     cdef SparseOp _obj
     cdef tuple _shape
@@ -1813,17 +1821,32 @@ cdef class sparse_op:
     @property
     def shape(self):
         r"""
+        Return the shape of the sparse matrix operator.
+
         """
         return self._shape
 
     @property
     def ecore(self):
         r"""
+        Return the constant/"zero-electron" integral.
+
         """
         return self._ecore
 
     def __init__(self, doci_ham ham not None, doci_wfn wfn not None, int_t nrow=-1):
         r"""
+        Initialize a sparse matrix operator instance.
+
+        Parameters
+        ----------
+        ham : doci_ham
+            DOCI Hamiltonian object.
+        wfn : doci_wfn
+            DOCI wave function object.
+        nrow : int, optional
+            Number of rows (<= number of determinants in wavefunction). Default is square matrix.
+
         """
         # check inputs
         if ham._nbasis != wfn._obj.nbasis:
@@ -1866,6 +1889,30 @@ cdef class sparse_op:
 
     def solve(self, int_t n=1, int_t ncv=20, double[::1] c0=None, int_t maxiter=-1, double tol=1.0e-6):
         r"""
+        Solve the CI problem for the energy/energies and coefficient vector(s).
+
+        Parameters
+        ----------
+        n : int, default=1
+            Number of lowest-energy solutions for which to solve.
+        ncv : int, default=20
+            Number of Lanczos vectors to use for eigensolver.
+            More is generally faster and more reliably convergent.
+        c0 : np.ndarray(c_double(len(wfn))), optional
+            Initial guess for lowest-energy coefficient vector.
+            If not provided, the default is [1, 0, 0, ..., 0, 0].
+        maxiter : int, default=1000*n
+            Maximum number of iterations for eigensolver to run.
+        tol : float, default=1.0e-6
+            Convergence tolerance for eigensolver.
+
+        Returns
+        -------
+        evals : np.ndarray(c_double(n))
+            Energies.
+        evecs : np.ndarray(c_double(n, len(wfn)))
+            Coefficient vectors.
+
         """
         if self._shape[0] != self._shape[1]:
             raise ValueError('cannot solve for a rectangular operator')
@@ -1894,78 +1941,6 @@ cdef class sparse_op:
                         <double *>(&evals[0]), <double *>(&evecs[0, 0]))
         evals_array += self._ecore
         return evals_array, evecs_array
-
-
-#def doci_solve_ci(doci_ham ham not None, doci_wfn wfn not None, int_t n=1, int_t ncv=20, double[::1] c0=None,
-#    int_t maxiter=-1, double tol=1.0e-6, object mode='sparse'):
-#    r"""
-#    Solve the CI problem for the energy/energies and coefficient vector(s).
-#
-#    Parameters
-#    ----------
-#    ham : doci_ham
-#        DOCI Hamiltonian object.
-#    wfn : doci_wfn
-#        DOCI wave function object.
-#    n : int, default=1
-#        Number of lowest-energy solutions for which to solve.
-#    ncv : int, default=20
-#        Number of Lanczos vectors to use for eigensolver.
-#        More is generally faster and more reliably convergent.
-#    c0 : np.ndarray(c_double(len(wfn))), optional
-#        Initial guess for lowest-energy coefficient vector.
-#        If not provided, the default is [1, 0, 0, ..., 0, 0].
-#    maxiter : int, default=1000*n
-#        Maximum number of iterations for eigensolver to run.
-#    tol : float, default=1.0e-6
-#        Convergence tolerance for eigensolver.
-#    mode : ('sparse' | 'direct'), default='sparse'
-#        Whether to use the sparse matrix or direct CI eigensolver.
-#        'direct' mode is much slower, but uses much less memory than 'sparse' mode.
-#
-#    Returns
-#    -------
-#    evals : np.ndarray(c_double(n))
-#        Energies.
-#    evecs : np.ndarray(c_double(n, len(wfn)))
-#        Coefficient vectors.
-#
-#    """
-#    # check inputs
-#    if ham._nbasis != wfn._obj.nbasis:
-#        raise ValueError('dimension of ham, wfn do not match')
-#    elif wfn._obj.ndet == 0:
-#        raise ValueError('wfn must contain at least one determinant')
-#    # handle ndet = 1 case
-#    if wfn._obj.ndet == 1:
-#        return (np.full(1, ham.elem_diag(wfn.occs_from_det(wfn[0])) + ham._ecore, dtype=c_double),
-#                np.ones((1, 1), dtype=c_double))
-#    # set number of lanczos vectors n < ncv <= len(c0)
-#    ncv = max(n + 1, min(ncv, wfn._obj.ndet))
-#    # default initial guess c = [1, 0, ..., 0]
-#    if c0 is None:
-#        c0 = np.zeros(wfn._obj.ndet, dtype=c_double)
-#        c0[0] = 1.0
-#    elif wfn._obj.ndet != c0.shape[0]:
-#        raise ValueError('dimension of wfn, c0 do not match')
-#    # default maxiter = 1000 * n
-#    if maxiter == -1:
-#        maxiter = 1000 * n
-#    # solve eigenproblem
-#    cdef np.ndarray evals_array = np.empty(n, dtype=c_double)
-#    cdef np.ndarray evecs_array = np.empty((n, wfn._obj.ndet), dtype=c_double)
-#    cdef double[:] evals = evals_array
-#    cdef double[:, :] evecs = evecs_array
-#    if mode == 'sparse':
-#        doci_solve_sparse_(wfn._obj, <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]), <double *>(&ham._w[0, 0]),
-#                           <double *>(&c0[0]), n, ncv, maxiter, tol, <double *>(&evals[0]), <double *>(&evecs[0, 0]))
-#    elif mode == 'direct':
-#        doci_solve_direct_(wfn._obj, <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]), <double *>(&ham._w[0, 0]),
-#                           <double *>(&c0[0]), n, ncv, maxiter, tol, <double *>(&evals[0]), <double *>(&evecs[0, 0]))
-#    else:
-#        raise ValueError('\'mode\' option must be either \'sparse\' or \'direct\'')
-#    evals_array += ham._ecore
-#    return evals_array, evecs_array
 
 
 def doci_compute_rdms(doci_wfn wfn not None, double[::1] coeffs not None):

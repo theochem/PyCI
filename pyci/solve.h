@@ -44,13 +44,4 @@ struct SparseOp {
 };
 
 
-/*
-void prepare_matvec_sparse(const DOCIWfn &, SparseOp &, const double *, const double *, const double *);
-
-
-void solve_sparse(const DOCIWfn &, const double *, const double *, const double *, const double *,
-    const int_t, const int_t, const int_t, const double, double *, double *);
-*/
-
-
 } // namespace pyci

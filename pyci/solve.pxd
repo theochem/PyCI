@@ -28,8 +28,6 @@ from pyci.fullci cimport FullCIWfn
 
 __all__ = [
     'SparseOp',
-    #'doci_solve_sparse_',
-    #'doci_solve_direct_',
     ]
 
 
@@ -51,11 +49,3 @@ cdef extern from 'pyci/solve.h' namespace 'pyci':
         int_t * indptr_ptr() except +
         void perform_op(const double *, double *)
         void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) except +
-    
-#    void doci_solve_sparse_ 'solve_sparse' (const DOCIWfn &, const double *, const double *,
-#        const double *, const double *, const int_t, const int_t, const int_t,
-#        const double, double *, double *) except +
-#
-#    void doci_solve_direct_ 'solve_direct' (const DOCIWfn &, const double *, const double *,
-#        const double *, const double *, const int_t, const int_t, const int_t,
-#        const double, double *, double *) except +
