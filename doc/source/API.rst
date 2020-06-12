@@ -33,6 +33,11 @@ Constants
 
 .. autodata:: pyci.fullci.SPIN_DN
 
+Miscellaneous functions
+-----------------------
+
+.. autodata:: pyci.comb
+
 DOCI Hamiltonian
 ----------------
 
@@ -49,10 +54,16 @@ DOCI wave function
 .. autoclass:: pyci.cext.doci_wfn
     :members:
 
+Variational solver
+------------------
+
+.. autoclass:: pyci.doci.sparse_op
+
+.. autoclass:: pyci.cext.sparse_op
+    :members:
+
 DOCI routines
 -------------
-
-.. autofunction:: pyci.doci.solve_ci
 
 .. autofunction:: pyci.doci.compute_rdms
 
