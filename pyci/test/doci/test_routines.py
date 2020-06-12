@@ -18,7 +18,9 @@ from nose.tools import assert_raises
 import numpy as np
 import numpy.testing as npt
 
-from pyci import doci, comb
+from pyci import doci
+from pyci.utils import comb
+
 from pyci.test import datafile
 
 

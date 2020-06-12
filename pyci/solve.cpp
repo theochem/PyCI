@@ -100,21 +100,6 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
 }
 
 
-double * SparseOp::data_ptr() {
-    return &data[0];
-}
-
-
-int_t * SparseOp::indices_ptr() {
-    return &indices[0];
-}
-
-
-int_t * SparseOp::indptr_ptr() {
-    return &indptr[0];
-}
-
-
 void SparseOp::perform_op(const double *x, double *y) const {
     int_t nthread = omp_get_max_threads();
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);

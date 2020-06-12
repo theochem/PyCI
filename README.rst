@@ -103,7 +103,6 @@ Full seniority-zero CI
     wfn.add_all_dets()
 
     # Solve CI problem and compute RDMs
-    evals, evecs = doci.solve_ci(ham, wfn, n=1)
     op = doci.sparse_op(ham, wfn)
     evals, evecs = op.solve(n=1)
     rdm0, rdm2 = doci.compute_rdms(wfn, evecs[0])

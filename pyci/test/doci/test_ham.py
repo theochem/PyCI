@@ -22,6 +22,7 @@ import numpy as np
 import numpy.testing as npt
 
 from pyci import doci
+
 from pyci.test import datafile
 
 

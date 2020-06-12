@@ -22,6 +22,8 @@ PyCI Cython header.
 
 from libc.stdint cimport int64_t, uint64_t
 
+from libcpp.vector cimport vector
+
 from pyci.doci cimport DOCIWfn
 from pyci.fullci cimport FullCIWfn
 
@@ -41,11 +43,11 @@ cdef extern from 'pyci/solve.h' namespace 'pyci':
 
     cdef cppclass SparseOp:
         int_t nrow, ncol
+        vector[double] data
+        vector[int_t] indices
+        vector[int_t] indptr
         SparseOp()
         SparseOp(const DOCIWfn &, const double *, const double *, const double *, const int_t) except +
         void init(const DOCIWfn &, const double *, const double *, const double *, const int_t) except +
-        double * data_ptr() except +
-        int_t * indices_ptr() except +
-        int_t * indptr_ptr() except +
         void perform_op(const double *, double *)
         void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) except +

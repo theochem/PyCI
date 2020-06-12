@@ -22,8 +22,12 @@ PyCI C extension module.
 
 from libc.stdint cimport int64_t, uint64_t
 
+from libcpp.vector cimport vector
+
 cimport numpy as np
 import numpy as np
+
+from scipy.sparse import csr_matrix
 
 from pyci.common cimport binomial, fill_det, fill_occs, fill_virs
 from pyci.common cimport nword_det, excite_det, setbit_det, clearbit_det, popcnt_det, ctz_det
@@ -1858,6 +1862,24 @@ cdef class sparse_op:
         self._shape = self._obj.nrow, self._obj.ncol
         self._ecore = ham._ecore
         self._ref_elem = ham.elem_diag(wfn.occs_from_det(wfn[0]))
+
+    def to_csr_matrix(self):
+        r"""
+        Convert the sparse matrix operator to a scipy.sparse.csr_matrix instance.
+
+        Returns
+        -------
+        mat : scipy.sparse.csr_matrix
+            CSR matrix instance.
+
+        """
+        cdef double *data_ptr = &self._obj.data[0]
+        cdef int_t *indices_ptr = &self._obj.indices[0]
+        cdef int_t *indptr_ptr = &self._obj.indptr[0]
+        cdef np.ndarray data = np.asarray(<double[:self._obj.data.size()]>data_ptr)
+        cdef np.ndarray indices = np.asarray(<int_t[:self._obj.indices.size()]>indices_ptr)
+        cdef np.ndarray indptr = np.asarray(<int_t[:self._obj.indptr.size()]>indptr_ptr)
+        return csr_matrix((data, indices, indptr), shape=self._shape, copy=True)
 
     def dot(self, double[::1] x not None, double[::1] out=None):
         r"""

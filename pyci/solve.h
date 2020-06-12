@@ -36,9 +36,6 @@ struct SparseOp {
     SparseOp();
     SparseOp(const DOCIWfn &, const double *, const double *, const double *, const int_t);
     void init(const DOCIWfn &, const double *, const double *, const double *, const int_t);
-    double * data_ptr();
-    int_t * indices_ptr();
-    int_t * indptr_ptr();
     void perform_op(const double *, double *) const;
     void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *);
 };
