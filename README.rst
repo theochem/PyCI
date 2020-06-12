@@ -33,6 +33,7 @@ The following programs/libraries are required to run PyCI:
 
 -  Python_ (≥3.x or ≥2.7)
 -  NumPy_ (≥1.13)
+-  SciPy_ (≥1.17)
 
 The following programs/libraries are required to build PyCI:
 
@@ -161,6 +162,7 @@ Excited states
 
 .. _Python:             http://python.org/
 .. _NumPy:              http://numpy.org/
+.. _SciPy:              http://docs.scipy.org/doc/scipy/reference/
 .. _Cython:             http://cython.org/
 .. _GCC:                http://gcc.gnu.org/
 .. _`Clang/LLVM`:       http://clang.llvm.org/
