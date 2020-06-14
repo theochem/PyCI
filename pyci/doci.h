@@ -25,9 +25,6 @@
 namespace pyci {
 
 
-struct DOCIWfn;
-
-
 struct DOCIWfn
 {
     typedef hashmap<int_t, int_t> hashmap_type;
