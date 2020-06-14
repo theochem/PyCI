@@ -46,8 +46,11 @@ cdef extern from 'pyci/solve.h' namespace 'pyci':
         vector[double] data
         vector[int_t] indices
         vector[int_t] indptr
+
         SparseOp()
         SparseOp(const DOCIWfn &, const double *, const double *, const double *, const int_t) except +
+
         void init(const DOCIWfn &, const double *, const double *, const double *, const int_t) except +
+
         void perform_op(const double *, double *)
         void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) except +

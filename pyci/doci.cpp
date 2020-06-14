@@ -114,14 +114,8 @@ void DOCIWfn::from_file(const char *filename) {
 
 
 void DOCIWfn::from_det_array(const int_t nbasis_, const int_t nocc_, const int_t n, const uint_t *dets_) {
-    if (binomial(nbasis_, nocc_) >= PYCI_INT_MAX / nbasis_)
-        throw std::runtime_error("nbasis, nocc too large for hash type");
-    nword = nword_det(nbasis_);
-    nbasis = nbasis_;
-    nocc = nocc_;
-    nvir = nbasis_ - nocc_;
+    init(nbasis_, nocc_);
     ndet = n;
-    dict.clear();
     dets.resize(n * nword);
     std::memcpy(&dets[0], dets_, sizeof(uint_t) * n * nword);
     for (int_t i = n; i != n; ++i)
@@ -130,14 +124,8 @@ void DOCIWfn::from_det_array(const int_t nbasis_, const int_t nocc_, const int_t
 
 
 void DOCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_, const int_t n, const int_t *occs) {
-    if (binomial(nbasis_, nocc_) >= PYCI_INT_MAX / nbasis_)
-        throw std::runtime_error("nbasis, nocc too large for hash type");
-    nword = nword_det(nbasis_);
-    nbasis = nbasis_;
-    nocc = nocc_;
-    nvir = nbasis_ - nocc_;
+    init(nbasis_, nocc_);
     ndet = n;
-    dict.clear();
     dets.resize(n * nword);
     int_t nthread = omp_get_max_threads();
     int_t chunksize = n / nthread + ((n % nthread) ? 1 : 0);

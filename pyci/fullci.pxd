@@ -22,6 +22,8 @@ PyCI Cython header.
 
 from libc.stdint cimport int64_t, uint64_t
 
+from libcpp.vector cimport vector
+
 
 __all__ = [
     'FullCIWfn',
@@ -37,18 +39,29 @@ ctypedef uint64_t uint_t
 cdef extern from 'pyci/fullci.h' namespace 'pyci':
 
     cdef cppclass FullCIWfn:
-        int_t nword, nbasis, nocc_up, nocc_dn, nvir_up, nvir_dn, ndet, maxdet_up, maxdet_dn
+        int_t nword, nword2, nbasis, nocc_up, nocc_dn, nvir_up, nvir_dn, ndet, maxdet_up, maxdet_dn
+        vector[uint_t] dets
+
         FullCIWfn()
         FullCIWfn(const int_t, const int_t, const int_t) except +
+        FullCIWfn(const FullCIWfn &) except +
         FullCIWfn(const char *) except +
+        FullCIWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *) except +
+
         void init(const int_t, const int_t, const int_t) except +
+        void from_fullciwfn(const FullCIWfn &) except +
         void from_file(const char *) except +
+        void from_det_array(const int_t, const int_t, const int_t, const int_t, const uint_t *) except +
+
         void to_file(const char *) except +
+
         int_t index_det(const uint_t *)
         void copy_det(const int_t, uint_t *)
+
         int_t add_det(const uint_t *) except +
         int_t add_det_from_occs(const int_t *, const int_t *) except +
         void add_all_dets() except +
         void add_excited_dets(const uint_t *, const int_t, const int_t) except +
+
         void reserve(const int_t) except +
         void squeeze()

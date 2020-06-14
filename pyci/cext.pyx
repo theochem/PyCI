@@ -1368,6 +1368,35 @@ cdef class fullci_wfn(base_wfn):
         wfn._obj.from_file(filename.encode())
         return wfn
 
+    @classmethod
+    def from_det_array(cls, int_t nbasis, int_t nocc_up, int_t nocc_dn, uint_t[:, :, ::1] det_array not None):
+        r"""
+        Return a fullci_wfn instance from an array of determinant bitstrings.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc_up : int
+            Number of occupied spin-up indices.
+        nocc_dn : int
+            Number of occupied spin-down indices.
+        det_array : np.ndarray(c_uint(n, 2, nword))
+            Array of determinants.
+
+        Returns
+        -------
+        wfn : fullci_wfn
+            FullCI wave function object.
+
+        """
+        cdef fullci_wfn wfn = cls(nbasis, nocc_up, nocc_dn)
+        if det_array.ndim != 3 or det_array.shape[1] != 2 or det_array.shape[2] != wfn.nword:
+            raise IndexError('nbasis, nocc_{up,dn} given do not match up with det_array dimensions')
+        wfn._obj.from_det_array(nbasis, nocc_up, nocc_dn, det_array.shape[0],
+                                <uint_t *>(&det_array[0, 0, 0]))
+        return wfn
+
     @property
     def nword(self):
         r"""
@@ -1487,6 +1516,20 @@ cdef class fullci_wfn(base_wfn):
             self._obj.copy_det(i, <uint_t *>(&det[0, 0]))
             yield det_array
 
+    def __copy__(self):
+        r"""
+        Copy a fullci_wfn instance.
+
+        Returns
+        -------
+        wfn : fullci_wfn
+            FullCI wave function object.
+
+        """
+        cdef fullci_wfn wfn = fullci_wfn(2, 1, 1)
+        wfn._obj.from_fullciwfn(self._obj)
+        return wfn
+
     def to_file(self, object filename not None):
         r"""
         Write a fullci_wfn instance to a FullCI file.
@@ -1498,6 +1541,51 @@ cdef class fullci_wfn(base_wfn):
 
         """
         self._obj.to_file(filename.encode())
+
+    def to_det_array(self, int_t start=-1, int_t end=-1):
+        r"""
+        Convert the determinant bitstrings to an array of words (bitstrings).
+
+        Parameters
+        ----------
+        start : int, optional
+            Works as in python built-in range function.
+        end : int, optional
+            Works as in python built-in range function.
+
+        Returns
+        -------
+        det_array : np.ndarray(c_uint(n, 2, nword))
+            Array of words (bitstrings).
+
+        """
+        # parse arguments (similar to python range())
+        if start == -1:
+            start = 0
+            if end == -1:
+                end = self._obj.ndet
+        elif end == -1:
+            end = start
+            start = 0
+        # check ranges
+        if self._obj.ndet == 0 or start < 0 or end < start or self._obj.ndet < end:
+            raise IndexError('\'start\', \'stop\' parameters out of range')
+        # copy det array
+        cdef uint_t *det_ptr = &self._obj.dets[start * self._obj.nword2]
+        cdef np.ndarray det_array = np.array(<uint_t[:(end - start), :2, :self._obj.nword]>det_ptr)
+        return det_array
+
+    def copy(self):
+        r"""
+        Copy a fullci_wfn instance.
+
+        Returns
+        -------
+        wfn : fullci_wfn
+            FullCI wave function object.
+
+        """
+        return self.__copy__()
 
     def index_det(self, uint_t[:, ::1] det not None):
         r"""

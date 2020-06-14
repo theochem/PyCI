@@ -57,14 +57,18 @@ cdef extern from 'pyci/doci.h' namespace 'pyci':
         void from_file(const char *) except +
         void from_det_array(const int_t, const int_t, const int_t, const uint_t *) except +
         void from_occs_array(const int_t, const int_t, const int_t, const int_t *) except +
+
         void to_file(const char *) except +
-        void to_occs_array(const int_t, const int_t, int_t *) except +
+        void to_occs_array(const int_t, const int_t, int_t *)
+
         int_t index_det(const uint_t *)
         int_t copy_det(const int_t, uint_t *)
+
         int_t add_det(const uint_t *) except +
         int_t add_det_from_occs(const int_t *) except +
         int_t add_all_dets() except +
         int_t add_excited_dets(const uint_t *, const int_t) except +
+
         void reserve(const int_t) except +
         void squeeze()
 
