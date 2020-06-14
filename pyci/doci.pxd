@@ -22,6 +22,8 @@ PyCI Cython header.
 
 from libc.stdint cimport int64_t, uint64_t
 
+from libcpp.vector cimport vector
+
 
 __all__ = [
     'DOCIWfn',
@@ -41,12 +43,22 @@ cdef extern from 'pyci/doci.h' namespace 'pyci':
 
     cdef cppclass DOCIWfn:
         int_t nword, nbasis, nocc, nvir, ndet
+        vector[uint_t] dets
+
         DOCIWfn()
         DOCIWfn(const int_t, const int_t) except +
+        DOCIWfn(const DOCIWfn &) except +
         DOCIWfn(const char *) except +
+        DOCIWfn(const int_t, const int_t, const int_t, const uint_t *) except +
+        DOCIWfn(const int_t, const int_t, const int_t, const int_t *) except +
+
         void init(const int_t, const int_t) except +
+        void from_dociwfn(const DOCIWfn &) except +
         void from_file(const char *) except +
+        void from_det_array(const int_t, const int_t, const int_t, const uint_t *) except +
+        void from_occs_array(const int_t, const int_t, const int_t, const int_t *) except +
         void to_file(const char *) except +
+        void to_occs_array(const int_t, const int_t, int_t *) except +
         int_t index_det(const uint_t *)
         int_t copy_det(const int_t, uint_t *)
         int_t add_det(const uint_t *) except +

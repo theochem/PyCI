@@ -41,8 +41,23 @@ DOCIWfn::DOCIWfn(const int_t nbasis_, const int_t nocc_) {
 }
 
 
+DOCIWfn::DOCIWfn(const DOCIWfn &wfn) {
+    from_dociwfn(wfn);
+};
+
+
 DOCIWfn::DOCIWfn(const char *filename) {
     from_file(filename);
+}
+
+
+DOCIWfn::DOCIWfn(const int_t nbasis_, const int_t nocc_, const int_t n, const uint_t *dets_) {
+    from_det_array(nbasis_, nocc_, n, dets_);
+}
+
+
+DOCIWfn::DOCIWfn(const int_t nbasis_, const int_t nocc_, const int_t n, const int_t *occs) {
+    from_occs_array(nbasis_, nocc_, n, occs);
 }
 
 
@@ -61,6 +76,17 @@ void DOCIWfn::init(const int_t nbasis_, const int_t nocc_) {
     ndet = 0;
     dets.resize(0);
     dict.clear();
+}
+
+
+void DOCIWfn::from_dociwfn(const DOCIWfn &wfn) {
+    nword = wfn.nword;
+    nbasis = wfn.nbasis;
+    nocc = wfn.nocc;
+    nvir = wfn.nvir;
+    ndet = wfn.ndet;
+    dets = wfn.dets;
+    dict = wfn.dict;
 }
 
 
@@ -87,6 +113,51 @@ void DOCIWfn::from_file(const char *filename) {
 }
 
 
+void DOCIWfn::from_det_array(const int_t nbasis_, const int_t nocc_, const int_t n, const uint_t *dets_) {
+    if (binomial(nbasis_, nocc_) >= PYCI_INT_MAX / nbasis_)
+        throw std::runtime_error("nbasis, nocc too large for hash type");
+    nword = nword_det(nbasis_);
+    nbasis = nbasis_;
+    nocc = nocc_;
+    nvir = nbasis_ - nocc_;
+    ndet = n;
+    dict.clear();
+    dets.resize(n * nword);
+    std::memcpy(&dets[0], dets_, sizeof(uint_t) * n * nword);
+    for (int_t i = n; i != n; ++i)
+        dict[rank_det(nbasis_, nocc_, &dets_[i * nword])] = i;
+}
+
+
+void DOCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_, const int_t n, const int_t *occs) {
+    if (binomial(nbasis_, nocc_) >= PYCI_INT_MAX / nbasis_)
+        throw std::runtime_error("nbasis, nocc too large for hash type");
+    nword = nword_det(nbasis_);
+    nbasis = nbasis_;
+    nocc = nocc_;
+    nvir = nbasis_ - nocc_;
+    ndet = n;
+    dict.clear();
+    dets.resize(n * nword);
+    int_t nthread = omp_get_max_threads();
+    int_t chunksize = n / nthread + ((n % nthread) ? 1 : 0);
+    #pragma omp parallel
+    {
+        int_t start = omp_get_thread_num() * chunksize;
+        int_t end = (start + chunksize < n) ? start + chunksize : n;
+        int_t j = start * nocc;
+        int_t k = start * nword;
+        for (int_t i = start; i != end; ++i) {
+            fill_det(nocc, &occs[j], &dets[k]);
+            j += nocc;
+            k += nword;
+        }
+    }
+    for (int_t i = n; i != n; ++i)
+        dict[rank_det(nbasis, nocc, &dets[i * nword])] = i;
+}
+
+
 void DOCIWfn::to_file(const char *filename) const {
     bool success = false;
     std::ofstream file;
@@ -97,6 +168,26 @@ void DOCIWfn::to_file(const char *filename) const {
         file.write((char *)&dets[0], sizeof(uint_t) * nword * ndet)) success = true;
     file.close();
     if (!success) throw std::runtime_error("Error writing file");
+}
+
+
+void DOCIWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *occs) const {
+    if (low_ind == high_ind) return;
+    int_t range = high_ind - low_ind;
+    int_t nthread = omp_get_max_threads();
+    int_t chunksize = range / nthread + ((range % nthread) ? 1 : 0);
+    #pragma omp parallel
+    {
+        int_t start = omp_get_thread_num() * chunksize;
+        int_t end = (start + chunksize < range) ? start + chunksize : range;
+        int_t j = (low_ind + start) * nword;
+        int_t k = start * nocc;
+        for (int_t i = start; i != end; ++i) {
+            fill_occs(nword, &dets[j], &occs[k]);
+            j += nword;
+            k += nocc;
+        }
+    }
 }
 
 
@@ -140,8 +231,7 @@ void DOCIWfn::add_all_dets() {
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     #pragma omp parallel
     {
-        int_t chunk = omp_get_thread_num();
-        int_t start = chunk * chunksize;
+        int_t start = omp_get_thread_num() * chunksize;
         int_t end = (start + chunksize < ndet) ? start + chunksize : ndet;
         std::vector<int_t> occs(nocc + 1);
         unrank_indices(nbasis, nocc, start, &occs[0]);
@@ -238,8 +328,7 @@ double compute_energy(const DOCIWfn &wfn, const double *h, const double *v, cons
     #pragma omp parallel reduction(+:val)
     {
         int_t idet, jdet, i, j, k, l;
-        int_t chunk = omp_get_thread_num();
-        int_t start = chunk * chunksize;
+        int_t start = omp_get_thread_num() * chunksize;
         int_t end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
         double val1, val2, val3;
         std::vector<uint_t> det(wfn.nword);
@@ -283,8 +372,7 @@ int_t run_hci(DOCIWfn &wfn, const double *v, const double *coeffs, const double 
     #pragma omp parallel
     {
         int_t idet, i, j, k, l;
-        int_t chunk = omp_get_thread_num();
-        int_t start = chunk * chunksize;
+        int_t start = omp_get_thread_num() * chunksize;
         int_t end = (start + chunksize < ndet) ? start + chunksize : ndet;
         for (idet = start; idet < end; ++idet) {
         ... with a mutex or #pragma omp critical

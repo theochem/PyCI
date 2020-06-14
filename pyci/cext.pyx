@@ -716,6 +716,58 @@ cdef class doci_wfn(base_wfn):
         wfn._obj.from_file(filename.encode())
         return wfn
 
+    @classmethod
+    def from_det_array(cls, int_t nbasis, int_t nocc, uint_t[:, ::1] det_array not None):
+        r"""
+        Return a doci_wfn instance from an array of determinant bitstrings.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+        det_array : np.ndarray(c_uint(n, nword))
+            Array of determinants.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        cdef doci_wfn wfn = cls(nbasis, nocc)
+        if det_array.ndim != 2 or det_array.shape[1] != wfn.nword:
+            raise IndexError('nbasis, nocc given do not match up with det_array dimensions')
+        wfn._obj.from_det_array(nbasis, nocc, det_array.shape[0], <uint_t *>(&det_array[0, 0]))
+        return wfn
+
+    @classmethod
+    def from_occs_array(cls, int_t nbasis, int_t nocc, int_t[:, ::1] occs_array not None):
+        r"""
+        Return a doci_wfn instance from an array of occupied indices.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+        occs_array : np.ndarray(c_int(n, nword))
+            Array of occupied indices.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        cdef doci_wfn wfn = cls(nbasis, nocc)
+        if occs_array.ndim != 2 or occs_array.shape[1] != wfn.nocc:
+            raise IndexError('nbasis, nocc given do not match up with occs_array dimensions')
+        wfn._obj.from_occs_array(nbasis, nocc, occs_array.shape[0], <int_t *>(&occs_array[0, 0]))
+        return wfn
+
     @property
     def nword(self):
         r"""
@@ -817,6 +869,20 @@ cdef class doci_wfn(base_wfn):
             self._obj.copy_det(i, <uint_t *>(&det[0]))
             yield det_array
 
+    def __copy__(self):
+        r"""
+        Copy a doci_wfn instance.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        cdef doci_wfn wfn = doci_wfn(2, 1)
+        wfn._obj.from_dociwfn(self._obj)
+        return wfn
+
     def to_file(self, object filename not None):
         r"""
         Write a doci_wfn instance to a DOCI file.
@@ -828,6 +894,85 @@ cdef class doci_wfn(base_wfn):
 
         """
         self._obj.to_file(filename.encode())
+
+    def to_det_array(self, int_t start=-1, int_t end=-1):
+        r"""
+        Convert the determinant bitstrings to an array of words (bitstrings).
+
+        Parameters
+        ----------
+        start : int, optional
+            Works as in python built-in range function.
+        end : int, optional
+            Works as in python built-in range function.
+
+        Returns
+        -------
+        det_array : np.ndarray(c_uint(n, nword))
+            Array of words (bitstrings).
+
+        """
+        # parse arguments (similar to python range())
+        if start == -1:
+            start = 0
+            if end == -1:
+                end = self._obj.ndet
+        elif end == -1:
+            end = start
+            start = 0
+        # check ranges
+        if self._obj.ndet == 0 or start < 0 or end < start or self._obj.ndet < end:
+            raise IndexError('\'start\', \'stop\' parameters out of range')
+        # copy det array
+        cdef uint_t *det_ptr = &self._obj.dets[start * self._obj.nword]
+        cdef np.ndarray det_array = np.array(<uint_t[:(end - start), :self._obj.nword]>det_ptr)
+        return det_array
+
+    def to_occs_array(self, int_t start=-1, int_t end=-1):
+        r"""
+        Convert the determinant bitstrings to an array of integers (occupied indices).
+
+        Parameters
+        ----------
+        start : int, optional
+            Works as in python built-in range function.
+        end : int, optional
+            Works as in python built-in range function.
+
+        Returns
+        -------
+        occs_array : np.ndarray(c_int(n, nocc))
+            Array of occupied indices.
+
+        """
+        # parse arguments (similar to python range())
+        if start == -1:
+            start = 0
+            if end == -1:
+                end = self._obj.ndet
+        elif end == -1:
+            end = start
+            start = 0
+        # check ranges
+        if self._obj.ndet == 0 or start < 0 or end < start or self._obj.ndet < end:
+            raise IndexError('\'start\', \'stop\' parameters out of range')
+        # compute occs array
+        cdef np.ndarray occs_array = np.empty((end - start, self._obj.nocc), dtype=c_int)
+        cdef int_t[:, ::1] occs = occs_array
+        self._obj.to_occs_array(start, end, <int_t *>(&occs[0, 0]))
+        return occs_array
+
+    def copy(self):
+        r"""
+        Copy a doci_wfn instance.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        return self.__copy__()
 
     def index_det(self, uint_t[::1] det not None):
         r"""

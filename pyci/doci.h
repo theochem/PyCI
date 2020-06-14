@@ -25,6 +25,9 @@
 namespace pyci {
 
 
+struct DOCIWfn;
+
+
 struct DOCIWfn
 {
     typedef hashmap<int_t, int_t> hashmap_type;
@@ -35,12 +38,19 @@ struct DOCIWfn
 
     DOCIWfn();
     DOCIWfn(const int_t, const int_t);
+    DOCIWfn(const DOCIWfn &);
     DOCIWfn(const char *);
+    DOCIWfn(const int_t, const int_t, const int_t, const uint_t *);
+    DOCIWfn(const int_t, const int_t, const int_t, const int_t *);
     ~DOCIWfn();
 
     void init(const int_t, const int_t);
+    void from_dociwfn(const DOCIWfn &);
     void from_file(const char *);
+    void from_det_array(const int_t, const int_t, const int_t, const uint_t *);
+    void from_occs_array(const int_t, const int_t, const int_t, const int_t *);
     void to_file(const char *) const;
+    void to_occs_array(const int_t, const int_t, int_t *) const;
     int_t index_det(const uint_t *) const;
     void copy_det(const int_t, uint_t *) const;
     int_t add_det(const uint_t *);
