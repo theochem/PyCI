@@ -18,8 +18,10 @@ from nose.tools import assert_raises
 import numpy as np
 import numpy.testing as npt
 
+from scipy.special import comb
+
 from pyci import doci
-from pyci.utils import comb
+from pyci import sparse_op
 
 from pyci.test import datafile
 
@@ -49,26 +51,26 @@ class TestRoutines:
         nocc, energy = self.CASES['h2o_ccpvdz']
         ham = doci.ham.from_file(datafile('h2o_ccpvdz.fcidump'))
         wfn = doci.wfn(ham.nbasis, nocc)
-        wfn.reserve(comb(wfn.nbasis, wfn.nocc))
+        wfn.reserve(comb(wfn.nbasis, wfn.nocc, exact=True))
         wfn.add_hartreefock_det()
-        op = doci.sparse_op(ham, wfn)
+        op = sparse_op(ham, wfn)
         es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
         dets_added = 1
         niter = 0
         while dets_added:
             dets_added = doci.run_hci(ham, wfn, cs[0], eps=1.0e-5)
-            op = doci.sparse_op(ham, wfn)
+            op = sparse_op(ham, wfn)
             es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
             niter += 1
         assert niter > 1
-        assert len(wfn) < comb(wfn.nbasis, wfn.nocc)
+        assert len(wfn) < comb(wfn.nbasis, wfn.nocc, exact=True)
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-6)
         dets_added = 1
         while dets_added:
             dets_added = doci.run_hci(ham, wfn, cs[0], eps=0.0)
-            op = doci.sparse_op(ham, wfn)
+            op = sparse_op(ham, wfn)
             es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
-        assert len(wfn) == comb(wfn.nbasis, wfn.nocc)
+        assert len(wfn) == comb(wfn.nbasis, wfn.nocc, exact=True)
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
     def run_solve_ci_sparse(self, filename):
@@ -76,7 +78,7 @@ class TestRoutines:
         ham = doci.ham.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = doci.wfn(ham.nbasis, nocc)
         wfn.add_all_dets()
-        op = doci.sparse_op(ham, wfn)
+        op = sparse_op(ham, wfn)
         es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
@@ -85,7 +87,7 @@ class TestRoutines:
         ham = doci.ham.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = doci.wfn(ham.nbasis, nocc)
         wfn.add_all_dets()
-        op = doci.sparse_op(ham, wfn)
+        op = sparse_op(ham, wfn)
         es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
         d0, d2 = doci.compute_rdms(wfn, cs[0])
         npt.assert_allclose(np.trace(d0), wfn.nocc, rtol=0, atol=1.0e-9)
@@ -110,6 +112,6 @@ class TestRoutines:
         ham = doci.ham.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = doci.wfn(ham.nbasis, nocc)
         wfn.add_all_dets()
-        op = doci.sparse_op(ham, wfn)
+        op = sparse_op(ham, wfn)
         es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
         npt.assert_allclose(doci.compute_energy(ham, wfn, cs[0]), energy, rtol=0.0, atol=1.0e-9)

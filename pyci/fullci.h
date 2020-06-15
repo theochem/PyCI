@@ -39,20 +39,23 @@ struct FullCIWfn
     FullCIWfn(const FullCIWfn &);
     FullCIWfn(const char *);
     FullCIWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *);
+    FullCIWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
     ~FullCIWfn();
 
     void init(const int_t, const int_t, const int_t);
     void from_fullciwfn(const FullCIWfn &);
     void from_file(const char *);
     void from_det_array(const int_t, const int_t, const int_t, const int_t, const uint_t *);
+    void from_occs_array(const int_t, const int_t, const int_t, const int_t, const int_t *);
 
     void to_file(const char *) const;
+    void to_occs_array(const int_t, const int_t, int_t *) const;
 
     int_t index_det(const uint_t *) const;
     void copy_det(const int_t, uint_t *) const;
 
     int_t add_det(const uint_t *);
-    int_t add_det_from_occs(const int_t *, const int_t *);
+    int_t add_det_from_occs(const int_t *);
     void add_all_dets();
     void add_excited_dets(const uint_t *, const int_t, const int_t);
 

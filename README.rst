@@ -95,6 +95,7 @@ Full seniority-zero CI
 .. code:: python
 
     from pyci import doci
+    from pyci import sparse_op
 
     # Load Hamiltonian from FCIDUMP file
     ham = doci.ham.from_file('Ne.FCIDUMP')
@@ -104,7 +105,7 @@ Full seniority-zero CI
     wfn.add_all_dets()
 
     # Solve CI problem and compute RDMs
-    op = doci.sparse_op(ham, wfn)
+    op = sparse_op(ham, wfn)
     evals, evecs = op.solve(n=1)
     rdm0, rdm2 = doci.compute_rdms(wfn, evecs[0])
 
@@ -118,7 +119,7 @@ CI pairs singles and doubles
     wfn.add_excited_dets(0, 1, 2)
 
     # Solve CI problem and compute RDMs
-    op = doci.sparse_op(ham, wfn)
+    op = sparse_op(ham, wfn)
     evals, evecs = op.solve(n=1)
     rdm0, rdm2 = doci.compute_rdms(wfn, evecs[0])
 
@@ -132,7 +133,7 @@ Seniority-zero Heat-Bath CI
     wfn.add_hartreefock_det()
 
     # Solve initial CI problem
-    op = doci.sparse_op(ham, wfn)
+    op = sparse_op(ham, wfn)
     evals, evecs = op.solve(n=1)
 
     # Run HCI iterations at epsilon=1.0e-5 until no more determinants are added
@@ -140,7 +141,7 @@ Seniority-zero Heat-Bath CI
     dets_added = 1
     while dets_added:
         dets_added = doci.run_hci(ham, wfn, evecs[0], epsilon)
-        op = doci.sparse_op(ham, wfn)
+        op = sparse_op(ham, wfn)
         evals, evecs = op.solve(n=1)
 
     # Compute RDMs
@@ -152,7 +153,7 @@ Excited states
 .. code:: python
 
     # Solve CI problem for three lowest-energy states
-    op = doci.sparse_op(ham, wfn)
+    op = sparse_op(ham, wfn)
     evals, evecs = op.solve(n=3)
 
     # Compute RDMs of ground state and first two excited states

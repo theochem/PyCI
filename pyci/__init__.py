@@ -21,6 +21,7 @@ PyCI module.
 import numpy as np
 
 from pyci.cext import _get_version
+from pyci.cext import sparse_op
 
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     'c_int',
     'c_uint',
     'c_double',
+    'sparse_op',
     ]
 
 

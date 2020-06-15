@@ -44,7 +44,6 @@ __all__ = [
     'SPIN_UP',
     'SPIN_DN',
     '_get_version',
-    'comb',
     'base_ham',
     'doci_ham',
     'fullci_ham',
@@ -90,28 +89,6 @@ def _get_version():
 
     """
     return PYCI_VERSION
-
-
-def comb(int_t n, int_t k):
-    r"""
-    Compute the binomial coefficient :math:`{n}\choose{k}`.
-
-    Parameters
-    ----------
-    n : int
-        :math:`n`.
-    k : int
-        :math:`k`.
-
-    Returns
-    -------
-    nck : int
-        :math:`{n}\choose{k}`.
-
-    """
-    if n < 0 or k < 0:
-        raise ValueError('n and k must be non-negative integers')
-    return binomial(n, k)
 
 
 cdef class base_ham:
@@ -957,7 +934,7 @@ cdef class doci_wfn(base_wfn):
         if self._obj.ndet == 0 or start < 0 or end < start or self._obj.ndet < end:
             raise IndexError('\'start\', \'stop\' parameters out of range')
         # compute occs array
-        cdef np.ndarray occs_array = np.empty((end - start, self._obj.nocc), dtype=c_int)
+        cdef np.ndarray occs_array = np.zeros((end - start, self._obj.nocc), dtype=c_int)
         cdef int_t[:, ::1] occs = occs_array
         self._obj.to_occs_array(start, end, <int_t *>(&occs[0, 0]))
         return occs_array
@@ -1391,10 +1368,39 @@ cdef class fullci_wfn(base_wfn):
 
         """
         cdef fullci_wfn wfn = cls(nbasis, nocc_up, nocc_dn)
-        if det_array.ndim != 3 or det_array.shape[1] != 2 or det_array.shape[2] != wfn.nword:
+        if det_array.ndim != 3 or det_array.shape[1] != 2 or det_array.shape[2] != wfn._obj.nword:
             raise IndexError('nbasis, nocc_{up,dn} given do not match up with det_array dimensions')
         wfn._obj.from_det_array(nbasis, nocc_up, nocc_dn, det_array.shape[0],
                                 <uint_t *>(&det_array[0, 0, 0]))
+        return wfn
+
+    @classmethod
+    def from_occs_array(cls, int_t nbasis, int_t nocc_up, int_t nocc_dn, int_t[:, :, ::1] occs_array not None):
+        r"""
+        Return a fullci_wfn instance from an array of occupied indices.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc_up : int
+            Number of occupied spin-up indices.
+        nocc_dn : int
+            Number of occupied spin-down indices.
+        occs_array : np.ndarray(c_uint(n, 2, nocc_up))
+            Array of occupied indices.
+
+        Returns
+        -------
+        wfn : fullci_wfn
+            FullCI wave function object.
+
+        """
+        cdef fullci_wfn wfn = cls(nbasis, nocc_up, nocc_dn)
+        if occs_array.ndim != 3 or occs_array.shape[1] != 2 or occs_array.shape[2] != nocc_up:
+            raise IndexError('nbasis, nocc_{up,dn} given do not match up with det_array dimensions')
+        wfn._obj.from_occs_array(nbasis, nocc_up, nocc_dn, occs_array.shape[0],
+                                 <int_t *>(&occs_array[0, 0, 0]))
         return wfn
 
     @property
@@ -1575,6 +1581,40 @@ cdef class fullci_wfn(base_wfn):
         cdef np.ndarray det_array = np.array(<uint_t[:(end - start), :2, :self._obj.nword]>det_ptr)
         return det_array
 
+    def to_occs_array(self, int_t start=-1, int_t end=-1):
+        r"""
+        Convert the determinant bitstrings to an array of occupied indices (integers).
+
+        Parameters
+        ----------
+        start : int, optional
+            Works as in python built-in range function.
+        end : int, optional
+            Works as in python built-in range function.
+
+        Returns
+        -------
+        occs_array : np.ndarray(c_uint(n, 2, nocc_up))
+            Array of occupied indices (integers).
+
+        """
+        # parse arguments (similar to python range())
+        if start == -1:
+            start = 0
+            if end == -1:
+                end = self._obj.ndet
+        elif end == -1:
+            end = start
+            start = 0
+        # check ranges
+        if self._obj.ndet == 0 or start < 0 or end < start or self._obj.ndet < end:
+            raise IndexError('\'start\', \'stop\' parameters out of range')
+        # compute occs array
+        cdef np.ndarray occs_array = np.empty((end - start, 2, self._obj.nocc_up), dtype=c_int)
+        cdef int_t[:, :, ::1] occs = occs_array
+        self._obj.to_occs_array(start, end, <int_t *>(&occs[0, 0, 0]))
+        return occs_array
+
     def copy(self):
         r"""
         Copy a fullci_wfn instance.
@@ -1621,16 +1661,14 @@ cdef class fullci_wfn(base_wfn):
         """
         return self._obj.add_det(<uint_t *>(&det[0, 0]))
 
-    def add_det_from_occs(self, int_t[::1] occs_up not None, int_t[::1] occs_dn not None):
+    def add_det_from_occs(self, int_t[:, ::1] occs not None):
         r"""
         Add a determinant to the wavefunction from an array of occupied indices.
 
         Parameters
         ----------
-        occs_up : np.ndarray(c_int(nocc_up))
-            Indices of occupied spin-up electrons in determinant.
-        occs_up : np.ndarray(c_int(nocc_dn))
-            Indices of occupied spin-down electrons in determinant.
+        occs : np.ndarray(c_int(2, nocc_up))
+            Indices of occupied spin-up and spin-down electrons in determinant.
 
         Returns
         -------
@@ -1638,15 +1676,17 @@ cdef class fullci_wfn(base_wfn):
             Index of determinant, or -1 if addition fails.
 
         """
-        return self._obj.add_det_from_occs(<int_t *>(&occs_up[0]), <int_t *>(&occs_dn[0]))
+        return self._obj.add_det_from_occs(<int_t *>(&occs[0, 0]))
 
     def add_hartreefock_det(self):
         r"""
         Add the Hartree-Fock determinant to the wave function.
 
         """
-        self.add_det_from_occs(np.arange(self._obj.nocc_up, dtype=c_int),
-                               np.arange(self._obj.nocc_dn, dtype=c_int))
+        cdef int_t[:, :] occs = np.zeros((2, self._obj.nocc_up), dtype=c_int)
+        occs[0, :self._obj.nocc_up] = np.arange(self._obj.nocc_up, dtype=c_int)
+        occs[1, :self._obj.nocc_dn] = np.arange(self._obj.nocc_dn, dtype=c_int)
+        self._obj.add_det_from_occs(<int_t *>(&occs[0, 0]))
 
     def add_all_dets(self):
         r"""
@@ -1719,16 +1759,14 @@ cdef class fullci_wfn(base_wfn):
         """
         self._obj.squeeze()
 
-    def det_from_occs(self, int_t[::1] occs_up not None, int_t[::1] occs_dn not None):
+    def det_from_occs(self, int_t[:, ::1] occs not None):
         r"""
         Convert an array of occupied indices to a determinant.
 
         Parameters
         ----------
-        occs_up : np.ndarray(c_int(nocc_up))
-            Indices of spin-up occupied electrons in determinant.
-        occs_dn : np.ndarray(c_int(nocc_dn))
-            Indices of spin-dn occupied electrons in determinant.
+        occs : np.ndarray(c_int(2, nocc_up))
+            Indices of occupied spin-up and spin-down electrons in determinant.
 
         Returns
         -------
@@ -1738,8 +1776,8 @@ cdef class fullci_wfn(base_wfn):
         """
         cdef np.ndarray det_array = np.zeros((2, self._obj.nword), dtype=c_uint)
         cdef uint_t[:, :] det = det_array
-        fill_det(self._obj.nocc_up, <int_t *>(&occs_up[0]), <uint_t *>(&det[0, 0]))
-        fill_det(self._obj.nocc_dn, <int_t *>(&occs_dn[0]), <uint_t *>(&det[1, 0]))
+        fill_det(self._obj.nocc_up, <int_t *>(&occs[0, 0]), <uint_t *>(&det[0, 0]))
+        fill_det(self._obj.nocc_dn, <int_t *>(&occs[1, 0]), <uint_t *>(&det[1, 0]))
         return det_array
 
     def occs_from_det(self, uint_t[:, ::1] det not None):
@@ -1753,19 +1791,15 @@ cdef class fullci_wfn(base_wfn):
 
         Returns
         -------
-        occs_up : np.ndarray(c_int(nocc_up))
-            Indices of spin-up occupied electrons in determinant.
-        occs_dn : np.ndarray(c_int(nocc_dn))
-            Indices of spin-down occupied electrons in determinant.
+        occs : np.ndarray(c_int(2, nocc_up))
+            Indices of occupied spin-up and spin-down electrons in determinant.
 
         """
-        cdef np.ndarray occs_up_array = np.empty(self._obj.nocc_up, dtype=c_int)
-        cdef np.ndarray occs_dn_array = np.empty(self._obj.nocc_dn, dtype=c_int)
-        cdef int_t[:] occs_up = occs_up_array
-        cdef int_t[:] occs_dn = occs_dn_array
-        fill_occs(self._obj.nword, <uint_t *>(&det[0, 0]), <int_t *>(&occs_up[0]))
-        fill_occs(self._obj.nword, <uint_t *>(&det[1, 0]), <int_t *>(&occs_dn[0]))
-        return occs_up_array, occs_dn_array
+        cdef np.ndarray occs_array = np.zeros((2, self._obj.nocc_up), dtype=c_int)
+        cdef int_t[:, :] occs = occs_array
+        fill_occs(self._obj.nword, <uint_t *>(&det[0, 0]), <int_t *>(&occs[0, 0]))
+        fill_occs(self._obj.nword, <uint_t *>(&det[1, 0]), <int_t *>(&occs[1, 0]))
+        return occs_array
 
     def virs_from_det(self, uint_t[:, ::1] det not None):
         r"""
@@ -1778,19 +1812,15 @@ cdef class fullci_wfn(base_wfn):
 
         Returns
         -------
-        virs_up : np.ndarray(c_int(2, nvir_up))
-            Spin-up indices without occupied electrons in determinant.
-        virs_dn : np.ndarray(c_int(2, nvir_dn))
-            Spin-down indices without occupied electrons in determinant.
+        virs : np.ndarray(c_int(2, nvir_dn))
+            Spin-up and spin-down indices without occupied electrons in determinant.
 
         """
-        cdef np.ndarray virs_up_array = np.empty((2, self._obj.nvir_up), dtype=c_int)
-        cdef np.ndarray virs_dn_array = np.empty((2, self._obj.nvir_dn), dtype=c_int)
-        cdef int_t[:] virs_up = virs_up_array
-        cdef int_t[:] virs_dn = virs_dn_array
-        fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[0, 0]), <int_t *>(&virs_up[0]))
-        fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[1, 0]), <int_t *>(&virs_dn[0]))
-        return virs_up_array, virs_dn_array
+        cdef np.ndarray virs_array = np.zeros((2, self._obj.nvir_dn), dtype=c_int)
+        cdef int_t[:, :] virs = virs_array
+        fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[0, 0]), <int_t *>(&virs[0, 0]))
+        fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[1, 0]), <int_t *>(&virs[1, 0]))
+        return virs_array
 
     def excite_det(self, int_t i, int_t a, uint_t[:, ::1] det not None, SpinLabel spin):
         r"""

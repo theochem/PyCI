@@ -21,8 +21,9 @@ from nose.tools import assert_raises
 import numpy as np
 import numpy.testing as npt
 
+from scipy.special import comb
+
 from pyci import doci
-from pyci.utils import comb
 
 from pyci.test import datafile
 
@@ -99,16 +100,16 @@ class TestDOCIWfn:
         wfn.add_all_dets()
         for det in wfn:
             assert wfn.popcnt_det(det) == wfn.nocc
-        assert len(wfn) == comb(wfn.nbasis, wfn.nocc)
+        assert len(wfn) == comb(wfn.nbasis, wfn.nocc, exact=True)
 
     def run_add_excited_dets(self, nbasis, nocc):
         wfn = doci.wfn(nbasis, nocc)
-        wfn.reserve(comb(wfn.nbasis, wfn.nocc))
+        wfn.reserve(comb(wfn.nbasis, wfn.nocc, exact=True))
         assert_raises(ValueError, wfn.add_excited_dets, -1)
         assert_raises(ValueError, wfn.add_excited_dets, 100)
         length = 0
         for i in range(wfn.nocc + 1):
-            length += comb(wfn.nocc, i) * comb(wfn.nvir, i)
+            length += comb(wfn.nocc, i, exact=True) * comb(wfn.nvir, i, exact=True)
             wfn.add_excited_dets(i)
             assert len(wfn) == length
-        assert len(wfn) == comb(wfn.nbasis, wfn.nocc)
+        assert len(wfn) == comb(wfn.nbasis, wfn.nocc, exact=True)

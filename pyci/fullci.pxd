@@ -47,19 +47,22 @@ cdef extern from 'pyci/fullci.h' namespace 'pyci':
         FullCIWfn(const FullCIWfn &) except +
         FullCIWfn(const char *) except +
         FullCIWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *) except +
+        FullCIWfn(const int_t, const int_t, const int_t, const int_t, const int_t *) except +
 
         void init(const int_t, const int_t, const int_t) except +
         void from_fullciwfn(const FullCIWfn &) except +
         void from_file(const char *) except +
         void from_det_array(const int_t, const int_t, const int_t, const int_t, const uint_t *) except +
+        void from_occs_array(const int_t, const int_t, const int_t, const int_t, const int_t *) except +
 
         void to_file(const char *) except +
+        void to_occs_array(const int_t, const int_t, int_t *) except +
 
         int_t index_det(const uint_t *)
         void copy_det(const int_t, uint_t *)
 
         int_t add_det(const uint_t *) except +
-        int_t add_det_from_occs(const int_t *, const int_t *) except +
+        int_t add_det_from_occs(const int_t *) except +
         void add_all_dets() except +
         void add_excited_dets(const uint_t *, const int_t, const int_t) except +
 

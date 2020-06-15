@@ -22,7 +22,6 @@ import numpy as np
 
 from pyci.cext import doci_ham as ham
 from pyci.cext import doci_wfn as wfn
-from pyci.cext import sparse_op
 from pyci.cext import doci_compute_rdms as compute_rdms
 from pyci.cext import doci_compute_energy as compute_energy
 from pyci.cext import doci_run_hci as run_hci
@@ -32,7 +31,6 @@ from pyci.cext import doci_generate_rdms as generate_rdms
 __all__ = [
     'ham',
     'wfn',
-    'sparse_op',
     'compute_rdms',
     'compute_energy',
     'run_hci',

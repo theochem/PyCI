@@ -54,9 +54,15 @@ FullCIWfn::FullCIWfn(const char *filename) {
 }
 
 
-FullCIWfn::FullCIWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_,
-    const int_t n, const uint_t *dets_) {
+FullCIWfn::FullCIWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_, const int_t n,
+    const uint_t *dets_) {
     from_det_array(nbasis_, nocc_up_, nocc_dn_, n, dets_);
+}
+
+
+FullCIWfn::FullCIWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_, const int_t n,
+    const int_t *occs) {
+    from_occs_array(nbasis_, nocc_up_, nocc_dn_, n, occs);
 }
 
 
@@ -155,6 +161,37 @@ void FullCIWfn::from_det_array(const int_t nbasis_, const int_t nocc_up_, const 
 }
 
 
+void FullCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_,
+    const int_t n, const int_t *occs) {
+    init(nbasis_, nocc_up_, nocc_dn_);
+    ndet = n;
+    dets.resize(n * nword2);
+    int_t nthread = omp_get_max_threads();
+    int_t chunksize = n / nthread + ((n % nthread) ? 1 : 0);
+    #pragma omp parallel
+    {
+        int_t start = omp_get_thread_num() * chunksize;
+        int_t end = (start + chunksize < n) ? start + chunksize : n;
+        int_t j = start * nocc_up * 2;
+        int_t k = start * nword2;
+        for (int_t i = start; i != end; ++i) {
+            fill_det(nocc_up, &occs[j], &dets[k]);
+            j += nocc_up;
+            k += nword;
+            fill_det(nocc_dn, &occs[j], &dets[k]);
+            j += nocc_up;
+            k += nword;
+        }
+    }
+    int_t j = 0;
+    for (int_t i = 0; i < n; ++i) {
+        dict[rank_det(nbasis_, nocc_up_, &dets[j]) * maxdet_dn
+           + rank_det(nbasis_, nocc_dn_, &dets[j + nword])] = i;
+        j += nword2;
+    }
+}
+
+
 void FullCIWfn::to_file(const char *filename) const {
     bool success = false;
     std::ofstream file;
@@ -166,6 +203,29 @@ void FullCIWfn::to_file(const char *filename) const {
         file.write((char *)&dets[0], sizeof(uint_t) * nword2 * ndet)) success = true;
     file.close();
     if (!success) throw std::runtime_error("Error writing file");
+}
+
+
+void FullCIWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *occs) const {
+    if (low_ind == high_ind) return;
+    int_t range = high_ind - low_ind;
+    int_t nthread = omp_get_max_threads();
+    int_t chunksize = range / nthread + ((range % nthread) ? 1 : 0);
+    #pragma omp parallel
+    {
+        int_t start = omp_get_thread_num() * chunksize;
+        int_t end = (start + chunksize < range) ? start + chunksize : range;
+        int_t j = (low_ind + start) * nword2;
+        int_t k = start * nocc_up * 2;
+        for (int_t i = start; i != end; ++i) {
+            fill_occs(nword, &dets[j], &occs[k]);
+            j += nword;
+            k += nocc_up;
+            fill_occs(nword, &dets[j], &occs[k]);
+            j += nword;
+            k += nocc_up;
+        }
+    }
 }
 
 
@@ -194,10 +254,10 @@ int_t FullCIWfn::add_det(const uint_t *det) {
 }
 
 
-int_t FullCIWfn::add_det_from_occs(const int_t *occs_up, const int_t *occs_dn) {
+int_t FullCIWfn::add_det_from_occs(const int_t *occs) {
     std::vector<uint_t> det(nword2);
-    fill_det(nocc_up, occs_up, &det[0]);
-    fill_det(nocc_dn, occs_dn, &det[nword]);
+    fill_det(nocc_up, &occs[0], &det[0]);
+    fill_det(nocc_dn, &occs[nocc_up], &det[nword]);
     return add_det(&det[0]);
 }
 
