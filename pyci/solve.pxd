@@ -49,8 +49,11 @@ cdef extern from 'pyci/solve.h' namespace 'pyci':
 
         SparseOp()
         SparseOp(const DOCIWfn &, const double *, const double *, const double *, const int_t) except +
-
-        void init(const DOCIWfn &, const double *, const double *, const double *, const int_t) except +
+        SparseOp(const FullCIWfn &, const double *, const double *, const int_t) except +
 
         void perform_op(const double *, double *)
         void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) except +
+
+        void init(const DOCIWfn &, const double *, const double *, const double *, const int_t) except +
+        void init(const FullCIWfn &, const double *, const double *, const int_t) except +
+

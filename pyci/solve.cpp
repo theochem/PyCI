@@ -41,6 +41,48 @@ SparseOp::SparseOp(const DOCIWfn &wfn, const double *h, const double *v, const d
 }
 
 
+SparseOp::SparseOp(const FullCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+    init(wfn, one_mo, two_mo, nrow_);
+}
+
+
+void SparseOp::perform_op(const double *x, double *y) const {
+    int_t nthread = omp_get_max_threads();
+    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
+    #pragma omp parallel
+    {
+        int_t i, j;
+        int_t chunk = omp_get_thread_num();
+        int_t istart = chunk * chunksize;
+        int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
+        int_t jstart, jend = indptr[istart];
+        double val;
+        for (i = istart; i < iend; ++i) {
+            jstart = jend;
+            jend = indptr[i + 1];
+            val = 0.0;
+            for (j = jstart; j < jend; ++j)
+                val += data[j] * x[indices[j]];
+            y[i] = val;
+        }
+    }
+}
+
+
+void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit, const double tol,
+    double *evals, double *evecs) {
+    Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE, SparseOp> eigs(this, n, ncv);
+    eigs.init(coeffs);
+    eigs.compute(maxit, tol, Spectra::SMALLEST_ALGE);
+    if (eigs.info() != Spectra::SUCCESSFUL)
+        throw std::runtime_error("Did not converge");
+    Eigen::Map<Eigen::VectorXd> eigenvalues(evals, n);
+    Eigen::Map<Eigen::MatrixXd> eigenvectors(evecs, ncol, n);
+    eigenvalues = eigs.eigenvalues();
+    eigenvectors = eigs.eigenvectors();
+}
+
+
 void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const double *w, const int_t nrow_) {
     int_t idet, jdet, i, j, k, l;
     double val1, val2;
@@ -100,40 +142,65 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
 }
 
 
-void SparseOp::perform_op(const double *x, double *y) const {
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-    #pragma omp parallel
-    {
-        int_t i, j;
-        int_t chunk = omp_get_thread_num();
-        int_t istart = chunk * chunksize;
-        int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-        int_t jstart, jend = indptr[istart];
-        double val;
-        for (i = istart; i < iend; ++i) {
-            jstart = jend;
-            jend = indptr[i + 1];
-            val = 0.0;
-            for (j = jstart; j < jend; ++j)
-                val += data[j] * x[indices[j]];
-            y[i] = val;
+void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+    int_t idet, jdet, i, j, k, l;
+    // set nrow <= ncol (value <1 defaults to nrow = ncol = wfn.ndet)
+    nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
+    ncol = wfn.ndet;
+    // prepare sparse matrix
+    data.resize(0);
+    indices.resize(0);
+    indptr.resize(0);
+    data.reserve(ncol + 1);
+    indices.reserve(ncol + 1);
+    indptr.reserve(nrow + 1);
+    indptr.push_back(0);
+    // compute elements
+    for (idet = 0; idet < nrow; ++idet) {
+        //
+        // 0-0 excitation elements
+        //
+        for (i = 0; i < wfn.nocc_up; ++i) {
+            for (j = 0; j < wfn.nvir_up; ++j) {
+                //
+                // 1-0 excitation elements
+                //
+                for (k = i + 1; k < wfn.nocc_up; ++k) {
+                    for (l = j + 1; l < wfn.nvir_up; ++l) {
+                        //
+                        // 2-0 excitation elements
+                        //
+                    }
+                }
+                for (k = 0; k < wfn.nocc_dn; ++k) {
+                    for (l = 0; j < wfn.nvir_dn; ++j) {
+                        //
+                        // 1-1 excitation elements
+                        //
+                    }
+                }
+            }
         }
+        for (i = 0; i < wfn.nocc_dn; ++i) {
+            for (j = 0; j < wfn.nvir_dn; ++j) {
+                //
+                // 0-1 excitation elements
+                //
+                for (k = i + 1; k < wfn.nocc_dn; ++k) {
+                    for (l = j + 1; l < wfn.nvir_dn; ++l) {
+                        //
+                        // 0-2 excitation elements
+                        //
+                    }
+                }
+            }
+        }
+        // add pointer to next row's indices
+        indptr.push_back(indices.size());
     }
-}
-
-
-void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit, const double tol,
-    double *evals, double *evecs) {
-    Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE, SparseOp> eigs(this, n, ncv);
-    eigs.init(coeffs);
-    eigs.compute(maxit, tol, Spectra::SMALLEST_ALGE);
-    if (eigs.info() != Spectra::SUCCESSFUL)
-        throw std::runtime_error("Did not converge");
-    Eigen::Map<Eigen::VectorXd> eigenvalues(evals, n);
-    Eigen::Map<Eigen::MatrixXd> eigenvectors(evecs, ncol, n);
-    eigenvalues = eigs.eigenvalues();
-    eigenvectors = eigs.eigenvectors();
+    data.shrink_to_fit();
+    indices.shrink_to_fit();
+    indptr.shrink_to_fit();
 }
 
 

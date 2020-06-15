@@ -26,18 +26,23 @@ namespace pyci {
 
 
 struct SparseOp {
-    int_t nrow;
-    int_t ncol;
+    int_t nrow, ncol;
     std::vector<double> data;
     std::vector<int_t> indices;
     std::vector<int_t> indptr;
+
     inline int_t rows() const { return nrow; }
     inline int_t cols() const { return ncol; }
+
     SparseOp();
     SparseOp(const DOCIWfn &, const double *, const double *, const double *, const int_t);
-    void init(const DOCIWfn &, const double *, const double *, const double *, const int_t);
+    SparseOp(const FullCIWfn &, const double *, const double *, const int_t);
+
     void perform_op(const double *, double *) const;
     void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *);
+
+    void init(const DOCIWfn &, const double *, const double *, const double *, const int_t);
+    void init(const FullCIWfn &, const double *, const double *, const int_t);
 };
 
 

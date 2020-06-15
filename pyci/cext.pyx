@@ -2109,29 +2109,52 @@ cdef class sparse_op:
         """
         return self._ecore
 
-    def __init__(self, doci_ham ham not None, doci_wfn wfn not None, int_t nrow=-1):
+    def __init__(self, object ham not None, object wfn not None, int_t nrow=-1):
         r"""
         Initialize a sparse matrix operator instance.
 
         Parameters
         ----------
-        ham : doci_ham
-            DOCI Hamiltonian object.
-        wfn : doci_wfn
-            DOCI wave function object.
+        ham : (doci_ham | fullci_ham)
+            Hamiltonian object.
+        wfn : (doci_wfn | fullci_wfn)
+            Wave function object.
         nrow : int, optional
             Number of rows (<= number of determinants in wavefunction). Default is square matrix.
 
         """
         # check inputs
-        if ham._nbasis != wfn._obj.nbasis:
+        if ham.nbasis != wfn.nbasis:
             raise ValueError('dimension of ham, wfn do not match')
-        elif wfn._obj.ndet == 0:
+        elif len(wfn) == 0:
             raise ValueError('wfn must contain at least one determinant')
         # intialize object
-        self._obj.init(wfn._obj, &ham._h[0], &ham._v[0, 0], &ham._w[0, 0], nrow)
-        self._shape = self._obj.nrow, self._obj.ncol
-        self._ecore = ham._ecore
+        cdef double[:] h
+        cdef double[:, :] v, w
+        cdef double[:, :, :, :] x
+        if isinstance(ham, doci_ham) and isinstance(wfn, doci_wfn):
+            h = ham.h
+            v = ham.v
+            w = ham.w
+            self._obj.init(
+                (<doci_wfn>wfn)._obj,
+                <double *>(&h[0]),
+                <double *>(&v[0, 0]),
+                <double *>(&w[0, 0]),
+                nrow)
+        elif isinstance(ham, fullci_ham) and isinstance(wfn, fullci_wfn):
+            w = ham.one_mo
+            x = ham.two_mo
+            self._obj.init(
+                (<fullci_wfn>wfn)._obj,
+                <double *>(&w[0, 0]),
+                <double *>(&x[0, 0, 0, 0]),
+                nrow,
+                )
+        else:
+            raise TypeError('wfn and ham types do not match')
+        self._shape = <object>(self._obj.nrow), <object>(self._obj.ncol)
+        self._ecore = ham.ecore
         self._ref_elem = ham.elem_diag(wfn.occs_from_det(wfn[0]))
 
     def to_csr_matrix(self):
