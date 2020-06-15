@@ -317,6 +317,11 @@ void FullCIWfn::add_all_dets() {
 
 
 void FullCIWfn::add_excited_dets(const uint_t *rdet, const int_t e_up, const int_t e_dn) {
+    // handle trivial case
+    if ((e_up == 0) && (e_dn == 0)) {
+        add_det(rdet);
+        return;
+    }
     // make spin-up and spin-down parts
     DOCIWfn wfn_up(nbasis, nocc_up);
     DOCIWfn wfn_dn(nbasis, nocc_dn);

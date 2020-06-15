@@ -23,8 +23,7 @@ import numpy.testing as npt
 
 from scipy.special import comb
 
-from pyci import doci
-
+from pyci import doci, sparse_op
 from pyci.test import datafile
 
 

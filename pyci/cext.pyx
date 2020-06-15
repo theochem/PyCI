@@ -1610,7 +1610,7 @@ cdef class fullci_wfn(base_wfn):
         if self._obj.ndet == 0 or start < 0 or end < start or self._obj.ndet < end:
             raise IndexError('\'start\', \'stop\' parameters out of range')
         # compute occs array
-        cdef np.ndarray occs_array = np.empty((end - start, 2, self._obj.nocc_up), dtype=c_int)
+        cdef np.ndarray occs_array = np.zeros((end - start, 2, self._obj.nocc_up), dtype=c_int)
         cdef int_t[:, :, ::1] occs = occs_array
         self._obj.to_occs_array(start, end, <int_t *>(&occs[0, 0, 0]))
         return occs_array
@@ -1683,10 +1683,10 @@ cdef class fullci_wfn(base_wfn):
         Add the Hartree-Fock determinant to the wave function.
 
         """
-        cdef int_t[:, :] occs = np.zeros((2, self._obj.nocc_up), dtype=c_int)
+        cdef np.ndarray occs = np.zeros((2, self._obj.nocc_up), dtype=c_int)
         occs[0, :self._obj.nocc_up] = np.arange(self._obj.nocc_up, dtype=c_int)
         occs[1, :self._obj.nocc_dn] = np.arange(self._obj.nocc_dn, dtype=c_int)
-        self._obj.add_det_from_occs(<int_t *>(&occs[0, 0]))
+        self.add_det_from_occs(occs)
 
     def add_all_dets(self):
         r"""
@@ -1708,7 +1708,9 @@ cdef class fullci_wfn(base_wfn):
 
         """
         # check excitation levels
-        cdef int_t emax = min(self._obj.nocc_up + self._obj.nocc_dn, self._obj.nvir_up + self._obj.nvir_dn)
+        cdef int_t nocc = self._obj.nocc_up + self._obj.nocc_dn
+        cdef int_t nvir = self._obj.nvir_up + self._obj.nvir_dn
+        cdef int_t emax = min(nocc, nvir)
         cdef int_t emax_up = min(self._obj.nocc_up, self._obj.nvir_up)
         cdef int_t emax_dn = min(self._obj.nocc_dn, self._obj.nvir_dn)
         cdef int_t ndet = 0, i, nexc, e, a, b
@@ -1726,9 +1728,12 @@ cdef class fullci_wfn(base_wfn):
                 a -= 1
                 b += 1
         # default determinant is hartree-fock determinant
+        cdef np.ndarray occs
         if det is None:
-            det = self.det_from_occs(np.arange(self._obj.nocc_up, dtype=c_int),
-                                     np.arange(self._obj.nocc_dn, dtype=c_int))
+            occs = np.zeros((2, self._obj.nocc_up), dtype=c_int)
+            occs[0, :self._obj.nocc_up] = np.arange(self._obj.nocc_up, dtype=c_int)
+            occs[1, :self._obj.nocc_dn] = np.arange(self._obj.nocc_dn, dtype=c_int)
+            det = self.det_from_occs(occs)
         # reserve space for determinants
         self._obj.reserve(ndet)
         # add determinants
@@ -1736,7 +1741,10 @@ cdef class fullci_wfn(base_wfn):
             e = excv[i]
             a = min(e, self._obj.nocc_up, self._obj.nvir_up)
             b = e - a
-            self._obj.add_excited_dets(&det[0, 0], a, b)
+            while (a >= 0) and (b <= emax_dn):
+                self._obj.add_excited_dets(&det[0, 0], a, b)
+                a -= 1
+                b += 1
 
     def reserve(self, int_t n):
         r"""
