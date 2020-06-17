@@ -59,6 +59,7 @@ cdef extern from 'pyci/fullci.h' namespace 'pyci':
         void to_occs_array(const int_t, const int_t, int_t *) except +
 
         int_t index_det(const uint_t *)
+        int_t index_det_from_rank(const int_t rank)
         void copy_det(const int_t, uint_t *)
 
         int_t add_det(const uint_t *) except +

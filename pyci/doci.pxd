@@ -27,9 +27,6 @@ from libcpp.vector cimport vector
 
 __all__ = [
     'DOCIWfn',
-    'doci_compute_rdms_',
-    'doci_compute_energy_',
-    'doci_run_hci_',
     ]
 
 
@@ -72,9 +69,8 @@ cdef extern from 'pyci/doci.h' namespace 'pyci':
         void reserve(const int_t) except +
         void squeeze()
 
-    void doci_compute_rdms_ 'compute_rdms' (const DOCIWfn &, const double *, double *, double *) except +
+        void compute_rdms(const double *, double *, double *) except +
 
-    double doci_compute_energy_ 'compute_energy' (const DOCIWfn &, const double *, const double *,
-        const double *, const double *) except +
+        double compute_energy(const double *, const double *, const double *, const double *) except +
 
-    int_t doci_run_hci_ 'run_hci' (DOCIWfn &, const double *, const double *, const double) except +
+        int_t run_hci(const double *, const double *, const double) except +

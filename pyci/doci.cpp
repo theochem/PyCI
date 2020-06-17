@@ -133,16 +133,16 @@ void DOCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_, const int_
     {
         int_t start = omp_get_thread_num() * chunksize;
         int_t end = (start + chunksize < n) ? start + chunksize : n;
-        int_t j = start * nocc;
+        int_t j = start * nocc_;
         int_t k = start * nword;
         for (int_t i = start; i < end; ++i) {
-            fill_det(nocc, &occs[j], &dets[k]);
-            j += nocc;
+            fill_det(nocc_, &occs[j], &dets[k]);
+            j += nocc_;
             k += nword;
         }
     }
     for (int_t i = n; i != n; ++i)
-        dict[rank_det(nbasis, nocc, &dets[i * nword])] = i;
+        dict[rank_det(nbasis_, nocc_, &dets[i * nword])] = i;
 }
 
 
@@ -271,37 +271,37 @@ void DOCIWfn::squeeze() {
 }
 
 
-void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2) {
+void DOCIWfn::compute_rdms(const double *coeffs, double *d0, double *d2) const {
     int_t idet, jdet, i, j, k, l;
     double val1, val2;
-    std::vector<uint_t> det(wfn.nword);
-    std::vector<int_t> occs(wfn.nocc);
-    std::vector<int_t> virs(wfn.nvir);
-    for (idet = 0; idet < wfn.ndet; ++idet) {
-        wfn.copy_det(idet, &det[0]);
-        fill_occs(wfn.nword, &det[0], &occs[0]);
-        fill_virs(wfn.nword, wfn.nbasis, &det[0], &virs[0]);
+    std::vector<uint_t> det(nword);
+    std::vector<int_t> occs(nocc);
+    std::vector<int_t> virs(nvir);
+    for (idet = 0; idet < ndet; ++idet) {
+        copy_det(idet, &det[0]);
+        fill_occs(nword, &det[0], &occs[0]);
+        fill_virs(nword, nbasis, &det[0], &virs[0]);
         // diagonal elements
         val1 = coeffs[idet] * coeffs[idet];
-        for (i = 0; i < wfn.nocc; ++i) {
+        for (i = 0; i < nocc; ++i) {
             k = occs[i];
-            d0[k * (wfn.nbasis + 1)] += val1;
-            for (j = i + 1; j < wfn.nocc; ++j) {
+            d0[k * (nbasis + 1)] += val1;
+            for (j = i + 1; j < nocc; ++j) {
                 l = occs[j];
-                d2[wfn.nbasis * k + l] += val1;
-                d2[wfn.nbasis * l + k] += val1;
+                d2[nbasis * k + l] += val1;
+                d2[nbasis * l + k] += val1;
             }
             // pair excitation elements
-            for (j = 0; j < wfn.nvir; ++j) {
+            for (j = 0; j < nvir; ++j) {
                 l = virs[j];
                 excite_det(k, l, &det[0]);
-                jdet = wfn.index_det(&det[0]);
-                wfn.copy_det(idet, &det[0]);
+                jdet = index_det(&det[0]);
+                copy_det(idet, &det[0]);
                 // check if excited determinant is in wfn
                 if (jdet > idet) {
                     val2 = coeffs[idet] * coeffs[jdet];
-                    d0[wfn.nbasis * k + l] += val2;
-                    d0[wfn.nbasis * l + k] += val2;
+                    d0[nbasis * k + l] += val2;
+                    d0[nbasis * l + k] += val2;
                 }
             }
         }
@@ -309,41 +309,42 @@ void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *
 }
 
 
-double compute_energy(const DOCIWfn &wfn, const double *h, const double *v, const double *w, const double *coeffs) {
+double DOCIWfn::compute_energy(const double *h, const double *v, const double *w,
+    const double *coeffs) const {
     int_t nthread = omp_get_max_threads();
-    int_t chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
+    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     double val = 0.0;
     #pragma omp parallel reduction(+:val)
     {
         int_t idet, jdet, i, j, k, l;
         int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
+        int_t end = (start + chunksize < ndet) ? start + chunksize : ndet;
         double val1, val2, val3;
-        std::vector<uint_t> det(wfn.nword);
-        std::vector<int_t> occs(wfn.nocc);
-        std::vector<int_t> virs(wfn.nvir);
+        std::vector<uint_t> det(nword);
+        std::vector<int_t> occs(nocc);
+        std::vector<int_t> virs(nvir);
         for (idet = start; idet < end; ++idet) {
-            wfn.copy_det(idet, &det[0]);
-            fill_occs(wfn.nword, &det[0], &occs[0]);
-            fill_virs(wfn.nword, wfn.nbasis, &det[0], &virs[0]);
+            copy_det(idet, &det[0]);
+            fill_occs(nword, &det[0], &occs[0]);
+            fill_virs(nword, nbasis, &det[0], &virs[0]);
             val1 = 0.0;
             val2 = 0.0;
             val3 = 0.0;
             // diagonal elements
-            for (i = 0; i < wfn.nocc; ++i) {
+            for (i = 0; i < nocc; ++i) {
                 k = occs[i];
-                val1 += v[k * (wfn.nbasis + 1)];
+                val1 += v[k * (nbasis + 1)];
                 val2 += h[k];
-                for (j = i + 1; j < wfn.nocc; ++j)
-                    val2 += w[k * wfn.nbasis + occs[j]];
+                for (j = i + 1; j < nocc; ++j)
+                    val2 += w[k * nbasis + occs[j]];
                 // pair excitation elements
-                for (j = 0; j < wfn.nvir; ++j) {
+                for (j = 0; j < nvir; ++j) {
                     l = virs[j];
                     excite_det(k, l, &det[0]);
-                    jdet = wfn.index_det(&det[0]);
-                    wfn.copy_det(idet, &det[0]);
+                    jdet = index_det(&det[0]);
+                    copy_det(idet, &det[0]);
                     // check if excited determinant is in wfn
-                    if (jdet != -1) val3 += v[k * wfn.nbasis + l] * coeffs[jdet];
+                    if (jdet != -1) val3 += v[k * nbasis + l] * coeffs[jdet];
                 }
             }
             val += ((val1 + val2 * 2) * coeffs[idet] + val3) * coeffs[idet];
@@ -353,9 +354,9 @@ double compute_energy(const DOCIWfn &wfn, const double *h, const double *v, cons
 }
 
 
-int_t run_hci(DOCIWfn &wfn, const double *v, const double *coeffs, const double eps) {
+int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) {
     /*
-    int_t ndet = wfn.ndet, nthread = omp_get_max_threads();
+    int_t nthread = omp_get_max_threads();
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     #pragma omp parallel
     {
@@ -366,28 +367,28 @@ int_t run_hci(DOCIWfn &wfn, const double *v, const double *coeffs, const double 
         ... with a mutex or #pragma omp critical
     }
     */
-    int_t ndet = wfn.ndet, idet, i, j, k, l;
-    std::vector<uint_t> det(wfn.nword);
-    std::vector<int_t> occs(wfn.nocc);
-    std::vector<int_t> virs(wfn.nvir);
-    for (idet = 0; idet < ndet; ++idet) {
-        wfn.copy_det(idet, &det[0]);
-        fill_occs(wfn.nword, &det[0], &occs[0]);
-        fill_virs(wfn.nword, wfn.nbasis, &det[0], &virs[0]);
+    int_t ndet_old = ndet, idet, i, j, k, l;
+    std::vector<uint_t> det(nword);
+    std::vector<int_t> occs(nocc);
+    std::vector<int_t> virs(nvir);
+    for (idet = 0; idet < ndet_old; ++idet) {
+        copy_det(idet, &det[0]);
+        fill_occs(nword, &det[0], &occs[0]);
+        fill_virs(nword, nbasis, &det[0], &virs[0]);
         // pair excitation elements
-        for (i = 0; i < wfn.nocc; ++i) {
+        for (i = 0; i < nocc; ++i) {
             k = occs[i];
-            for (j = 0; j < wfn.nvir; ++j) {
+            for (j = 0; j < nvir; ++j) {
                 l = virs[j];
                 excite_det(k, l, &det[0]);
                 // add determinant if |H*c| > eps
-                if (std::abs(v[k * wfn.nbasis + l] * coeffs[idet]) > eps)
-                    wfn.add_det(&det[0]);
-                wfn.copy_det(idet, &det[0]);
+                if (std::abs(v[k * nbasis + l] * coeffs[idet]) > eps)
+                    add_det(&det[0]);
+                copy_det(idet, &det[0]);
             }
         }
     }
-    return wfn.ndet - ndet;
+    return ndet - ndet_old;
 }
 
 

@@ -172,14 +172,14 @@ void FullCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_up_, const
     {
         int_t start = omp_get_thread_num() * chunksize;
         int_t end = (start + chunksize < n) ? start + chunksize : n;
-        int_t j = start * nocc_up * 2;
+        int_t j = start * nocc_up_ * 2;
         int_t k = start * nword2;
         for (int_t i = start; i < end; ++i) {
-            fill_det(nocc_up, &occs[j], &dets[k]);
-            j += nocc_up;
+            fill_det(nocc_up_, &occs[j], &dets[k]);
+            j += nocc_up_;
             k += nword;
-            fill_det(nocc_dn, &occs[j], &dets[k]);
-            j += nocc_up;
+            fill_det(nocc_dn_, &occs[j], &dets[k]);
+            j += nocc_up_;
             k += nword;
         }
     }
@@ -233,6 +233,12 @@ int_t FullCIWfn::index_det(const uint_t *det) const {
     FullCIWfn::hashmap_type::const_iterator search = dict.find(
         rank_det(nbasis, nocc_up, &det[0]) * maxdet_dn + rank_det(nbasis, nocc_dn, &det[nword])
     );
+    return (search == dict.end()) ? -1 : search->second;
+}
+
+
+int_t FullCIWfn::index_det_from_rank(const int_t rank) const {
+    FullCIWfn::hashmap_type::const_iterator search = dict.find(rank);
     return (search == dict.end()) ? -1 : search->second;
 }
 

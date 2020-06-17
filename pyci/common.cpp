@@ -14,7 +14,6 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdexcept>
-#include <vector>
 
 #include <pyci/common.h>
 
@@ -141,7 +140,7 @@ void clearbit_det(const int_t i, uint_t *det) {
 
 int_t phase_single_det(const int_t nword, const int_t i, const int_t a, const uint_t *det) {
     int_t j, k, l, m, n, high, low, nperm = 0;
-    std::vector<uint_t> mask(nword);
+    uint_t mask[8] = {PYCI_UINT_ZERO};
     if (i > a) {
         high = i;
         low = a;
@@ -159,14 +158,14 @@ int_t phase_single_det(const int_t nword, const int_t i, const int_t a, const ui
     mask[j] &= ~(PYCI_UINT_ONE << (n + 1)) + 1;
     for (l = j; l <= k; ++l)
         nperm += PYCI_POPCNT(det[l] & mask[l]);
-    return (nperm % 1) ? -1 : 1;
+    return (nperm % 2) ? -1 : 1;
 }
 
 
 int_t phase_double_det(const int_t nword, const int_t i1, const int_t i2, const int_t a1, const int_t a2,
     const uint_t *det) {
     int_t j, k, l, m, n, high, low, nperm = 0;
-    std::vector<uint_t> mask(nword);
+    uint_t mask[8] = {PYCI_UINT_ZERO};
     // first excitation
     if (i1 > a1) {
         high = i1;

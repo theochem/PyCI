@@ -17,8 +17,8 @@
 PyCI API Documentation
 ======================
 
-NumPy dtypes
-------------
+Constants
+---------
 
 .. autodata:: pyci.c_int
 
@@ -26,63 +26,22 @@ NumPy dtypes
 
 .. autodata:: pyci.c_double
 
-Constants
----------
 
-.. autodata:: pyci.fullci.SPIN_UP
+.. autodata:: pyci.SPIN_UP
 
-.. autodata:: pyci.fullci.SPIN_DN
+.. autodata:: pyci.SPIN_DN
 
-DOCI Hamiltonian
-----------------
+Classes
+-------
 
-.. autoclass:: pyci.doci.ham
-
-.. autoclass:: pyci.cext.doci_ham
+.. autoclass:: pyci.hamiltonian
     :members:
 
-DOCI wave function
-------------------
-
-.. autoclass:: pyci.doci.wfn
-
-.. autoclass:: pyci.cext.doci_wfn
+.. autoclass:: pyci.doci_wfn
     :members:
 
-DOCI routines
--------------
-
-.. autofunction:: pyci.doci.compute_rdms
-
-.. autofunction:: pyci.doci.generate_rdms
-
-.. autofunction:: pyci.doci.compute_energy
-
-.. autofunction:: pyci.doci.run_hci
-
-FullCI Hamiltonian
-------------------
-
-.. autoclass:: pyci.fullci.ham
-
-.. autoclass:: pyci.cext.fullci_ham
+.. autoclass:: pyci.fullci_wfn
     :members:
-
-FullCI wave function
---------------------
-
-.. autoclass:: pyci.fullci.wfn
-
-.. autoclass:: pyci.cext.fullci_wfn
-    :members:
-
-FullCI routines
----------------
-
-WIP.
-
-Variational solver
-------------------
 
 .. autoclass:: pyci.sparse_op
     :members:

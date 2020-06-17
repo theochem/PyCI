@@ -52,6 +52,7 @@ struct FullCIWfn
     void to_occs_array(const int_t, const int_t, int_t *) const;
 
     int_t index_det(const uint_t *) const;
+    int_t index_det_from_rank(const int_t) const;
     void copy_det(const int_t, uint_t *) const;
 
     int_t add_det(const uint_t *);

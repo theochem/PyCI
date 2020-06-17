@@ -20,8 +20,8 @@ PyCI module.
 
 import numpy as np
 
-from pyci.cext import _get_version
-from pyci.cext import sparse_op
+from pyci.cext import _get_version, SpinLabel, SPIN_UP, SPIN_DN
+from pyci.cext import hamiltonian, doci_wfn, fullci_wfn, sparse_op
 
 
 __all__ = [
@@ -29,6 +29,12 @@ __all__ = [
     'c_int',
     'c_uint',
     'c_double',
+    'SpinLabel',
+    'SPIN_UP',
+    'SPIN_DN',
+    'hamiltonian',
+    'doci_wfn',
+    'fullci_wfn',
     'sparse_op',
     ]
 
