@@ -109,22 +109,23 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
         fill_virs(wfn.nword, wfn.nbasis, &det[0], &virs[0]);
         val1 = 0.0;
         val2 = 0.0;
-        // diagonal elements
+        // loop over single (or "pair") excitations
         for (i = 0; i < wfn.nocc; ++i) {
+            // compute part of diagonal element
             k = occs[i];
             val1 += v[k * (wfn.nbasis + 1)];
             val2 += h[k];
             for (j = i + 1; j < wfn.nocc; ++j)
                 val2 += w[k * wfn.nbasis + occs[j]];
-            // pair excitation elements
             for (j = 0; j < wfn.nvir; ++j) {
+                // pair excitation elements
                 l = virs[j];
                 excite_det(k, l, &det[0]);
                 jdet = wfn.index_det(&det[0]);
-                wfn.copy_det(idet, &det[0]);
+                excite_det(l, k, &det[0]);
                 // check if excited determinant is in wfn
                 if (jdet != -1) {
-                    // add pair-excited element to sparse matrix
+                    // add pair excitation element to sparse matrix
                     data.push_back(v[k * wfn.nbasis + l]);
                     indices.push_back(jdet);
                 }
@@ -143,7 +144,7 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
 
 
 void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
-    int_t idet, jdet, i, j, k, l;
+    int_t idet, i, j, k, l;
     // set nrow <= ncol (value <1 defaults to nrow = ncol = wfn.ndet)
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
     ncol = wfn.ndet;

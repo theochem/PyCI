@@ -2193,13 +2193,17 @@ cdef class sparse_op:
 
         """
         cdef np.ndarray y
+        if x.size != self._obj.ncol:
+            raise ValueError('Dimensions of operator and \'x\' do not match')
+        # set y and out variables
         if out is None:
-            y = np.empty_like(x)
+            y = np.empty(self._obj.nrow, dtype=c_double)
             out = y
         else:
-            if x.size != out.size:
-                raise ValueError('Dimensions of arrays \'x\' and \'y\' do not match')
+            if out.size != self._obj.nrow:
+                raise ValueError('Dimensions of operator and \'out\' do not match')
             y = np.asarray(out)
+        # return result of operation
         self._obj.perform_op(&x[0], &out[0])
         return y
 

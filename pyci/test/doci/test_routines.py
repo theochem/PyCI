@@ -20,7 +20,7 @@ import numpy.testing as npt
 
 from scipy.special import comb
 
-from pyci import doci, sparse_op
+from pyci import c_double, doci, sparse_op
 from pyci.test import datafile
 
 
@@ -36,6 +36,10 @@ class TestRoutines:
     def test_solve_ci_sparse(self):
         for filename in self.CASES.keys():
             yield self.run_solve_ci_sparse, filename
+
+    def test_ci_sparse_rectangular(self):
+        for filename in self.CASES.keys():
+            yield self.run_ci_sparse_rectangular, filename
 
     def test_compute_rdms(self):
         for filename in self.CASES.keys():
@@ -79,6 +83,18 @@ class TestRoutines:
         op = sparse_op(ham, wfn)
         es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
+
+    def run_ci_sparse_rectangular(self, filename):
+        nocc, energy = self.CASES[filename]
+        ham = doci.ham.from_file(datafile('{0:s}.fcidump'.format(filename)))
+        wfn = doci.wfn(ham.nbasis, nocc)
+        wfn.add_all_dets()
+        nrow = len(wfn) - 10
+        op = sparse_op(ham, wfn, nrow)
+        assert op.shape == (nrow, len(wfn))
+        y = op.dot(np.ones(op.shape[1], dtype=c_double))
+        assert y.ndim == 1
+        assert y.shape[0] == op.shape[0]
 
     def run_compute_rdms(self, filename):
         nocc, energy = self.CASES[filename]
