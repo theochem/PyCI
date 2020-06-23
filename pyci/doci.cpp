@@ -135,7 +135,7 @@ void DOCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_, const int_
         int_t end = (start + chunksize < n) ? start + chunksize : n;
         int_t j = start * nocc;
         int_t k = start * nword;
-        for (int_t i = start; i != end; ++i) {
+        for (int_t i = start; i < end; ++i) {
             fill_det(nocc, &occs[j], &dets[k]);
             j += nocc;
             k += nword;
@@ -170,7 +170,7 @@ void DOCIWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *oc
         int_t end = (start + chunksize < range) ? start + chunksize : range;
         int_t j = (low_ind + start) * nword;
         int_t k = start * nocc;
-        for (int_t i = start; i != end; ++i) {
+        for (int_t i = start; i < end; ++i) {
             fill_occs(nword, &dets[j], &occs[k]);
             j += nword;
             k += nocc;
