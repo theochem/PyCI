@@ -27,10 +27,10 @@ from pyci.test import datafile
 class TestRoutines:
 
     CASES = [
+        ('h2o_ccpvdz', pyci.doci_wfn,   (5,),   -75.634588422),
         ('he_ccpvqz',  pyci.doci_wfn,   (1,),    -2.886809116),
         ('be_ccpvdz',  pyci.doci_wfn,   (2,),   -14.600556994),
         ('li2_ccpvdz', pyci.doci_wfn,   (3,),   -14.878455349),
-        ('h2o_ccpvdz', pyci.doci_wfn,   (5,),   -75.634588422),
         ('he_ccpvqz',  pyci.fullci_wfn, (1, 1),  -2.886809116),
         ('be_ccpvdz',  pyci.fullci_wfn, (2, 2), -14.600556994),
         ]
@@ -47,34 +47,9 @@ class TestRoutines:
         for filename, wfn_type, occs, energy in self.CASES:
             yield self.run_compute_rdms, filename, wfn_type, occs, energy
 
-    def test_compute_energy(self):
-        for filename, wfn_type, occs, energy in self.CASES:
-            yield self.run_compute_energy, filename, wfn_type, occs, energy
-
-    def test_doci_run_hci(self):
-        nocc, energy = 5, -75.63458842226694
-        ham = pyci.hamiltonian.from_file(datafile('h2o_ccpvdz.fcidump'))
-        wfn = pyci.doci_wfn(ham.nbasis, nocc)
-        #wfn.reserve(comb(wfn.nbasis, wfn.nocc, exact=True))
-        wfn.add_hartreefock_det()
-        op = pyci.sparse_op(ham, wfn)
-        es, cs = pyci.sparse_op(ham, wfn).solve(n=1, ncv=30, tol=1.0e-6)
-        dets_added = 1
-        niter = 0
-        while dets_added:
-            dets_added = wfn.run_hci(ham, cs[0], eps=1.0e-5)
-            es, cs = pyci.sparse_op(ham, wfn).solve(n=1, ncv=30, tol=1.0e-6)
-            niter += 1
-        assert niter > 1
-        assert len(wfn) < comb(wfn.nbasis, wfn.nocc, exact=True)
-        npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-6)
-        dets_added = 1
-        while dets_added:
-            dets_added = wfn.run_hci(ham, cs[0], eps=0.0)
-            op = pyci.sparse_op(ham, wfn)
-            es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
-        assert len(wfn) == comb(wfn.nbasis, wfn.nocc, exact=True)
-        npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
+    def test_run_hci(self):
+        for filename, wfn_type, occs, energy in self.CASES[:1]:
+            yield self.run_run_hci, filename, wfn_type, occs, energy
 
     def run_solve_sparse(self, filename, wfn_type, occs, energy):
         ham = pyci.hamiltonian.from_file(datafile('{0:s}.fcidump'.format(filename)))
@@ -97,7 +72,7 @@ class TestRoutines:
 
     def run_compute_rdms(self, filename, wfn_type, occs, energy):
         if wfn_type is pyci.fullci_wfn:
-            return
+            raise AssertionError('not implemented')
         ham = pyci.hamiltonian.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
@@ -114,6 +89,10 @@ class TestRoutines:
             energy += np.einsum('ij,ij', k2, d2)
             npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
             rdm1, rdm2 = wfn.generate_rdms(d0, d2)
+        elif isinstance(wfn, pyci.fullci_wfn):
+            rdm1, rdm2 = wfn.compute_rdms(cs[0])
+        else:
+            raise ValueError('wfn_type must be doci_wfn or fullci_wfn')
         with np.load(datafile('{0:s}_spinres.npz'.format(filename))) as f:
             one_mo = f['one_mo']
             two_mo = f['two_mo']
@@ -122,12 +101,27 @@ class TestRoutines:
         energy += 0.25 * np.einsum('ijkl,ijkl', two_mo, rdm2)
         npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
 
-    def run_compute_energy(self, filename, wfn_type, occs, energy):
+    def run_run_hci(self, filename, wfn_type, occs, energy):
         if wfn_type is pyci.fullci_wfn:
-            return
+            raise AssertionError('not implemented')
         ham = pyci.hamiltonian.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
-        wfn.add_all_dets()
-        op = pyci.sparse_op(ham, wfn)
-        es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
-        npt.assert_allclose(wfn.compute_energy(ham, cs[0]), energy, rtol=0.0, atol=1.0e-9)
+        wfn.add_hartreefock_det()
+        es, cs = pyci.sparse_op(ham, wfn).solve(n=1, ncv=30, tol=1.0e-6)
+        dets_added = 1
+        niter = 0
+        while dets_added:
+            dets_added = wfn.run_hci(ham, cs[0], eps=1.0e-5)
+            es, cs = pyci.sparse_op(ham, wfn).solve(n=1, ncv=30, tol=1.0e-6)
+            niter += 1
+        assert niter > 1
+        assert len(wfn) < np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
+        npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-6)
+        dets_added = 1
+        while dets_added:
+            dets_added = wfn.run_hci(ham, cs[0], eps=0.0)
+            op = pyci.sparse_op(ham, wfn)
+            es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
+        assert len(wfn) == np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
+        npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
+

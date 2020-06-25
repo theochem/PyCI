@@ -65,15 +65,4 @@ struct FullCIWfn
 };
 
 
-/** TODO
-void compute_rdms(const DOCIWfn &, const double *, double *, double *);
-
-
-double compute_energy(const DOCIWfn &, const double *, const double *, const double *, const double *);
-
-
-int_t run_hci(DOCIWfn &, const double *, const double *, const double);
-**/
-
-
 } // namespace pyci

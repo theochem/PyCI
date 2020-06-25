@@ -1057,34 +1057,6 @@ cdef class doci_wfn:
         self._obj.compute_rdms(<double *>(&coeffs[0]), <double *>(&d0[0, 0]), <double *>(&d2[0, 0]))
         return d0_array, d2_array
 
-    def compute_energy(self, hamiltonian ham not None, double[::1] coeffs not None):
-        r"""
-        Compute the energy of a wave function from the Hamiltonian and coefficients.
-
-        Parameters
-        ----------
-        ham : hamiltonian
-            Hamiltonian object.
-        coeffs : np.ndarray(c_double(ndet))
-            Coefficient vector.
-
-        Returns
-        -------
-        energy : float
-            Energy.
-
-        """
-        if self._obj.ndet != coeffs.shape[0]:
-            raise ValueError('dimensions of wfn, coeffs do not match')
-        elif self._obj.ndet == 0:
-            raise ValueError('wfn must contain at least one determinant')
-        elif self._obj.nbasis != ham._nbasis:
-            raise ValueError('dimensions of wfn, ham do not match')
-        return self._obj.compute_energy(
-            <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]),
-            <double *>(&ham._w[0, 0]), <double *>(&coeffs[0])
-            ) + ham._ecore
-
     def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
         r"""
         Run an iteration of seniority-zero heat-bath CI.

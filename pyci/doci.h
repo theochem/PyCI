@@ -63,8 +63,6 @@ struct DOCIWfn
 
     void compute_rdms(const double *, double *, double *) const;
 
-    double compute_energy(const double *, const double *, const double *, const double *) const;
-
     int_t run_hci(const double *, const double *, const double);
 };
 

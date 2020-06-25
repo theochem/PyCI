@@ -71,6 +71,4 @@ cdef extern from 'pyci/doci.h' namespace 'pyci':
 
         void compute_rdms(const double *, double *, double *) except +
 
-        double compute_energy(const double *, const double *, const double *, const double *) except +
-
         int_t run_hci(const double *, const double *, const double) except +

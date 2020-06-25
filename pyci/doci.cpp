@@ -309,51 +309,6 @@ void DOCIWfn::compute_rdms(const double *coeffs, double *d0, double *d2) const {
 }
 
 
-double DOCIWfn::compute_energy(const double *h, const double *v, const double *w,
-    const double *coeffs) const {
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
-    double val = 0.0;
-    #pragma omp parallel reduction(+:val)
-    {
-        int_t idet, jdet, i, j, k, l;
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < ndet) ? start + chunksize : ndet;
-        double val1, val2, val3;
-        std::vector<uint_t> det(nword);
-        std::vector<int_t> occs(nocc);
-        std::vector<int_t> virs(nvir);
-        for (idet = start; idet < end; ++idet) {
-            copy_det(idet, &det[0]);
-            fill_occs(nword, &det[0], &occs[0]);
-            fill_virs(nword, nbasis, &det[0], &virs[0]);
-            val1 = 0.0;
-            val2 = 0.0;
-            val3 = 0.0;
-            // diagonal elements
-            for (i = 0; i < nocc; ++i) {
-                k = occs[i];
-                val1 += v[k * (nbasis + 1)];
-                val2 += h[k];
-                for (j = i + 1; j < nocc; ++j)
-                    val2 += w[k * nbasis + occs[j]];
-                // pair excitation elements
-                for (j = 0; j < nvir; ++j) {
-                    l = virs[j];
-                    excite_det(k, l, &det[0]);
-                    jdet = index_det(&det[0]);
-                    copy_det(idet, &det[0]);
-                    // check if excited determinant is in wfn
-                    if (jdet != -1) val3 += v[k * nbasis + l] * coeffs[jdet];
-                }
-            }
-            val += ((val1 + val2 * 2) * coeffs[idet] + val3) * coeffs[idet];
-        }
-    }
-    return val;
-}
-
-
 int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) {
     /*
     int_t nthread = omp_get_max_threads();
