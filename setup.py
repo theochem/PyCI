@@ -21,14 +21,7 @@ Run `python setup.py --help` for help.
 """
 
 from io import open
-from os import path, rename
-from tempfile import NamedTemporaryFile
-from zipfile import ZipFile
-
-try:
-    from urllib.request import urlretrieve
-except ImportError:
-    from urllib import urlretrieve
+from os import path
 
 from setuptools import setup
 
@@ -118,7 +111,7 @@ try:
     from Cython.Distutils import build_ext, Extension
     cext['sources'].remove('pyci/cext.cpp')
     cext['sources'].append('pyci/cext.pyx')
-    cext['cython_compile_time_env'] = dict(PYCI_VERSION=str(version))
+    cext['cython_compile_time_env'] = dict(PYCI_VERSION=version)
 except ImportError:
     from setuptools.command.build_ext import build_ext
     from setuptools import Extension

@@ -64,11 +64,14 @@ cdef extern from 'pyci/fullci.h' namespace 'pyci':
         const uint_t * det_ptr(const int_t)
 
         int_t add_det(const uint_t *) except +
+        int_t add_det_with_rank(const uint_t *, const int_t) except +
         int_t add_det_from_occs(const int_t *) except +
         void add_all_dets() except +
         void add_excited_dets(const uint_t *, const int_t, const int_t) except +
 
         void reserve(const int_t) except +
         void squeeze()
+
+        void compute_rdms(const double *, double *, double *) except +
 
         int_t run_hci(const double *, const double *, const double *, const double) except +

@@ -72,14 +72,15 @@ FullCIWfn::~FullCIWfn() {
 
 
 void FullCIWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
-    // check that determinants of this wave function can be hashed
     int_t maxdet_up_ = binomial(nbasis_, nocc_up_);
     int_t maxdet_dn_ = binomial(nbasis_, nocc_dn_);
-    if (maxdet_up_ * maxdet_dn_ >= PYCI_INT_MAX)
+    int_t nword_ = nword_det(nbasis_);
+    // check that determinants of this wave function can be hashed
+    if ((maxdet_up_ * maxdet_dn_ >= PYCI_INT_MAX) || (nword_ > PYCI_NWORD_MAX))
         throw std::runtime_error("nbasis, nocc_up, nocc_dn too large for hash type");
     // set attributes
-    nword = nword_det(nbasis_);
-    nword2 = nword * 2;
+    nword = nword_;
+    nword2 = nword_ * 2;
     nbasis = nbasis_;
     nocc_up = nocc_up_;
     nocc_dn = nocc_dn_;
@@ -265,6 +266,16 @@ int_t FullCIWfn::add_det(const uint_t *det) {
 }
 
 
+int_t FullCIWfn::add_det_with_rank(const uint_t *det, const int_t rank) {
+    if (dict.insert(std::make_pair(rank, ndet)).second) {
+        dets.resize(dets.size() + nword2);
+        std::memcpy(&dets[nword2 * ndet], det, sizeof(uint_t) * nword2);
+        return ndet++;
+    }
+    return -1;
+}
+
+
 int_t FullCIWfn::add_det_from_occs(const int_t *occs) {
     std::vector<uint_t> det(nword2);
     fill_det(nocc_up, &occs[0], &det[0]);
@@ -364,6 +375,11 @@ void FullCIWfn::squeeze() {
 }
 
 
+void FullCIWfn::compute_rdms(const double *coeffs, double *rdm1, double *rdm2) const {
+    return; // TODO
+}
+
+
 int_t FullCIWfn::run_hci(const double *one_mo, const double *two_mo, const double *coeffs, const double eps) {
     // save ndet as ndet_old
     int_t ndet_old = ndet;
@@ -407,7 +423,7 @@ void FullCIWfn::run_hci_run_thread(const FullCIWfn &wfn, const double *one_mo, c
     uint_t *det_up = &det[0], *det_dn = &det[nword];
     // loop over determinants
     int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
-    int_t rank_up_ref, rank_dn_ref, rank_up;
+    int_t rank_up_ref, rank_dn_ref, rank_up, rank;
     int_t n1 = wfn.nbasis;
     int_t n2 = n1 * n1;
     int_t n3 = n1 * n2;
@@ -444,9 +460,11 @@ void FullCIWfn::run_hci_run_thread(const FullCIWfn &wfn, const double *one_mo, c
                     val += two_mo[ioffset + n2 * kk + n1 * jj + kk];
                 }
                 // add determinant if |H*c| > eps and not already in wfn
-                if ((std::abs(val * coeffs[idet]) > eps) &&
-                    (wfn.index_det_from_rank(rank_up + rank_dn_ref) == -1))
-                    add_det(det_up);
+                if (std::abs(val * coeffs[idet]) > eps) {
+                    rank = rank_up + rank_dn_ref;
+                    if (wfn.index_det_from_rank(rank) == -1)
+                        add_det_with_rank(det_up, rank);
+                }
                 // loop over spin-down occupied indices
                 for (k = 0; k < wfn.nocc_dn; ++k) {
                     kk = occs_dn[k];
@@ -458,9 +476,11 @@ void FullCIWfn::run_hci_run_thread(const FullCIWfn &wfn, const double *one_mo, c
                         excite_det(kk, ll, det_dn);
                         val = two_mo[koffset + n1 * jj + ll];
                         // add determinant if |H*c| > eps and not already in wfn
-                        if ((std::abs(val * coeffs[idet]) > eps) &&
-                            (wfn.index_det_from_rank(rank_up + rank_det(n1, wfn.nocc_dn, det_dn)) == -1))
-                            add_det(det_up);
+                        if (std::abs(val * coeffs[idet]) > eps) {
+                            rank = rank_up + rank_det(n1, wfn.nocc_dn, det_dn);
+                            if (wfn.index_det_from_rank(rank) == -1)
+                                add_det_with_rank(det_up, rank);
+                        }
                         excite_det(ll, kk, det_dn);
                     }
                 }
@@ -475,10 +495,11 @@ void FullCIWfn::run_hci_run_thread(const FullCIWfn &wfn, const double *one_mo, c
                         excite_det(kk, ll, det_up);
                         val = two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj];
                         // add determinant if |H*c| > eps and not already in wfn
-                        if ((std::abs(val * coeffs[idet]) > eps) &&
-                            (wfn.index_det_from_rank(rank_det(n1, wfn.nocc_up, det_up)
-                            /*------------------*/ * wfn.maxdet_dn + rank_dn_ref) == -1))
-                            add_det(det_up);
+                        if (std::abs(val * coeffs[idet]) > eps) {
+                            rank = rank_det(n1, wfn.nocc_up, det_up) * wfn.maxdet_dn + rank_dn_ref;
+                            if (wfn.index_det_from_rank(rank) == -1)
+                                add_det_with_rank(det_up, rank);
+                        }
                         excite_det(ll, kk, det_up);
                     }
                 }
@@ -505,9 +526,11 @@ void FullCIWfn::run_hci_run_thread(const FullCIWfn &wfn, const double *one_mo, c
                     val += two_mo[koffset + n1 * jj + kk] - two_mo[koffset + n1 * kk + jj];
                 }
                 // add determinant if |H*c| > eps and not already in wfn
-                if ((std::abs(val * coeffs[idet]) > eps) &&
-                    (wfn.index_det_from_rank(rank_up_ref + rank_det(n1, wfn.nocc_dn, det_dn)) == -1))
-                    add_det(det_up);
+                if (std::abs(val * coeffs[idet]) > eps) {
+                    rank = rank_up_ref + rank_det(n1, wfn.nocc_dn, det_dn);
+                    if (wfn.index_det_from_rank(rank) == -1)
+                        add_det_with_rank(det_up, rank);
+                }
                 // loop over spin-down occupied indices
                 for (k = i + 1; k < wfn.nocc_dn; ++k) {
                     kk = occs_dn[k];
@@ -519,9 +542,11 @@ void FullCIWfn::run_hci_run_thread(const FullCIWfn &wfn, const double *one_mo, c
                         excite_det(kk, ll, det_dn);
                         val = two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj];
                         // add determinant if |H*c| > eps and not already in wfn
-                        if ((std::abs(val * coeffs[idet]) > eps) &&
-                            (wfn.index_det_from_rank(rank_up_ref + rank_det(n1, wfn.nocc_dn, det_dn)) == -1))
-                            add_det(det_up);
+                        if (std::abs(val * coeffs[idet]) > eps) {
+                            rank = rank_up_ref + rank_det(n1, wfn.nocc_dn, det_dn);
+                            if (wfn.index_det_from_rank(rank) == -1)
+                                add_det_with_rank(det_up, rank);
+                        }
                         excite_det(ll, kk, det_dn);
                     }
                 }

@@ -22,8 +22,9 @@ PyCI C extension module.
 
 from libc.stdint cimport int64_t, uint64_t
 
-cimport numpy as np
+from io import open
 
+cimport numpy as np
 import numpy as np
 
 from scipy.sparse import csr_matrix
@@ -34,7 +35,6 @@ from pyci.common cimport phase_single_det, phase_double_det, rank_det
 from pyci.doci cimport DOCIWfn
 from pyci.fullci cimport FullCIWfn
 from pyci.solve cimport SparseOp
-from pyci import fcidump
 
 
 __all__ = [
@@ -44,6 +44,7 @@ __all__ = [
     '_get_version',
     'hamiltonian',
     'doci_wfn',
+    'gen_wfn',
     'fullci_wfn',
     'sparse_op',
     ]
@@ -148,7 +149,62 @@ cdef class hamiltonian:
             Hamiltonian object.
 
         """
-        return hamiltonian(*fcidump.read(filename)[:3], keep_mo=keep_mo, doci=doci)
+        cdef str line, key, val, field
+        cdef list fields
+        cdef dict header_info
+        cdef int_t nbasis, nelec, ms2, i, j, k, l
+        cdef double[:, :] one_mo
+        cdef double[:, :, :, :] two_mo
+        cdef double ecore = 0.0, fval
+        with open(filename, 'r', encoding='utf-8') as f:
+            # check header
+            line = next(f)
+            if not line.startswith(' &FCI NORB='):
+                raise IOError('Error in FCIDUMP file header')
+            # read info from header
+            fields = line[5:].split(',')
+            header_info = dict()
+            for field in fields:
+                if field.count('=') == 1:
+                    key, val = field.split('=')
+                    header_info[key.strip()] = val.strip()
+            nbasis = int(header_info['NORB'])
+            nelec = int(header_info.get('NELEC', '0'))
+            ms2 = int(header_info.get('MS2', '0'))
+            # skip rest of header
+            for line in f:
+                field = line.split()[0]
+                if field == '&END' or field == '/END' or field == '/':
+                    break
+            # read integrals
+            one_mo = np.zeros((nbasis, nbasis), dtype=np.double)
+            two_mo = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+            for line in f:
+                fields = line.split()
+                if len(fields) != 5:
+                    raise IOError('Expecting 5 fields on each data line in FCIDUMP')
+                fval = float(fields[0].strip())
+                if fields[3] != '0':
+                    i = int(fields[1].strip()) - 1
+                    j = int(fields[2].strip()) - 1
+                    k = int(fields[3].strip()) - 1
+                    l = int(fields[4].strip()) - 1
+                    two_mo[i, k, j, l] = fval
+                    two_mo[k, i, l, j] = fval
+                    two_mo[j, k, i, l] = fval
+                    two_mo[i, l, j, k] = fval
+                    two_mo[j, l, i, k] = fval
+                    two_mo[l, j, k, i] = fval
+                    two_mo[k, j, l, i] = fval
+                    two_mo[l, i, k, j] = fval
+                elif fields[1] != '0':
+                    i = int(fields[1].strip()) - 1
+                    j = int(fields[2].strip()) - 1
+                    one_mo[i, j] = fval
+                    one_mo[j, i] = fval
+                else:
+                    ecore = fval
+        return hamiltonian(ecore, one_mo, two_mo)
 
     @property
     def nbasis(self):
@@ -256,7 +312,7 @@ cdef class hamiltonian:
             self._v = None
             self._w = None
 
-    def to_file(self, object filename not None, int_t nelec=0, int_t ms2=0):
+    def to_file(self, object filename not None, int_t nelec=0, int_t ms2=0, double tol=1.0e-18):
         r"""
         Write a Hamiltonian instance to an FCIDUMP file.
 
@@ -268,9 +324,34 @@ cdef class hamiltonian:
             Electron number to write to FCIDUMP file.
         ms2 : int, default=0
             Spin number to write to FCIDUMP file.
+        tol : float, default=1.0e-18
+            Write elements with magnitude larger than this value.
 
         """
-        fcidump.write(filename, self._ecore, self.one_mo, self.two_mo, nelec=nelec, ms2=ms2)
+        cdef int_t nbasis = self.one_mo.shape[0], i, j, k, l
+        cdef double val
+        cdef str fmt = '{0:23.16E} {1:4d} {2:4d} {3:4d} {4:4d}\n'
+        with open(filename, 'w', encoding='utf-8') as f:
+            # write header
+            f.write(' &FCI NORB={0:d},NELEC={1:d},MS2={2:d},\n'.format(nbasis, nelec, ms2))
+            f.write('  ORBSYM={0:s}\n  ISYM=1\n &END\n'.format('1,' * nbasis))
+            # write two-electron integrals
+            for i in range(nbasis):
+                for j in range(i + 1):
+                    for k in range(nbasis):
+                        for l in range(k + 1):
+                            if (i * (i + 1)) // 2 + j >= (k * (k + 1)) // 2 + l:
+                                val = self._two_mo[i, k, j, l]
+                                if abs(val) > tol:
+                                    f.write(fmt.format(val, i + 1, j + 1, k + 1, l + 1))
+            # write one-electron integrals
+            for i in range(nbasis):
+                for j in range(i + 1):
+                    val = self._one_mo[i, j]
+                    if abs(val) > tol:
+                        f.write(fmt.format(val, i + 1, j + 1, 0, 0))
+            # write zero-energy integrals
+            f.write(fmt.format((self._ecore if abs(self._ecore) > tol else 0.0), 0, 0, 0, 0))
 
     def reduced_v(self, int_t nocc):
         r"""
@@ -329,240 +410,13 @@ cdef class hamiltonian:
         w_array += self._w
         return w_array
 
-    def _doci_elem_diag(self, int_t[::1] occs not None):
-        r"""
-        Compute Hamiltonian element :math:`\left<d|H|d\right>` for determinant :math:`d`.
 
-        Parameters
-        ----------
-        occs : np.ndarray(c_int(nocc))
-            Indices of occupied electron pairs in determinant.
-
-        Returns
-        -------
-        elem : float
-            Hamiltonian element.
-
-        """
-        if self._h is None:
-            raise AttributeError('seniority-zero integrals were not computed')
-        cdef int_t nocc = occs.shape[0], i, j, k
-        cdef double elem1 = 0.0, elem2 = 0.0
-        for i in range(nocc):
-            j = occs[i]
-            elem1 += self._v[j, j]
-            elem2 += self._h[j]
-            for k in range(i):
-                elem2 += self._w[j, occs[k]]
-        return elem1 + elem2 * 2
-
-    def _fullci_elem_diag(self, int_t[::1] occs_up not None, int_t[::1] occs_dn not None):
-        r"""
-        Compute Hamiltonian element :math:`\left<d|H|d\right>` for determinant :math:`d`.
-
-        Parameters
-        ----------
-        occs_up : np.ndarray(c_int(nocc_up))
-            Indices of occupied spin-up electrons in determinant.
-        occs_dn : np.ndarray(c_int(nocc_dn))
-            Indices of occupied spin-down electrons in determinant.
-
-        Returns
-        -------
-        elem : float
-            Hamiltonian element.
-
-        """
-        if self._one_mo is None:
-            raise AttributeError('full integral arrays were not saved')
-        cdef int_t nocc_up = occs_up.shape[0], nocc_dn = occs_dn.shape[0], i, j, k, l
-        cdef double elem = 0.0
-        for i in range(nocc_up):
-            j = occs_up[i]
-            elem += self._one_mo[j, j]
-            for k in range(i):
-                l = occs_up[i]
-                elem += self._two_mo[j, l, j, l] - self._two_mo[j, l, l, j]
-            for k in range(nocc_dn):
-                l = occs_dn[k]
-                elem += self._two_mo[j, l, j, l]
-        for i in range(nocc_dn):
-            j = occs_dn[i]
-            elem += self._one_mo[j, j]
-            for k in range(i):
-                l = occs_dn[i]
-                elem += self._two_mo[j, l, j, l] - self._two_mo[j, l, l, j]
-        return elem
-
-
-cdef class doci_wfn:
+cdef class spin_wfn:
     r"""
-    DOCI wave function class.
-
-    Attributes
-    ----------
-    nbasis : int
-        Number of orbital basis functions.
-    nocc : int
-        Number of occupied indices.
-    nocc_up : int
-        Number of occupied spin-up indices.
-    nocc_dn : int
-        Number of occupied spin-down indices.
-    nvir : int
-        Number of virtual indices.
-    nvir_up : int
-        Number of virtual spin-up indices.
-    nvir_dn : int
-        Number of virtual spin-down indices.
-
+    Single-spin wave function class.
 
     """
     cdef DOCIWfn _obj
-
-    @staticmethod
-    def from_file(object filename not None):
-        r"""
-        Return a doci_wfn instance by loading a DOCI file.
-
-        Parameters
-        ----------
-        filename : str
-            DOCI file from which to load determinants.
-
-        Returns
-        -------
-        wfn : doci_wfn
-            DOCI wave function object.
-
-        """
-        cdef doci_wfn wfn = doci_wfn(2, 1)
-        wfn._obj.from_file(filename.encode())
-        return wfn
-
-    @staticmethod
-    def from_det_array(int_t nbasis, int_t nocc, uint_t[:, ::1] det_array not None):
-        r"""
-        Return a doci_wfn instance from an array of determinant bitstrings.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc : int
-            Number of occupied indices.
-        det_array : np.ndarray(c_uint(n, nword))
-            Array of determinants.
-
-        Returns
-        -------
-        wfn : doci_wfn
-            DOCI wave function object.
-
-        """
-        cdef doci_wfn wfn = doci_wfn(nbasis, nocc)
-        if det_array.ndim != 2 or det_array.shape[1] != wfn._obj.nword:
-            raise IndexError('nbasis, nocc given do not match up with det_array dimensions')
-        wfn._obj.from_det_array(nbasis, nocc, det_array.shape[0], <uint_t *>(&det_array[0, 0]))
-        return wfn
-
-    @staticmethod
-    def from_occs_array(int_t nbasis, int_t nocc, int_t[:, ::1] occs_array not None):
-        r"""
-        Return a doci_wfn instance from an array of occupied indices.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc : int
-            Number of occupied indices.
-        occs_array : np.ndarray(c_int(n, nword))
-            Array of occupied indices.
-
-        Returns
-        -------
-        wfn : doci_wfn
-            DOCI wave function object.
-
-        """
-        cdef doci_wfn wfn = doci_wfn(nbasis, nocc)
-        if occs_array.ndim != 2 or occs_array.shape[1] != wfn._obj.nocc:
-            raise IndexError('nbasis, nocc given do not match up with occs_array dimensions')
-        wfn._obj.from_occs_array(nbasis, nocc, occs_array.shape[0], <int_t *>(&occs_array[0, 0]))
-        return wfn
-
-    @property
-    def nbasis(self):
-        r"""
-        Number of orbital basis functions.
-
-        """
-        return self._obj.nbasis
-
-    @property
-    def nocc(self):
-        r"""
-        Number of occupied indices.
-
-        """
-        return self._obj.nocc * 2
-
-    @property
-    def nocc_up(self):
-        r"""
-        Number of spin-up occupied indices.
-
-        """
-        return self._obj.nocc
-
-    @property
-    def nocc_dn(self):
-        r"""
-        Number of spin-down occupied indices.
-
-        """
-        return self._obj.nocc
-
-    @property
-    def nvir(self):
-        r"""
-        Number of virtual indices.
-
-        """
-        return self._obj.nvir * 2
-
-    @property
-    def nvir_up(self):
-        r"""
-        Number of spin-up virtual indices.
-
-        """
-        return self._obj.nvir
-
-    @property
-    def nvir_dn(self):
-        r"""
-        Number of spin-down virtual indices.
-
-        """
-        return self._obj.nvir
-
-    def __init__(self, int_t nbasis, int_t nocc):
-        r"""
-        Initialize a doci_wfn instance.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc : int
-            Number of occupied indices.
-
-        """
-        if nbasis <= nocc or nocc < 1:
-            raise ValueError('failed check: nbasis > nocc > 0')
-        self._obj.init(nbasis, nocc)
 
     def __len__(self):
         r"""
@@ -597,32 +451,6 @@ cdef class doci_wfn:
         cdef uint_t[:] det = det_array
         self._obj.copy_det(index, <uint_t *>(&det[0]))
         return det_array
-
-    def __copy__(self):
-        r"""
-        Copy a doci_wfn instance.
-
-        Returns
-        -------
-        wfn : doci_wfn
-            DOCI wave function object.
-
-        """
-        cdef doci_wfn wfn = doci_wfn(2, 1)
-        wfn._obj.from_dociwfn(self._obj)
-        return wfn
-
-    def to_file(self, object filename not None):
-        r"""
-        Write a doci_wfn instance to a DOCI file.
-
-        Parameters
-        ----------
-        filename : str
-            Name of DOCI file to write.
-
-        """
-        self._obj.to_file(filename.encode())
 
     def to_det_array(self, int_t start=-1, int_t end=-1):
         r"""
@@ -690,18 +518,6 @@ cdef class doci_wfn:
         cdef int_t[:, ::1] occs = occs_array
         self._obj.to_occs_array(start, end, <int_t *>(&occs[0, 0]))
         return occs_array
-
-    def copy(self):
-        r"""
-        Copy a doci_wfn instance.
-
-        Returns
-        -------
-        wfn : doci_wfn
-            DOCI wave function object.
-
-        """
-        return self.__copy__()
 
     def index_det(self, uint_t[::1] det not None):
         r"""
@@ -1054,6 +870,212 @@ cdef class doci_wfn:
         """
         return np.zeros(self._obj.nword, dtype=c_uint)
 
+
+cdef class doci_wfn(spin_wfn):
+    r"""
+    DOCI wave function class.
+
+    Attributes
+    ----------
+    nbasis : int
+        Number of orbital basis functions.
+    nocc : int
+        Number of occupied indices.
+    nocc_up : int
+        Number of occupied spin-up indices.
+    nocc_dn : int
+        Number of occupied spin-down indices.
+    nvir : int
+        Number of virtual indices.
+    nvir_up : int
+        Number of virtual spin-up indices.
+    nvir_dn : int
+        Number of virtual spin-down indices.
+
+    """
+
+    @staticmethod
+    def from_file(object filename not None):
+        r"""
+        Return a doci_wfn instance by loading a DOCI file.
+
+        Parameters
+        ----------
+        filename : str
+            DOCI file from which to load determinants.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        cdef doci_wfn wfn = doci_wfn(2, 1)
+        wfn._obj.from_file(filename.encode())
+        return wfn
+
+    @staticmethod
+    def from_det_array(int_t nbasis, int_t nocc, uint_t[:, ::1] det_array not None):
+        r"""
+        Return a doci_wfn instance from an array of determinant bitstrings.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+        det_array : np.ndarray(c_uint(n, nword))
+            Array of determinants.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        cdef doci_wfn wfn = doci_wfn(nbasis, nocc)
+        if det_array.ndim != 2 or det_array.shape[1] != wfn._obj.nword:
+            raise IndexError('nbasis, nocc given do not match up with det_array dimensions')
+        wfn._obj.from_det_array(nbasis, nocc, det_array.shape[0], <uint_t *>(&det_array[0, 0]))
+        return wfn
+
+    @staticmethod
+    def from_occs_array(int_t nbasis, int_t nocc, int_t[:, ::1] occs_array not None):
+        r"""
+        Return a doci_wfn instance from an array of occupied indices.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+        occs_array : np.ndarray(c_int(n, nword))
+            Array of occupied indices.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        cdef doci_wfn wfn = doci_wfn(nbasis, nocc)
+        if occs_array.ndim != 2 or occs_array.shape[1] != wfn._obj.nocc:
+            raise IndexError('nbasis, nocc given do not match up with occs_array dimensions')
+        wfn._obj.from_occs_array(nbasis, nocc, occs_array.shape[0], <int_t *>(&occs_array[0, 0]))
+        return wfn
+
+    @property
+    def nbasis(self):
+        r"""
+        Number of orbital basis functions.
+
+        """
+        return self._obj.nbasis
+
+    @property
+    def nocc(self):
+        r"""
+        Number of occupied indices.
+
+        """
+        return self._obj.nocc * 2
+
+    @property
+    def nocc_up(self):
+        r"""
+        Number of spin-up occupied indices.
+
+        """
+        return self._obj.nocc
+
+    @property
+    def nocc_dn(self):
+        r"""
+        Number of spin-down occupied indices.
+
+        """
+        return self._obj.nocc
+
+    @property
+    def nvir(self):
+        r"""
+        Number of virtual indices.
+
+        """
+        return self._obj.nvir * 2
+
+    @property
+    def nvir_up(self):
+        r"""
+        Number of spin-up virtual indices.
+
+        """
+        return self._obj.nvir
+
+    @property
+    def nvir_dn(self):
+        r"""
+        Number of spin-down virtual indices.
+
+        """
+        return self._obj.nvir
+
+    def __init__(self, int_t nbasis, int_t nocc):
+        r"""
+        Initialize a doci_wfn instance.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+
+        """
+        if nbasis <= nocc or nocc < 1:
+            raise ValueError('failed check: nbasis > nocc > 0')
+        self._obj.init(nbasis, nocc)
+
+    def __copy__(self):
+        r"""
+        Copy a doci_wfn instance.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        cdef doci_wfn wfn = doci_wfn(2, 1)
+        wfn._obj.from_dociwfn(self._obj)
+        return wfn
+
+    def to_file(self, object filename not None):
+        r"""
+        Write a doci_wfn instance to a DOCI file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of DOCI file to write.
+
+        """
+        self._obj.to_file(filename.encode())
+
+    def copy(self):
+        r"""
+        Copy a doci_wfn instance.
+
+        Returns
+        -------
+        wfn : doci_wfn
+            DOCI wave function object.
+
+        """
+        return self.__copy__()
+
     def compute_rdms(self, double[::1] coeffs not None):
         r"""
         Compute the 2-particle reduced density matrix (RDM) of a wave function.
@@ -1124,6 +1146,8 @@ cdef class doci_wfn:
             raise ValueError('wfn must contain at least one determinant')
         elif self._obj.nbasis != ham._nbasis:
             raise ValueError('dimensions of wfn, ham do not match')
+        elif ham._h is None:
+            raise AttributeError('seniority-zero integrals were not computed')
         return self._obj.run_hci(<double *>(&ham._v[0, 0]), <double *>(&coeffs[0]), eps)
 
     @staticmethod
@@ -1173,6 +1197,310 @@ cdef class doci_wfn:
         rdm2_array -= np.transpose(rdm2_array, axes=(0, 1, 3, 2))
         rdm2_array *= 0.5
         return rdm1_array, rdm2_array
+
+
+cdef class gen_wfn(spin_wfn):
+    r"""
+    Generalized CI wave function class.
+
+    Attributes
+    ----------
+    nbasis : int
+        Number of orbital basis functions.
+    nocc : int
+        Number of occupied indices.
+    nocc_up : int
+        Number of occupied spin-up indices.
+    nocc_dn : int
+        Number of occupied spin-down indices.
+    nvir : int
+        Number of virtual indices.
+    nvir_up : int
+        Number of virtual spin-up indices.
+    nvir_dn : int
+        Number of virtual spin-down indices.
+
+    """
+
+    @staticmethod
+    def from_file(object filename not None):
+        r"""
+        Return a gen_wfn instance by loading a GEN file.
+
+        Parameters
+        ----------
+        filename : str
+            GEN file from which to load determinants.
+
+        Returns
+        -------
+        wfn : gen_wfn
+            Generalized wave function object.
+
+        """
+        cdef gen_wfn wfn = gen_wfn(2, 1)
+        wfn._obj.from_file(filename.encode())
+        return wfn
+
+    @staticmethod
+    def from_det_array(int_t nbasis, int_t nocc, uint_t[:, ::1] det_array not None):
+        r"""
+        Return a gen_wfn instance from an array of determinant bitstrings.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+        det_array : np.ndarray(c_uint(n, nword))
+            Array of determinants.
+
+        Returns
+        -------
+        wfn : gen_wfn
+            Generalized wave function object.
+
+        """
+        cdef gen_wfn wfn = gen_wfn(nbasis, nocc)
+        if det_array.ndim != 2 or det_array.shape[1] != wfn._obj.nword:
+            raise IndexError('nbasis, nocc given do not match up with det_array dimensions')
+        wfn._obj.from_det_array(nbasis, nocc, det_array.shape[0], <uint_t *>(&det_array[0, 0]))
+        return wfn
+
+    @staticmethod
+    def from_occs_array(int_t nbasis, int_t nocc, int_t[:, ::1] occs_array not None):
+        r"""
+        Return a gen_wfn instance from an array of occupied indices.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+        occs_array : np.ndarray(c_int(n, nword))
+            Array of occupied indices.
+
+        Returns
+        -------
+        wfn : gen_wfn
+            Generalized wave function object.
+
+        """
+        cdef gen_wfn wfn = gen_wfn(nbasis, nocc)
+        if occs_array.ndim != 2 or occs_array.shape[1] != wfn._obj.nocc:
+            raise IndexError('nbasis, nocc given do not match up with occs_array dimensions')
+        wfn._obj.from_occs_array(nbasis, nocc, occs_array.shape[0], <int_t *>(&occs_array[0, 0]))
+        return wfn
+
+    @property
+    def nocc_up(self):
+        r"""
+        Number of spin-up occupied indices.
+
+        """
+        return self._obj.nocc
+
+    @property
+    def nocc_dn(self):
+        r"""
+        Number of spin-down occupied indices.
+
+        """
+        return 0
+
+    @property
+    def nvir_up(self):
+        r"""
+        Number of spin-up virtual indices.
+
+        """
+        return self._obj.nvir
+
+    @property
+    def nvir_dn(self):
+        r"""
+        Number of spin-down virtual indices.
+
+        """
+        return 0
+
+    def __init__(self, int_t nbasis, int_t nocc):
+        r"""
+        Initialize a gen_wfn instance.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+
+        """
+        if nbasis <= nocc or nocc < 1:
+            raise ValueError('failed check: nbasis > nocc > 0')
+        self._obj.init(nbasis, nocc)
+
+    def __copy__(self):
+        r"""
+        Copy a gen_wfn instance.
+
+        Returns
+        -------
+        wfn : gen_wfn
+            Generalized CI wave function object.
+
+        """
+        cdef gen_wfn wfn = gen_wfn(2, 1)
+        wfn._obj.from_dociwfn(self._obj)
+        return wfn
+
+    def to_file(self, object filename not None):
+        r"""
+        Write a gen_wfn instance to a GEN file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of GEN file to write.
+
+        """
+        self._obj.to_file(filename.encode())
+
+    def copy(self):
+        r"""
+        Copy a gen_wfn instance.
+
+        Returns
+        -------
+        wfn : gen_wfn
+            Generalized CI wave function object.
+
+        """
+        return self.__copy__()
+
+    def phase_single_det(self, uint_t[::1] det not None, int_t i, int_t a):
+        r"""
+        Compute the phase factor of a reference determinant with a singly-excited determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+        i : int
+            Electron "hole" index.
+        a : int
+            Electron "particle" index.
+
+        Returns
+        -------
+        phase : (+1 | -1)
+            Phase factor.
+
+        """
+        return phase_single_det(self._obj.nword, i, a, <uint_t *>(&det[0]))
+
+    def phase_double_det(self, uint_t[::1] det not None, int_t i, int_t j, int_t a, int_t b):
+        r"""
+        Compute the phase factor of a reference determinant with a doubly-excited determinant.
+
+        Parameters
+        ----------
+        det : np.ndarray(c_uint(nword))
+            Determinant.
+        i : int
+            First electron "hole" index.
+        j : int
+            Second electron "hole" index.
+        a : int
+            First electron "particle" index.
+        b : int
+            Second electron "particle" index.
+
+        Returns
+        -------
+        phase : (+1 | -1)
+            Phase factor.
+
+        """
+        return phase_double_det(self._obj.nword, i, j, a, b, <uint_t *>(&det[0]))
+
+    def compute_rdms(self, double[::1] coeffs not None):
+        r"""
+        Compute the 1- and 2- particle reduced density matrices (RDMs) of a wave function.
+
+        .. math::
+
+            d_{pq} = \left<p|q\right>
+
+        .. math::
+
+            D_{pqrs} = \left<pq|rs\right>
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(c_double(ndet))
+            Coefficient vector.
+
+        Returns
+        -------
+        rdm1 : np.ndarray(c_double(nbasis, nbasis))
+            1-particle reduced density matrix, :math:`d`.
+        rdm2 : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            2-particle reduced density matrix, :math:`D`.
+
+        """
+        if self._obj.ndet != coeffs.shape[0]:
+            raise ValueError('dimensions of wfn, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
+        cdef tuple nbasis2 = (self._obj.nbasis, self._obj.nbasis)
+        cdef tuple nbasis4 = (self._obj.nbasis, self._obj.nbasis, self._obj.nbasis, self._obj.nbasis)
+        cdef np.ndarray rdm1_array = np.zeros(nbasis2, dtype=c_double)
+        cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
+        cdef double[:, :] rdm1 = rdm1_array
+        cdef double[:, :, :, :] rdm2 = rdm2_array
+        self._obj.compute_rdms_gen(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
+                                   <double *>(&rdm2[0, 0, 0, 0]))
+        return rdm1_array, rdm2_array
+
+    def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
+        r"""
+        Run an iteration of heat-bath CI.
+
+        Adds all determinants connected to determinants currently in the wave function,
+        if they satisfy the criteria
+        :math:`|\left<f|H|d\right> c_d| > \epsilon` for :math:`f = a^\dagger_i a_a d` or
+        :math:`f = a^\dagger_i a^\dagger_j a_b a_a d`.
+
+        Parameters
+        ----------
+        ham : hamiltonian
+            Hamiltonian object.
+        coeffs : np.ndarray(c_double(ndet))
+            Coefficient vector.
+        eps : float
+            Threshold value for which determinants to include.
+
+        Returns
+        -------
+        n : int
+            Number of determinants added to wave function.
+
+        """
+        if self._obj.ndet != coeffs.shape[0]:
+            raise ValueError('dimensions of wfn, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
+        elif self._obj.nbasis != ham._nbasis:
+            raise ValueError('dimensions of wfn, ham do not match')
+        elif ham._one_mo is None:
+            raise AttributeError('full integral arrays were not saved')
+        return self._obj.run_hci_gen(
+            <double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
+            <double *>(&coeffs[0]), eps,
+            )
 
 
 cdef class fullci_wfn:
@@ -1946,6 +2274,45 @@ cdef class fullci_wfn:
         """
         return np.zeros((2, self._obj.nword), dtype=c_uint)
 
+    def compute_rdms(self, double[::1] coeffs not None):
+        r"""
+        Compute the 1- and 2- particle reduced density matrices (RDMs) of a wave function.
+
+        .. math::
+
+            d_{pq} = \left<p|q\right>
+
+        .. math::
+
+            D_{pqrs} = \left<pq|rs\right>
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(c_double(ndet))
+            Coefficient vector.
+
+        Returns
+        -------
+        rdm1 : np.ndarray(c_double(nbasis, nbasis))
+            1-particle reduced density matrix, :math:`d`.
+        rdm2 : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            2-particle reduced density matrix, :math:`D`.
+
+        """
+        if self._obj.ndet != coeffs.shape[0]:
+            raise ValueError('dimensions of wfn, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
+        cdef tuple nbasis2 = (self._obj.nbasis, self._obj.nbasis)
+        cdef tuple nbasis4 = (self._obj.nbasis, self._obj.nbasis, self._obj.nbasis, self._obj.nbasis)
+        cdef np.ndarray rdm1_array = np.zeros(nbasis2, dtype=c_double)
+        cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
+        cdef double[:, :] rdm1 = rdm1_array
+        cdef double[:, :, :, :] rdm2 = rdm2_array
+        self._obj.compute_rdms(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
+                               <double *>(&rdm2[0, 0, 0, 0]))
+        return rdm1_array, rdm2_array
+
     def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
         r"""
         Run an iteration of heat-bath CI.
@@ -1976,236 +2343,10 @@ cdef class fullci_wfn:
             raise ValueError('wfn must contain at least one determinant')
         elif self._obj.nbasis != ham._nbasis:
             raise ValueError('dimensions of wfn, ham do not match')
+        elif ham._one_mo is None:
+            raise AttributeError('full integral arrays were not saved')
         return self._obj.run_hci(<double *>(&ham._one_mo[0, 0]),
                                  <double *>(&ham._two_mo[0, 0, 0, 0]), <double *>(&coeffs[0]), eps)
-
-
-cdef class gen_wfn(doci_wfn):
-    r"""
-    Generalized CI wave function class.
-
-    Attributes
-    ----------
-    nbasis : int
-        Number of orbital basis functions.
-    nocc : int
-        Number of occupied indices.
-    nocc_up : int
-        Number of occupied spin-up indices.
-    nocc_dn : int
-        Number of occupied spin-down indices.
-    nvir : int
-        Number of virtual indices.
-    nvir_up : int
-        Number of virtual spin-up indices.
-    nvir_dn : int
-        Number of virtual spin-down indices.
-
-    """
-
-    @staticmethod
-    def from_file(object filename not None):
-        r"""
-        Return a gen_wfn instance by loading a GEN file.
-
-        Parameters
-        ----------
-        filename : str
-            GEN file from which to load determinants.
-
-        Returns
-        -------
-        wfn : gen_wfn
-            Generalized wave function object.
-
-        """
-        cdef gen_wfn wfn = gen_wfn(2, 1)
-        wfn._obj.from_file(filename.encode())
-        return wfn
-
-    @staticmethod
-    def from_det_array(int_t nbasis, int_t nocc, uint_t[:, ::1] det_array not None):
-        r"""
-        Return a gen_wfn instance from an array of determinant bitstrings.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc : int
-            Number of occupied indices.
-        det_array : np.ndarray(c_uint(n, nword))
-            Array of determinants.
-
-        Returns
-        -------
-        wfn : gen_wfn
-            Generalized wave function object.
-
-        """
-        cdef gen_wfn wfn = gen_wfn(nbasis, nocc)
-        if det_array.ndim != 2 or det_array.shape[1] != wfn._obj.nword:
-            raise IndexError('nbasis, nocc given do not match up with det_array dimensions')
-        wfn._obj.from_det_array(nbasis, nocc, det_array.shape[0], <uint_t *>(&det_array[0, 0]))
-        return wfn
-
-    @staticmethod
-    def from_occs_array(int_t nbasis, int_t nocc, int_t[:, ::1] occs_array not None):
-        r"""
-        Return a gen_wfn instance from an array of occupied indices.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc : int
-            Number of occupied indices.
-        occs_array : np.ndarray(c_int(n, nword))
-            Array of occupied indices.
-
-        Returns
-        -------
-        wfn : gen_wfn
-            Generalized wave function object.
-
-        """
-        cdef gen_wfn wfn = gen_wfn(nbasis, nocc)
-        if occs_array.ndim != 2 or occs_array.shape[1] != wfn._obj.nocc:
-            raise IndexError('nbasis, nocc given do not match up with occs_array dimensions')
-        wfn._obj.from_occs_array(nbasis, nocc, occs_array.shape[0], <int_t *>(&occs_array[0, 0]))
-        return wfn
-
-    @property
-    def nocc_up(self):
-        r"""
-        Number of spin-up occupied indices.
-
-        """
-        return self._obj.nocc
-
-    @property
-    def nocc_dn(self):
-        r"""
-        Number of spin-down occupied indices.
-
-        """
-        return 0
-
-    @property
-    def nvir_up(self):
-        r"""
-        Number of spin-up virtual indices.
-
-        """
-        return self._obj.nvir
-
-    @property
-    def nvir_dn(self):
-        r"""
-        Number of spin-down virtual indices.
-
-        """
-        return 0
-
-    def __init__(self, int_t nbasis, int_t nocc):
-        r"""
-        Initialize a gen_wfn instance.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc : int
-            Number of occupied indices.
-
-        """
-        if nbasis <= nocc or nocc < 1:
-            raise ValueError('failed check: nbasis > nocc > 0')
-        self._obj.init(nbasis, nocc)
-
-    def __copy__(self):
-        r"""
-        Copy a gen_wfn instance.
-
-        Returns
-        -------
-        wfn : gen_wfn
-            DOCI wave function object.
-
-        """
-        cdef gen_wfn wfn = gen_wfn(2, 1)
-        wfn._obj.from_dociwfn(self._obj)
-        return wfn
-
-    def copy(self):
-        r"""
-        Copy a gen_wfn instance.
-
-        Returns
-        -------
-        wfn : gen_wfn
-            DOCI wave function object.
-
-        """
-        return self.__copy__()
-
-    def to_file(self, object filename not None):
-        r"""
-        Write a gen_wfn instance to a GEN file.
-
-        Parameters
-        ----------
-        filename : str
-            Name of GEN file to write.
-
-        """
-        self._obj.to_file(filename.encode())
-
-    def phase_single_det(self, uint_t[::1] det not None, int_t i, int_t a):
-        r"""
-        Compute the phase factor of a reference determinant with a singly-excited determinant.
-
-        Parameters
-        ----------
-        det : np.ndarray(c_uint(nword))
-            Determinant.
-        i : int
-            Electron "hole" index.
-        a : int
-            Electron "particle" index.
-
-        Returns
-        -------
-        phase : (+1 | -1)
-            Phase factor.
-
-        """
-        return phase_single_det(self._obj.nword, i, a, <uint_t *>(&det[0]))
-
-    def phase_double_det(self, uint_t[::1] det not None, int_t i, int_t j, int_t a, int_t b):
-        r"""
-        Compute the phase factor of a reference determinant with a doubly-excited determinant.
-
-        Parameters
-        ----------
-        det : np.ndarray(c_uint(nword))
-            Determinant.
-        i : int
-            First electron "hole" index.
-        j : int
-            Second electron "hole" index.
-        a : int
-            First electron "particle" index.
-        b : int
-            Second electron "particle" index.
-
-        Returns
-        -------
-        phase : (+1 | -1)
-            Phase factor.
-
-        """
-        return phase_double_det(self._obj.nword, i, j, a, b, <uint_t *>(&det[0]))
 
 
 cdef class sparse_op:
@@ -2227,7 +2368,7 @@ cdef class sparse_op:
     @property
     def shape(self):
         r"""
-        Return the shape of the sparse matrix operator.
+        The shape of the sparse matrix operator.
 
         """
         return self._shape
@@ -2235,7 +2376,7 @@ cdef class sparse_op:
     @property
     def ecore(self):
         r"""
-        Return the constant/"zero-electron" integral.
+        Constant/"zero-electron" integral.
 
         """
         return self._ecore
@@ -2248,7 +2389,7 @@ cdef class sparse_op:
         ----------
         ham : hamiltonian
             Hamiltonian object.
-        wfn : (doci_wfn | fullci_wfn)
+        wfn : (doci_wfn | fullci_wfn | gen_wfn)
             Wave function object.
         nrow : int, optional
             Number of rows (<= number of determinants in wavefunction). Default is square matrix.
@@ -2263,22 +2404,25 @@ cdef class sparse_op:
         cdef double[:] h
         cdef double[:, :] v, w
         cdef double[:, :, :, :] x
-        cdef int_t[:, :] occs
         if isinstance(wfn, doci_wfn):
             h = ham.h
             v = ham.v
             w = ham.w
-            self._obj.init((<doci_wfn>wfn)._obj, <double *>(&h[0]), <double *>(&v[0, 0]),
-                           <double *>(&w[0, 0]), nrow)
+            self._obj.init_doci((<doci_wfn>wfn)._obj, <double *>(&h[0]), <double *>(&v[0, 0]),
+                                <double *>(&w[0, 0]), nrow)
         elif isinstance(wfn, fullci_wfn):
             w = ham.one_mo
             x = ham.two_mo
-            self._obj.init((<fullci_wfn>wfn)._obj, <double *>(&w[0, 0]),
-                           <double *>(&x[0, 0, 0, 0]), nrow)
-            occs = wfn.det_to_occs(wfn[0])
+            self._obj.init_fullci((<fullci_wfn>wfn)._obj, <double *>(&w[0, 0]),
+                                  <double *>(&x[0, 0, 0, 0]), nrow)
+        elif isinstance(wfn, gen_wfn):
+            w = ham.one_mo
+            x = ham.two_mo
+            self._obj.init_gen((<gen_wfn>wfn)._obj, <double *>(&w[0, 0]),
+                               <double *>(&x[0, 0, 0, 0]), nrow)
         else:
             raise TypeError('invalid wfn type')
-        self._shape = <object>(self._obj.nrow), <object>(self._obj.ncol)
+        self._shape = self._obj.nrow, self._obj.ncol
         self._ecore = ham.ecore
 
     def to_csr_matrix(self):

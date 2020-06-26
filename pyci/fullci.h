@@ -59,12 +59,15 @@ struct FullCIWfn
     const uint_t * det_ptr(const int_t) const;
 
     int_t add_det(const uint_t *);
+    int_t add_det_with_rank(const uint_t *, const int_t);
     int_t add_det_from_occs(const int_t *);
     void add_all_dets();
     void add_excited_dets(const uint_t *, const int_t, const int_t);
 
     void reserve(const int_t);
     void squeeze();
+
+    void compute_rdms(const double *, double *, double *) const;
 
     int_t run_hci(const double *, const double *, const double *, const double);
 

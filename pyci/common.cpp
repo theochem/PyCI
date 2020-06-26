@@ -140,7 +140,7 @@ void clearbit_det(const int_t i, uint_t *det) {
 
 int_t phase_single_det(const int_t nword, const int_t i, const int_t a, const uint_t *det) {
     int_t j, k, l, m, n, high, low, nperm = 0;
-    uint_t mask[8] = {PYCI_UINT_ZERO};
+    uint_t mask[PYCI_NWORD_MAX] = {PYCI_UINT_ZERO};
     if (i > a) {
         high = i;
         low = a;
@@ -165,7 +165,7 @@ int_t phase_single_det(const int_t nword, const int_t i, const int_t a, const ui
 int_t phase_double_det(const int_t nword, const int_t i1, const int_t i2, const int_t a1, const int_t a2,
     const uint_t *det) {
     int_t j, k, l, m, n, high, low, nperm = 0;
-    uint_t mask[8] = {PYCI_UINT_ZERO};
+    uint_t mask[PYCI_NWORD_MAX] = {PYCI_UINT_ZERO};
     // first excitation
     if (i1 > a1) {
         high = i1;

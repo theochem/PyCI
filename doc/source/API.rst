@@ -26,6 +26,7 @@ Constants
 
 .. autodata:: pyci.c_double
 
+.. autodata:: pyci.SpinLabel
 
 .. autodata:: pyci.SPIN_UP
 
@@ -38,6 +39,9 @@ Classes
     :members:
 
 .. autoclass:: pyci.doci_wfn
+    :members:
+
+.. autoclass:: pyci.gen_wfn
     :members:
 
 .. autoclass:: pyci.fullci_wfn

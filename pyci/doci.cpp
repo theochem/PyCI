@@ -67,9 +67,10 @@ DOCIWfn::~DOCIWfn() {
 
 
 void DOCIWfn::init(const int_t nbasis_, const int_t nocc_) {
-    if (binomial(nbasis_, nocc_) >= PYCI_INT_MAX / nbasis_)
+    int_t nword_ = nword_det(nbasis_);
+    if ((binomial(nbasis_, nocc_) >= PYCI_INT_MAX / nbasis_) || (nword_ > PYCI_NWORD_MAX))
         throw std::runtime_error("nbasis, nocc too large for hash type");
-    nword = nword_det(nbasis_);
+    nword = nword_;
     nbasis = nbasis_;
     nocc = nocc_;
     nvir = nbasis_ - nocc_;
@@ -185,6 +186,12 @@ int_t DOCIWfn::index_det(const uint_t *det) const {
 }
 
 
+int_t DOCIWfn::index_det_from_rank(const int_t rank) const {
+    DOCIWfn::hashmap_type::const_iterator search = dict.find(rank);
+    return (search == dict.end()) ? -1 : search->second;
+}
+
+
 void DOCIWfn::copy_det(const int_t i, uint_t *det) const {
     std::memcpy(det, &dets[i * nword], sizeof(uint_t) * nword);
 }
@@ -197,6 +204,16 @@ const uint_t * DOCIWfn::det_ptr(const int_t i) const {
 
 int_t DOCIWfn::add_det(const uint_t *det) {
     if (dict.insert(std::make_pair(rank_det(nbasis, nocc, det), ndet)).second) {
+        dets.resize(dets.size() + nword);
+        std::memcpy(&dets[nword * ndet], det, sizeof(uint_t) * nword);
+        return ndet++;
+    }
+    return -1;
+}
+
+
+int_t DOCIWfn::add_det_with_rank(const uint_t *det, const int_t rank) {
+    if (dict.insert(std::make_pair(rank, ndet)).second) {
         dets.resize(dets.size() + nword);
         std::memcpy(&dets[nword * ndet], det, sizeof(uint_t) * nword);
         return ndet++;
@@ -314,6 +331,11 @@ void DOCIWfn::compute_rdms(const double *coeffs, double *d0, double *d2) const {
 }
 
 
+void DOCIWfn::compute_rdms_gen(const double *coeffs, double *rdm1, double *rdm2) const {
+    return; // TODO
+}
+
+
 int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) {
     // save ndet as ndet_old
     int_t ndet_old = ndet;
@@ -336,6 +358,28 @@ int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) 
 }
 
 
+int_t DOCIWfn::run_hci_gen(const double *one_mo, const double *two_mo, const double *coeffs, const double eps) {
+    // save ndet as ndet_old
+    int_t ndet_old = ndet;
+    // do computation in chunks by making smaller DOCIWfns in parallel
+    int_t nthread = omp_get_max_threads();
+    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    std::vector<DOCIWfn> wfns(nthread);
+    #pragma omp parallel
+    {
+        int_t ithread = omp_get_thread_num();
+        int_t istart = ithread * chunksize;
+        int_t iend = (istart + chunksize < ndet_old) ? istart + chunksize : ndet_old;
+        wfns[ithread].run_hci_gen_run_thread(*this, one_mo, two_mo, coeffs, eps, istart, iend);
+    }
+    // fill original DOCIWfn (this object)
+    for (int_t t = 0; t < nthread; ++t)
+        run_hci_condense_thread(wfns[t]);
+    // return number of determinants added
+    return ndet - ndet_old;
+}
+
+
 void DOCIWfn::run_hci_run_thread(const DOCIWfn &wfn, const double *v, const double *coeffs,
     const double eps, const int_t istart, const int_t iend) {
     if (istart >= iend) return;
@@ -349,7 +393,7 @@ void DOCIWfn::run_hci_run_thread(const DOCIWfn &wfn, const double *v, const doub
     std::vector<int_t> occs(nocc);
     std::vector<int_t> virs(nvir);
     // loop over determinants
-    int_t i, j, k, l;
+    int_t i, j, k, l, rank;
     for (int_t idet = istart; idet < iend; ++idet) {
         // fill working vectors
         wfn.copy_det(idet, &det[0]);
@@ -362,9 +406,82 @@ void DOCIWfn::run_hci_run_thread(const DOCIWfn &wfn, const double *v, const doub
                 l = virs[j];
                 excite_det(k, l, &det[0]);
                 // add determinant if |H*c| > eps and not already in wfn
-                if ((std::abs(v[k * nbasis + l] * coeffs[idet]) > eps) && (wfn.index_det(&det[0]) == -1))
-                    add_det(&det[0]);
+                if (std::abs(v[k * nbasis + l] * coeffs[idet]) > eps) {
+                    rank = rank_det(nbasis, nocc, &det[0]);
+                    if (wfn.index_det_from_rank(rank) == -1)
+                        add_det_with_rank(&det[0], rank);
+                }
                 excite_det(l, k, &det[0]);
+            }
+        }
+    }
+}
+
+
+void DOCIWfn::run_hci_gen_run_thread(const DOCIWfn &wfn, const double *one_mo, const double *two_mo,
+    const double *coeffs, const double eps, const int_t istart, const int_t iend) {
+    if (istart >= iend) return;
+    // set attributes
+    nword = wfn.nword;
+    nbasis = wfn.nbasis;
+    nocc = wfn.nocc;
+    nvir = wfn.nvir;
+    // prepare working vectors
+    std::vector<uint_t> det(wfn.nword);
+    std::vector<int_t> occs(wfn.nocc);
+    std::vector<int_t> virs(wfn.nvir);
+    // loop over determinants
+    int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset, rank;
+    int_t n1 = wfn.nbasis;
+    int_t n2 = n1 * n1;
+    int_t n3 = n1 * n2;
+    double val;
+    for (int_t idet = istart; idet < iend; ++idet) {
+        // fill working vectors
+        wfn.copy_det(idet, &det[0]);
+        fill_occs(wfn.nword, &det[0], &occs[0]);
+        fill_virs(wfn.nword, wfn.nbasis, &det[0], &virs[0]);
+        // loop over occupied indices
+        for (i = 0; i < wfn.nocc; ++i) {
+            ii = occs[i];
+            ioffset = n3 * ii;
+            // loop over virtual indices
+            for (j = 0; j < wfn.nvir; ++j) {
+                jj = virs[j];
+                // single excitation elements
+                excite_det(ii, jj, &det[0]);
+                val = one_mo[n1 * ii + jj];
+                for (k = 0; k < wfn.nocc; ++k) {
+                    kk = occs[k];
+                    koffset = ioffset + n2 * kk;
+                    val += two_mo[koffset + n1 * jj + kk] - two_mo[koffset + n1 * kk + jj];
+                }
+                // add determinant if |H*c| > eps and not already in wfn
+                if (std::abs(val * coeffs[idet]) > eps) {
+                    rank = rank_det(nbasis, nocc, &det[0]);
+                    if (wfn.index_det_from_rank(rank) == -1)
+                        add_det_with_rank(&det[0], rank);
+                }
+                // loop over occupied indices
+                for (k = i + 1; k < wfn.nocc; ++k) {
+                    kk = occs[k];
+                    koffset = ioffset + n2 * kk;
+                    // loop over virtual indices
+                    for (l = j + 1; l < wfn.nvir; ++l) {
+                        ll = virs[l];
+                        // double excitation elements
+                        excite_det(kk, ll, &det[0]);
+                        val = two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj];
+                        // add determinant if |H*c| > eps and not already in wfn
+                        if (std::abs(val * coeffs[idet]) > eps) {
+                            rank = rank_det(nbasis, nocc, &det[0]);
+                            if (wfn.index_det_from_rank(rank) == -1)
+                                add_det_with_rank(&det[0], rank);
+                        }
+                        excite_det(ll, kk, &det[0]);
+                    }
+                }
+                excite_det(jj, ii, &det[0]);
             }
         }
     }

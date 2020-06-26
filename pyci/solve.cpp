@@ -37,21 +37,6 @@ SparseOp::SparseOp() : nrow(0), ncol(0) {
 }
 
 
-SparseOp::SparseOp(const DOCIWfn &wfn, const double *h, const double *v, const double *w, const int_t nrow_) {
-    init(wfn, h, v, w, nrow_);
-}
-
-
-SparseOp::SparseOp(const FullCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
-    init(wfn, one_mo, two_mo, nrow_);
-}
-
-
-SparseOp::SparseOp(const DOCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
-    init(wfn, one_mo, two_mo, nrow_);
-}
-
-
 void SparseOp::perform_op(const double *x, double *y) const {
     int_t nthread = omp_get_max_threads();
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
@@ -93,7 +78,7 @@ void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const
 }
 
 
-void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const double *w, const int_t nrow_) {
+void SparseOp::init_doci(const DOCIWfn &wfn, const double *h, const double *v, const double *w, const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
     ncol = wfn.ndet;
@@ -104,7 +89,7 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
     // do computations in chunks by making smaller SparseOps in parallel
     int_t nthread = omp_get_max_threads();
     if (nthread == 1) {
-        init_run_thread(wfn, h, v, w, 0, nrow);
+        init_doci_run_thread(wfn, h, v, w, 0, nrow);
         return;
     }
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
@@ -114,7 +99,7 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-        ops[ithread].init_run_thread(wfn, h, v, w, istart, iend);
+        ops[ithread].init_doci_run_thread(wfn, h, v, w, istart, iend);
         // construct larger SparseOp (this instance) from chunks
         #pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
@@ -129,7 +114,7 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
 }
 
 
-void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+void SparseOp::init_fullci(const FullCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
     ncol = wfn.ndet;
@@ -140,7 +125,7 @@ void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *tw
     // do computations in chunks by making smaller SparseOps in parallel
     int_t nthread = omp_get_max_threads();
     if (nthread == 1) {
-        init_run_thread(wfn, one_mo, two_mo, 0, nrow);
+        init_fullci_run_thread(wfn, one_mo, two_mo, 0, nrow);
         return;
     }
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
@@ -150,7 +135,7 @@ void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *tw
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-        ops[ithread].init_run_thread(wfn, one_mo, two_mo, istart, iend);
+        ops[ithread].init_fullci_run_thread(wfn, one_mo, two_mo, istart, iend);
         // construct larger SparseOp (this instance) from chunks
         #pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
@@ -165,7 +150,7 @@ void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *tw
 }
 
 
-void SparseOp::init(const DOCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+void SparseOp::init_gen(const DOCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
     ncol = wfn.ndet;
@@ -176,7 +161,7 @@ void SparseOp::init(const DOCIWfn &wfn, const double *one_mo, const double *two_
     // do computations in chunks by making smaller SparseOps in parallel
     int_t nthread = omp_get_max_threads();
     if (nthread == 1) {
-        init_run_thread(wfn, one_mo, two_mo, 0, nrow);
+        init_gen_run_thread(wfn, one_mo, two_mo, 0, nrow);
         return;
     }
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
@@ -186,7 +171,7 @@ void SparseOp::init(const DOCIWfn &wfn, const double *one_mo, const double *two_
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-        ops[ithread].init_run_thread(wfn, one_mo, two_mo, istart, iend);
+        ops[ithread].init_gen_run_thread(wfn, one_mo, two_mo, istart, iend);
         // construct larger SparseOp (this instance) from chunks
         #pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
@@ -201,8 +186,8 @@ void SparseOp::init(const DOCIWfn &wfn, const double *one_mo, const double *two_
 }
 
 
-void SparseOp::init_run_thread(const DOCIWfn &wfn, const double *h, const double *v, const double *w,
-    const int_t istart, const int_t iend) {
+void SparseOp::init_doci_run_thread(const DOCIWfn &wfn, const double *h, const double *v,
+    const double *w, const int_t istart, const int_t iend) {
     // prepare sparse matrix
     if (istart >= iend) return;
     data.reserve(wfn.ndet + 1);
@@ -261,7 +246,7 @@ void SparseOp::init_run_thread(const DOCIWfn &wfn, const double *h, const double
 }
 
 
-void SparseOp::init_run_thread(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
+void SparseOp::init_fullci_run_thread(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
     if (istart >= iend) return;
@@ -457,7 +442,7 @@ void SparseOp::init_run_thread(const FullCIWfn &wfn, const double *one_mo, const
 }
 
 
-void SparseOp::init_run_thread(const DOCIWfn &wfn, const double *one_mo, const double *two_mo,
+void SparseOp::init_gen_run_thread(const DOCIWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
     if (istart >= iend) return;
@@ -499,19 +484,19 @@ void SparseOp::init_run_thread(const DOCIWfn &wfn, const double *one_mo, const d
             // loop over virtual indices
             for (j = 0; j < wfn.nvir; ++j) {
                 jj = virs[j];
-                // singly-excited elements
+                // single excitation elements
                 excite_det(ii, jj, &det[0]);
                 jdet = wfn.index_det(&det[0]);
                 // check if singly-excited determinant is in wfn
                 if (jdet != -1) {
-                    // compute singly-excited matrix element
+                    // compute single excitation matrix element
                     val1 = one_mo[n1 * ii + jj];
                     for (k = 0; k < wfn.nocc; ++k) {
                         kk = occs[k];
                         koffset = ioffset + n2 * kk;
                         val1 += two_mo[koffset + n1 * jj + kk] - two_mo[koffset + n1 * kk + jj];
                     }
-                    // add singly-excited matrix element
+                    // add single excitation matrix element
                     data.push_back(phase_single_det(wfn.nword, ii, jj, rdet) * val1);
                     indices.push_back(jdet);
                 }

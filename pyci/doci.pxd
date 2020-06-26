@@ -59,10 +59,12 @@ cdef extern from 'pyci/doci.h' namespace 'pyci':
         void to_occs_array(const int_t, const int_t, int_t *)
 
         int_t index_det(const uint_t *)
+        int_t index_det_from_rank(const int_t)
         int_t copy_det(const int_t, uint_t *)
         const uint_t * det_ptr(const int_t)
 
         int_t add_det(const uint_t *) except +
+        int_t add_det_with_rank(const uint_t *, const int_t) except +
         int_t add_det_from_occs(const int_t *) except +
         int_t add_all_dets() except +
         int_t add_excited_dets(const uint_t *, const int_t) except +
@@ -71,5 +73,8 @@ cdef extern from 'pyci/doci.h' namespace 'pyci':
         void squeeze()
 
         void compute_rdms(const double *, double *, double *) except +
+        void compute_rdms_gen(const double *, double *, double *) except +
 
         int_t run_hci(const double *, const double *, const double) except +
+
+        int_t run_hci_gen(const double *, const double *, const double *, const double) except +

@@ -53,10 +53,12 @@ struct DOCIWfn
     void to_occs_array(const int_t, const int_t, int_t *) const;
 
     int_t index_det(const uint_t *) const;
+    int_t index_det_from_rank(const int_t) const;
     void copy_det(const int_t, uint_t *) const;
     const uint_t * det_ptr(const int_t) const;
 
     int_t add_det(const uint_t *);
+    int_t add_det_with_rank(const uint_t *, const int_t);
     int_t add_det_from_occs(const int_t *);
     void add_all_dets();
     void add_excited_dets(const uint_t *, const int_t);
@@ -65,12 +67,17 @@ struct DOCIWfn
     void squeeze();
 
     void compute_rdms(const double *, double *, double *) const;
+    void compute_rdms_gen(const double *, double *, double *) const;
 
     int_t run_hci(const double *, const double *, const double);
+    int_t run_hci_gen(const double *, const double *, const double *, const double);
 
     private:
 
     void run_hci_run_thread(const DOCIWfn &, const double *, const double *, const double, const int_t, const int_t);
+    void run_hci_gen_run_thread(const DOCIWfn &, const double *, const double *, const double *,
+        const double, const int_t, const int_t);
+
     void run_hci_condense_thread(DOCIWfn &);
 };
 
