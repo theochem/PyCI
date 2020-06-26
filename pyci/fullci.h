@@ -65,6 +65,15 @@ struct FullCIWfn
 
     void reserve(const int_t);
     void squeeze();
+
+    int_t run_hci(const double *, const double *, const double *, const double);
+
+    private:
+
+    void run_hci_run_thread(const FullCIWfn &, const double *, const double *, const double *,
+        const double, const int_t, const int_t);
+
+    void run_hci_condense_thread(FullCIWfn &);
 };
 
 

@@ -30,9 +30,9 @@ class TestRoutines:
         ('h2o_ccpvdz', pyci.doci_wfn,   (5,),   -75.634588422),
         ('be_ccpvdz',  pyci.doci_wfn,   (2,),   -14.600556994),
         ('li2_ccpvdz', pyci.doci_wfn,   (3,),   -14.878455349),
+        ('be_ccpvdz',  pyci.fullci_wfn, (2, 2), -14.600556994),
         ('he_ccpvqz',  pyci.doci_wfn,   (1,),    -2.886809116),
         ('he_ccpvqz',  pyci.fullci_wfn, (1, 1),  -2.886809116),
-        ('be_ccpvdz',  pyci.fullci_wfn, (2, 2), -14.600556994),
         ]
 
     def test_solve_sparse(self):
@@ -48,7 +48,7 @@ class TestRoutines:
             yield self.run_compute_rdms, filename, wfn_type, occs, energy
 
     def test_run_hci(self):
-        for filename, wfn_type, occs, energy in self.CASES[:3]:
+        for filename, wfn_type, occs, energy in self.CASES[:4]:
             yield self.run_run_hci, filename, wfn_type, occs, energy
 
     def run_solve_sparse(self, filename, wfn_type, occs, energy):
@@ -102,8 +102,6 @@ class TestRoutines:
         npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
 
     def run_run_hci(self, filename, wfn_type, occs, energy):
-        if wfn_type is pyci.fullci_wfn:
-            raise AssertionError('not implemented')
         ham = pyci.hamiltonian.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_hartreefock_det()

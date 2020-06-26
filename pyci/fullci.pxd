@@ -70,3 +70,5 @@ cdef extern from 'pyci/fullci.h' namespace 'pyci':
 
         void reserve(const int_t) except +
         void squeeze()
+
+        int_t run_hci(const double *, const double *, const double *, const double) except +

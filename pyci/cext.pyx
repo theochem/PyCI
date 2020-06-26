@@ -405,8 +405,17 @@ cdef class doci_wfn:
         Number of orbital basis functions.
     nocc : int
         Number of occupied indices.
+    nocc_up : int
+        Number of occupied spin-up indices.
+    nocc_dn : int
+        Number of occupied spin-down indices.
     nvir : int
         Number of virtual indices.
+    nvir_up : int
+        Number of virtual spin-up indices.
+    nvir_dn : int
+        Number of virtual spin-down indices.
+
 
     """
     cdef DOCIWfn _obj
@@ -1700,7 +1709,7 @@ cdef class fullci_wfn:
         det : np.ndarray(c_uint(2, nword))
             Determinant.
         spin : (SPIN_UP | SPIN_DN)
-            Which spin upon which to perform the oepration.
+            The spin upon which to perform the operation.
 
         Returns
         -------
@@ -1724,7 +1733,7 @@ cdef class fullci_wfn:
         det : np.ndarray(c_uint(2, nword))
             Determinant.
         spin : (SPIN_UP | SPIN_DN)
-            Which spin upon which to perform the oepration.
+            The spin upon which to perform the operation.
 
         Returns
         -------
@@ -1748,7 +1757,7 @@ cdef class fullci_wfn:
         det : np.ndarray(c_uint(2, nword))
             Determinant.
         spin : (SPIN_UP | SPIN_DN)
-            Which spin upon which to perform the oepration.
+            The spin upon which to perform the operation.
 
         Returns
         -------
@@ -1774,7 +1783,7 @@ cdef class fullci_wfn:
         det : np.ndarray(c_uint(2, nword))
             Determinant.
         spin : (SPIN_UP | SPIN_DN)
-            Which spin upon which to perform the oepration.
+            The spin upon which to perform the operation.
 
         """
         excite_det(i, a, <uint_t *>(&det[<int_t>spin, 0]))
@@ -1790,7 +1799,7 @@ cdef class fullci_wfn:
         det : np.ndarray(c_uint(2, nword))
             Determinant.
         spin : (SPIN_UP | SPIN_DN)
-            Which spin upon which to perform the oepration.
+            The spin upon which to perform the operation.
 
         """
         setbit_det(i, <uint_t *>(&det[<int_t>spin, 0]))
@@ -1806,7 +1815,7 @@ cdef class fullci_wfn:
         det : np.ndarray(c_uint(2, nword))
             Determinant.
         spin : (SPIN_UP | SPIN_DN)
-            Which spin upon which to perform the oepration.
+            The spin upon which to perform the operation.
 
         """
         clearbit_det(i, <uint_t *>(&det[<int_t>spin, 0]))
@@ -1820,7 +1829,7 @@ cdef class fullci_wfn:
         det : np.ndarray(c_uint(2, nword))
             Determinant.
         spin : (SPIN_UP | SPIN_DN)
-            Which spin upon which to perform the oepration.
+            The spin upon which to perform the operation.
 
         Returns
         -------
@@ -1839,7 +1848,7 @@ cdef class fullci_wfn:
         det : np.ndarray(c_uint(2, nword))
             Determinant.
         spin : (SPIN_UP | SPIN_DN)
-            Which spin upon which to perform the oepration.
+            The spin upon which to perform the operation.
 
         Returns
         -------
@@ -1862,7 +1871,7 @@ cdef class fullci_wfn:
         a : int
             Electron "particle" index.
         spin : (SPIN_UP | SPIN_DN)
-            Which spin upon which to perform the oepration.
+            The spin upon which to perform the operation.
 
         Returns
         -------
@@ -1882,13 +1891,13 @@ cdef class fullci_wfn:
         det : np.ndarray(c_uint(2, nword))
             Determinant.
         i : int
-            Electron "hole" index.
+            First electron "hole" index.
         j : int
-            Electron "hole" index.
+            Second electron "hole" index.
         a : int
-            Electron "particle" index.
+            First electron "particle" index.
         b : int
-            Electron "particle" index.
+            Second electron "particle" index.
         spin1 : (SPIN_UP | SPIN_DN)
             Spin of first excitation.
         spin2 : (SPIN_UP | SPIN_DN)
@@ -1937,10 +1946,60 @@ cdef class fullci_wfn:
         """
         return np.zeros((2, self._obj.nword), dtype=c_uint)
 
+    def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
+        r"""
+        Run an iteration of heat-bath CI.
+
+        Adds all determinants connected to determinants currently in the wave function,
+        if they satisfy the criteria
+        :math:`|\left<f|H|d\right> c_d| > \epsilon` for :math:`f = a^\dagger_i a_a d` or
+        :math:`f = a^\dagger_i a^\dagger_j a_b a_a d`.
+
+        Parameters
+        ----------
+        ham : hamiltonian
+            Hamiltonian object.
+        coeffs : np.ndarray(c_double(ndet))
+            Coefficient vector.
+        eps : float
+            Threshold value for which determinants to include.
+
+        Returns
+        -------
+        n : int
+            Number of determinants added to wave function.
+
+        """
+        if self._obj.ndet != coeffs.shape[0]:
+            raise ValueError('dimensions of wfn, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
+        elif self._obj.nbasis != ham._nbasis:
+            raise ValueError('dimensions of wfn, ham do not match')
+        return self._obj.run_hci(<double *>(&ham._one_mo[0, 0]),
+                                 <double *>(&ham._two_mo[0, 0, 0, 0]), <double *>(&coeffs[0]), eps)
+
 
 cdef class gen_wfn(doci_wfn):
     r"""
     Generalized CI wave function class.
+
+    Attributes
+    ----------
+    nbasis : int
+        Number of orbital basis functions.
+    nocc : int
+        Number of occupied indices.
+    nocc_up : int
+        Number of occupied spin-up indices.
+    nocc_dn : int
+        Number of occupied spin-down indices.
+    nvir : int
+        Number of virtual indices.
+    nvir_up : int
+        Number of virtual spin-up indices.
+    nvir_dn : int
+        Number of virtual spin-down indices.
 
     """
 
@@ -2132,13 +2191,13 @@ cdef class gen_wfn(doci_wfn):
         det : np.ndarray(c_uint(nword))
             Determinant.
         i : int
-            Electron "hole" index.
+            First electron "hole" index.
         j : int
-            Electron "hole" index.
+            Second electron "hole" index.
         a : int
-            Electron "particle" index.
+            First electron "particle" index.
         b : int
-            Electron "particle" index.
+            Second electron "particle" index.
 
         Returns
         -------

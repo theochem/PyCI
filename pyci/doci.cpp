@@ -315,7 +315,9 @@ void DOCIWfn::compute_rdms(const double *coeffs, double *d0, double *d2) const {
 
 
 int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) {
+    // save ndet as ndet_old
     int_t ndet_old = ndet;
+    // do computation in chunks by making smaller DOCIWfns in parallel
     int_t nthread = omp_get_max_threads();
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     std::vector<DOCIWfn> wfns(nthread);
@@ -326,8 +328,10 @@ int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) 
         int_t iend = (istart + chunksize < ndet_old) ? istart + chunksize : ndet_old;
         wfns[ithread].run_hci_run_thread(*this, v, coeffs, eps, istart, iend);
     }
+    // fill original DOCIWfn (this object)
     for (int_t t = 0; t < nthread; ++t)
         run_hci_condense_thread(wfns[t]);
+    // return number of determinants added
     return ndet - ndet_old;
 }
 
@@ -335,19 +339,23 @@ int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) 
 void DOCIWfn::run_hci_run_thread(const DOCIWfn &wfn, const double *v, const double *coeffs,
     const double eps, const int_t istart, const int_t iend) {
     if (istart >= iend) return;
+    // set attributes
     nword = wfn.nword;
     nbasis = wfn.nbasis;
     nocc = wfn.nocc;
     nvir = wfn.nvir;
+    // prepare working vectors
     std::vector<uint_t> det(nword);
     std::vector<int_t> occs(nocc);
     std::vector<int_t> virs(nvir);
+    // loop over determinants
     int_t i, j, k, l;
     for (int_t idet = istart; idet < iend; ++idet) {
+        // fill working vectors
         wfn.copy_det(idet, &det[0]);
         fill_occs(nword, &det[0], &occs[0]);
         fill_virs(nword, nbasis, &det[0], &virs[0]);
-        // pair excitation elements
+        // single/"pair"-excited elements elements
         for (i = 0; i < nocc; ++i) {
             k = occs[i];
             for (j = 0; j < nvir; ++j) {
