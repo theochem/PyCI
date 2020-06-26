@@ -77,7 +77,6 @@ struct DOCIWfn
     void run_hci_run_thread(const DOCIWfn &, const double *, const double *, const double, const int_t, const int_t);
     void run_hci_gen_run_thread(const DOCIWfn &, const double *, const double *, const double *,
         const double, const int_t, const int_t);
-
     void run_hci_condense_thread(DOCIWfn &);
 };
 

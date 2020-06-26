@@ -30,7 +30,7 @@ import numpy
 
 name = 'pyci'
 
-version = '0.1.0'
+version = '0.2.0'
 
 license = 'GPLv3'
 
@@ -40,7 +40,7 @@ author_email = 'richerm@mcmaster.ca'
 
 url = 'https://github.com/msricher/pyci'
 
-description = 'A flexible seniority-zero configuraion interaction libary.'
+description = 'A flexible ab-initio quantum chemistry library for Configuration Interaction.'
 
 long_description = open('README.rst', 'r', encoding='utf-8').read()
 

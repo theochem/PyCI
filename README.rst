@@ -86,6 +86,22 @@ be specified by using the ``CC`` and ``CXX`` environment variables:
 
     CC=/path/to/your/gcc/or/clang CXX=/path/to/your/g++/or/clang++ python setup.py install --user
 
+Building Documentation
+~~~~~~~~~~~~~~~~~~~~~~
+
+Run the following in your shell to install the Read the Docs Sphinx theme via pip:
+
+.. code:: shell
+
+    pip install sphinx-rtd-theme --user
+
+Then, compile PyCI and build the HTML documentation:
+
+.. code:: shell
+
+    python setup.py build_ext --inplace
+    cd doc && make html
+
 .. _Python:             http://python.org/
 .. _NumPy:              http://numpy.org/
 .. _SciPy:              http://docs.scipy.org/doc/scipy/reference/
