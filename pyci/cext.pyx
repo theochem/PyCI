@@ -1076,6 +1076,32 @@ cdef class doci_wfn(spin_wfn):
         """
         return self.__copy__()
 
+    def compute_overlap(self, double[::1] coeffs not None, doci_wfn wfn not None,
+        double[::1] w_coeffs not None):
+        r"""
+        Compute the overlap of this wave function with another wave function.
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(c_double(ndet))
+            This wave function's coefficient vector.
+        wfn : doci_wfn
+            Wave function with which to compute overlap.
+        w_coeffs : np.ndarray(c_double(len(wfn)))
+            This wave function's coefficient vector.
+
+        Returns
+        -------
+        olp : float
+            Overlap.
+
+        """
+        if self._obj.ndet != coeffs.size:
+            raise ValueError('dimensions of self, coeffs do not match')
+        if wfn._obj.ndet != w_coeffs.size:
+            raise ValueError('dimensions of wfn, w_coeffs do not match')
+        return self._obj.compute_overlap(&coeffs[0], wfn._obj, &w_coeffs[0])
+
     def compute_rdms(self, double[::1] coeffs not None):
         r"""
         Compute the 2-particle reduced density matrix (RDM) of a wave function.
@@ -1425,6 +1451,32 @@ cdef class gen_wfn(spin_wfn):
 
         """
         return phase_double_det(self._obj.nword, i, j, a, b, <uint_t *>(&det[0]))
+
+    def compute_overlap(self, double[::1] coeffs not None, gen_wfn wfn not None,
+        double[::1] w_coeffs not None):
+        r"""
+        Compute the overlap of this wave function with another wave function.
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(c_double(ndet))
+            This wave function's coefficient vector.
+        wfn : gen_wfn
+            Wave function with which to compute overlap.
+        w_coeffs : np.ndarray(c_double(len(wfn)))
+            This wave function's coefficient vector.
+
+        Returns
+        -------
+        olp : float
+            Overlap.
+
+        """
+        if self._obj.ndet != coeffs.size:
+            raise ValueError('dimensions of self, coeffs do not match')
+        if wfn._obj.ndet != w_coeffs.size:
+            raise ValueError('dimensions of wfn, w_coeffs do not match')
+        return self._obj.compute_overlap(&coeffs[0], wfn._obj, &w_coeffs[0])
 
     def compute_rdms(self, double[::1] coeffs not None):
         r"""
@@ -2273,6 +2325,32 @@ cdef class fullci_wfn:
 
         """
         return np.zeros((2, self._obj.nword), dtype=c_uint)
+
+    def compute_overlap(self, double[::1] coeffs not None, fullci_wfn wfn not None,
+        double[::1] w_coeffs not None):
+        r"""
+        Compute the overlap of this wave function with another wave function.
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(c_double(ndet))
+            This wave function's coefficient vector.
+        wfn : fullci_wfn
+            Wave function with which to compute overlap.
+        w_coeffs : np.ndarray(c_double(len(wfn)))
+            This wave function's coefficient vector.
+
+        Returns
+        -------
+        olp : float
+            Overlap.
+
+        """
+        if self._obj.ndet != coeffs.size:
+            raise ValueError('dimensions of self, coeffs do not match')
+        if wfn._obj.ndet != w_coeffs.size:
+            raise ValueError('dimensions of wfn, w_coeffs do not match')
+        return self._obj.compute_overlap(&coeffs[0], wfn._obj, &w_coeffs[0])
 
     def compute_rdms(self, double[::1] coeffs not None):
         r"""

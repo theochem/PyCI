@@ -72,6 +72,8 @@ cdef extern from 'pyci/doci.h' namespace 'pyci':
         void reserve(const int_t) except +
         void squeeze()
 
+        double compute_overlap(const double *, const DOCIWfn &, const double *) except +
+
         void compute_rdms(const double *, double *, double *) except +
         void compute_rdms_gen(const double *, double *, double *) except +
 

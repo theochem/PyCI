@@ -67,6 +67,8 @@ struct FullCIWfn
     void reserve(const int_t);
     void squeeze();
 
+    double compute_overlap(const double *, const FullCIWfn &, const double *) const;
+
     void compute_rdms(const double *, double *, double *) const;
 
     int_t run_hci(const double *, const double *, const double *, const double);
@@ -74,7 +76,7 @@ struct FullCIWfn
     private:
 
     void run_hci_run_thread(const FullCIWfn &, const double *, const double *, const double *,
-        const double, const int_t, const int_t);
+                            const double, const int_t, const int_t);
     void run_hci_condense_thread(FullCIWfn &);
 };
 

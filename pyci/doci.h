@@ -69,14 +69,17 @@ struct DOCIWfn
     void compute_rdms(const double *, double *, double *) const;
     void compute_rdms_gen(const double *, double *, double *) const;
 
+    double compute_overlap(const double *, const DOCIWfn &, const double *) const;
+
     int_t run_hci(const double *, const double *, const double);
     int_t run_hci_gen(const double *, const double *, const double *, const double);
 
     private:
 
-    void run_hci_run_thread(const DOCIWfn &, const double *, const double *, const double, const int_t, const int_t);
+    void run_hci_run_thread(const DOCIWfn &, const double *, const double *, const double,
+                            const int_t, const int_t);
     void run_hci_gen_run_thread(const DOCIWfn &, const double *, const double *, const double *,
-        const double, const int_t, const int_t);
+                                const double, const int_t, const int_t);
     void run_hci_condense_thread(DOCIWfn &);
 };
 
