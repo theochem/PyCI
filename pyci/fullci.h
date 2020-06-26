@@ -27,6 +27,8 @@ namespace pyci {
 
 struct FullCIWfn
 {
+    public:
+
     typedef hashmap<int_t, int_t> hashmap_type;
 
     int_t nword, nword2, nbasis, nocc_up, nocc_dn, nvir_up, nvir_dn, ndet, maxdet_up, maxdet_dn;

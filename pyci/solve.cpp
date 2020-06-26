@@ -83,28 +83,6 @@ void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const
 }
 
 
-void SparseOp::condense_thread(SparseOp &op) {
-    if (!(op.nrow)) return;
-    int_t val_ptr = indices.size();
-    int_t istart = data.size();
-    int_t iend = op.data.size();
-    data.resize(istart + iend);
-    std::memcpy(&data[istart], &op.data[0], sizeof(double) * iend);
-    op.data.resize(0);
-    // copy over indices array
-    istart = indices.size();
-    iend = op.indices.size();
-    indices.resize(istart + iend);
-    std::memcpy(&indices[istart], &op.indices[0], sizeof(int_t) * iend);
-    op.indices.resize(0);
-    // copy over indptr array
-    iend = op.indptr.size() - 1;
-    for (int_t i = 0; i < iend; ++i)
-        indptr.push_back(op.indptr[i] + val_ptr);
-    op.indptr.resize(0);
-}
-
-
 void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const double *w, const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
@@ -122,12 +100,12 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-        ops[ithread].init_thread(wfn, h, v, w, istart, iend);
+        ops[ithread].init_run_thread(wfn, h, v, w, istart, iend);
         // construct larger SparseOp (this instance) from chunks
         #pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
             #pragma omp ordered
-            condense_thread(ops[t]);
+            init_condense_thread(ops[t]);
     }
     // finalize vectors
     indptr.push_back(indices.size());
@@ -154,12 +132,12 @@ void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *tw
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-        ops[ithread].init_thread(wfn, one_mo, two_mo, istart, iend);
+        ops[ithread].init_run_thread(wfn, one_mo, two_mo, istart, iend);
         // construct larger SparseOp (this instance) from chunks
         #pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
             #pragma omp ordered
-            condense_thread(ops[t]);
+            init_condense_thread(ops[t]);
     }
     // finalize vectors
     indptr.push_back(indices.size());
@@ -169,7 +147,7 @@ void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *tw
 }
 
 
-void SparseOp::init_thread(const DOCIWfn &wfn, const double *h, const double *v, const double *w,
+void SparseOp::init_run_thread(const DOCIWfn &wfn, const double *h, const double *v, const double *w,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
     if (istart >= iend) return;
@@ -232,7 +210,7 @@ void SparseOp::init_thread(const DOCIWfn &wfn, const double *h, const double *v,
 }
 
 
-void SparseOp::init_thread(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
+void SparseOp::init_run_thread(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
     if (istart >= iend) return;
@@ -430,6 +408,28 @@ void SparseOp::init_thread(const FullCIWfn &wfn, const double *one_mo, const dou
     data.shrink_to_fit();
     indices.shrink_to_fit();
     indptr.shrink_to_fit();
+}
+
+
+void SparseOp::init_condense_thread(SparseOp &op) {
+    if (!(op.nrow)) return;
+    int_t val_ptr = indices.size();
+    int_t istart = data.size();
+    int_t iend = op.data.size();
+    data.resize(istart + iend);
+    std::memcpy(&data[istart], &op.data[0], sizeof(double) * iend);
+    op.data.resize(0);
+    // copy over indices array
+    istart = indices.size();
+    iend = op.indices.size();
+    indices.resize(istart + iend);
+    std::memcpy(&indices[istart], &op.indices[0], sizeof(int_t) * iend);
+    op.indices.resize(0);
+    // copy over indptr array
+    iend = op.indptr.size() - 1;
+    for (int_t i = 0; i < iend; ++i)
+        indptr.push_back(op.indptr[i] + val_ptr);
+    op.indptr.resize(0);
 }
 
 

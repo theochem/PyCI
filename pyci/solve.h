@@ -25,7 +25,10 @@
 namespace pyci {
 
 
-struct SparseOp {
+struct SparseOp
+{
+    public:
+
     int_t nrow, ncol;
     std::vector<double> data;
     std::vector<int_t> indices;
@@ -41,15 +44,14 @@ struct SparseOp {
     void perform_op(const double *, double *) const;
     void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) const;
 
-    void condense_thread(SparseOp &);
-
     void init(const DOCIWfn &, const double *, const double *, const double *, const int_t);
     void init(const FullCIWfn &, const double *, const double *, const int_t);
 
-    void init_thread(const DOCIWfn &, const double *, const double *, const double *, const int_t, const int_t);
-    void init_thread(const FullCIWfn &, const double *, const double *, const int_t, const int_t);
+    private:
 
-
+    void init_run_thread(const DOCIWfn &, const double *, const double *, const double *, const int_t, const int_t);
+    void init_run_thread(const FullCIWfn &, const double *, const double *, const int_t, const int_t);
+    void init_condense_thread(SparseOp &);
 };
 
 

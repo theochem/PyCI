@@ -310,24 +310,36 @@ void DOCIWfn::compute_rdms(const double *coeffs, double *d0, double *d2) const {
 
 
 int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) {
-    /*
+    int_t ndet_old = ndet;
     int_t nthread = omp_get_max_threads();
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    std::vector<DOCIWfn> wfns(nthread);
     #pragma omp parallel
     {
-        int_t idet, i, j, k, l;
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < ndet) ? start + chunksize : ndet;
-        for (idet = start; idet < end; ++idet) {
-        ... with a mutex or #pragma omp critical
+        int_t ithread = omp_get_thread_num();
+        int_t istart = ithread * chunksize;
+        int_t iend = (istart + chunksize < ndet_old) ? istart + chunksize : ndet_old;
+        wfns[ithread].run_hci_run_thread(*this, v, coeffs, eps, istart, iend);
     }
-    */
-    int_t ndet_old = ndet, idet, i, j, k, l;
+    for (int_t t = 0; t < nthread; ++t)
+        run_hci_condense_thread(wfns[t]);
+    return ndet - ndet_old;
+}
+
+
+void DOCIWfn::run_hci_run_thread(const DOCIWfn &wfn, const double *v, const double *coeffs,
+    const double eps, const int_t istart, const int_t iend) {
+    if (istart >= iend) return;
+    nword = wfn.nword;
+    nbasis = wfn.nbasis;
+    nocc = wfn.nocc;
+    nvir = wfn.nvir;
     std::vector<uint_t> det(nword);
     std::vector<int_t> occs(nocc);
     std::vector<int_t> virs(nvir);
-    for (idet = 0; idet < ndet_old; ++idet) {
-        copy_det(idet, &det[0]);
+    int_t i, j, k, l;
+    for (int_t idet = istart; idet < iend; ++idet) {
+        wfn.copy_det(idet, &det[0]);
         fill_occs(nword, &det[0], &occs[0]);
         fill_virs(nword, nbasis, &det[0], &virs[0]);
         // pair excitation elements
@@ -336,14 +348,22 @@ int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) 
             for (j = 0; j < nvir; ++j) {
                 l = virs[j];
                 excite_det(k, l, &det[0]);
-                // add determinant if |H*c| > eps
-                if (std::abs(v[k * nbasis + l] * coeffs[idet]) > eps)
+                // add determinant if |H*c| > eps and not already in wfn
+                if ((std::abs(v[k * nbasis + l] * coeffs[idet]) > eps) && (wfn.index_det(&det[0]) == -1))
                     add_det(&det[0]);
-                copy_det(idet, &det[0]);
+                excite_det(l, k, &det[0]);
             }
         }
     }
-    return ndet - ndet_old;
+}
+
+
+void DOCIWfn::run_hci_condense_thread(DOCIWfn &wfn) {
+    if (!(wfn.ndet)) return;
+    for (int_t idet = 0; idet < wfn.ndet; ++idet)
+        add_det(&wfn.dets[idet * nword]);
+    wfn.dets.resize(0);
+    wfn.dict.clear();
 }
 
 
