@@ -95,7 +95,7 @@ Run the following in your shell to install the Read the Docs Sphinx theme via pi
 
     pip install sphinx-rtd-theme --user
 
-Then, compile PyCI and build the HTML documentation:
+Then, run the following to compile PyCI and build the HTML documentation:
 
 .. code:: shell
 
