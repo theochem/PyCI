@@ -47,6 +47,11 @@ SparseOp::SparseOp(const FullCIWfn &wfn, const double *one_mo, const double *two
 }
 
 
+SparseOp::SparseOp(const DOCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+    init(wfn, one_mo, two_mo, nrow_);
+}
+
+
 void SparseOp::perform_op(const double *x, double *y) const {
     int_t nthread = omp_get_max_threads();
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
@@ -71,6 +76,11 @@ void SparseOp::perform_op(const double *x, double *y) const {
 
 void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit,
     const double tol, double *evals, double *evecs) const {
+    if (nrow == 1) {
+        *evals = data[0];
+        *evecs = 1.0;
+        return;
+    }
     Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE, const SparseOp> eigs(this, n, ncv);
     eigs.init(coeffs);
     eigs.compute(maxit, tol, Spectra::SMALLEST_ALGE);
@@ -93,6 +103,10 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
     indptr.resize(0);
     // do computations in chunks by making smaller SparseOps in parallel
     int_t nthread = omp_get_max_threads();
+    if (nthread == 1) {
+        init_run_thread(wfn, h, v, w, 0, nrow);
+        return;
+    }
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     std::vector<SparseOp> ops(nthread);
     #pragma omp parallel
@@ -125,6 +139,46 @@ void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *tw
     indptr.resize(0);
     // do computations in chunks by making smaller SparseOps in parallel
     int_t nthread = omp_get_max_threads();
+    if (nthread == 1) {
+        init_run_thread(wfn, one_mo, two_mo, 0, nrow);
+        return;
+    }
+    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
+    std::vector<SparseOp> ops(nthread);
+    #pragma omp parallel
+    {
+        int_t ithread = omp_get_thread_num();
+        int_t istart = ithread * chunksize;
+        int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
+        ops[ithread].init_run_thread(wfn, one_mo, two_mo, istart, iend);
+        // construct larger SparseOp (this instance) from chunks
+        #pragma omp for ordered schedule(static,1)
+        for (int_t t = 0; t < nthread; ++t)
+            #pragma omp ordered
+            init_condense_thread(ops[t]);
+    }
+    // finalize vectors
+    indptr.push_back(indices.size());
+    data.shrink_to_fit();
+    indices.shrink_to_fit();
+    indptr.shrink_to_fit();
+}
+
+
+void SparseOp::init(const DOCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+    // set attributes
+    nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
+    ncol = wfn.ndet;
+    // prepare vectors
+    data.resize(0);
+    indices.resize(0);
+    indptr.resize(0);
+    // do computations in chunks by making smaller SparseOps in parallel
+    int_t nthread = omp_get_max_threads();
+    if (nthread == 1) {
+        init_run_thread(wfn, one_mo, two_mo, 0, nrow);
+        return;
+    }
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     std::vector<SparseOp> ops(nthread);
     #pragma omp parallel
@@ -155,23 +209,20 @@ void SparseOp::init_run_thread(const DOCIWfn &wfn, const double *h, const double
     indices.reserve(wfn.ndet + 1);
     indptr.reserve(iend - istart + 1);
     indptr.push_back(0);
-    // set nrow
-    nrow = istart - iend;
+    // set nrow and ncol
+    nrow = iend - istart;
     // prepare working vectors
-    std::vector<uint_t> vdet(wfn.nword);
-    std::vector<int_t> voccs(wfn.nocc);
-    std::vector<int_t> vvirs(wfn.nvir);
-    uint_t *det = &vdet[0];
-    int_t *occs = &voccs[0];
-    int_t *virs = &vvirs[0];
+    std::vector<uint_t> det(wfn.nword);
+    std::vector<int_t> occs(wfn.nocc);
+    std::vector<int_t> virs(wfn.nvir);
     // loop over determinants
     int_t i, j, k, l, jdet;
     double val1, val2;
     for (int_t idet = istart; idet < iend; ++idet) {
         // fill working vectors
-        std::memcpy(det, &wfn.dets[idet * wfn.nword], sizeof(uint_t) * wfn.nword);
-        fill_occs(wfn.nword, det, occs);
-        fill_virs(wfn.nword, wfn.nbasis, det, virs);
+        wfn.copy_det(idet, &det[0]);
+        fill_occs(wfn.nword, &det[0], &occs[0]);
+        fill_virs(wfn.nword, wfn.nbasis, &det[0], &virs[0]);
         val1 = 0.0;
         val2 = 0.0;
         // loop over occupied indices
@@ -184,17 +235,17 @@ void SparseOp::init_run_thread(const DOCIWfn &wfn, const double *h, const double
                 val2 += w[k * wfn.nbasis + occs[j]];
             // loop over virtual indices
             for (j = 0; j < wfn.nvir; ++j) {
-                // compute single/"pair" excitation elements
+                // compute single/"pair"-excited elements
                 l = virs[j];
-                excite_det(k, l, det);
-                jdet = wfn.index_det(det);
+                excite_det(k, l, &det[0]);
+                jdet = wfn.index_det(&det[0]);
                 // check if excited determinant is in wfn
                 if (jdet != -1) {
-                    // add single/"pair" excitation matrix element
+                    // add single/"pair"-excited matrix element
                     data.push_back(v[k * wfn.nbasis + l]);
                     indices.push_back(jdet);
                 }
-                excite_det(l, k, det);
+                excite_det(l, k, &det[0]);
             }
         }
         // add diagonal element to matrix
@@ -218,19 +269,14 @@ void SparseOp::init_run_thread(const FullCIWfn &wfn, const double *one_mo, const
     indices.reserve(wfn.ndet + 1);
     indptr.reserve(iend - istart + 1);
     indptr.push_back(0);
-    // set nrow
-    nrow = istart - iend;
+    // set nrow and ncol
+    nrow = iend - istart;
     // working vectors
-    std::vector<uint_t> vdet(wfn.nword2);
-    std::vector<int_t> voccs_up(wfn.nocc_up), voccs_dn(wfn.nocc_dn);
-    std::vector<int_t> vvirs_up(wfn.nvir_up), vvirs_dn(wfn.nvir_dn);
+    std::vector<uint_t> det(wfn.nword2);
+    std::vector<int_t> occs_up(wfn.nocc_up), occs_dn(wfn.nocc_dn);
+    std::vector<int_t> virs_up(wfn.nvir_up), virs_dn(wfn.nvir_dn);
     const uint_t *rdet_up, *rdet_dn;
-    uint_t *det_up = &vdet[0];
-    uint_t *det_dn = det_up + wfn.nword;
-    int_t *occs_up = &voccs_up[0];
-    int_t *occs_dn = &voccs_dn[0];
-    int_t *virs_up = &vvirs_up[0];
-    int_t *virs_dn = &vvirs_dn[0];
+    uint_t *det_up = &det[0], *det_dn = &det[wfn.nword];
     // loop over determinants
     int_t i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset;
     int_t rank_up_ref, rank_dn_ref, rank_up, sign_up;
@@ -243,10 +289,10 @@ void SparseOp::init_run_thread(const FullCIWfn &wfn, const double *one_mo, const
         rdet_up = &wfn.dets[idet * wfn.nword2];
         rdet_dn = rdet_up + wfn.nword;
         std::memcpy(det_up, rdet_up, sizeof(uint_t) * wfn.nword2);
-        fill_occs(wfn.nword, rdet_up, occs_up);
-        fill_occs(wfn.nword, rdet_dn, occs_dn);
-        fill_virs(wfn.nword, wfn.nbasis, rdet_up, virs_up);
-        fill_virs(wfn.nword, wfn.nbasis, rdet_dn, virs_dn);
+        fill_occs(wfn.nword, rdet_up, &occs_up[0]);
+        fill_occs(wfn.nword, rdet_dn, &occs_dn[0]);
+        fill_virs(wfn.nword, wfn.nbasis, rdet_up, &virs_up[0]);
+        fill_virs(wfn.nword, wfn.nbasis, rdet_dn, &virs_dn[0]);
         rank_up_ref = rank_det(n1, wfn.nocc_up, rdet_up) * wfn.maxdet_dn;
         rank_dn_ref = rank_det(n1, wfn.nocc_dn, rdet_dn);
         val2 = 0.0;
@@ -396,6 +442,102 @@ void SparseOp::init_run_thread(const FullCIWfn &wfn, const double *one_mo, const
                     }
                 }
                 excite_det(jj, ii, det_dn);
+            }
+        }
+        // add diagonal element to matrix
+        data.push_back(val2);
+        indices.push_back(idet);
+        // add pointer to next row's indices
+        indptr.push_back(indices.size());
+    }
+    // finalize vectors
+    data.shrink_to_fit();
+    indices.shrink_to_fit();
+    indptr.shrink_to_fit();
+}
+
+
+void SparseOp::init_run_thread(const DOCIWfn &wfn, const double *one_mo, const double *two_mo,
+    const int_t istart, const int_t iend) {
+    // prepare sparse matrix
+    if (istart >= iend) return;
+    data.reserve(wfn.ndet + 1);
+    indices.reserve(wfn.ndet + 1);
+    indptr.reserve(iend - istart + 1);
+    indptr.push_back(0);
+    // set nrow and ncol
+    nrow = iend - istart;
+    // working vectors
+    std::vector<uint_t> det(wfn.nword);
+    std::vector<int_t> occs(wfn.nocc);
+    std::vector<int_t> virs(wfn.nvir);
+    const uint_t *rdet;
+    // loop over determinants
+    int_t i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset;
+    int_t n1 = wfn.nbasis;
+    int_t n2 = n1 * n1;
+    int_t n3 = n1 * n2;
+    double val1, val2;
+    for (int_t idet = istart; idet < iend; ++idet) {
+        // fill working vectors
+        rdet = &wfn.dets[idet * wfn.nword];
+        std::memcpy(&det[0], rdet, sizeof(uint_t) * wfn.nword);
+        fill_occs(wfn.nword, rdet, &occs[0]);
+        fill_virs(wfn.nword, wfn.nbasis, rdet, &virs[0]);
+        val2 = 0.0;
+        // loop over occupied indices
+        for (i = 0; i < wfn.nocc; ++i) {
+            ii = occs[i];
+            ioffset = n3 * ii;
+            // compute part of diagonal matrix element
+            val2 += one_mo[(n1 + 1) * ii];
+            for (k = i + 1; k < wfn.nocc; ++k) {
+                kk = occs[k];
+                koffset = ioffset + n2 * kk;
+                val2 += two_mo[koffset + n1 * ii + kk] - two_mo[koffset + n1 * kk + ii];
+            }
+            // loop over virtual indices
+            for (j = 0; j < wfn.nvir; ++j) {
+                jj = virs[j];
+                // singly-excited elements
+                excite_det(ii, jj, &det[0]);
+                jdet = wfn.index_det(&det[0]);
+                // check if singly-excited determinant is in wfn
+                if (jdet != -1) {
+                    // compute singly-excited matrix element
+                    val1 = one_mo[n1 * ii + jj];
+                    for (k = 0; k < wfn.nocc; ++k) {
+                        kk = occs[k];
+                        koffset = ioffset + n2 * kk;
+                        val1 += two_mo[koffset + n1 * jj + kk] - two_mo[koffset + n1 * kk + jj];
+                    }
+                    // add singly-excited matrix element
+                    data.push_back(phase_single_det(wfn.nword, ii, jj, rdet) * val1);
+                    indices.push_back(jdet);
+                }
+                // loop over occupied indices
+                for (k = i + 1; k < wfn.nocc; ++k) {
+                    kk = occs[k];
+                    koffset = ioffset + n2 * kk;
+                    // loop over virtual indices
+                    for (l = j + 1; l < wfn.nvir; ++l) {
+                        ll = virs[l];
+                        // double excitation elements
+                        excite_det(kk, ll, &det[0]);
+                        jdet = wfn.index_det(&det[0]);
+                        // check if double excited determinant is in wfn
+                        if (jdet != -1) {
+                            // add double matrix element
+                            data.push_back(
+                                phase_double_det(wfn.nword, ii, kk, jj, ll, rdet)
+                              * (two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj])
+                            );
+                            indices.push_back(jdet);
+                        }
+                        excite_det(ll, kk, &det[0]);
+                    }
+                }
+                excite_det(jj, ii, &det[0]);
             }
         }
         // add diagonal element to matrix

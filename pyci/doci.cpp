@@ -296,7 +296,7 @@ void DOCIWfn::compute_rdms(const double *coeffs, double *d0, double *d2) const {
                 l = virs[j];
                 excite_det(k, l, &det[0]);
                 jdet = index_det(&det[0]);
-                copy_det(idet, &det[0]);
+                excite_det(l, k, &det[0]);
                 // check if excited determinant is in wfn
                 if (jdet > idet) {
                     val2 = coeffs[idet] * coeffs[jdet];

@@ -2198,7 +2198,7 @@ cdef class sparse_op:
         self._obj.perform_op(&x[0], &out[0])
         return y
 
-    def solve(self, int_t n=1, int_t ncv=20, double[::1] c0=None, int_t maxiter=-1, double tol=1.0e-6):
+    def solve(self, int_t n=1, int_t ncv=-1, double[::1] c0=None, int_t maxiter=-1, double tol=1.0e-6):
         r"""
         Solve the CI problem for the energy/energies and coefficient vector(s).
 
@@ -2206,10 +2206,10 @@ cdef class sparse_op:
         ----------
         n : int, default=1
             Number of lowest-energy solutions for which to solve.
-        ncv : int, default=20
+        ncv : int, default=max(n + 1, min(20, nrow))
             Number of Lanczos vectors to use for eigensolver.
             More is generally faster and more reliably convergent.
-        c0 : np.ndarray(c_double(len(wfn))), optional
+        c0 : np.ndarray(c_double(nrow)), optional
             Initial guess for lowest-energy coefficient vector.
             If not provided, the default is [1, 0, 0, ..., 0, 0].
         maxiter : int, default=1000*n
@@ -2221,25 +2221,22 @@ cdef class sparse_op:
         -------
         evals : np.ndarray(c_double(n))
             Energies.
-        evecs : np.ndarray(c_double(n, len(wfn)))
+        evecs : np.ndarray(c_double(n, nrow))
             Coefficient vectors.
 
         """
         if self._shape[0] != self._shape[1]:
             raise ValueError('cannot solve for a rectangular operator')
         cdef int_t ndet = self._shape[0]
-        # handle ndet = 1 case
-        if ndet == 1:
-            return (np.full(1, self._ref_elem + self._ecore, dtype=c_double),
-                    np.ones((1, 1), dtype=c_double))
-        # set number of lanczos vectors n < ncv <= len(c0)
-        ncv = max(n + 1, min(ncv, ndet))
+        # set default number of lanczos vectors n < ncv <= len(c0)
+        if ncv == -1:
+            ncv = max(n + 1, min(20, ndet))
         # default initial guess c = [1, 0, ..., 0]
         if c0 is None:
             c0 = np.zeros(ndet, dtype=c_double)
             c0[0] = 1.0
         elif ndet != c0.shape[0]:
-            raise ValueError('dimension of wfn, c0 do not match')
+            raise ValueError('dimension of sparse_op, c0 do not match')
         # default maxiter = 1000 * n
         if maxiter == -1:
             maxiter = 1000 * n

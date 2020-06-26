@@ -40,17 +40,20 @@ struct SparseOp
     SparseOp();
     SparseOp(const DOCIWfn &, const double *, const double *, const double *, const int_t);
     SparseOp(const FullCIWfn &, const double *, const double *, const int_t);
+    SparseOp(const DOCIWfn &, const double *, const double *, const int_t);
 
     void perform_op(const double *, double *) const;
     void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) const;
 
     void init(const DOCIWfn &, const double *, const double *, const double *, const int_t);
     void init(const FullCIWfn &, const double *, const double *, const int_t);
+    void init(const DOCIWfn &, const double *, const double *, const int_t);
 
     private:
 
     void init_run_thread(const DOCIWfn &, const double *, const double *, const double *, const int_t, const int_t);
     void init_run_thread(const FullCIWfn &, const double *, const double *, const int_t, const int_t);
+    void init_run_thread(const DOCIWfn &, const double *, const double *, const int_t, const int_t);
     void init_condense_thread(SparseOp &);
 };
 
