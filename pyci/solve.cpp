@@ -70,8 +70,8 @@ void SparseOp::perform_op(const double *x, double *y) const {
 
 
 void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit,
-    const double tol, double *evals, double *evecs) {
-    Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE, SparseOp> eigs(this, n, ncv);
+    const double tol, double *evals, double *evecs) const {
+    Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE, const SparseOp> eigs(this, n, ncv);
     eigs.init(coeffs);
     eigs.compute(maxit, tol, Spectra::SMALLEST_ALGE);
     if (eigs.info() != Spectra::SUCCESSFUL)
@@ -83,35 +83,25 @@ void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const
 }
 
 
-void SparseOp::condense_threads(std::vector<SparseOp> &ops) {
-    // make one large SparseOp
-    int_t i, istart, iend, val_ptr;
-    for (std::vector<SparseOp>::iterator it = ops.begin(); it != ops.end(); ++it) {
-        val_ptr = indices.size();
-        if (!(it->nrow)) continue;
-        // copy over data array
-        istart = data.size();
-        iend = it->data.size();
-        data.resize(istart + iend);
-        std::memcpy(&data[istart], &(it->data[0]), sizeof(double) * iend);
-        it->data.resize(0);
-        // copy over indices array
-        istart = indices.size();
-        iend = it->indices.size();
-        indices.resize(istart + iend);
-        std::memcpy(&indices[istart], &(it->indices[0]), sizeof(int_t) * iend);
-        it->indices.resize(0);
-        // copy over indptr array
-        iend = it->indptr.size() - 1;
-        for (i = 0; i < iend; ++i)
-            indptr.push_back(it->indptr[i] + val_ptr);
-        it->indptr.resize(0);
-    }
-    indptr.push_back(indices.size());
-    // finalize vectors
-    data.shrink_to_fit();
-    indices.shrink_to_fit();
-    indptr.shrink_to_fit();
+void SparseOp::condense_thread(SparseOp &op) {
+    if (!(op.nrow)) return;
+    int_t val_ptr = indices.size();
+    int_t istart = data.size();
+    int_t iend = op.data.size();
+    data.resize(istart + iend);
+    std::memcpy(&data[istart], &op.data[0], sizeof(double) * iend);
+    op.data.resize(0);
+    // copy over indices array
+    istart = indices.size();
+    iend = op.indices.size();
+    indices.resize(istart + iend);
+    std::memcpy(&indices[istart], &op.indices[0], sizeof(int_t) * iend);
+    op.indices.resize(0);
+    // copy over indptr array
+    iend = op.indptr.size() - 1;
+    for (int_t i = 0; i < iend; ++i)
+        indptr.push_back(op.indptr[i] + val_ptr);
+    op.indptr.resize(0);
 }
 
 
@@ -133,8 +123,17 @@ void SparseOp::init(const DOCIWfn &wfn, const double *h, const double *v, const 
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
         ops[ithread].init_thread(wfn, h, v, w, istart, iend);
+        // construct larger SparseOp (this instance) from chunks
+        #pragma omp for ordered schedule(static,1)
+        for (int_t t = 0; t < nthread; ++t)
+            #pragma omp ordered
+            condense_thread(ops[t]);
     }
-    condense_threads(ops);
+    // finalize vectors
+    indptr.push_back(indices.size());
+    data.shrink_to_fit();
+    indices.shrink_to_fit();
+    indptr.shrink_to_fit();
 }
 
 
@@ -156,19 +155,28 @@ void SparseOp::init(const FullCIWfn &wfn, const double *one_mo, const double *tw
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
         ops[ithread].init_thread(wfn, one_mo, two_mo, istart, iend);
+        // construct larger SparseOp (this instance) from chunks
+        #pragma omp for ordered schedule(static,1)
+        for (int_t t = 0; t < nthread; ++t)
+            #pragma omp ordered
+            condense_thread(ops[t]);
     }
-    condense_threads(ops);
+    // finalize vectors
+    indptr.push_back(indices.size());
+    data.shrink_to_fit();
+    indices.shrink_to_fit();
+    indptr.shrink_to_fit();
 }
 
 
 void SparseOp::init_thread(const DOCIWfn &wfn, const double *h, const double *v, const double *w,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
-    indptr.push_back(0);
     if (istart >= iend) return;
     data.reserve(wfn.ndet + 1);
     indices.reserve(wfn.ndet + 1);
     indptr.reserve(iend - istart + 1);
+    indptr.push_back(0);
     // set nrow
     nrow = istart - iend;
     // prepare working vectors
@@ -227,19 +235,18 @@ void SparseOp::init_thread(const DOCIWfn &wfn, const double *h, const double *v,
 void SparseOp::init_thread(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
-    indptr.push_back(0);
     if (istart >= iend) return;
     data.reserve(wfn.ndet + 1);
     indices.reserve(wfn.ndet + 1);
     indptr.reserve(iend - istart + 1);
+    indptr.push_back(0);
     // set nrow
     nrow = istart - iend;
     // working vectors
-    std::vector<uint_t> vrdet(wfn.nword2), vdet(wfn.nword2);
+    std::vector<uint_t> vdet(wfn.nword2);
     std::vector<int_t> voccs_up(wfn.nocc_up), voccs_dn(wfn.nocc_dn);
     std::vector<int_t> vvirs_up(wfn.nvir_up), vvirs_dn(wfn.nvir_dn);
-    uint_t *rdet_up = &vrdet[0];
-    uint_t *rdet_dn = rdet_up + wfn.nword;
+    const uint_t *rdet_up, *rdet_dn;
     uint_t *det_up = &vdet[0];
     uint_t *det_dn = det_up + wfn.nword;
     int_t *occs_up = &voccs_up[0];
@@ -255,7 +262,8 @@ void SparseOp::init_thread(const FullCIWfn &wfn, const double *one_mo, const dou
     double val1, val2;
     for (int_t idet = istart; idet < iend; ++idet) {
         // fill working vectors
-        wfn.copy_det(idet, rdet_up);
+        rdet_up = &wfn.dets[idet * wfn.nword2];
+        rdet_dn = rdet_up + wfn.nword;
         std::memcpy(det_up, rdet_up, sizeof(uint_t) * wfn.nword2);
         fill_occs(wfn.nword, rdet_up, occs_up);
         fill_occs(wfn.nword, rdet_dn, occs_dn);
