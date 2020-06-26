@@ -56,6 +56,7 @@ struct FullCIWfn
     int_t index_det(const uint_t *) const;
     int_t index_det_from_rank(const int_t) const;
     void copy_det(const int_t, uint_t *) const;
+    const uint_t * det_ptr(const int_t) const;
 
     int_t add_det(const uint_t *);
     int_t add_det_from_occs(const int_t *);

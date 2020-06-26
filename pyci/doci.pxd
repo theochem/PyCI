@@ -60,6 +60,7 @@ cdef extern from 'pyci/doci.h' namespace 'pyci':
 
         int_t index_det(const uint_t *)
         int_t copy_det(const int_t, uint_t *)
+        const uint_t * det_ptr(const int_t)
 
         int_t add_det(const uint_t *) except +
         int_t add_det_from_occs(const int_t *) except +

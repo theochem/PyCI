@@ -28,9 +28,9 @@ class TestRoutines:
 
     CASES = [
         ('h2o_ccpvdz', pyci.doci_wfn,   (5,),   -75.634588422),
-        ('he_ccpvqz',  pyci.doci_wfn,   (1,),    -2.886809116),
         ('be_ccpvdz',  pyci.doci_wfn,   (2,),   -14.600556994),
         ('li2_ccpvdz', pyci.doci_wfn,   (3,),   -14.878455349),
+        ('he_ccpvqz',  pyci.doci_wfn,   (1,),    -2.886809116),
         ('he_ccpvqz',  pyci.fullci_wfn, (1, 1),  -2.886809116),
         ('be_ccpvdz',  pyci.fullci_wfn, (2, 2), -14.600556994),
         ]
@@ -48,7 +48,7 @@ class TestRoutines:
             yield self.run_compute_rdms, filename, wfn_type, occs, energy
 
     def test_run_hci(self):
-        for filename, wfn_type, occs, energy in self.CASES[:1]:
+        for filename, wfn_type, occs, energy in self.CASES[:3]:
             yield self.run_run_hci, filename, wfn_type, occs, energy
 
     def run_solve_sparse(self, filename, wfn_type, occs, energy):
@@ -80,10 +80,10 @@ class TestRoutines:
         es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
         if isinstance(wfn, pyci.doci_wfn):
             d0, d2 = wfn.compute_rdms(cs[0])
-            npt.assert_allclose(np.trace(d0), wfn.nocc, rtol=0, atol=1.0e-9)
-            npt.assert_allclose(np.sum(d2), wfn.nocc * (wfn.nocc - 1), rtol=0, atol=1.0e-9)
-            k0 = ham.reduced_v(wfn.nocc)
-            k2 = ham.reduced_w(wfn.nocc)
+            npt.assert_allclose(np.trace(d0), wfn.nocc_up, rtol=0, atol=1.0e-9)
+            npt.assert_allclose(np.sum(d2), wfn.nocc_up * (wfn.nocc_up - 1), rtol=0, atol=1.0e-9)
+            k0 = ham.reduced_v(wfn.nocc_up)
+            k2 = ham.reduced_w(wfn.nocc_up)
             energy = ham.ecore
             energy += np.einsum('ij,ij', k0, d0)
             energy += np.einsum('ij,ij', k2, d2)
@@ -107,12 +107,12 @@ class TestRoutines:
         ham = pyci.hamiltonian.from_file(datafile('{0:s}.fcidump'.format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_hartreefock_det()
-        es, cs = pyci.sparse_op(ham, wfn).solve(n=1, ncv=30, tol=1.0e-6)
+        es, cs = pyci.sparse_op(ham, wfn).solve(n=1, tol=1.0e-6)
         dets_added = 1
         niter = 0
         while dets_added:
             dets_added = wfn.run_hci(ham, cs[0], eps=1.0e-5)
-            es, cs = pyci.sparse_op(ham, wfn).solve(n=1, ncv=30, tol=1.0e-6)
+            es, cs = pyci.sparse_op(ham, wfn).solve(n=1, tol=1.0e-6)
             niter += 1
         assert niter > 1
         assert len(wfn) < np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
@@ -121,7 +121,7 @@ class TestRoutines:
         while dets_added:
             dets_added = wfn.run_hci(ham, cs[0], eps=0.0)
             op = pyci.sparse_op(ham, wfn)
-            es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
+            es, cs = op.solve(n=1, tol=1.0e-6)
         assert len(wfn) == np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 

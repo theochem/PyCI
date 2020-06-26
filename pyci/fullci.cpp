@@ -248,6 +248,11 @@ void FullCIWfn::copy_det(const int_t i, uint_t *det) const {
 }
 
 
+const uint_t * FullCIWfn::det_ptr(const int_t i) const {
+    return &dets[i * nword2];
+}
+
+
 int_t FullCIWfn::add_det(const uint_t *det) {
     if (dict.insert(std::make_pair(
             rank_det(nbasis, nocc_up, &det[0]) * maxdet_dn + rank_det(nbasis, nocc_dn, &det[nword]),

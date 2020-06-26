@@ -190,6 +190,11 @@ void DOCIWfn::copy_det(const int_t i, uint_t *det) const {
 }
 
 
+const uint_t * DOCIWfn::det_ptr(const int_t i) const {
+    return &dets[i * nword];
+}
+
+
 int_t DOCIWfn::add_det(const uint_t *det) {
     if (dict.insert(std::make_pair(rank_det(nbasis, nocc, det), ndet)).second) {
         dets.resize(dets.size() + nword);

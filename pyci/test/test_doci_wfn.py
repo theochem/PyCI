@@ -98,17 +98,17 @@ class TestDOCIWfn:
         wfn = pyci.doci_wfn(nbasis, nocc)
         wfn.add_all_dets()
         for det in wfn:
-            assert wfn.popcnt_det(det) == wfn.nocc
-        assert len(wfn) == comb(wfn.nbasis, wfn.nocc, exact=True)
+            assert wfn.popcnt_det(det) == wfn.nocc_up == wfn.nocc_dn == wfn.nocc // 2
+        assert len(wfn) == comb(wfn.nbasis, wfn.nocc_up, exact=True)
 
     def run_add_excited_dets(self, nbasis, nocc):
         wfn = pyci.doci_wfn(nbasis, nocc)
-        wfn.reserve(comb(wfn.nbasis, wfn.nocc, exact=True))
+        wfn.reserve(comb(wfn.nbasis, wfn.nocc_up, exact=True))
         assert_raises(ValueError, wfn.add_excited_dets, -1)
         assert_raises(ValueError, wfn.add_excited_dets, 100)
         length = 0
-        for i in range(wfn.nocc + 1):
-            length += comb(wfn.nocc, i, exact=True) * comb(wfn.nvir, i, exact=True)
+        for i in range(wfn.nocc_up + 1):
+            length += comb(wfn.nocc_up, i, exact=True) * comb(wfn.nvir_up, i, exact=True)
             wfn.add_excited_dets(i)
             assert len(wfn) == length
-        assert len(wfn) == comb(wfn.nbasis, wfn.nocc, exact=True)
+        assert len(wfn) == comb(wfn.nbasis, wfn.nocc_up, exact=True)

@@ -21,7 +21,6 @@ PyCI C extension module.
 """
 
 from libc.stdint cimport int64_t, uint64_t
-from libcpp.vector cimport vector
 
 cimport numpy as np
 
@@ -498,12 +497,44 @@ cdef class doci_wfn:
         Number of occupied indices.
 
         """
+        return self._obj.nocc * 2
+
+    @property
+    def nocc_up(self):
+        r"""
+        Number of spin-up occupied indices.
+
+        """
+        return self._obj.nocc
+
+    @property
+    def nocc_dn(self):
+        r"""
+        Number of spin-down occupied indices.
+
+        """
         return self._obj.nocc
 
     @property
     def nvir(self):
         r"""
         Number of virtual indices.
+
+        """
+        return self._obj.nvir * 2
+
+    @property
+    def nvir_up(self):
+        r"""
+        Number of spin-up virtual indices.
+
+        """
+        return self._obj.nvir
+
+    @property
+    def nvir_dn(self):
+        r"""
+        Number of spin-down virtual indices.
 
         """
         return self._obj.nvir
@@ -613,7 +644,7 @@ cdef class doci_wfn:
         if self._obj.ndet == 0 or start < 0 or end < start or self._obj.ndet < end:
             raise IndexError('\'start\', \'stop\' parameters out of range')
         # copy det array
-        cdef uint_t *det_ptr = &self._obj.dets[start * self._obj.nword]
+        cdef const uint_t *det_ptr = self._obj.det_ptr(start)
         cdef np.ndarray det_array = np.array(<uint_t[:(end - start), :self._obj.nword]>det_ptr)
         return det_array
 
@@ -760,7 +791,7 @@ cdef class doci_wfn:
 
     def reserve(self, int_t n):
         r"""
-        Reserve space in memory for :math:`n` elements in the doci_wfn instance.
+        Reserve space in memory for :math:`n` elements in the wave function instance.
 
         Parameters
         ----------
@@ -772,7 +803,7 @@ cdef class doci_wfn:
 
     def squeeze(self):
         r"""
-        Free up any unused memory reserved by the doci_wfn instance.
+        Free up any unused memory reserved by the wave function instance.
 
         This can help reduce memory usage if many determinants are individually added.
 
@@ -1295,7 +1326,7 @@ cdef class fullci_wfn:
 
     def __init__(self, int_t nbasis, int_t nocc_up, int_t nocc_dn):
         r"""
-        Initialize a doci_wfn instance.
+        Initialize a fullci_wfn instance.
 
         Parameters
         ----------
@@ -1403,7 +1434,7 @@ cdef class fullci_wfn:
         if self._obj.ndet == 0 or start < 0 or end < start or self._obj.ndet < end:
             raise IndexError('\'start\', \'stop\' parameters out of range')
         # copy det array
-        cdef uint_t *det_ptr = &self._obj.dets[start * self._obj.nword2]
+        cdef const uint_t *det_ptr = self._obj.det_ptr(start)
         cdef np.ndarray det_array = np.array(<uint_t[:(end - start), :2, :self._obj.nword]>det_ptr)
         return det_array
 
@@ -1574,7 +1605,7 @@ cdef class fullci_wfn:
 
     def reserve(self, int_t n):
         r"""
-        Reserve space in memory for :math:`n` elements in the doci_wfn instance.
+        Reserve space in memory for :math:`n` elements in the wave function instance.
 
         Parameters
         ----------
@@ -1586,7 +1617,7 @@ cdef class fullci_wfn:
 
     def squeeze(self):
         r"""
-        Free up any unused memory reserved by the doci_wfn instance.
+        Free up any unused memory reserved by the wave function instance.
 
         This can help reduce memory usage if many determinants are individually added.
 
@@ -1909,19 +1940,19 @@ cdef class fullci_wfn:
 
 cdef class gen_wfn(doci_wfn):
     r"""
-    Generalized wave function class.
+    Generalized CI wave function class.
 
     """
 
     @staticmethod
     def from_file(object filename not None):
         r"""
-        Return a gen_wfn instance by loading a DOCI file.
+        Return a gen_wfn instance by loading a GEN file.
 
         Parameters
         ----------
         filename : str
-            DOCI file from which to load determinants.
+            GEN file from which to load determinants.
 
         Returns
         -------
@@ -2017,6 +2048,60 @@ cdef class gen_wfn(doci_wfn):
         """
         return 0
 
+    def __init__(self, int_t nbasis, int_t nocc):
+        r"""
+        Initialize a gen_wfn instance.
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+
+        """
+        if nbasis <= nocc or nocc < 1:
+            raise ValueError('failed check: nbasis > nocc > 0')
+        self._obj.init(nbasis, nocc)
+
+    def __copy__(self):
+        r"""
+        Copy a gen_wfn instance.
+
+        Returns
+        -------
+        wfn : gen_wfn
+            DOCI wave function object.
+
+        """
+        cdef gen_wfn wfn = gen_wfn(2, 1)
+        wfn._obj.from_dociwfn(self._obj)
+        return wfn
+
+    def copy(self):
+        r"""
+        Copy a gen_wfn instance.
+
+        Returns
+        -------
+        wfn : gen_wfn
+            DOCI wave function object.
+
+        """
+        return self.__copy__()
+
+    def to_file(self, object filename not None):
+        r"""
+        Write a gen_wfn instance to a GEN file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of GEN file to write.
+
+        """
+        self._obj.to_file(filename.encode())
+
     def phase_single_det(self, uint_t[::1] det not None, int_t i, int_t a):
         r"""
         Compute the phase factor of a reference determinant with a singly-excited determinant.
@@ -2079,7 +2164,6 @@ cdef class sparse_op:
     cdef SparseOp _obj
     cdef tuple _shape
     cdef double _ecore
-    cdef double _ref_elem
 
     @property
     def shape(self):
@@ -2125,24 +2209,14 @@ cdef class sparse_op:
             h = ham.h
             v = ham.v
             w = ham.w
-            self._obj.init(
-                (<doci_wfn>wfn)._obj,
-                <double *>(&h[0]),
-                <double *>(&v[0, 0]),
-                <double *>(&w[0, 0]),
-                nrow)
-            self._ref_elem = ham._doci_elem_diag(wfn.det_to_occs(wfn[0]))
+            self._obj.init((<doci_wfn>wfn)._obj, <double *>(&h[0]), <double *>(&v[0, 0]),
+                           <double *>(&w[0, 0]), nrow)
         elif isinstance(wfn, fullci_wfn):
             w = ham.one_mo
             x = ham.two_mo
-            self._obj.init(
-                (<fullci_wfn>wfn)._obj,
-                <double *>(&w[0, 0]),
-                <double *>(&x[0, 0, 0, 0]),
-                nrow,
-                )
+            self._obj.init((<fullci_wfn>wfn)._obj, <double *>(&w[0, 0]),
+                           <double *>(&x[0, 0, 0, 0]), nrow)
             occs = wfn.det_to_occs(wfn[0])
-            self._ref_elem = ham._fullci_elem_diag(occs[0, :wfn.nocc_up], occs[1, :wfn.nocc_dn])
         else:
             raise TypeError('invalid wfn type')
         self._shape = <object>(self._obj.nrow), <object>(self._obj.ncol)
