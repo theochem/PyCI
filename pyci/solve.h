@@ -41,8 +41,15 @@ struct SparseOp {
     void perform_op(const double *, double *) const;
     void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *);
 
+    void condense_threads(std::vector<SparseOp> &);
+
     void init(const DOCIWfn &, const double *, const double *, const double *, const int_t);
+    void init_thread(const DOCIWfn &, const double *, const double *, const double *, const int_t, const int_t);
+
     void init(const FullCIWfn &, const double *, const double *, const int_t);
+    void init_thread(const FullCIWfn &, const double *, const double *, const int_t, const int_t);
+
+
 };
 
 
