@@ -153,8 +153,8 @@ cdef class hamiltonian:
         cdef list fields
         cdef dict header_info
         cdef int_t nbasis, nelec, ms2, i, j, k, l
-        cdef double[:, :] one_mo
-        cdef double[:, :, :, :] two_mo
+        cdef double[:, ::1] one_mo
+        cdef double[:, :, :, ::1] two_mo
         cdef double ecore = 0.0, fval
         with open(filename, 'r', encoding='utf-8') as f:
             # check header
@@ -402,7 +402,7 @@ cdef class hamiltonian:
         """
         cdef int_t i, j
         cdef np.ndarray w_array = np.empty_like(self.v)
-        cdef double[:, :] w = w_array
+        cdef double[:, ::1] w = w_array
         for i in range(self._nbasis):
             for j in range(self._nbasis):
                 w[i, j] = self._h[i] + self._h[j]
@@ -448,7 +448,7 @@ cdef class spin_wfn:
         if index < 0 or index >= self._obj.ndet:
             raise IndexError('index out of range')
         cdef np.ndarray det_array = np.empty(self._obj.nword, dtype=c_uint)
-        cdef uint_t[:] det = det_array
+        cdef uint_t[::1] det = det_array
         self._obj.copy_det(index, <uint_t *>(&det[0]))
         return det_array
 
@@ -598,7 +598,7 @@ cdef class spin_wfn:
         """
         # check excitation levels
         cdef int_t emax = min(self._obj.nocc, self._obj.nvir), ndet = 0, i, e, nexc
-        cdef int_t[:] excv = np.array(list(set(exc)), dtype=c_int)
+        cdef int_t[::1] excv = np.array(list(set(exc)), dtype=c_int)
         nexc = excv.shape[0]
         for i in range(nexc):
             e = excv[i]
@@ -651,7 +651,7 @@ cdef class spin_wfn:
 
         """
         cdef np.ndarray det_array = np.zeros(self._obj.nword, dtype=c_uint)
-        cdef uint_t[:] det = det_array
+        cdef uint_t[::1] det = det_array
         fill_det(self._obj.nocc, <int_t *>(&occs[0]), <uint_t *>(&det[0]))
         return det_array
 
@@ -671,7 +671,7 @@ cdef class spin_wfn:
 
         """
         cdef np.ndarray occs_array = np.empty(self._obj.nocc, dtype=c_int)
-        cdef int_t[:] occs = occs_array
+        cdef int_t[::1] occs = occs_array
         fill_occs(self._obj.nword, <uint_t *>(&det[0]), <int_t *>(&occs[0]))
         return occs_array
 
@@ -691,7 +691,7 @@ cdef class spin_wfn:
 
         """
         cdef np.ndarray virs_array = np.empty(self._obj.nvir, dtype=c_int)
-        cdef int_t[:] virs = virs_array
+        cdef int_t[::1] virs = virs_array
         fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[0]), <int_t *>(&virs[0]))
         return virs_array
 
@@ -715,7 +715,7 @@ cdef class spin_wfn:
 
         """
         cdef np.ndarray newdet_array = np.copy(det)
-        cdef uint_t[:] newdet = newdet_array
+        cdef uint_t[::1] newdet = newdet_array
         excite_det(i, a, <uint_t *>(&newdet[0]))
         return newdet_array
 
@@ -737,7 +737,7 @@ cdef class spin_wfn:
 
         """
         cdef np.ndarray newdet_array = np.copy(det)
-        cdef uint_t[:] newdet = newdet_array
+        cdef uint_t[::1] newdet = newdet_array
         setbit_det(i, <uint_t *>(&newdet[0]))
         return newdet_array
 
@@ -759,7 +759,7 @@ cdef class spin_wfn:
 
         """
         cdef np.ndarray newdet_array = np.copy(det)
-        cdef uint_t[:] newdet = newdet_array
+        cdef uint_t[::1] newdet = newdet_array
         clearbit_det(i, <uint_t *>(&newdet[0]))
         return newdet_array
 
@@ -1112,8 +1112,8 @@ cdef class doci_wfn(spin_wfn):
             raise ValueError('wfn must contain at least one determinant')
         cdef np.ndarray d0_array = np.zeros((self._obj.nbasis, self._obj.nbasis), dtype=c_double)
         cdef np.ndarray d2_array = np.zeros((self._obj.nbasis, self._obj.nbasis), dtype=c_double)
-        cdef double[:, :] d0 = d0_array
-        cdef double[:, :] d2 = d2_array
+        cdef double[:, ::1] d0 = d0_array
+        cdef double[:, ::1] d2 = d2_array
         self._obj.compute_rdms(<double *>(&coeffs[0]), <double *>(&d0[0, 0]), <double *>(&d2[0, 0]))
         return d0_array, d2_array
 
@@ -1459,8 +1459,8 @@ cdef class gen_wfn(spin_wfn):
         cdef tuple nbasis4 = (self._obj.nbasis, self._obj.nbasis, self._obj.nbasis, self._obj.nbasis)
         cdef np.ndarray rdm1_array = np.zeros(nbasis2, dtype=c_double)
         cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
-        cdef double[:, :] rdm1 = rdm1_array
-        cdef double[:, :, :, :] rdm2 = rdm2_array
+        cdef double[:, ::1] rdm1 = rdm1_array
+        cdef double[:, :, :, ::1] rdm2 = rdm2_array
         self._obj.compute_rdms_gen(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
                                    <double *>(&rdm2[0, 0, 0, 0]))
         return rdm1_array, rdm2_array
@@ -1712,7 +1712,7 @@ cdef class fullci_wfn:
         if index < 0 or index >= self._obj.ndet:
             raise IndexError('index out of range')
         cdef np.ndarray det_array = np.empty((2, self._obj.nword), dtype=c_uint)
-        cdef uint_t[:, :] det = det_array
+        cdef uint_t[:, ::1] det = det_array
         self._obj.copy_det(index, <uint_t *>(&det[0, 0]))
         return det_array
 
@@ -1908,7 +1908,7 @@ cdef class fullci_wfn:
         cdef int_t emax_up = min(self._obj.nocc_up, self._obj.nvir_up)
         cdef int_t emax_dn = min(self._obj.nocc_dn, self._obj.nvir_dn)
         cdef int_t ndet = 0, i, nexc, e, a, b
-        cdef int_t[:] excv = np.array(list(set(exc)), dtype=c_int)
+        cdef int_t[::1] excv = np.array(list(set(exc)), dtype=c_int)
         nexc = excv.shape[0]
         for i in range(nexc):
             e = excv[i]
@@ -1977,7 +1977,7 @@ cdef class fullci_wfn:
 
         """
         cdef np.ndarray det_array = np.zeros((2, self._obj.nword), dtype=c_uint)
-        cdef uint_t[:, :] det = det_array
+        cdef uint_t[:, ::1] det = det_array
         fill_det(self._obj.nocc_up, <int_t *>(&occs[0, 0]), <uint_t *>(&det[0, 0]))
         fill_det(self._obj.nocc_dn, <int_t *>(&occs[1, 0]), <uint_t *>(&det[1, 0]))
         return det_array
@@ -1998,7 +1998,7 @@ cdef class fullci_wfn:
 
         """
         cdef np.ndarray occs_array = np.zeros((2, self._obj.nocc_up), dtype=c_int)
-        cdef int_t[:, :] occs = occs_array
+        cdef int_t[:, ::1] occs = occs_array
         fill_occs(self._obj.nword, <uint_t *>(&det[0, 0]), <int_t *>(&occs[0, 0]))
         fill_occs(self._obj.nword, <uint_t *>(&det[1, 0]), <int_t *>(&occs[1, 0]))
         return occs_array
@@ -2019,7 +2019,7 @@ cdef class fullci_wfn:
 
         """
         cdef np.ndarray virs_array = np.zeros((2, self._obj.nvir_dn), dtype=c_int)
-        cdef int_t[:, :] virs = virs_array
+        cdef int_t[:, ::1] virs = virs_array
         fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[0, 0]), <int_t *>(&virs[0, 0]))
         fill_virs(self._obj.nword, self._obj.nbasis, <uint_t *>(&det[1, 0]), <int_t *>(&virs[1, 0]))
         return virs_array
@@ -2046,7 +2046,7 @@ cdef class fullci_wfn:
 
         """
         cdef np.ndarray newdet_array = np.copy(det)
-        cdef uint_t[:, :] newdet = newdet_array
+        cdef uint_t[:, ::1] newdet = newdet_array
         excite_det(i, a, <uint_t *>(&newdet[<int_t>spin, 0]))
         return newdet_array
 
@@ -2070,7 +2070,7 @@ cdef class fullci_wfn:
 
         """
         cdef np.ndarray newdet_array = np.copy(det)
-        cdef uint_t[:, :] newdet = newdet_array
+        cdef uint_t[:, ::1] newdet = newdet_array
         setbit_det(i, <uint_t *>(&newdet[<int_t>spin, 0]))
         return newdet_array
 
@@ -2094,7 +2094,7 @@ cdef class fullci_wfn:
 
         """
         cdef np.ndarray newdet_array = np.copy(det)
-        cdef uint_t[:, :] newdet = newdet_array
+        cdef uint_t[:, ::1] newdet = newdet_array
         clearbit_det(i, <uint_t *>(&newdet[<int_t>spin, 0]))
         return newdet_array
 
@@ -2307,8 +2307,8 @@ cdef class fullci_wfn:
         cdef tuple nbasis4 = (self._obj.nbasis, self._obj.nbasis, self._obj.nbasis, self._obj.nbasis)
         cdef np.ndarray rdm1_array = np.zeros(nbasis2, dtype=c_double)
         cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
-        cdef double[:, :] rdm1 = rdm1_array
-        cdef double[:, :, :, :] rdm2 = rdm2_array
+        cdef double[:, ::1] rdm1 = rdm1_array
+        cdef double[:, :, :, ::1] rdm2 = rdm2_array
         self._obj.compute_rdms(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
                                <double *>(&rdm2[0, 0, 0, 0]))
         return rdm1_array, rdm2_array
@@ -2401,9 +2401,9 @@ cdef class sparse_op:
         elif len(wfn) == 0:
             raise ValueError('wfn must contain at least one determinant')
         # intialize object
-        cdef double[:] h
-        cdef double[:, :] v, w
-        cdef double[:, :, :, :] x
+        cdef double[::1] h
+        cdef double[:, ::1] v, w
+        cdef double[:, :, :, ::1] x
         if isinstance(wfn, doci_wfn):
             h = ham.h
             v = ham.v
@@ -2520,8 +2520,8 @@ cdef class sparse_op:
         # solve eigenproblem
         cdef np.ndarray evals_array = np.empty(n, dtype=c_double)
         cdef np.ndarray evecs_array = np.empty((n, ndet), dtype=c_double)
-        cdef double[:] evals = evals_array
-        cdef double[:, :] evecs = evecs_array
+        cdef double[::1] evals = evals_array
+        cdef double[:, ::1] evecs = evecs_array
         self._obj.solve(<double *>(&c0[0]), n, ncv, maxiter, tol,
                         <double *>(&evals[0]), <double *>(&evecs[0, 0]))
         evals_array += self._ecore
