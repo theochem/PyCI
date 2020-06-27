@@ -293,6 +293,29 @@ void DOCIWfn::squeeze() {
 }
 
 
+double DOCIWfn::compute_overlap(const double *coeffs, const DOCIWfn &wfn, const double *w_coeffs) const {
+    // run this function for the smaller wfn
+    if (ndet > wfn.ndet) return wfn.compute_overlap(w_coeffs, *this, coeffs);
+    // iterate over this instance's determinants in parallel
+    int_t nthread = omp_get_max_threads();
+    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    double olp = 0.0;
+    #pragma omp parallel reduction(+:olp)
+    {
+        int_t istart = omp_get_thread_num() * chunksize;
+        int_t iend = (istart + chunksize < ndet) ? istart + chunksize : ndet;
+        int_t jdet;
+        for (int_t idet = istart; idet < iend; ++idet) {
+            // add c[idet] * c[jdet] if both wfns constain determinant idet
+            jdet = wfn.index_det(&dets[idet * nword]);
+            if (jdet != -1)
+                olp += coeffs[idet] * w_coeffs[jdet];
+        }
+    }
+    return olp;
+}
+
+
 void DOCIWfn::compute_rdms(const double *coeffs, double *d0, double *d2) const {
     int_t idet, jdet, i, j, k, l;
     double val1, val2;
@@ -355,29 +378,6 @@ int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) 
         run_hci_condense_thread(wfns[t]);
     // return number of determinants added
     return ndet - ndet_old;
-}
-
-
-double DOCIWfn::compute_overlap(const double *coeffs, const DOCIWfn &wfn, const double *w_coeffs) const {
-    // run this function for the smaller wfn
-    if (ndet > wfn.ndet) return wfn.compute_overlap(w_coeffs, *this, coeffs);
-    // iterate over this instance's determinants in parallel
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
-    double olp = 0.0;
-    #pragma omp parallel reduction(+:olp)
-    {
-        int_t istart = omp_get_thread_num() * chunksize;
-        int_t iend = (istart + chunksize < ndet) ? istart + chunksize : ndet;
-        int_t jdet;
-        for (int_t idet = istart; idet < iend; ++idet) {
-            // add c[idet] * c[jdet] if both wfns constain determinant idet
-            jdet = wfn.index_det(&dets[idet * nword]);
-            if (jdet != -1)
-                olp += coeffs[idet] * w_coeffs[jdet];
-        }
-    }
-    return olp;
 }
 
 
