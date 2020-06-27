@@ -368,13 +368,12 @@ int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) 
     int_t ndet_old = ndet;
     // do computation in chunks by making smaller DOCIWfns in parallel
     int_t nthread = omp_get_max_threads();
-    std::vector<DOCIWfn> wfns(nthread);
     if (nthread == 1) {
-        wfns[0].from_dociwfn(*this);
-        run_hci_run_thread(wfns[0], v, coeffs, eps, 0, ndet_old);
+        run_hci_run_thread(*this, v, coeffs, eps, 0, ndet_old);
         return ndet - ndet_old;
     }
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    std::vector<DOCIWfn> wfns(nthread);
     #pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
@@ -395,13 +394,12 @@ int_t DOCIWfn::run_hci_gen(const double *one_mo, const double *two_mo, const dou
     int_t ndet_old = ndet;
     // do computation in chunks by making smaller DOCIWfns in parallel
     int_t nthread = omp_get_max_threads();
-    std::vector<DOCIWfn> wfns(nthread);
     if (nthread == 1) {
-        wfns[0].from_dociwfn(*this);
-        run_hci_gen_run_thread(wfns[0], one_mo, two_mo, coeffs, eps, 0, ndet_old);
+        run_hci_gen_run_thread(*this, one_mo, two_mo, coeffs, eps, 0, ndet_old);
         return ndet - ndet_old;
     }
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    std::vector<DOCIWfn> wfns(nthread);
     #pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
@@ -417,40 +415,46 @@ int_t DOCIWfn::run_hci_gen(const double *one_mo, const double *two_mo, const dou
 }
 
 
+namespace {
+
+void compute_enpt2_condense_thread(hashmap<int_t, double> &terms, hashmap<int_t, double> &diags,
+    hashmap<int_t, double> &thread_terms, hashmap<int_t, double> &thread_diags, const int_t ithread) {
+    if (ithread == 0) {
+        std::swap(terms, thread_terms);
+        std::swap(diags, thread_diags);
+        return;
+    }
+    // sum all enpt2 terms
+    for (auto keyval : thread_terms)
+        terms[keyval.first] += keyval.second;
+    thread_terms.clear();
+    // ensure all diagonal terms are present
+    for (auto keyval : thread_diags)
+        diags[keyval.first] = keyval.second;
+    thread_diags.clear();
+}
+
+}
+
+
 double DOCIWfn::compute_enpt2(const double *h, const double *v, const double *w, const double *coeffs,
     const double energy, const double eps, const int_t istart, const int_t iend) const {
     // do computation in chunks by making smaller hashmaps in parallel
-    int_t nthread = omp_get_max_threads(), chunksize;
+    int_t nthread = omp_get_max_threads();
     hashmap<int_t, double> terms, diags;
-    std::vector<hashmap<int_t, double>> vterms, vdiags;
-    if (nthread == 1)
-        compute_enpt2_run_thread(terms, diags, h, v, w, coeffs, eps, 0, ndet);
-    else {
-        chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
-        vterms.resize(nthread);
-        vdiags.resize(nthread);
-        #pragma omp parallel
-        {
-            int_t ithread = omp_get_thread_num();
-            int_t istart = ithread * chunksize;
-            int_t iend = (istart + chunksize < ndet) ? istart + chunksize : ndet;
-            compute_enpt2_run_thread(vterms[ithread], vdiags[ithread], h, v, w, coeffs, eps, istart, iend);
-            // combine hashmaps into larger terms, diags objects
-            #pragma omp for ordered schedule(static,1)
-            for (int_t t = 0; t < nthread; ++t) {
-                #pragma omp ordered
-                {
-                    // sum all enpt2 terms
-                    for (auto keyval : vterms[t])
-                        terms[keyval.first] += keyval.second;
-                    vterms[t].clear();
-                    // ensure all diagonal terms are present
-                    for (auto keyval : vdiags[t])
-                        diags[keyval.first] = keyval.second;
-                    vdiags[t].clear();
-                }
-            }
-        }
+    std::vector<hashmap<int_t, double>> vterms(nthread), vdiags(nthread);
+    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    #pragma omp parallel
+    {
+        int_t ithread = omp_get_thread_num();
+        int_t istart = ithread * chunksize;
+        int_t iend = (istart + chunksize < ndet) ? istart + chunksize : ndet;
+        compute_enpt2_run_thread(vterms[ithread], vdiags[ithread], h, v, w, coeffs, eps, istart, iend);
+        // combine hashmaps into larger terms, diags objects
+        #pragma omp for ordered schedule(static,1)
+        for (int_t t = 0; t < nthread; ++t)
+            #pragma omp ordered
+            compute_enpt2_condense_thread(terms, diags, vterms[t], vdiags[t], t);
     }
     // compute enpt2 correction
     double result = 0.0;
@@ -460,7 +464,7 @@ double DOCIWfn::compute_enpt2(const double *h, const double *v, const double *w,
 }
 
 
-void DOCIWfn::run_hci_run_thread(const DOCIWfn &wfn, const double *v, const double *coeffs,
+void DOCIWfn::run_hci_run_thread(DOCIWfn &wfn, const double *v, const double *coeffs,
     const double eps, const int_t istart, const int_t iend) {
     if (istart >= iend) return;
     // set attributes
@@ -498,7 +502,7 @@ void DOCIWfn::run_hci_run_thread(const DOCIWfn &wfn, const double *v, const doub
 }
 
 
-void DOCIWfn::run_hci_gen_run_thread(const DOCIWfn &wfn, const double *one_mo, const double *two_mo,
+void DOCIWfn::run_hci_gen_run_thread(DOCIWfn &wfn, const double *one_mo, const double *two_mo,
     const double *coeffs, const double eps, const int_t istart, const int_t iend) {
     if (istart >= iend) return;
     // set attributes

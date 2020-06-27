@@ -52,7 +52,7 @@ struct SparseOp
         const int_t, const int_t);
     void init_fullci_run_thread(const FullCIWfn &, const double *, const double *, const int_t, const int_t);
     void init_gen_run_thread(const DOCIWfn &, const double *, const double *, const int_t, const int_t);
-    void init_condense_thread(SparseOp &);
+    void init_condense_thread(SparseOp &, const int_t);
 };
 
 

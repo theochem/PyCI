@@ -88,10 +88,6 @@ void SparseOp::init_doci(const DOCIWfn &wfn, const double *h, const double *v, c
     indptr.resize(0);
     // do computations in chunks by making smaller SparseOps in parallel
     int_t nthread = omp_get_max_threads();
-    if (nthread == 1) {
-        init_doci_run_thread(wfn, h, v, w, 0, nrow);
-        return;
-    }
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     std::vector<SparseOp> ops(nthread);
     #pragma omp parallel
@@ -104,7 +100,7 @@ void SparseOp::init_doci(const DOCIWfn &wfn, const double *h, const double *v, c
         #pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
             #pragma omp ordered
-            init_condense_thread(ops[t]);
+            init_condense_thread(ops[t], t);
     }
     // finalize vectors
     indptr.push_back(indices.size());
@@ -124,10 +120,6 @@ void SparseOp::init_fullci(const FullCIWfn &wfn, const double *one_mo, const dou
     indptr.resize(0);
     // do computations in chunks by making smaller SparseOps in parallel
     int_t nthread = omp_get_max_threads();
-    if (nthread == 1) {
-        init_fullci_run_thread(wfn, one_mo, two_mo, 0, nrow);
-        return;
-    }
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     std::vector<SparseOp> ops(nthread);
     #pragma omp parallel
@@ -140,7 +132,7 @@ void SparseOp::init_fullci(const FullCIWfn &wfn, const double *one_mo, const dou
         #pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
             #pragma omp ordered
-            init_condense_thread(ops[t]);
+            init_condense_thread(ops[t], t);
     }
     // finalize vectors
     indptr.push_back(indices.size());
@@ -160,10 +152,6 @@ void SparseOp::init_gen(const DOCIWfn &wfn, const double *one_mo, const double *
     indptr.resize(0);
     // do computations in chunks by making smaller SparseOps in parallel
     int_t nthread = omp_get_max_threads();
-    if (nthread == 1) {
-        init_gen_run_thread(wfn, one_mo, two_mo, 0, nrow);
-        return;
-    }
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     std::vector<SparseOp> ops(nthread);
     #pragma omp parallel
@@ -176,7 +164,7 @@ void SparseOp::init_gen(const DOCIWfn &wfn, const double *one_mo, const double *
         #pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
             #pragma omp ordered
-            init_condense_thread(ops[t]);
+            init_condense_thread(ops[t], t);
     }
     // finalize vectors
     indptr.push_back(indices.size());
@@ -538,25 +526,39 @@ void SparseOp::init_gen_run_thread(const DOCIWfn &wfn, const double *one_mo, con
 }
 
 
-void SparseOp::init_condense_thread(SparseOp &op) {
-    if (!(op.nrow)) return;
-    int_t val_ptr = indices.size();
+void SparseOp::init_condense_thread(SparseOp &op, const int_t ithread) {
+    // handle first thread
+    if (op.nrow == 0)
+        return;
+    else if (ithread == 0) {
+        std::swap(data, op.data);
+        std::swap(indices, op.indices);
+        std::swap(indptr, op.indptr);
+        indptr.pop_back();
+        return;
+    }
+    // handle other threads
+    int_t indptr_val = indices.size();
+    // copy over data array
     int_t istart = data.size();
     int_t iend = op.data.size();
     data.resize(istart + iend);
     std::memcpy(&data[istart], &op.data[0], sizeof(double) * iend);
     op.data.resize(0);
+    op.data.shrink_to_fit();
     // copy over indices array
     istart = indices.size();
     iend = op.indices.size();
     indices.resize(istart + iend);
     std::memcpy(&indices[istart], &op.indices[0], sizeof(int_t) * iend);
     op.indices.resize(0);
+    op.indices.shrink_to_fit();
     // copy over indptr array
     iend = op.indptr.size() - 1;
     for (int_t i = 0; i < iend; ++i)
-        indptr.push_back(op.indptr[i] + val_ptr);
+        indptr.push_back(op.indptr[i] + indptr_val);
     op.indptr.resize(0);
+    op.indptr.shrink_to_fit();
 }
 
 
