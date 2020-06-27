@@ -88,7 +88,7 @@ class TestRoutines:
             energy += np.einsum('ij,ij', k0, d0)
             energy += np.einsum('ij,ij', k2, d2)
             npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
-            rdm1, rdm2 = wfn.generate_rdms(d0, d2)
+            rdm1, rdm2 = wfn.generate_generalized_rdms(d0, d2)
         elif isinstance(wfn, pyci.fullci_wfn):
             rdm1, rdm2 = wfn.compute_rdms(cs[0])
         else:
