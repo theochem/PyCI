@@ -363,6 +363,33 @@ void DOCIWfn::compute_rdms_gen(const double *coeffs, double *rdm1, double *rdm2)
 }
 
 
+double DOCIWfn::compute_enpt2(const double *h, const double *v, const double *w, const double *coeffs,
+    const double energy, const double eps) const {
+    // do computation in chunks by making smaller hashmaps in parallel
+    int_t nthread = omp_get_max_threads();
+    hashmap<int_t, std::pair<double, double>> terms;
+    std::vector<hashmap<int_t, std::pair<double, double>>> vterms(nthread);
+    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    #pragma omp parallel
+    {
+        int_t ithread = omp_get_thread_num();
+        int_t istart = ithread * chunksize;
+        int_t iend = (istart + chunksize < ndet) ? istart + chunksize : ndet;
+        compute_enpt2_run_thread(vterms[ithread], h, v, w, coeffs, eps, istart, iend);
+        // combine hashmaps into larger terms, diags objects
+        #pragma omp for ordered schedule(static,1)
+        for (int_t t = 0; t < nthread; ++t)
+            #pragma omp ordered
+            DOCIWfn::compute_enpt2_condense_thread(terms, vterms[t], t);
+    }
+    // compute enpt2 correction
+    double result = 0.0;
+    for (auto keyval : terms)
+        result += keyval.second.first * keyval.second.first / (energy - keyval.second.second);
+    return result;
+}
+
+
 int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) {
     // save ndet as ndet_old
     int_t ndet_old = ndet;
@@ -415,52 +442,71 @@ int_t DOCIWfn::run_hci_gen(const double *one_mo, const double *two_mo, const dou
 }
 
 
-namespace {
+void DOCIWfn::compute_enpt2_run_thread(hashmap<int_t, std::pair<double, double>> &terms,
+    const double *h, const double *v, const double *w, const double *coeffs, const double eps,
+    const int_t istart, const int_t iend) const {
+    if (istart >= iend) return;
+    // prepare working vectors
+    std::vector<uint_t> det(nword);
+    std::vector<int_t> occs(nocc), d_occs(nocc);
+    std::vector<int_t> virs(nvir);
+    // loop over determinants
+    std::pair<double, double> *pair;
+    int_t i, j, k, l, m, n, o, rank;
+    double val, d_val1, d_val2;
+    for (int_t idet = istart; idet < iend; ++idet) {
+        // fill working vectors
+        copy_det(idet, &det[0]);
+        fill_occs(nword, &det[0], &occs[0]);
+        fill_virs(nword, nbasis, &det[0], &virs[0]);
+        // single/"pair"-excited elements elements
+        for (i = 0; i < nocc; ++i) {
+            k = occs[i];
+            for (j = 0; j < nvir; ++j) {
+                l = virs[j];
+                excite_det(k, l, &det[0]);
+                val = v[k * nbasis + l] * coeffs[idet];
+                // add term if |H*c| > eps and not already in wfn
+                if (std::abs(val) > eps) {
+                    rank = rank_det(nbasis, nocc, &det[0]);
+                    if (index_det_from_rank(rank) == -1) {
+                        // compute diagonal element of det
+                        fill_occs(nword, &det[0], &d_occs[0]);
+                        d_val1 = 0.0;
+                        d_val2 = 0.0;
+                        for (m = 0; m < nocc; ++m) {
+                            o = d_occs[m];
+                            d_val1 += v[o * (nbasis + 1)];
+                            d_val2 += h[o];
+                            for (n = m + 1; n < nocc; ++n)
+                                d_val2 += w[o * nbasis + d_occs[n]];
+                        }
+                        // add enpt2 term to total and store diagonal term
+                        pair = &terms[rank];
+                        pair->first += val;
+                        pair->second = d_val1 + d_val2 * 2;
+                    }
+                }
+                excite_det(l, k, &det[0]);
+            }
+        }
+    }
+}
 
-void compute_enpt2_condense_thread(hashmap<int_t, double> &terms, hashmap<int_t, double> &diags,
-    hashmap<int_t, double> &thread_terms, hashmap<int_t, double> &thread_diags, const int_t ithread) {
+
+void DOCIWfn::compute_enpt2_condense_thread(hashmap<int_t, std::pair<double, double>> &terms,
+    hashmap<int_t, std::pair<double, double>> &thread_terms, const int_t ithread) {
     if (ithread == 0) {
         std::swap(terms, thread_terms);
-        std::swap(diags, thread_diags);
         return;
     }
-    // sum all enpt2 terms
-    for (auto keyval : thread_terms)
-        terms[keyval.first] += keyval.second;
-    thread_terms.clear();
-    // ensure all diagonal terms are present
-    for (auto keyval : thread_diags)
-        diags[keyval.first] = keyval.second;
-    thread_diags.clear();
-}
-
-}
-
-
-double DOCIWfn::compute_enpt2(const double *h, const double *v, const double *w, const double *coeffs,
-    const double energy, const double eps, const int_t istart, const int_t iend) const {
-    // do computation in chunks by making smaller hashmaps in parallel
-    int_t nthread = omp_get_max_threads();
-    hashmap<int_t, double> terms, diags;
-    std::vector<hashmap<int_t, double>> vterms(nthread), vdiags(nthread);
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
-    #pragma omp parallel
-    {
-        int_t ithread = omp_get_thread_num();
-        int_t istart = ithread * chunksize;
-        int_t iend = (istart + chunksize < ndet) ? istart + chunksize : ndet;
-        compute_enpt2_run_thread(vterms[ithread], vdiags[ithread], h, v, w, coeffs, eps, istart, iend);
-        // combine hashmaps into larger terms, diags objects
-        #pragma omp for ordered schedule(static,1)
-        for (int_t t = 0; t < nthread; ++t)
-            #pragma omp ordered
-            compute_enpt2_condense_thread(terms, diags, vterms[t], vdiags[t], t);
+    std::pair<double, double> *pair;
+    for (auto& keyval : thread_terms) {
+        pair = &terms[keyval.first];
+        pair->first += keyval.second.first;
+        pair->second = keyval.second.second;
     }
-    // compute enpt2 correction
-    double result = 0.0;
-    for (auto keyval : terms)
-        result += keyval.second * keyval.second / (energy - diags[keyval.first]);
-    return result;
+    thread_terms.clear();
 }
 
 
@@ -578,56 +624,6 @@ void DOCIWfn::run_hci_condense_thread(DOCIWfn &wfn) {
         add_det(&wfn.dets[idet * nword]);
     wfn.dets.resize(0);
     wfn.dict.clear();
-}
-
-
-void DOCIWfn::compute_enpt2_run_thread(hashmap<int_t, double> &terms, hashmap<int_t, double> &diags,
-    const double *h, const double *v, const double *w, const double *coeffs, const double eps,
-    const int_t istart, const int_t iend) const {
-    if (istart >= iend) return;
-    // prepare working vectors
-    std::vector<uint_t> det(nword);
-    std::vector<int_t> occs(nocc), d_occs(nocc);
-    std::vector<int_t> virs(nvir);
-    // loop over determinants
-    int_t i, j, k, l, m, n, o, rank;
-    double val, d_val1, d_val2;
-    for (int_t idet = istart; idet < iend; ++idet) {
-        // fill working vectors
-        copy_det(idet, &det[0]);
-        fill_occs(nword, &det[0], &occs[0]);
-        fill_virs(nword, nbasis, &det[0], &virs[0]);
-        // single/"pair"-excited elements elements
-        for (i = 0; i < nocc; ++i) {
-            k = occs[i];
-            for (j = 0; j < nvir; ++j) {
-                l = virs[j];
-                excite_det(k, l, &det[0]);
-                val = v[k * nbasis + l] * coeffs[idet];
-                // add term if |H*c| > eps and not already in wfn
-                if (std::abs(val) > eps) {
-                    rank = rank_det(nbasis, nocc, &det[0]);
-                    if (index_det_from_rank(rank) == -1) {
-                        // compute diagonal element of det
-                        fill_occs(nword, &det[0], &d_occs[0]);
-                        d_val1 = 0.0;
-                        d_val2 = 0.0;
-                        for (m = 0; m < nocc; ++m) {
-                            o = d_occs[m];
-                            d_val1 += v[o * (nbasis + 1)];
-                            d_val2 += h[o];
-                            for (n = m + 1; n < nocc; ++n)
-                                d_val2 += w[o * nbasis + d_occs[n]];
-                        }
-                        // add enpt2 term to total and store diagonal term
-                        terms[rank] += val;
-                        diags[rank] = d_val1 + d_val2 * 2;
-                    }
-                }
-                excite_det(l, k, &det[0]);
-            }
-        }
-    }
 }
 
 

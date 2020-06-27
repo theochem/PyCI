@@ -1160,6 +1160,39 @@ cdef class doci_wfn(spin_wfn):
         else:
             raise ValueError('mode must be one of \'d\', \'r\', \'g\'')
 
+    def compute_enpt2(self, hamiltonian ham not None, double[::1] coeffs not None,
+        double energy, double eps=1.0e-6):
+        r"""
+        Compute the second-order Epstein-Nesbet perturbation theory correction to the energy.
+
+        Parameters
+        ----------
+        ham : hamiltonian
+            Hamiltonian object.
+        coeffs : np.ndarray(c_double(ndet))
+            Coefficient vector.
+        energy : float
+            Variational energy.
+        eps : float, default=1.0e-6
+            Threshold value for which determinants to include.
+
+        Returns
+        -------
+        enpt2_energy : float
+           ENPT2-corrected energy. 
+
+        """
+        if self._obj.ndet != coeffs.shape[0]:
+            raise ValueError('dimensions of wfn, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
+        elif self._obj.nbasis != ham._nbasis:
+            raise ValueError('dimensions of wfn, ham do not match')
+        elif ham._h is None:
+            raise AttributeError('seniority-zero integrals were not computed')
+        return self._obj.compute_enpt2(<double *>(&ham._h[0]), <double *>(&ham._v[0, 0]),
+            <double *>(&ham._w[0, 0]), <double *>(&coeffs[0]), energy - ham._ecore, eps) + energy
+
     def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
         r"""
         Run an iteration of heat-bath CI.

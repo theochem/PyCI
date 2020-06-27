@@ -77,5 +77,8 @@ cdef extern from 'pyci/doci.h' namespace 'pyci':
         void compute_rdms(const double *, double *, double *) except +
         void compute_rdms_gen(const double *, double *, double *) except +
 
+        double compute_enpt2(const double *, const double *, const double *, const double *,
+            const double, const double) except +
+
         int_t run_hci(const double *, const double *, const double) except +
         int_t run_hci_gen(const double *, const double *, const double *, const double) except +

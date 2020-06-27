@@ -71,20 +71,23 @@ struct DOCIWfn
 
     double compute_overlap(const double *, const DOCIWfn &, const double *) const;
 
+    double compute_enpt2(const double *, const double *, const double *, const double *,
+        const double, const double) const;
+
     int_t run_hci(const double *, const double *, const double);
     int_t run_hci_gen(const double *, const double *, const double *, const double);
 
-    double compute_enpt2(const double *, const double *, const double *, const double *,
-        const double, const double, const int_t, const int_t) const;
-
     private:
 
-    void run_hci_run_thread(DOCIWfn &, const double *, const double *, const double, const int_t, const int_t);
-    void run_hci_gen_run_thread(DOCIWfn &, const double *, const double *, const double *, const double, const int_t, const int_t);
-    void run_hci_condense_thread(DOCIWfn &);
-
-    void compute_enpt2_run_thread(hashmap<int_t, double> &, hashmap<int_t, double> &, const double *,
+    void compute_enpt2_run_thread(hashmap<int_t, std::pair<double, double>> &, const double *,
         const double *, const double *, const double *, const double, const int_t, const int_t) const;
+    static void compute_enpt2_condense_thread(hashmap<int_t, std::pair<double, double>> &,
+        hashmap<int_t, std::pair<double, double>> &, const int_t);
+
+    void run_hci_run_thread(DOCIWfn &, const double *, const double *, const double, const int_t, const int_t);
+    void run_hci_gen_run_thread(DOCIWfn &, const double *, const double *, const double *, const double,
+        const int_t, const int_t);
+    void run_hci_condense_thread(DOCIWfn &);
 };
 
 
