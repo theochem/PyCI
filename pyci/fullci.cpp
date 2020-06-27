@@ -347,8 +347,13 @@ void FullCIWfn::add_excited_dets(const uint_t *rdet, const int_t e_up, const int
     // make spin-up and spin-down parts
     DOCIWfn wfn_up(nbasis, nocc_up);
     DOCIWfn wfn_dn(nbasis, nocc_dn);
-    wfn_up.add_excited_dets(&rdet[0], e_up);
-    wfn_dn.add_excited_dets(&rdet[nword], e_dn);
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        wfn_up.add_excited_dets(&rdet[0], e_up);
+        #pragma omp section
+        wfn_dn.add_excited_dets(&rdet[nword], e_dn);
+    }
     // add determinants
     int_t i, j;
     std::vector<uint_t> det(nword2);
