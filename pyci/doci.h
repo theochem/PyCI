@@ -74,13 +74,19 @@ struct DOCIWfn
     int_t run_hci(const double *, const double *, const double);
     int_t run_hci_gen(const double *, const double *, const double *, const double);
 
+    double compute_enpt2(const double *, const double *, const double *, const double *,
+        const double, const double, const int_t, const int_t) const;
+
     private:
 
     void run_hci_run_thread(const DOCIWfn &, const double *, const double *, const double,
-                            const int_t, const int_t);
+        const int_t, const int_t);
     void run_hci_gen_run_thread(const DOCIWfn &, const double *, const double *, const double *,
-                                const double, const int_t, const int_t);
+        const double, const int_t, const int_t);
     void run_hci_condense_thread(DOCIWfn &);
+
+    void compute_enpt2_run_thread(hashmap<int_t, double> &, hashmap<int_t, double> &, const double *,
+        const double *, const double *, const double *, const double, const int_t, const int_t) const;
 };
 
 

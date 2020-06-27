@@ -76,7 +76,7 @@ struct FullCIWfn
     private:
 
     void run_hci_run_thread(const FullCIWfn &, const double *, const double *, const double *,
-                            const double, const int_t, const int_t);
+        const double, const int_t, const int_t);
     void run_hci_condense_thread(FullCIWfn &);
 };
 
