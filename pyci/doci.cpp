@@ -364,8 +364,13 @@ int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) 
     int_t ndet_old = ndet;
     // do computation in chunks by making smaller DOCIWfns in parallel
     int_t nthread = omp_get_max_threads();
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     std::vector<DOCIWfn> wfns(nthread);
+    if (nthread == 1) {
+        wfns[0].from_dociwfn(*this);
+        run_hci_run_thread(wfns[0], v, coeffs, eps, 0, ndet_old);
+        return ndet - ndet_old;
+    }
+    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     #pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
@@ -373,7 +378,7 @@ int_t DOCIWfn::run_hci(const double *v, const double *coeffs, const double eps) 
         int_t iend = (istart + chunksize < ndet_old) ? istart + chunksize : ndet_old;
         wfns[ithread].run_hci_run_thread(*this, v, coeffs, eps, istart, iend);
     }
-    // fill original DOCIWfn (this object)
+    // fill original DOCIWfn (this instance)
     for (int_t t = 0; t < nthread; ++t)
         run_hci_condense_thread(wfns[t]);
     // return number of determinants added
@@ -386,8 +391,13 @@ int_t DOCIWfn::run_hci_gen(const double *one_mo, const double *two_mo, const dou
     int_t ndet_old = ndet;
     // do computation in chunks by making smaller DOCIWfns in parallel
     int_t nthread = omp_get_max_threads();
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     std::vector<DOCIWfn> wfns(nthread);
+    if (nthread == 1) {
+        wfns[0].from_dociwfn(*this);
+        run_hci_gen_run_thread(wfns[0], one_mo, two_mo, coeffs, eps, 0, ndet_old);
+        return ndet - ndet_old;
+    }
+    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     #pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
@@ -395,7 +405,7 @@ int_t DOCIWfn::run_hci_gen(const double *one_mo, const double *two_mo, const dou
         int_t iend = (istart + chunksize < ndet_old) ? istart + chunksize : ndet_old;
         wfns[ithread].run_hci_gen_run_thread(*this, one_mo, two_mo, coeffs, eps, istart, iend);
     }
-    // fill original DOCIWfn (this object)
+    // fill original DOCIWfn (this instance)
     for (int_t t = 0; t < nthread; ++t)
         run_hci_condense_thread(wfns[t]);
     // return number of determinants added

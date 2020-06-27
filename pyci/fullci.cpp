@@ -412,8 +412,13 @@ int_t FullCIWfn::run_hci(const double *one_mo, const double *two_mo, const doubl
     int_t ndet_old = ndet;
     // do computation in chunks by making smaller FullCIWfns in parallel
     int_t nthread = omp_get_max_threads();
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     std::vector<FullCIWfn> wfns(nthread);
+    if (nthread == 1) {
+        wfns[0].from_fullciwfn(*this);
+        run_hci_run_thread(wfns[0], one_mo, two_mo, coeffs, eps, 0, ndet_old);
+        return ndet - ndet_old;
+    }
+    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     #pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
@@ -421,7 +426,7 @@ int_t FullCIWfn::run_hci(const double *one_mo, const double *two_mo, const doubl
         int_t iend = (istart + chunksize < ndet_old) ? istart + chunksize : ndet_old;
         wfns[ithread].run_hci_run_thread(*this, one_mo, two_mo, coeffs, eps, istart, iend);
     }
-    // fill original FullCIWfn (this object)
+    // fill original FullCIWfn (this instance)
     for (int_t t = 0; t < nthread; ++t)
         run_hci_condense_thread(wfns[t]);
     // return number of determinants added
