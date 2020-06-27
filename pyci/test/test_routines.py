@@ -66,7 +66,7 @@ class TestRoutines:
         nrow = len(wfn) - 10
         op = pyci.sparse_op(ham, wfn, nrow)
         assert op.shape == (nrow, len(wfn))
-        y = op.dot(np.ones(op.shape[1], dtype=pyci.c_double))
+        y = op(np.ones(op.shape[1], dtype=pyci.c_double))
         assert y.ndim == 1
         assert y.shape[0] == op.shape[0]
 

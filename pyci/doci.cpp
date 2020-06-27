@@ -99,12 +99,16 @@ void DOCIWfn::from_file(const char *filename) {
         file.read((char *)&nbasis, sizeof(int_t)) &&
         file.read((char *)&nocc, sizeof(int_t))) {
         nword = nword_det(nbasis);
-        nvir = nbasis - nocc;
-        dets.resize(0);
-        dict.clear();
-        dets.resize(nword * ndet);
-        dict.reserve(ndet);
-        if (file.read((char *)&dets[0], sizeof(uint_t) * nword * ndet)) success = true;
+        // proceed if pyci was built for this many words per determinant
+        if (nword <= PYCI_NWORD_MAX) {
+            nvir = nbasis - nocc;
+            dets.resize(0);
+            dict.clear();
+            dets.resize(nword * ndet);
+            dict.reserve(ndet);
+            if (file.read((char *)&dets[0], sizeof(uint_t) * nword * ndet))
+                success = true;
+        }
     }
     file.close();
     if (success)

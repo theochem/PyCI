@@ -122,17 +122,21 @@ void FullCIWfn::from_file(const char *filename) {
         file.read((char *)&nocc_dn, sizeof(int_t))) {
         // set attributes
         nword = nword_det(nbasis);
-        nword2 = nword * 2;
-        nvir_up = nbasis - nocc_up;
-        nvir_dn = nbasis - nocc_dn;
-        maxdet_up = binomial(nbasis, nocc_up);
-        maxdet_dn = binomial(nbasis, nocc_dn);
-        // prepare determinant array and hashmap
-        dets.resize(0);
-        dict.clear();
-        dets.resize(nword2 * ndet);
-        dict.reserve(ndet);
-        if (file.read((char *)&dets[0], sizeof(uint_t) * nword2 * ndet)) success = true;
+        // proceed if pyci was built for this many words per determinant
+        if (nword <= PYCI_NWORD_MAX) {
+            nword2 = nword * 2;
+            nvir_up = nbasis - nocc_up;
+            nvir_dn = nbasis - nocc_dn;
+            maxdet_up = binomial(nbasis, nocc_up);
+            maxdet_dn = binomial(nbasis, nocc_dn);
+            // prepare determinant array and hashmap
+            dets.resize(0);
+            dict.clear();
+            dets.resize(nword2 * ndet);
+            dict.reserve(ndet);
+            if (file.read((char *)&dets[0], sizeof(uint_t) * nword2 * ndet))
+                success = true;
+        }
     }
     file.close();
     // populate hashmap

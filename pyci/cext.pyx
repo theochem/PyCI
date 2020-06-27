@@ -597,19 +597,16 @@ cdef class spin_wfn:
 
         """
         # check excitation levels
-        cdef int_t emax = min(self._obj.nocc, self._obj.nvir), ndet = 0, i, e, nexc
+        cdef int_t emax = min(self._obj.nocc, self._obj.nvir)
         cdef int_t[::1] excv = np.array(list(set(exc)), dtype=c_int)
-        nexc = excv.shape[0]
+        cdef int_t nexc = excv.shape[0], i, e
         for i in range(nexc):
             e = excv[i]
             if e < 0 or e > emax:
                 raise ValueError('invalid excitation order e < 0 or e > min(nocc, nvir)')
-            ndet += binomial(self._obj.nocc, e) * binomial(self._obj.nvir, e)
         # default determinant is hartree-fock determinant
         if det is None:
             det = self.occs_to_det(np.arange(self._obj.nocc, dtype=c_int))
-        # reserve space for determinants
-        self._obj.reserve(ndet)
         # add determinants
         for i in range(nexc):
             self._obj.add_excited_dets(&det[0], excv[i])
@@ -2004,20 +2001,12 @@ cdef class fullci_wfn:
         cdef int_t emax = min(nocc, nvir)
         cdef int_t emax_up = min(self._obj.nocc_up, self._obj.nvir_up)
         cdef int_t emax_dn = min(self._obj.nocc_dn, self._obj.nvir_dn)
-        cdef int_t ndet = 0, i, nexc, e, a, b
         cdef int_t[::1] excv = np.array(list(set(exc)), dtype=c_int)
-        nexc = excv.shape[0]
+        cdef int_t nexc = excv.shape[0], i, e, a, b
         for i in range(nexc):
             e = excv[i]
             if e < 0 or e > emax:
                 raise ValueError('invalid excitation order e < 0 or e > min(nocc, nvir)')
-            a = min(e, self._obj.nocc_up, self._obj.nvir_up)
-            b = e - a
-            while (a >= 0) and (b <= emax_dn):
-                ndet += binomial(self._obj.nocc_up, a) * binomial(self._obj.nvir_up, a) \
-                      * binomial(self._obj.nocc_dn, b) * binomial(self._obj.nvir_dn, b)
-                a -= 1
-                b += 1
         # default determinant is hartree-fock determinant
         cdef np.ndarray occs
         if det is None:
@@ -2025,8 +2014,6 @@ cdef class fullci_wfn:
             occs[0, :self._obj.nocc_up] = np.arange(self._obj.nocc_up, dtype=c_int)
             occs[1, :self._obj.nocc_dn] = np.arange(self._obj.nocc_dn, dtype=c_int)
             det = self.occs_to_det(occs)
-        # reserve space for determinants
-        self._obj.reserve(ndet)
         # add determinants
         for i in range(nexc):
             e = excv[i]
@@ -2556,51 +2543,29 @@ cdef class sparse_op:
         elif len(wfn) == 0:
             raise ValueError('wfn must contain at least one determinant')
         # intialize object
-        cdef double[::1] h
-        cdef double[:, ::1] v, w
-        cdef double[:, :, :, ::1] x
         if isinstance(wfn, doci_wfn):
-            h = ham.h
-            v = ham.v
-            w = ham.w
-            self._obj.init_doci((<doci_wfn>wfn)._obj, <double *>(&h[0]), <double *>(&v[0, 0]),
-                                <double *>(&w[0, 0]), nrow)
+            if ham._h is None:
+                raise AttributeError('seniority-zero integrals were not computed')
+            self._obj.init_doci((<doci_wfn>wfn)._obj, <double *>(&ham._h[0]), <double *>(&ham._v[0, 0]),
+                                <double *>(&ham._w[0, 0]), nrow)
         elif isinstance(wfn, fullci_wfn):
-            w = ham.one_mo
-            x = ham.two_mo
-            self._obj.init_fullci((<fullci_wfn>wfn)._obj, <double *>(&w[0, 0]),
-                                  <double *>(&x[0, 0, 0, 0]), nrow)
+            if ham._one_mo is None:
+                raise AttributeError('full integral arrays were not saved')
+            self._obj.init_fullci((<fullci_wfn>wfn)._obj, <double *>(&ham._one_mo[0, 0]),
+                                  <double *>(&ham._two_mo[0, 0, 0, 0]), nrow)
         elif isinstance(wfn, gen_wfn):
-            w = ham.one_mo
-            x = ham.two_mo
-            self._obj.init_gen((<gen_wfn>wfn)._obj, <double *>(&w[0, 0]),
-                               <double *>(&x[0, 0, 0, 0]), nrow)
+            if ham._one_mo is None:
+                raise AttributeError('full integral arrays were not saved')
+            self._obj.init_gen((<gen_wfn>wfn)._obj, <double *>(&ham._one_mo[0, 0]),
+                               <double *>(&ham._two_mo[0, 0, 0, 0]), nrow)
         else:
-            raise TypeError('invalid wfn type')
+            raise TypeError('wfn type must be one of \'doci_wfn\', \'fullci_wfn\', \'gen_wfn\'')
         self._shape = self._obj.nrow, self._obj.ncol
         self._ecore = ham.ecore
 
-    def to_csr_matrix(self):
+    def __call__(self, double[::1] x not None, double[::1] out=None):
         r"""
-        Convert the sparse matrix operator to a scipy.sparse.csr_matrix instance.
-
-        Returns
-        -------
-        mat : scipy.sparse.csr_matrix
-            CSR matrix instance.
-
-        """
-        cdef double *data_ptr = &self._obj.data[0]
-        cdef int_t *indices_ptr = &self._obj.indices[0]
-        cdef int_t *indptr_ptr = &self._obj.indptr[0]
-        cdef np.ndarray data = np.asarray(<double[:self._obj.data.size()]>data_ptr)
-        cdef np.ndarray indices = np.asarray(<int_t[:self._obj.indices.size()]>indices_ptr)
-        cdef np.ndarray indptr = np.asarray(<int_t[:self._obj.indptr.size()]>indptr_ptr)
-        return csr_matrix((data, indices, indptr), shape=self._shape, copy=True)
-
-    def dot(self, double[::1] x not None, double[::1] out=None):
-        r"""
-        Compute the dot product of the sparse operator :math:`A` with a vector :math:`x`.
+        Compute the result of the sparse operator :math:`A` applied to vector :math:`x`.
 
         Parameters
         ----------
@@ -2629,6 +2594,24 @@ cdef class sparse_op:
         # return result of operation
         self._obj.perform_op(&x[0], &out[0])
         return y
+
+    def to_csr_matrix(self):
+        r"""
+        Convert the sparse matrix operator to a scipy.sparse.csr_matrix instance.
+
+        Returns
+        -------
+        mat : scipy.sparse.csr_matrix
+            CSR matrix instance.
+
+        """
+        cdef double *data_ptr = &self._obj.data[0]
+        cdef int_t *indices_ptr = &self._obj.indices[0]
+        cdef int_t *indptr_ptr = &self._obj.indptr[0]
+        cdef np.ndarray data = np.asarray(<double[:self._obj.data.size()]>data_ptr)
+        cdef np.ndarray indices = np.asarray(<int_t[:self._obj.indices.size()]>indices_ptr)
+        cdef np.ndarray indptr = np.asarray(<int_t[:self._obj.indptr.size()]>indptr_ptr)
+        return csr_matrix((data, indices, indptr), shape=self._shape, copy=True)
 
     def solve(self, int_t n=1, int_t ncv=-1, double[::1] c0=None, int_t maxiter=-1, double tol=1.0e-6):
         r"""
