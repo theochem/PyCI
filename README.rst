@@ -19,8 +19,7 @@
 PyCI
 ====
 
-PyCI is a flexible *ab-initio* quantum chemistry library for Configuration
-Interaction consisting of a C++ library and a Python package.
+PyCI is a flexible *ab-initio* quantum chemistry library for Configuration Interaction.
 
 PyCI is distributed under the GNU General Public License version 3 (GPLv3+).
 
@@ -33,7 +32,6 @@ The following programs/libraries are required to run PyCI:
 
 -  Python_ (≥3.x or ≥2.7)
 -  NumPy_ (≥1.13)
--  SciPy_ (≥1.17)
 
 The following programs/libraries are required to build PyCI:
 
@@ -41,7 +39,6 @@ The following programs/libraries are required to build PyCI:
 -  Python_ (≥3.x or ≥2.7, including system headers)
 -  NumPy_ (≥1.13)
 -  Cython_ (≥0.24)
--  Nosetests_ (optional: to run tests)
 
 The following programs/libraries are required to build the PyCI documentation:
 
@@ -95,20 +92,17 @@ Run the following in your shell to install the Read the Docs Sphinx theme via pi
 
     pip install sphinx-rtd-theme --user
 
-Then, run the following to compile PyCI and build the HTML documentation:
+Then, after installing PyCI, run the following to build the HTML documentation:
 
 .. code:: shell
 
-    python setup.py build_ext --inplace
     cd doc && make html
 
 .. _Python:             http://python.org/
 .. _NumPy:              http://numpy.org/
-.. _SciPy:              http://docs.scipy.org/doc/scipy/reference/
 .. _Cython:             http://cython.org/
 .. _GCC:                http://gcc.gnu.org/
 .. _`Clang/LLVM`:       http://clang.llvm.org/
-.. _Nosetests:          http://nose.readthedocs.io/
 .. _Sphinx:             http://sphinx-doc.org/
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
