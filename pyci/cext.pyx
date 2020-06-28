@@ -22,19 +22,14 @@ PyCI C extension module.
 
 from libc.stdint cimport int64_t, uint64_t
 
+from libcpp.vector cimport vector
+
 from io import open
 
 cimport numpy as np
 import numpy as np
 
-from scipy.sparse import csr_matrix
-
-from pyci.common cimport binomial, fill_det, fill_occs, fill_virs
-from pyci.common cimport excite_det, setbit_det, clearbit_det, popcnt_det, ctz_det
-from pyci.common cimport phase_single_det, phase_double_det, rank_det
-from pyci.doci cimport DOCIWfn
-from pyci.fullci cimport FullCIWfn
-from pyci.solve cimport SparseOp
+from pyci.cext cimport *
 
 
 __all__ = [
@@ -44,18 +39,16 @@ __all__ = [
     '_get_version',
     'hamiltonian',
     'doci_wfn',
-    'gen_wfn',
+    'genci_wfn',
     'fullci_wfn',
     'sparse_op',
     ]
 
 
-ctypedef int64_t int_t
-ctypedef uint64_t uint_t
-
-
 cdef np.dtype c_int = np.dtype(np.int64)
+
 cdef np.dtype c_uint = np.dtype(np.uint64)
+
 cdef np.dtype c_double = np.dtype(np.double)
 
 
@@ -1150,7 +1143,7 @@ cdef class doci_wfn(spin_wfn):
         cdef np.ndarray d2_array = np.zeros((self._obj.nbasis, self._obj.nbasis), dtype=c_double)
         cdef double[:, ::1] d0 = d0_array
         cdef double[:, ::1] d2 = d2_array
-        self._obj.compute_rdms(<double *>(&coeffs[0]), <double *>(&d0[0, 0]), <double *>(&d2[0, 0]))
+        self._obj.compute_rdms_doci(<double *>(&coeffs[0]), <double *>(&d0[0, 0]), <double *>(&d2[0, 0]))
         if mode == 'd':
             return d0_array, d2_array
         elif mode == 'r':
@@ -1159,39 +1152,6 @@ cdef class doci_wfn(spin_wfn):
             return doci_wfn.generate_generalized_rdms(d0, d2)
         else:
             raise ValueError('mode must be one of \'d\', \'r\', \'g\'')
-
-    def compute_enpt2(self, hamiltonian ham not None, double[::1] coeffs not None,
-        double energy, double eps=1.0e-6):
-        r"""
-        Compute the second-order Epstein-Nesbet perturbation theory correction to the energy.
-
-        Parameters
-        ----------
-        ham : hamiltonian
-            Hamiltonian object.
-        coeffs : np.ndarray(c_double(ndet))
-            Coefficient vector.
-        energy : float
-            Variational energy.
-        eps : float, default=1.0e-6
-            Threshold value for which determinants to include.
-
-        Returns
-        -------
-        enpt2_energy : float
-           ENPT2-corrected energy. 
-
-        """
-        if self._obj.ndet != coeffs.shape[0]:
-            raise ValueError('dimensions of wfn, coeffs do not match')
-        elif self._obj.ndet == 0:
-            raise ValueError('wfn must contain at least one determinant')
-        elif self._obj.nbasis != ham._nbasis:
-            raise ValueError('dimensions of wfn, ham do not match')
-        elif ham._h is None:
-            raise AttributeError('seniority-zero integrals were not computed')
-        return self._obj.compute_enpt2(<double *>(&ham._h[0]), <double *>(&ham._v[0, 0]),
-            <double *>(&ham._w[0, 0]), <double *>(&coeffs[0]), energy - ham._ecore, eps) + energy
 
     def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
         r"""
@@ -1224,7 +1184,7 @@ cdef class doci_wfn(spin_wfn):
             raise ValueError('dimensions of wfn, ham do not match')
         elif ham._h is None:
             raise AttributeError('seniority-zero integrals were not computed')
-        return self._obj.run_hci(<double *>(&ham._v[0, 0]), <double *>(&coeffs[0]), eps)
+        return self._obj.run_hci_doci(<double *>(&ham._v[0, 0]), <double *>(&coeffs[0]), eps)
 
     @staticmethod
     def generate_restricted_rdms(double[:, ::1] d0 not None, double[:, ::1] d2 not None):
@@ -1297,7 +1257,7 @@ cdef class doci_wfn(spin_wfn):
         return rdm1_array, rdm2_array
 
 
-cdef class gen_wfn(spin_wfn):
+cdef class genci_wfn(spin_wfn):
     r"""
     Generalized CI wave function class.
 
@@ -1323,27 +1283,27 @@ cdef class gen_wfn(spin_wfn):
     @staticmethod
     def from_file(object filename not None):
         r"""
-        Return a gen_wfn instance by loading a GEN file.
+        Return a genci_wfn instance by loading a GENCI file.
 
         Parameters
         ----------
         filename : str
-            GEN file from which to load determinants.
+            GENCI file from which to load determinants.
 
         Returns
         -------
-        wfn : gen_wfn
+        wfn : genci_wfn
             Generalized wave function object.
 
         """
-        cdef gen_wfn wfn = gen_wfn(2, 1)
+        cdef genci_wfn wfn = genci_wfn(2, 1)
         wfn._obj.from_file(filename.encode())
         return wfn
 
     @staticmethod
     def from_det_array(int_t nbasis, int_t nocc, uint_t[:, ::1] det_array not None):
         r"""
-        Return a gen_wfn instance from an array of determinant bitstrings.
+        Return a genci_wfn instance from an array of determinant bitstrings.
 
         Parameters
         ----------
@@ -1356,11 +1316,11 @@ cdef class gen_wfn(spin_wfn):
 
         Returns
         -------
-        wfn : gen_wfn
+        wfn : genci_wfn
             Generalized wave function object.
 
         """
-        cdef gen_wfn wfn = gen_wfn(nbasis, nocc)
+        cdef genci_wfn wfn = genci_wfn(nbasis, nocc)
         if det_array.ndim != 2 or det_array.shape[1] != wfn._obj.nword:
             raise IndexError('nbasis, nocc given do not match up with det_array dimensions')
         wfn._obj.from_det_array(nbasis, nocc, det_array.shape[0], <uint_t *>(&det_array[0, 0]))
@@ -1369,7 +1329,7 @@ cdef class gen_wfn(spin_wfn):
     @staticmethod
     def from_occs_array(int_t nbasis, int_t nocc, int_t[:, ::1] occs_array not None):
         r"""
-        Return a gen_wfn instance from an array of occupied indices.
+        Return a genci_wfn instance from an array of occupied indices.
 
         Parameters
         ----------
@@ -1382,11 +1342,11 @@ cdef class gen_wfn(spin_wfn):
 
         Returns
         -------
-        wfn : gen_wfn
+        wfn : genci_wfn
             Generalized wave function object.
 
         """
-        cdef gen_wfn wfn = gen_wfn(nbasis, nocc)
+        cdef genci_wfn wfn = genci_wfn(nbasis, nocc)
         if occs_array.ndim != 2 or occs_array.shape[1] != wfn._obj.nocc:
             raise IndexError('nbasis, nocc given do not match up with occs_array dimensions')
         wfn._obj.from_occs_array(nbasis, nocc, occs_array.shape[0], <int_t *>(&occs_array[0, 0]))
@@ -1426,7 +1386,7 @@ cdef class gen_wfn(spin_wfn):
 
     def __init__(self, int_t nbasis, int_t nocc):
         r"""
-        Initialize a gen_wfn instance.
+        Initialize a genci_wfn instance.
 
         Parameters
         ----------
@@ -1442,37 +1402,37 @@ cdef class gen_wfn(spin_wfn):
 
     def __copy__(self):
         r"""
-        Copy a gen_wfn instance.
+        Copy a genci_wfn instance.
 
         Returns
         -------
-        wfn : gen_wfn
+        wfn : genci_wfn
             Generalized CI wave function object.
 
         """
-        cdef gen_wfn wfn = gen_wfn(2, 1)
+        cdef genci_wfn wfn = genci_wfn(2, 1)
         wfn._obj.from_dociwfn(self._obj)
         return wfn
 
     def to_file(self, object filename not None):
         r"""
-        Write a gen_wfn instance to a GEN file.
+        Write a genci_wfn instance to a GENCI file.
 
         Parameters
         ----------
         filename : str
-            Name of GEN file to write.
+            Name of GENCI file to write.
 
         """
         self._obj.to_file(filename.encode())
 
     def copy(self):
         r"""
-        Copy a gen_wfn instance.
+        Copy a genci_wfn instance.
 
         Returns
         -------
-        wfn : gen_wfn
+        wfn : genci_wfn
             Generalized CI wave function object.
 
         """
@@ -1524,7 +1484,7 @@ cdef class gen_wfn(spin_wfn):
         """
         return phase_double_det(self._obj.nword, i, j, a, b, <uint_t *>(&det[0]))
 
-    def compute_overlap(self, double[::1] coeffs not None, gen_wfn wfn not None,
+    def compute_overlap(self, double[::1] coeffs not None, genci_wfn wfn not None,
         double[::1] w_coeffs not None):
         r"""
         Compute the overlap of this wave function with another wave function.
@@ -1533,7 +1493,7 @@ cdef class gen_wfn(spin_wfn):
         ----------
         coeffs : np.ndarray(c_double(ndet))
             This wave function's coefficient vector.
-        wfn : gen_wfn
+        wfn : genci_wfn
             Wave function with which to compute overlap.
         w_coeffs : np.ndarray(c_double(len(wfn)))
             This wave function's coefficient vector.
@@ -1588,8 +1548,8 @@ cdef class gen_wfn(spin_wfn):
         cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
         cdef double[:, ::1] rdm1 = rdm1_array
         cdef double[:, :, :, ::1] rdm2 = rdm2_array
-        self._obj.compute_rdms_gen(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
-                                   <double *>(&rdm2[0, 0, 0, 0]))
+        self._obj.compute_rdms_genci(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
+                                     <double *>(&rdm2[0, 0, 0, 0]))
         return rdm1_array, rdm2_array
 
     def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
@@ -1624,7 +1584,7 @@ cdef class gen_wfn(spin_wfn):
             raise ValueError('dimensions of wfn, ham do not match')
         elif ham._one_mo is None:
             raise AttributeError('full integral arrays were not saved')
-        return self._obj.run_hci_gen(
+        return self._obj.run_hci_genci(
             <double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
             <double *>(&coeffs[0]), eps,
             )
@@ -2466,6 +2426,41 @@ cdef class fullci_wfn:
         else:
             raise ValueError('mode must be \'fullci\' or \'gen\'')
 
+    def compute_enpt2(self, hamiltonian ham not None, double[::1] coeffs not None,
+        double energy, double eps=1.0e-6):
+        r"""
+        Compute the second-order Epstein-Nesbet perturbation theory correction to the energy.
+
+        Parameters
+        ----------
+        ham : hamiltonian
+            Hamiltonian object.
+        coeffs : np.ndarray(c_double(ndet))
+            Coefficient vector.
+        energy : float
+            Variational energy.
+        eps : float, default=1.0e-6
+            Threshold value for which determinants to include.
+
+        Returns
+        -------
+        enpt2_energy : float
+           ENPT2-corrected energy.
+
+        """
+        if self._obj.ndet != coeffs.shape[0]:
+            raise ValueError('dimensions of wfn, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
+        elif self._obj.nbasis != ham._nbasis:
+            raise ValueError('dimensions of wfn, ham do not match')
+        elif ham._h is None:
+            raise AttributeError('seniority-zero integrals were not computed')
+        return self._obj.compute_enpt2(
+            <double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
+            <double *>(&coeffs[0]), energy - ham._ecore, eps,
+            ) + energy
+
     def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
         r"""
         Run an iteration of heat-bath CI.
@@ -2564,7 +2559,7 @@ cdef class sparse_op:
         ----------
         ham : hamiltonian
             Hamiltonian object.
-        wfn : (doci_wfn | fullci_wfn | gen_wfn)
+        wfn : (doci_wfn | fullci_wfn | genci_wfn)
             Wave function object.
         nrow : int, optional
             Number of rows (<= number of determinants in wavefunction). Default is square matrix.
@@ -2586,13 +2581,13 @@ cdef class sparse_op:
                 raise AttributeError('full integral arrays were not saved')
             self._obj.init_fullci((<fullci_wfn>wfn)._obj, <double *>(&ham._one_mo[0, 0]),
                                   <double *>(&ham._two_mo[0, 0, 0, 0]), nrow)
-        elif isinstance(wfn, gen_wfn):
+        elif isinstance(wfn, genci_wfn):
             if ham._one_mo is None:
                 raise AttributeError('full integral arrays were not saved')
-            self._obj.init_gen((<gen_wfn>wfn)._obj, <double *>(&ham._one_mo[0, 0]),
-                               <double *>(&ham._two_mo[0, 0, 0, 0]), nrow)
+            self._obj.init_genci((<genci_wfn>wfn)._obj, <double *>(&ham._one_mo[0, 0]),
+                                 <double *>(&ham._two_mo[0, 0, 0, 0]), nrow)
         else:
-            raise TypeError('wfn type must be one of \'doci_wfn\', \'fullci_wfn\', \'gen_wfn\'')
+            raise TypeError('wfn type must be one of \'doci_wfn\', \'fullci_wfn\', \'genci_wfn\'')
         self._shape = self._obj.nrow, self._obj.ncol
         self._ecore = ham.ecore
 
@@ -2638,6 +2633,7 @@ cdef class sparse_op:
             CSR matrix instance.
 
         """
+        from scipy.sparse import csr_matrix
         cdef double *data_ptr = &self._obj.data[0]
         cdef int_t *indices_ptr = &self._obj.indices[0]
         cdef int_t *indptr_ptr = &self._obj.indptr[0]

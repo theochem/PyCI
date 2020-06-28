@@ -23,7 +23,7 @@
 
 #include <parallel_hashmap/phmap.h>
 
-#include <pyci/fullci.h>
+#include <pyci/pyci.h>
 
 
 namespace pyci {
@@ -231,7 +231,7 @@ void enpt2_fullci_run_thread(const FullCIWfn &wfn, phashmap &terms, const double
                         if (std::abs(val) > eps) {
                             rank = rank_up_ref + rank_det(n1, wfn.nocc_dn, det_dn);
                             if (wfn.index_det_from_rank(rank) == -1) {
-                                val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn); 
+                                val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn);
                                 fill_occs(wfn.nword, det_dn, t_dn);
                                 enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, t_up, t_dn);
                             }

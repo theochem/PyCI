@@ -15,7 +15,7 @@
 
 #include <stdexcept>
 
-#include <pyci/common.h>
+#include <pyci/pyci.h>
 
 
 namespace pyci {

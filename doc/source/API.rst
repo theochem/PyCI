@@ -41,7 +41,7 @@ Classes
 .. autoclass:: pyci.doci_wfn
     :members:
 
-.. autoclass:: pyci.gen_wfn
+.. autoclass:: pyci.genci_wfn
     :members:
 
 .. autoclass:: pyci.fullci_wfn

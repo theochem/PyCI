@@ -99,8 +99,16 @@ compile_args = [
 cext = {
     'name': 'pyci.cext',
     'language': 'c++',
-    'sources':
-        ['pyci/common.cpp', 'pyci/doci.cpp', 'pyci/fullci.cpp', 'pyci/solve.cpp', 'pyci/cext.cpp'],
+    'sources': [
+        'pyci/common.cpp',
+        'pyci/doci.cpp',
+        'pyci/fullci.cpp',
+        'pyci/solve.cpp',
+        'pyci/rdm.cpp',
+        'pyci/enpt2.cpp',
+        'pyci/hci.cpp',
+        'pyci/cext.cpp',
+        ],
     'include_dirs': include_dirs,
     'extra_compile_args': compile_args,
     'extra_link_args': compile_args,
