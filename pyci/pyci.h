@@ -109,7 +109,7 @@ int_t ctz_det(const int_t, const uint_t *);
 int_t rank_det(const int_t, const int_t, const uint_t *);
 
 
-struct DOCIWfn
+struct OneSpinWfn
 {
     typedef hashmap<int_t, int_t> hashmap_type;
 
@@ -117,23 +117,23 @@ struct DOCIWfn
     std::vector<uint_t> dets;
     hashmap_type dict;
 
-    DOCIWfn();
+    OneSpinWfn();
 
-    DOCIWfn(const int_t, const int_t);
+    OneSpinWfn(const int_t, const int_t);
 
-    DOCIWfn(const DOCIWfn &);
+    OneSpinWfn(const OneSpinWfn &);
 
-    DOCIWfn(const char *);
+    OneSpinWfn(const char *);
 
-    DOCIWfn(const int_t, const int_t, const int_t, const uint_t *);
+    OneSpinWfn(const int_t, const int_t, const int_t, const uint_t *);
 
-    DOCIWfn(const int_t, const int_t, const int_t, const int_t *);
+    OneSpinWfn(const int_t, const int_t, const int_t, const int_t *);
 
-    ~DOCIWfn();
+    ~OneSpinWfn();
 
     void init(const int_t, const int_t);
 
-    void from_dociwfn(const DOCIWfn &);
+    void from_onespinwfn(const OneSpinWfn &);
 
     void from_file(const char *);
 
@@ -171,7 +171,7 @@ struct DOCIWfn
 
     void compute_rdms_genci(const double *, double *, double *) const;
 
-    double compute_overlap(const double *, const DOCIWfn &, const double *) const;
+    double compute_overlap(const double *, const OneSpinWfn &, const double *) const;
 
     int_t run_hci_doci(const double *, const double *, const double);
 
@@ -179,7 +179,7 @@ struct DOCIWfn
 };
 
 
-struct FullCIWfn
+struct TwoSpinWfn
 {
     typedef hashmap<int_t, int_t> hashmap_type;
 
@@ -188,23 +188,23 @@ struct FullCIWfn
     std::vector<uint_t> dets;
     hashmap_type dict;
 
-    FullCIWfn();
+    TwoSpinWfn();
 
-    FullCIWfn(const int_t, const int_t, const int_t);
+    TwoSpinWfn(const int_t, const int_t, const int_t);
 
-    FullCIWfn(const FullCIWfn &);
+    TwoSpinWfn(const TwoSpinWfn &);
 
-    FullCIWfn(const char *);
+    TwoSpinWfn(const char *);
 
-    FullCIWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *);
+    TwoSpinWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *);
 
-    FullCIWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
+    TwoSpinWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
 
-    ~FullCIWfn();
+    ~TwoSpinWfn();
 
     void init(const int_t, const int_t, const int_t);
 
-    void from_fullciwfn(const FullCIWfn &);
+    void from_twospinwfn(const TwoSpinWfn &);
 
     void from_file(const char *);
 
@@ -238,13 +238,13 @@ struct FullCIWfn
 
     void squeeze();
 
-    double compute_overlap(const double *, const FullCIWfn &, const double *) const;
+    double compute_overlap(const double *, const TwoSpinWfn &, const double *) const;
 
-    void compute_rdms(const double *, double *, double *) const;
+    void compute_rdms_fullci(const double *, double *, double *) const;
 
-    double compute_enpt2(const double *, const double *, const double *, const double, const double) const;
+    double compute_enpt2_fullci(const double *, const double *, const double *, const double, const double) const;
 
-    int_t run_hci(const double *, const double *, const double *, const double);
+    int_t run_hci_fullci(const double *, const double *, const double *, const double);
 };
 
 
@@ -265,11 +265,11 @@ struct SparseOp
 
     void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) const;
 
-    void init_doci(const DOCIWfn &, const double *, const double *, const double *, const int_t);
+    void init_doci(const OneSpinWfn &, const double *, const double *, const double *, const int_t);
 
-    void init_fullci(const FullCIWfn &, const double *, const double *, const int_t);
+    void init_fullci(const TwoSpinWfn &, const double *, const double *, const int_t);
 
-    void init_genci(const DOCIWfn &, const double *, const double *, const int_t);
+    void init_genci(const OneSpinWfn &, const double *, const double *, const int_t);
 };
 
 

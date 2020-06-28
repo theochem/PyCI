@@ -404,12 +404,12 @@ cdef class hamiltonian:
         return w_array
 
 
-cdef class spin_wfn:
+cdef class one_spin_wfn:
     r"""
     Single-spin wave function class.
 
     """
-    cdef DOCIWfn _obj
+    cdef OneSpinWfn _obj
 
     def __len__(self):
         r"""
@@ -861,7 +861,7 @@ cdef class spin_wfn:
         return np.zeros(self._obj.nword, dtype=c_uint)
 
 
-cdef class doci_wfn(spin_wfn):
+cdef class doci_wfn(one_spin_wfn):
     r"""
     Restricted DOCI wave function class.
 
@@ -1039,7 +1039,7 @@ cdef class doci_wfn(spin_wfn):
 
         """
         cdef doci_wfn wfn = doci_wfn(2, 1)
-        wfn._obj.from_dociwfn(self._obj)
+        wfn._obj.from_onespinwfn(self._obj)
         return wfn
 
     def to_file(self, object filename not None):
@@ -1257,7 +1257,7 @@ cdef class doci_wfn(spin_wfn):
         return rdm1_array, rdm2_array
 
 
-cdef class genci_wfn(spin_wfn):
+cdef class genci_wfn(one_spin_wfn):
     r"""
     Generalized CI wave function class.
 
@@ -1411,7 +1411,7 @@ cdef class genci_wfn(spin_wfn):
 
         """
         cdef genci_wfn wfn = genci_wfn(2, 1)
-        wfn._obj.from_dociwfn(self._obj)
+        wfn._obj.from_onespinwfn(self._obj)
         return wfn
 
     def to_file(self, object filename not None):
@@ -1584,10 +1584,8 @@ cdef class genci_wfn(spin_wfn):
             raise ValueError('dimensions of wfn, ham do not match')
         elif ham._one_mo is None:
             raise AttributeError('full integral arrays were not saved')
-        return self._obj.run_hci_genci(
-            <double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
-            <double *>(&coeffs[0]), eps,
-            )
+        return self._obj.run_hci_genci(<double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
+                                       <double *>(&coeffs[0]), eps)
 
 
 cdef class fullci_wfn:
@@ -1612,7 +1610,7 @@ cdef class fullci_wfn:
         Number of virtual spin-down indices.
 
     """
-    cdef FullCIWfn _obj
+    cdef TwoSpinWfn _obj
 
     @staticmethod
     def from_file(object filename not None):
@@ -1814,7 +1812,7 @@ cdef class fullci_wfn:
 
         """
         cdef fullci_wfn wfn = fullci_wfn(2, 1, 1)
-        wfn._obj.from_fullciwfn(self._obj)
+        wfn._obj.from_twospinwfn(self._obj)
         return wfn
 
     def to_file(self, object filename not None):
@@ -2417,8 +2415,8 @@ cdef class fullci_wfn:
         cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
         cdef double[:, ::1] rdm1 = rdm1_array
         cdef double[:, :, :, ::1] rdm2 = rdm2_array
-        self._obj.compute_rdms(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
-                               <double *>(&rdm2[0, 0, 0, 0]))
+        self._obj.compute_rdms_fullci(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
+                                      <double *>(&rdm2[0, 0, 0, 0]))
         if mode == 'r':
             return rdm1_array, rdm2_array
         elif mode == 'g':
@@ -2456,7 +2454,7 @@ cdef class fullci_wfn:
             raise ValueError('dimensions of wfn, ham do not match')
         elif ham._h is None:
             raise AttributeError('seniority-zero integrals were not computed')
-        return self._obj.compute_enpt2(
+        return self._obj.compute_enpt2_fullci(
             <double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
             <double *>(&coeffs[0]), energy - ham._ecore, eps,
             ) + energy
@@ -2493,8 +2491,9 @@ cdef class fullci_wfn:
             raise ValueError('dimensions of wfn, ham do not match')
         elif ham._one_mo is None:
             raise AttributeError('full integral arrays were not saved')
-        return self._obj.run_hci(<double *>(&ham._one_mo[0, 0]),
-                                 <double *>(&ham._two_mo[0, 0, 0, 0]), <double *>(&coeffs[0]), eps)
+        return self._obj.run_hci_fullci(<double *>(&ham._one_mo[0, 0]),
+                                        <double *>(&ham._two_mo[0, 0, 0, 0]),
+                                        <double *>(&coeffs[0]), eps)
 
     @staticmethod
     def generate_generalized_rdms(double[:, ::1] rdm1 not None, double[:, :, :, ::1] rdm2 not None):

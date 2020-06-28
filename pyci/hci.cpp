@@ -31,7 +31,7 @@ namespace pyci {
 namespace { // anonymous
 
 
-void hci_doci_run_thread(DOCIWfn &wfn, DOCIWfn &thread_wfn, const double *v, const double *coeffs,
+void hci_doci_run_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn, const double *v, const double *coeffs,
     const double eps, const int_t istart, const int_t iend) {
     if (istart >= iend) return;
     // set attributes
@@ -69,7 +69,7 @@ void hci_doci_run_thread(DOCIWfn &wfn, DOCIWfn &thread_wfn, const double *v, con
 }
 
 
-void hci_genci_run_thread(DOCIWfn &wfn, DOCIWfn &thread_wfn, const double *one_mo, const double *two_mo,
+void hci_genci_run_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn, const double *one_mo, const double *two_mo,
     const double *coeffs, const double eps, const int_t istart, const int_t iend) {
     if (istart >= iend) return;
     // set attributes
@@ -139,7 +139,7 @@ void hci_genci_run_thread(DOCIWfn &wfn, DOCIWfn &thread_wfn, const double *one_m
 }
 
 
-void hci_fullci_run_thread(FullCIWfn &wfn, FullCIWfn &thread_wfn, const double *one_mo, const double *two_mo,
+void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double *one_mo, const double *two_mo,
     const double *coeffs, const double eps, const int_t istart, const int_t iend) {
     if (istart >= iend) return;
     // set attributes
@@ -296,7 +296,7 @@ void hci_fullci_run_thread(FullCIWfn &wfn, FullCIWfn &thread_wfn, const double *
 }
 
 
-void hci_condense_thread(DOCIWfn &wfn, DOCIWfn &thread_wfn) {
+void hci_condense_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn) {
     if (thread_wfn.ndet == 0)
         return;
     for (auto &keyval : thread_wfn.dict)
@@ -307,7 +307,7 @@ void hci_condense_thread(DOCIWfn &wfn, DOCIWfn &thread_wfn) {
 }
 
 
-void hci_condense_thread(FullCIWfn &wfn, FullCIWfn &thread_wfn) {
+void hci_condense_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn) {
     if (thread_wfn.ndet == 0)
         return;
     for (auto &keyval : thread_wfn.dict)
@@ -321,17 +321,17 @@ void hci_condense_thread(FullCIWfn &wfn, FullCIWfn &thread_wfn) {
 } // namespace // anonymous
 
 
-int_t DOCIWfn::run_hci_doci(const double *v, const double *coeffs, const double eps) {
+int_t OneSpinWfn::run_hci_doci(const double *v, const double *coeffs, const double eps) {
     // save ndet as ndet_old
     int_t ndet_old = ndet;
-    // do computation in chunks by making smaller DOCIWfns in parallel
+    // do computation in chunks by making smaller OneSpinWfns in parallel
     int_t nthread = omp_get_max_threads();
     if (nthread == 1) {
         hci_doci_run_thread(*this, *this, v, coeffs, eps, 0, ndet_old);
         return ndet - ndet_old;
     }
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
-    std::vector<DOCIWfn> wfns(nthread);
+    std::vector<OneSpinWfn> wfns(nthread);
     #pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
@@ -339,7 +339,7 @@ int_t DOCIWfn::run_hci_doci(const double *v, const double *coeffs, const double 
         int_t iend = (istart + chunksize < ndet_old) ? istart + chunksize : ndet_old;
         hci_doci_run_thread(*this, wfns[ithread], v, coeffs, eps, istart, iend);
     }
-    // fill original DOCIWfn (this instance)
+    // fill original OneSpinWfn (this instance)
     for (int_t t = 0; t < nthread; ++t)
         hci_condense_thread(*this, wfns[t]);
     // return number of determinants added
@@ -347,17 +347,17 @@ int_t DOCIWfn::run_hci_doci(const double *v, const double *coeffs, const double 
 }
 
 
-int_t DOCIWfn::run_hci_genci(const double *one_mo, const double *two_mo, const double *coeffs, const double eps) {
+int_t OneSpinWfn::run_hci_genci(const double *one_mo, const double *two_mo, const double *coeffs, const double eps) {
     // save ndet as ndet_old
     int_t ndet_old = ndet;
-    // do computation in chunks by making smaller DOCIWfns in parallel
+    // do computation in chunks by making smaller OneSpinWfns in parallel
     int_t nthread = omp_get_max_threads();
     if (nthread == 1) {
         hci_genci_run_thread(*this, *this, one_mo, two_mo, coeffs, eps, 0, ndet_old);
         return ndet - ndet_old;
     }
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
-    std::vector<DOCIWfn> wfns(nthread);
+    std::vector<OneSpinWfn> wfns(nthread);
     #pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
@@ -365,7 +365,7 @@ int_t DOCIWfn::run_hci_genci(const double *one_mo, const double *two_mo, const d
         int_t iend = (istart + chunksize < ndet_old) ? istart + chunksize : ndet_old;
         hci_genci_run_thread(*this, wfns[ithread], one_mo, two_mo, coeffs, eps, istart, iend);
     }
-    // fill original DOCIWfn (this instance)
+    // fill original OneSpinWfn (this instance)
     for (int_t t = 0; t < nthread; ++t)
         hci_condense_thread(*this, wfns[t]);
     // return number of determinants added
@@ -373,17 +373,17 @@ int_t DOCIWfn::run_hci_genci(const double *one_mo, const double *two_mo, const d
 }
 
 
-int_t FullCIWfn::run_hci(const double *one_mo, const double *two_mo, const double *coeffs, const double eps) {
+int_t TwoSpinWfn::run_hci_fullci(const double *one_mo, const double *two_mo, const double *coeffs, const double eps) {
     // save ndet as ndet_old
     int_t ndet_old = ndet;
-    // do computation in chunks by making smaller DOCIWfns in parallel
+    // do computation in chunks by making smaller OneSpinWfns in parallel
     int_t nthread = omp_get_max_threads();
     if (nthread == 1) {
         hci_fullci_run_thread(*this, *this, one_mo, two_mo, coeffs, eps, 0, ndet_old);
         return ndet - ndet_old;
     }
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
-    std::vector<FullCIWfn> wfns(nthread);
+    std::vector<TwoSpinWfn> wfns(nthread);
     #pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
@@ -391,7 +391,7 @@ int_t FullCIWfn::run_hci(const double *one_mo, const double *two_mo, const doubl
         int_t iend = (istart + chunksize < ndet_old) ? istart + chunksize : ndet_old;
         hci_fullci_run_thread(*this, wfns[ithread], one_mo, two_mo, coeffs, eps, istart, iend);
     }
-    // fill original DOCIWfn (this instance)
+    // fill original OneSpinWfn (this instance)
     for (int_t t = 0; t < nthread; ++t)
         hci_condense_thread(*this, wfns[t]);
     // return number of determinants added

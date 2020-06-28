@@ -31,42 +31,42 @@
 namespace pyci {
 
 
-DOCIWfn::DOCIWfn() : nword(1), nbasis(2), nocc(1), nvir(1), ndet(0) {
+OneSpinWfn::OneSpinWfn() : nword(1), nbasis(2), nocc(1), nvir(1), ndet(0) {
     return;
 };
 
 
-DOCIWfn::DOCIWfn(const int_t nbasis_, const int_t nocc_) {
+OneSpinWfn::OneSpinWfn(const int_t nbasis_, const int_t nocc_) {
     init(nbasis_, nocc_);
 }
 
 
-DOCIWfn::DOCIWfn(const DOCIWfn &wfn) {
-    from_dociwfn(wfn);
+OneSpinWfn::OneSpinWfn(const OneSpinWfn &wfn) {
+    from_onespinwfn(wfn);
 };
 
 
-DOCIWfn::DOCIWfn(const char *filename) {
+OneSpinWfn::OneSpinWfn(const char *filename) {
     from_file(filename);
 }
 
 
-DOCIWfn::DOCIWfn(const int_t nbasis_, const int_t nocc_, const int_t n, const uint_t *dets_) {
+OneSpinWfn::OneSpinWfn(const int_t nbasis_, const int_t nocc_, const int_t n, const uint_t *dets_) {
     from_det_array(nbasis_, nocc_, n, dets_);
 }
 
 
-DOCIWfn::DOCIWfn(const int_t nbasis_, const int_t nocc_, const int_t n, const int_t *occs) {
+OneSpinWfn::OneSpinWfn(const int_t nbasis_, const int_t nocc_, const int_t n, const int_t *occs) {
     from_occs_array(nbasis_, nocc_, n, occs);
 }
 
 
-DOCIWfn::~DOCIWfn() {
+OneSpinWfn::~OneSpinWfn() {
     return;
 }
 
 
-void DOCIWfn::init(const int_t nbasis_, const int_t nocc_) {
+void OneSpinWfn::init(const int_t nbasis_, const int_t nocc_) {
     int_t nword_ = nword_det(nbasis_);
     if ((binomial(nbasis_, nocc_) >= PYCI_INT_MAX / nbasis_) || (nword_ > PYCI_NWORD_MAX))
         throw std::runtime_error("nbasis, nocc too large for hash type");
@@ -80,7 +80,7 @@ void DOCIWfn::init(const int_t nbasis_, const int_t nocc_) {
 }
 
 
-void DOCIWfn::from_dociwfn(const DOCIWfn &wfn) {
+void OneSpinWfn::from_onespinwfn(const OneSpinWfn &wfn) {
     nword = wfn.nword;
     nbasis = wfn.nbasis;
     nocc = wfn.nocc;
@@ -91,7 +91,7 @@ void DOCIWfn::from_dociwfn(const DOCIWfn &wfn) {
 }
 
 
-void DOCIWfn::from_file(const char *filename) {
+void OneSpinWfn::from_file(const char *filename) {
     bool success = false;
     std::ifstream file;
     file.open(filename, std::ios::in | std::ios::binary);
@@ -118,7 +118,7 @@ void DOCIWfn::from_file(const char *filename) {
 }
 
 
-void DOCIWfn::from_det_array(const int_t nbasis_, const int_t nocc_, const int_t n, const uint_t *dets_) {
+void OneSpinWfn::from_det_array(const int_t nbasis_, const int_t nocc_, const int_t n, const uint_t *dets_) {
     init(nbasis_, nocc_);
     ndet = n;
     dets.resize(n * nword);
@@ -128,7 +128,7 @@ void DOCIWfn::from_det_array(const int_t nbasis_, const int_t nocc_, const int_t
 }
 
 
-void DOCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_, const int_t n, const int_t *occs) {
+void OneSpinWfn::from_occs_array(const int_t nbasis_, const int_t nocc_, const int_t n, const int_t *occs) {
     init(nbasis_, nocc_);
     ndet = n;
     dets.resize(n * nword);
@@ -151,7 +151,7 @@ void DOCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_, const int_
 }
 
 
-void DOCIWfn::to_file(const char *filename) const {
+void OneSpinWfn::to_file(const char *filename) const {
     bool success = false;
     std::ofstream file;
     file.open(filename, std::ios::out | std::ios::binary);
@@ -164,7 +164,7 @@ void DOCIWfn::to_file(const char *filename) const {
 }
 
 
-void DOCIWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *occs) const {
+void OneSpinWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *occs) const {
     if (low_ind == high_ind) return;
     int_t range = high_ind - low_ind;
     int_t nthread = omp_get_max_threads();
@@ -184,29 +184,29 @@ void DOCIWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *oc
 }
 
 
-int_t DOCIWfn::index_det(const uint_t *det) const {
-    DOCIWfn::hashmap_type::const_iterator search = dict.find(rank_det(nbasis, nocc, det));
+int_t OneSpinWfn::index_det(const uint_t *det) const {
+    OneSpinWfn::hashmap_type::const_iterator search = dict.find(rank_det(nbasis, nocc, det));
     return (search == dict.end()) ? -1 : search->second;
 }
 
 
-int_t DOCIWfn::index_det_from_rank(const int_t rank) const {
-    DOCIWfn::hashmap_type::const_iterator search = dict.find(rank);
+int_t OneSpinWfn::index_det_from_rank(const int_t rank) const {
+    OneSpinWfn::hashmap_type::const_iterator search = dict.find(rank);
     return (search == dict.end()) ? -1 : search->second;
 }
 
 
-void DOCIWfn::copy_det(const int_t i, uint_t *det) const {
+void OneSpinWfn::copy_det(const int_t i, uint_t *det) const {
     std::memcpy(det, &dets[i * nword], sizeof(uint_t) * nword);
 }
 
 
-const uint_t * DOCIWfn::det_ptr(const int_t i) const {
+const uint_t * OneSpinWfn::det_ptr(const int_t i) const {
     return &dets[i * nword];
 }
 
 
-int_t DOCIWfn::add_det(const uint_t *det) {
+int_t OneSpinWfn::add_det(const uint_t *det) {
     if (dict.insert(std::make_pair(rank_det(nbasis, nocc, det), ndet)).second) {
         dets.resize(dets.size() + nword);
         std::memcpy(&dets[nword * ndet], det, sizeof(uint_t) * nword);
@@ -216,7 +216,7 @@ int_t DOCIWfn::add_det(const uint_t *det) {
 }
 
 
-int_t DOCIWfn::add_det_with_rank(const uint_t *det, const int_t rank) {
+int_t OneSpinWfn::add_det_with_rank(const uint_t *det, const int_t rank) {
     if (dict.insert(std::make_pair(rank, ndet)).second) {
         dets.resize(dets.size() + nword);
         std::memcpy(&dets[nword * ndet], det, sizeof(uint_t) * nword);
@@ -226,14 +226,14 @@ int_t DOCIWfn::add_det_with_rank(const uint_t *det, const int_t rank) {
 }
 
 
-int_t DOCIWfn::add_det_from_occs(const int_t *occs) {
+int_t OneSpinWfn::add_det_from_occs(const int_t *occs) {
     std::vector<uint_t> det(nword);
     fill_det(nocc, occs, &det[0]);
     return add_det(&det[0]);
 }
 
 
-void DOCIWfn::add_all_dets() {
+void OneSpinWfn::add_all_dets() {
     ndet = binomial_nocheck(nbasis, nocc);
     dets.resize(0);
     dict.clear();
@@ -258,7 +258,7 @@ void DOCIWfn::add_all_dets() {
 }
 
 
-void DOCIWfn::add_excited_dets(const uint_t *rdet, const int_t e) {
+void OneSpinWfn::add_excited_dets(const uint_t *rdet, const int_t e) {
     int_t i, j, k, no = binomial_nocheck(nocc, e), nv = binomial_nocheck(nvir, e);
     std::vector<uint_t> det(nword);
     std::vector<int_t> occs(nocc);
@@ -286,18 +286,18 @@ void DOCIWfn::add_excited_dets(const uint_t *rdet, const int_t e) {
 }
 
 
-void DOCIWfn::reserve(const int_t n) {
+void OneSpinWfn::reserve(const int_t n) {
     dets.reserve(n * nword);
     dict.reserve(n);
 }
 
 
-void DOCIWfn::squeeze() {
+void OneSpinWfn::squeeze() {
     dets.shrink_to_fit();
 }
 
 
-double DOCIWfn::compute_overlap(const double *coeffs, const DOCIWfn &wfn, const double *w_coeffs) const {
+double OneSpinWfn::compute_overlap(const double *coeffs, const OneSpinWfn &wfn, const double *w_coeffs) const {
     // run this function for the smaller wfn
     if (ndet > wfn.ndet) return wfn.compute_overlap(w_coeffs, *this, coeffs);
     // iterate over this instance's determinants in parallel

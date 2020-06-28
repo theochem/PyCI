@@ -21,7 +21,7 @@
 namespace pyci {
 
 
-void DOCIWfn::compute_rdms_doci(const double *coeffs, double *d0, double *d2) const {
+void OneSpinWfn::compute_rdms_doci(const double *coeffs, double *d0, double *d2) const {
     int_t idet, jdet, i, j, k, l;
     double val1, val2;
     std::vector<uint_t> det(nword);
@@ -59,12 +59,12 @@ void DOCIWfn::compute_rdms_doci(const double *coeffs, double *d0, double *d2) co
 }
 
 
-void DOCIWfn::compute_rdms_genci(const double *coeffs, double *rdm1, double *rdm2) const {
+void OneSpinWfn::compute_rdms_genci(const double *coeffs, double *rdm1, double *rdm2) const {
     return; // TODO
 }
 
 
-void FullCIWfn::compute_rdms(const double *coeffs, double *rdm1, double *rdm2) const {
+void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *rdm1, double *rdm2) const {
     return; // TODO
 }
 

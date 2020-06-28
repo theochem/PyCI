@@ -101,8 +101,8 @@ cext = {
     'language': 'c++',
     'sources': [
         'pyci/common.cpp',
-        'pyci/doci.cpp',
-        'pyci/fullci.cpp',
+        'pyci/onespin.cpp',
+        'pyci/twospin.cpp',
         'pyci/solve.cpp',
         'pyci/rdm.cpp',
         'pyci/enpt2.cpp',

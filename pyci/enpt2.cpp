@@ -35,7 +35,7 @@ typedef hashmap<int_t, std::pair<double, double>> phashmap;
 namespace { // anonymous
 
 
-void enpt2_fullci_add_terms(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
+void enpt2_fullci_add_terms(const TwoSpinWfn &wfn, const double *one_mo, const double *two_mo,
     std::pair<double, double> &term, const double val, const int_t n3, const int_t n2,
     const int_t *occs_up, const int_t *occs_dn) {
     // add enpt2 term to terms
@@ -74,7 +74,7 @@ void enpt2_fullci_add_terms(const FullCIWfn &wfn, const double *one_mo, const do
 }
 
 
-void enpt2_fullci_run_thread(const FullCIWfn &wfn, phashmap &terms, const double *one_mo,
+void enpt2_fullci_run_thread(const TwoSpinWfn &wfn, phashmap &terms, const double *one_mo,
     const double *two_mo, const double *coeffs, const double eps, const int_t istart, const int_t iend) {
     if (istart >= iend) return;
     // prepare working vectors
@@ -264,7 +264,7 @@ void enpt2_condense_thread(phashmap &terms, phashmap &thread_terms, const int_t 
 } // namespace // anonymous
 
 
-double FullCIWfn::compute_enpt2(const double *one_mo, const double *two_mo, const double *coeffs,
+double TwoSpinWfn::compute_enpt2_fullci(const double *one_mo, const double *two_mo, const double *coeffs,
     const double energy, const double eps) const {
     // do computation in chunks by making smaller hashmaps in parallel
     int_t nthread = omp_get_max_threads();

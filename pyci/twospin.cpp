@@ -32,45 +32,45 @@
 namespace pyci {
 
 
-FullCIWfn::FullCIWfn() : nword(1), nbasis(2), nocc_up(1), nocc_dn(1), nvir_up(1), nvir_dn(1),
+TwoSpinWfn::TwoSpinWfn() : nword(1), nbasis(2), nocc_up(1), nocc_dn(1), nvir_up(1), nvir_dn(1),
     ndet(0), maxdet_up(1), maxdet_dn(1) {
     return;
 };
 
 
-FullCIWfn::FullCIWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
+TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
     init(nbasis_, nocc_up_, nocc_dn_);
 }
 
 
-FullCIWfn::FullCIWfn(const FullCIWfn &wfn) {
-    from_fullciwfn(wfn);
+TwoSpinWfn::TwoSpinWfn(const TwoSpinWfn &wfn) {
+    from_twospinwfn(wfn);
 };
 
 
-FullCIWfn::FullCIWfn(const char *filename) {
+TwoSpinWfn::TwoSpinWfn(const char *filename) {
     from_file(filename);
 }
 
 
-FullCIWfn::FullCIWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_, const int_t n,
+TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_, const int_t n,
     const uint_t *dets_) {
     from_det_array(nbasis_, nocc_up_, nocc_dn_, n, dets_);
 }
 
 
-FullCIWfn::FullCIWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_, const int_t n,
+TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_, const int_t n,
     const int_t *occs) {
     from_occs_array(nbasis_, nocc_up_, nocc_dn_, n, occs);
 }
 
 
-FullCIWfn::~FullCIWfn() {
+TwoSpinWfn::~TwoSpinWfn() {
     return;
 }
 
 
-void FullCIWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
+void TwoSpinWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
     int_t maxdet_up_ = binomial(nbasis_, nocc_up_);
     int_t maxdet_dn_ = binomial(nbasis_, nocc_dn_);
     int_t nword_ = nword_det(nbasis_);
@@ -94,7 +94,7 @@ void FullCIWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t nocc
 }
 
 
-void FullCIWfn::from_fullciwfn(const FullCIWfn &wfn) {
+void TwoSpinWfn::from_twospinwfn(const TwoSpinWfn &wfn) {
     nword = wfn.nword;
     nword2 = wfn.nword2;
     nbasis = wfn.nbasis;
@@ -110,7 +110,7 @@ void FullCIWfn::from_fullciwfn(const FullCIWfn &wfn) {
 }
 
 
-void FullCIWfn::from_file(const char *filename) {
+void TwoSpinWfn::from_file(const char *filename) {
     // read file
     bool success = false;
     std::ifstream file;
@@ -150,7 +150,7 @@ void FullCIWfn::from_file(const char *filename) {
 }
 
 
-void FullCIWfn::from_det_array(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_,
+void TwoSpinWfn::from_det_array(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_,
     const int_t n, const uint_t *dets_) {
     init(nbasis_, nocc_up_, nocc_dn_);
     ndet = n;
@@ -165,7 +165,7 @@ void FullCIWfn::from_det_array(const int_t nbasis_, const int_t nocc_up_, const 
 }
 
 
-void FullCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_,
+void TwoSpinWfn::from_occs_array(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_,
     const int_t n, const int_t *occs) {
     init(nbasis_, nocc_up_, nocc_dn_);
     ndet = n;
@@ -196,7 +196,7 @@ void FullCIWfn::from_occs_array(const int_t nbasis_, const int_t nocc_up_, const
 }
 
 
-void FullCIWfn::to_file(const char *filename) const {
+void TwoSpinWfn::to_file(const char *filename) const {
     bool success = false;
     std::ofstream file;
     file.open(filename, std::ios::out | std::ios::binary);
@@ -210,7 +210,7 @@ void FullCIWfn::to_file(const char *filename) const {
 }
 
 
-void FullCIWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *occs) const {
+void TwoSpinWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *occs) const {
     if (low_ind == high_ind) return;
     int_t range = high_ind - low_ind;
     int_t nthread = omp_get_max_threads();
@@ -233,31 +233,31 @@ void FullCIWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *
 }
 
 
-int_t FullCIWfn::index_det(const uint_t *det) const {
-    FullCIWfn::hashmap_type::const_iterator search = dict.find(
+int_t TwoSpinWfn::index_det(const uint_t *det) const {
+    TwoSpinWfn::hashmap_type::const_iterator search = dict.find(
         rank_det(nbasis, nocc_up, &det[0]) * maxdet_dn + rank_det(nbasis, nocc_dn, &det[nword])
     );
     return (search == dict.end()) ? -1 : search->second;
 }
 
 
-int_t FullCIWfn::index_det_from_rank(const int_t rank) const {
-    FullCIWfn::hashmap_type::const_iterator search = dict.find(rank);
+int_t TwoSpinWfn::index_det_from_rank(const int_t rank) const {
+    TwoSpinWfn::hashmap_type::const_iterator search = dict.find(rank);
     return (search == dict.end()) ? -1 : search->second;
 }
 
 
-void FullCIWfn::copy_det(const int_t i, uint_t *det) const {
+void TwoSpinWfn::copy_det(const int_t i, uint_t *det) const {
     std::memcpy(det, &dets[i * nword2], sizeof(uint_t) * nword2);
 }
 
 
-const uint_t * FullCIWfn::det_ptr(const int_t i) const {
+const uint_t * TwoSpinWfn::det_ptr(const int_t i) const {
     return &dets[i * nword2];
 }
 
 
-int_t FullCIWfn::add_det(const uint_t *det) {
+int_t TwoSpinWfn::add_det(const uint_t *det) {
     if (dict.insert(std::make_pair(
             rank_det(nbasis, nocc_up, &det[0]) * maxdet_dn + rank_det(nbasis, nocc_dn, &det[nword]),
             ndet)).second) {
@@ -269,7 +269,7 @@ int_t FullCIWfn::add_det(const uint_t *det) {
 }
 
 
-int_t FullCIWfn::add_det_with_rank(const uint_t *det, const int_t rank) {
+int_t TwoSpinWfn::add_det_with_rank(const uint_t *det, const int_t rank) {
     if (dict.insert(std::make_pair(rank, ndet)).second) {
         dets.resize(dets.size() + nword2);
         std::memcpy(&dets[nword2 * ndet], det, sizeof(uint_t) * nword2);
@@ -279,7 +279,7 @@ int_t FullCIWfn::add_det_with_rank(const uint_t *det, const int_t rank) {
 }
 
 
-int_t FullCIWfn::add_det_from_occs(const int_t *occs) {
+int_t TwoSpinWfn::add_det_from_occs(const int_t *occs) {
     std::vector<uint_t> det(nword2);
     fill_det(nocc_up, &occs[0], &det[0]);
     fill_det(nocc_dn, &occs[nocc_up], &det[nword]);
@@ -287,7 +287,7 @@ int_t FullCIWfn::add_det_from_occs(const int_t *occs) {
 }
 
 
-void FullCIWfn::add_all_dets() {
+void TwoSpinWfn::add_all_dets() {
     // prepare determinant array and hashmap
     ndet = maxdet_up * maxdet_dn;
     dets.resize(0);
@@ -341,15 +341,15 @@ void FullCIWfn::add_all_dets() {
 }
 
 
-void FullCIWfn::add_excited_dets(const uint_t *rdet, const int_t e_up, const int_t e_dn) {
+void TwoSpinWfn::add_excited_dets(const uint_t *rdet, const int_t e_up, const int_t e_dn) {
     // handle trivial case
     if ((e_up == 0) && (e_dn == 0)) {
         add_det(rdet);
         return;
     }
     // make spin-up and spin-down parts
-    DOCIWfn wfn_up(nbasis, nocc_up);
-    DOCIWfn wfn_dn(nbasis, nocc_dn);
+    OneSpinWfn wfn_up(nbasis, nocc_up);
+    OneSpinWfn wfn_dn(nbasis, nocc_dn);
     #pragma omp parallel sections
     {
         #pragma omp section
@@ -372,18 +372,18 @@ void FullCIWfn::add_excited_dets(const uint_t *rdet, const int_t e_up, const int
 }
 
 
-void FullCIWfn::reserve(const int_t n) {
+void TwoSpinWfn::reserve(const int_t n) {
     dets.reserve(n * nword2);
     dict.reserve(n);
 }
 
 
-void FullCIWfn::squeeze() {
+void TwoSpinWfn::squeeze() {
     dets.shrink_to_fit();
 }
 
 
-double FullCIWfn::compute_overlap(const double *coeffs, const FullCIWfn &wfn, const double *w_coeffs) const {
+double TwoSpinWfn::compute_overlap(const double *coeffs, const TwoSpinWfn &wfn, const double *w_coeffs) const {
     // run this function for the smaller wfn
     if (ndet > wfn.ndet) return wfn.compute_overlap(w_coeffs, *this, coeffs);
     // iterate over this instance's determinants in parallel

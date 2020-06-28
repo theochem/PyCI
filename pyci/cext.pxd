@@ -44,8 +44,8 @@ __all__ = [
     'phase_single_det',
     'phase_double_det',
     'rank_det',
-    'DOCIWfn',
-    'FullCIWfn',
+    'OneSpinWfn',
+    'TwoSpinWfn',
     'SparseOp',
     ]
 
@@ -90,26 +90,26 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
     int_t rank_det(const int_t, const int_t, const uint_t *)
 
-    cdef cppclass DOCIWfn:
+    cdef cppclass OneSpinWfn:
 
         int_t nword, nbasis, nocc, nvir, ndet
         vector[uint_t] dets
 
-        DOCIWfn()
+        OneSpinWfn()
 
-        DOCIWfn(const int_t, const int_t) except +
+        OneSpinWfn(const int_t, const int_t) except +
 
-        DOCIWfn(const DOCIWfn &) except +
+        OneSpinWfn(const OneSpinWfn &) except +
 
-        DOCIWfn(const char *) except +
+        OneSpinWfn(const char *) except +
 
-        DOCIWfn(const int_t, const int_t, const int_t, const uint_t *) except +
+        OneSpinWfn(const int_t, const int_t, const int_t, const uint_t *) except +
 
-        DOCIWfn(const int_t, const int_t, const int_t, const int_t *) except +
+        OneSpinWfn(const int_t, const int_t, const int_t, const int_t *) except +
 
         void init(const int_t, const int_t) except +
 
-        void from_dociwfn(const DOCIWfn &) except +
+        void from_onespinwfn(const OneSpinWfn &) except +
 
         void from_file(const char *) except +
 
@@ -143,7 +143,7 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         void squeeze()
 
-        double compute_overlap(const double *, const DOCIWfn &, const double *) except +
+        double compute_overlap(const double *, const OneSpinWfn &, const double *) except +
 
         void compute_rdms_doci(const double *, double *, double *) except +
 
@@ -153,27 +153,27 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         int_t run_hci_genci(const double *, const double *, const double *, const double) except +
 
-    cdef cppclass FullCIWfn:
+    cdef cppclass TwoSpinWfn:
 
         int_t nword, nword2, nbasis, nocc_up, nocc_dn, nvir_up, nvir_dn
         int_t ndet, maxdet_up, maxdet_dn
         vector[uint_t] dets
 
-        FullCIWfn()
+        TwoSpinWfn()
 
-        FullCIWfn(const int_t, const int_t, const int_t) except +
+        TwoSpinWfn(const int_t, const int_t, const int_t) except +
 
-        FullCIWfn(const FullCIWfn &) except +
+        TwoSpinWfn(const TwoSpinWfn &) except +
 
-        FullCIWfn(const char *) except +
+        TwoSpinWfn(const char *) except +
 
-        FullCIWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *) except +
+        TwoSpinWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *) except +
 
-        FullCIWfn(const int_t, const int_t, const int_t, const int_t, const int_t *) except +
+        TwoSpinWfn(const int_t, const int_t, const int_t, const int_t, const int_t *) except +
 
         void init(const int_t, const int_t, const int_t) except +
 
-        void from_fullciwfn(const FullCIWfn &) except +
+        void from_twospinwfn(const TwoSpinWfn &) except +
 
         void from_file(const char *) except +
 
@@ -207,13 +207,13 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         void squeeze()
 
-        double compute_overlap(const double *, const FullCIWfn &, const double *) except +
+        double compute_overlap(const double *, const TwoSpinWfn &, const double *) except +
 
-        double compute_enpt2(const double *, const double *, const double *, const double, const double)
+        double compute_enpt2_fullci(const double *, const double *, const double *, const double, const double)
 
-        void compute_rdms(const double *, double *, double *) except +
+        void compute_rdms_fullci(const double *, double *, double *) except +
 
-        int_t run_hci(const double *, const double *, const double *, const double) except +
+        int_t run_hci_fullci(const double *, const double *, const double *, const double) except +
 
     cdef cppclass SparseOp:
 
@@ -228,9 +228,9 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) except +
 
-        void init_doci(const DOCIWfn &, const double *, const double *, const double *, const int_t) except +
+        void init_doci(const OneSpinWfn &, const double *, const double *, const double *, const int_t) except +
 
-        void init_genci(const DOCIWfn &, const double *, const double *, const int_t) except +
+        void init_genci(const OneSpinWfn &, const double *, const double *, const int_t) except +
 
-        void init_fullci(const FullCIWfn &, const double *, const double *, const int_t) except +
+        void init_fullci(const TwoSpinWfn &, const double *, const double *, const int_t) except +
 

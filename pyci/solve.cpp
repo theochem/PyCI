@@ -35,7 +35,7 @@ namespace pyci {
 namespace { // anonymous
 
 
-void init_doci_run_thread(SparseOp &op, const DOCIWfn &wfn, const double *h, const double *v, const double *w,
+void init_doci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *h, const double *v, const double *w,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
     if (istart >= iend) return;
@@ -95,7 +95,7 @@ void init_doci_run_thread(SparseOp &op, const DOCIWfn &wfn, const double *h, con
 }
 
 
-void init_genci_run_thread(SparseOp &op, const DOCIWfn &wfn, const double *one_mo, const double *two_mo,
+void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
     if (istart >= iend) return;
@@ -191,7 +191,7 @@ void init_genci_run_thread(SparseOp &op, const DOCIWfn &wfn, const double *one_m
 }
 
 
-void init_fullci_run_thread(SparseOp &op, const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
+void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
     if (istart >= iend) return;
@@ -470,7 +470,7 @@ void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const
 }
 
 
-void SparseOp::init_doci(const DOCIWfn &wfn, const double *h, const double *v, const double *w,
+void SparseOp::init_doci(const OneSpinWfn &wfn, const double *h, const double *v, const double *w,
     const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
@@ -503,7 +503,7 @@ void SparseOp::init_doci(const DOCIWfn &wfn, const double *h, const double *v, c
 }
 
 
-void SparseOp::init_genci(const DOCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+void SparseOp::init_genci(const OneSpinWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
     ncol = wfn.ndet;
@@ -535,7 +535,7 @@ void SparseOp::init_genci(const DOCIWfn &wfn, const double *one_mo, const double
 }
 
 
-void SparseOp::init_fullci(const FullCIWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
     ncol = wfn.ndet;
