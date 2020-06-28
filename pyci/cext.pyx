@@ -199,7 +199,7 @@ cdef class hamiltonian:
                     one_mo[j, i] = fval
                 else:
                     ecore = fval
-        return hamiltonian(ecore, one_mo, two_mo)
+        return hamiltonian(ecore, one_mo, two_mo, keep_mo=keep_mo, doci=doci)
 
     @property
     def nbasis(self):
