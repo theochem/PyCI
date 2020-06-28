@@ -32,8 +32,8 @@
 namespace pyci {
 
 
-TwoSpinWfn::TwoSpinWfn() : nword(1), nbasis(2), nocc_up(1), nocc_dn(1), nvir_up(1), nvir_dn(1),
-    ndet(0), maxdet_up(1), maxdet_dn(1) {
+TwoSpinWfn::TwoSpinWfn() : nword(0), nbasis(0), nocc_up(0), nocc_dn(0), nvir_up(0), nvir_dn(0),
+    ndet(0), maxdet_up(0), maxdet_dn(0) {
     return;
 };
 

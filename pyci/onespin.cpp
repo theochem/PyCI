@@ -31,7 +31,7 @@
 namespace pyci {
 
 
-OneSpinWfn::OneSpinWfn() : nword(1), nbasis(2), nocc(1), nvir(1), ndet(0) {
+OneSpinWfn::OneSpinWfn() : nword(0), nbasis(0), nocc(0), nvir(0), ndet(0) {
     return;
 };
 
