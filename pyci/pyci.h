@@ -22,6 +22,7 @@
 
 #include <parallel_hashmap/phmap.h>
 
+
 #define PYCI_NWORD_MAX 16
 
 #define PYCI_INT_SIZE (std::int64_t)(sizeof(std::int64_t) * CHAR_BIT)

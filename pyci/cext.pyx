@@ -47,7 +47,9 @@ __all__ = [
 
 cdef np.dtype c_int = np.dtype(np.int64)
 
+
 cdef np.dtype c_uint = np.dtype(np.uint64)
+
 
 cdef np.dtype c_double = np.dtype(np.double)
 
@@ -1054,6 +1056,32 @@ cdef class doci_wfn(one_spin_wfn):
         """
         self._obj.to_file(filename.encode())
 
+    def to_fullci_wfn(self):
+        r"""
+        Convert a restricted DOCI wave function to a restricted FullCI wave function.
+
+        Returns
+        -------
+        wfn : fullci_wfn
+            FullCI wave funtion object.
+
+        """
+        cdef fullci_wfn wfn = fullci_wfn(2, 1, 1)
+        wfn._obj.from_onespinwfn(self._obj)
+        return wfn
+
+    def to_genci_wfn(self):
+        r"""
+        Convert a restricted DOCI wave function to a restricted Generalized CI wave function.
+
+        Returns
+        -------
+        wfn : genci_wfn
+            Generalized CI wave funtion object.
+
+        """
+        return self.to_fullci_wfn().to_genci_wfn()
+
     def copy(self):
         r"""
         Copy a doci_wfn instance.
@@ -1583,8 +1611,7 @@ cdef class genci_wfn(one_spin_wfn):
         cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
         cdef double[:, ::1] rdm1 = rdm1_array
         cdef double[:, :, :, ::1] rdm2 = rdm2_array
-        self._obj.compute_rdms_genci(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
-                                     <double *>(&rdm2[0, 0, 0, 0]))
+        self._obj.compute_rdms_genci(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]), <double *>(&rdm2[0, 0, 0, 0]))
         return rdm1_array, rdm2_array
 
     def compute_enpt2(self, hamiltonian ham not None, double[::1] coeffs not None,
@@ -1654,7 +1681,8 @@ cdef class genci_wfn(one_spin_wfn):
             raise ValueError('dimensions of wfn, ham do not match')
         elif ham._one_mo is None:
             raise AttributeError('full integral arrays were not saved')
-        return self._obj.run_hci_genci(<double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
+        return self._obj.run_hci_genci(<double *>(&ham._one_mo[0, 0]),
+                                       <double *>(&ham._two_mo[0, 0, 0, 0]),
                                        <double *>(&coeffs[0]), eps)
 
 
@@ -1727,8 +1755,7 @@ cdef class fullci_wfn:
         cdef fullci_wfn wfn = fullci_wfn(nbasis, nocc_up, nocc_dn)
         if det_array.ndim != 3 or det_array.shape[1] != 2 or det_array.shape[2] != wfn._obj.nword:
             raise IndexError('nbasis, nocc_{up,dn} given do not match up with det_array dimensions')
-        wfn._obj.from_det_array(nbasis, nocc_up, nocc_dn, det_array.shape[0],
-                                <uint_t *>(&det_array[0, 0, 0]))
+        wfn._obj.from_det_array(nbasis, nocc_up, nocc_dn, det_array.shape[0], <uint_t *>(&det_array[0, 0, 0]))
         return wfn
 
     @staticmethod
@@ -1756,8 +1783,7 @@ cdef class fullci_wfn:
         cdef fullci_wfn wfn = fullci_wfn(nbasis, nocc_up, nocc_dn)
         if occs_array.ndim != 3 or occs_array.shape[1] != 2 or occs_array.shape[2] != nocc_up:
             raise IndexError('nbasis, nocc_{up,dn} given do not match up with det_array dimensions')
-        wfn._obj.from_occs_array(nbasis, nocc_up, nocc_dn, occs_array.shape[0],
-                                 <int_t *>(&occs_array[0, 0, 0]))
+        wfn._obj.from_occs_array(nbasis, nocc_up, nocc_dn, occs_array.shape[0], <int_t *>(&occs_array[0, 0, 0]))
         return wfn
 
     @property
@@ -1832,9 +1858,7 @@ cdef class fullci_wfn:
         """
         if (nbasis < nocc_up or nbasis <= nocc_dn or \
             nocc_up <= 0 or nocc_dn < 0 or nocc_up < nocc_dn):
-            raise ValueError(
-                'failed check: nbasis >= nocc_up > 0, nbasis > nocc_dn >= 0, nocc_up >= nocc_dn'
-                )
+            raise ValueError('failed check: nbasis >= nocc_up > 0, nbasis > nocc_dn >= 0, nocc_up >= nocc_dn')
         self._obj.init(nbasis, nocc_up, nocc_dn)
 
     def __len__(self):
@@ -1963,6 +1987,20 @@ cdef class fullci_wfn:
         cdef int_t[:, :, ::1] occs = occs_array
         self._obj.to_occs_array(start, end, <int_t *>(&occs[0, 0, 0]))
         return occs_array
+
+    def to_genci_wfn(self):
+        r"""
+        Convert a restricted FullCI wave function to a Generalized CI wave function.
+
+        Returns
+        -------
+        wfn : genci_wfn
+            Generalized CI wave funtion object.
+
+        """
+        cdef genci_wfn wfn = genci_wfn(2, 1)
+        wfn._obj.from_twospinwfn(self._obj)
+        return wfn
 
     def copy(self):
         r"""
@@ -2485,8 +2523,7 @@ cdef class fullci_wfn:
         cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
         cdef double[:, ::1] rdm1 = rdm1_array
         cdef double[:, :, :, ::1] rdm2 = rdm2_array
-        self._obj.compute_rdms_fullci(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
-                                      <double *>(&rdm2[0, 0, 0, 0]))
+        self._obj.compute_rdms_fullci(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]), <double *>(&rdm2[0, 0, 0, 0]))
         if mode == 'r':
             return rdm1_array, rdm2_array
         elif mode == 'g':
