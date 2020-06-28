@@ -54,10 +54,7 @@ classifiers = [
     ]
 
 
-install_requires = [
-    'numpy>=1.13',
-    'scipy>=0.17',
-    ]
+install_requires = ['numpy>=1.13']
 
 
 extras_require = {
