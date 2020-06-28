@@ -1116,6 +1116,8 @@ cdef class doci_wfn(one_spin_wfn):
         """
         if self._obj.ndet != coeffs.size:
             raise ValueError('dimensions of self, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
         if wfn._obj.ndet != w_coeffs.size:
             raise ValueError('dimensions of wfn, w_coeffs do not match')
         return self._obj.compute_overlap(&coeffs[0], wfn._obj, &w_coeffs[0])
@@ -1584,6 +1586,8 @@ cdef class genci_wfn(one_spin_wfn):
         """
         if self._obj.ndet != coeffs.size:
             raise ValueError('dimensions of self, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
         if wfn._obj.ndet != w_coeffs.size:
             raise ValueError('dimensions of wfn, w_coeffs do not match')
         return self._obj.compute_overlap(&coeffs[0], wfn._obj, &w_coeffs[0])
@@ -2494,6 +2498,8 @@ cdef class fullci_wfn:
         """
         if self._obj.ndet != coeffs.size:
             raise ValueError('dimensions of self, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
         if wfn._obj.ndet != w_coeffs.size:
             raise ValueError('dimensions of wfn, w_coeffs do not match')
         return self._obj.compute_overlap(&coeffs[0], wfn._obj, &w_coeffs[0])

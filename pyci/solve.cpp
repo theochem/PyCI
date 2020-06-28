@@ -299,8 +299,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
                         ll = virs_up[l];
                         // 2-0 excitation elements
                         excite_det(kk, ll, det_up);
-                        jdet = wfn.index_det_from_rank(rank_det(n1, wfn.nocc_up, det_up) * wfn.maxdet_dn
-                                                     + rank_dn_ref);
+                        jdet = wfn.index_det_from_rank(rank_det(n1, wfn.nocc_up, det_up) * wfn.maxdet_dn + rank_dn_ref);
                         // check if 2-0 excited determinant is in wfn
                         if (jdet != -1) {
                             // add 2-0 matrix element

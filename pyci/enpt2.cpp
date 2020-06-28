@@ -36,7 +36,7 @@ namespace { // anonymous
 
 
 void enpt2_genci_add_terms(const OneSpinWfn &wfn, const double *one_mo, const double *two_mo,
-    std::pair<double, double> &term, const double val, const int_t n3, const int_t n2,
+    std::pair<double, double> &term, const double val, const int_t n2, const int_t n3,
     const int_t *occs) {
     // add enpt2 term to terms
     term.first += val;
@@ -104,7 +104,7 @@ void enpt2_genci_run_thread(const OneSpinWfn &wfn, phashmap &terms, const double
                     if (wfn.index_det_from_rank(rank) == -1) {
                         val *= phase_single_det(wfn.nword, ii, jj, rdet);
                         fill_occs(wfn.nword, &det[0], &tmps[0]);
-                        enpt2_genci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, &tmps[0]);
+                        enpt2_genci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n2, n3, &tmps[0]);
                     }
                 }
                 // loop over occupied indices
@@ -123,7 +123,7 @@ void enpt2_genci_run_thread(const OneSpinWfn &wfn, phashmap &terms, const double
                             if (wfn.index_det_from_rank(rank) == -1) {
                                 val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet);
                                 fill_occs(wfn.nword, &det[0], &tmps[0]);
-                                enpt2_genci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, &tmps[0]);
+                                enpt2_genci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n2, n3, &tmps[0]);
                             }
                         }
                         excite_det(ll, kk, &det[0]);
@@ -137,7 +137,7 @@ void enpt2_genci_run_thread(const OneSpinWfn &wfn, phashmap &terms, const double
 
 
 void enpt2_fullci_add_terms(const TwoSpinWfn &wfn, const double *one_mo, const double *two_mo,
-    std::pair<double, double> &term, const double val, const int_t n3, const int_t n2,
+    std::pair<double, double> &term, const double val, const int_t n2, const int_t n3,
     const int_t *occs_up, const int_t *occs_dn) {
     // add enpt2 term to terms
     term.first += val;
@@ -237,7 +237,7 @@ void enpt2_fullci_run_thread(const TwoSpinWfn &wfn, phashmap &terms, const doubl
                     if (wfn.index_det_from_rank(rank) == -1) {
                         val *= sign_up;
                         fill_occs(wfn.nword, det_up, t_up);
-                        enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, t_up, t_dn);
+                        enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n2, n3, t_up, t_dn);
                     }
                 }
                 // loop over spin-down occupied indices
@@ -256,7 +256,7 @@ void enpt2_fullci_run_thread(const TwoSpinWfn &wfn, phashmap &terms, const doubl
                             if (wfn.index_det_from_rank(rank) == -1) {
                                 val *= sign_up * phase_single_det(wfn.nword, kk, ll, rdet_dn);
                                 fill_occs(wfn.nword, det_dn, t_dn);
-                                enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, t_up, t_dn);
+                                enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n2, n3, t_up, t_dn);
                             }
                         }
                         excite_det(ll, kk, det_dn);
@@ -279,7 +279,7 @@ void enpt2_fullci_run_thread(const TwoSpinWfn &wfn, phashmap &terms, const doubl
                             if (wfn.index_det_from_rank(rank) == -1) {
                                 val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up);
                                 fill_occs(wfn.nword, det_up, t_up);
-                                enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, t_up, t_dn);
+                                enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n2, n3, t_up, t_dn);
                             }
                         }
                         excite_det(ll, kk, det_up);
@@ -315,7 +315,7 @@ void enpt2_fullci_run_thread(const TwoSpinWfn &wfn, phashmap &terms, const doubl
                     if (wfn.index_det_from_rank(rank) == -1) {
                         val *= phase_single_det(wfn.nword, ii, jj, rdet_dn);
                         fill_occs(wfn.nword, det_dn, t_dn);
-                        enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, t_up, t_dn);
+                        enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n2, n3, t_up, t_dn);
                     }
                 }
                 // loop over spin-down occupied indices
@@ -334,7 +334,7 @@ void enpt2_fullci_run_thread(const TwoSpinWfn &wfn, phashmap &terms, const doubl
                             if (wfn.index_det_from_rank(rank) == -1) {
                                 val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn);
                                 fill_occs(wfn.nword, det_dn, t_dn);
-                                enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, t_up, t_dn);
+                                enpt2_fullci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n2, n3, t_up, t_dn);
                             }
                         }
                         excite_det(ll, kk, det_dn);
@@ -376,7 +376,7 @@ double OneSpinWfn::compute_enpt2_genci(const double *one_mo, const double *two_m
     const double energy, const double eps) const {
     // do computation in chunks by making smaller hashmaps in parallel
     int_t nthread = omp_get_max_threads();
-    hashmap<int_t, std::pair<double, double>> terms;
+    phashmap terms;
     std::vector<phashmap> vterms(nthread);
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     #pragma omp parallel
@@ -403,7 +403,7 @@ double TwoSpinWfn::compute_enpt2_fullci(const double *one_mo, const double *two_
     const double energy, const double eps) const {
     // do computation in chunks by making smaller hashmaps in parallel
     int_t nthread = omp_get_max_threads();
-    hashmap<int_t, std::pair<double, double>> terms;
+    phashmap terms;
     std::vector<phashmap> vterms(nthread);
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     #pragma omp parallel
