@@ -118,14 +118,12 @@ void TwoSpinWfn::from_onespinwfn(const OneSpinWfn &wfn) {
     // add determinants
     dets.resize(wfn.ndet * nword2);
     dict.clear();
-    int_t i = 0, j = 0;
-    for (int_t idet = 0; idet < wfn.ndet; ++idet) {
-        std::memcpy(&dets[i], &wfn.dets[j], sizeof(uint_t) * wfn.nword);
-        i += wfn.nword;
-        std::memcpy(&dets[i], &wfn.dets[j], sizeof(uint_t) * wfn.nword);
-        i += wfn.nword;
-        dict[rank_det(wfn.nbasis, wfn.nocc, &wfn.dets[j]) * (maxdet_dn + 1)] = idet;
-        j += wfn.nword;
+    int_t idet;
+    for (const auto &keyval : wfn.dict) {
+        idet = keyval.second;
+        std::memcpy(&dets[idet * nword2], &wfn.dets[idet * nword], sizeof(uint_t) * wfn.nword);
+        std::memcpy(&dets[idet * nword2 + nword], &wfn.dets[idet * nword], sizeof(uint_t) * wfn.nword);
+        dict[keyval.first * (maxdet_dn + 1)] = idet;
     }
 }
 
@@ -270,7 +268,7 @@ void TwoSpinWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t 
 
 
 int_t TwoSpinWfn::index_det(const uint_t *det) const {
-    TwoSpinWfn::hashmap_type::const_iterator search = dict.find(
+    const auto &search = dict.find(
         rank_det(nbasis, nocc_up, &det[0]) * maxdet_dn + rank_det(nbasis, nocc_dn, &det[nword])
     );
     return (search == dict.end()) ? -1 : search->second;
@@ -278,7 +276,7 @@ int_t TwoSpinWfn::index_det(const uint_t *det) const {
 
 
 int_t TwoSpinWfn::index_det_from_rank(const int_t rank) const {
-    TwoSpinWfn::hashmap_type::const_iterator search = dict.find(rank);
+    const auto &search = dict.find(rank);
     return (search == dict.end()) ? -1 : search->second;
 }
 
@@ -394,15 +392,14 @@ void TwoSpinWfn::add_excited_dets(const uint_t *rdet, const int_t e_up, const in
         wfn_dn.add_excited_dets(&rdet[nword], e_dn);
     }
     // add determinants
-    int_t i, j;
     std::vector<uint_t> det(nword2);
-    uint_t *dets_up = &wfn_up.dets[0];
-    uint_t *dets_dn = &wfn_dn.dets[0];
-    for (i = 0; i < wfn_up.ndet; ++i) {
-        std::memcpy(&det[0], &dets_up[i * nword], sizeof(uint_t) * nword);
-        for (j = 0; j < wfn_dn.ndet; ++j) {
-            std::memcpy(&det[nword], &dets_dn[j * nword], sizeof(uint_t) * nword);
-            add_det(&det[0]);
+    int_t rank_up;
+    for (const auto &keyval_up : wfn_up.dict) {
+        rank_up = keyval_up.first * maxdet_dn;
+        std::memcpy(&det[0], &wfn_up.dets[keyval_up.second * nword], sizeof(uint_t) * nword);
+        for (const auto &keyval_dn : wfn_dn.dict) {
+            std::memcpy(&det[nword], &wfn_dn.dets[keyval_dn.second * nword], sizeof(uint_t) * nword);
+            add_det_with_rank(&det[0], rank_up + keyval_dn.first);
         }
     }
 }

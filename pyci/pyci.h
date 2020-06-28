@@ -120,11 +120,9 @@ int_t rank_det(const int_t, const int_t, const uint_t *);
 
 struct OneSpinWfn
 {
-    typedef hashmap<int_t, int_t> hashmap_type;
-
     int_t nword, nbasis, nocc, nvir, ndet;
     std::vector<uint_t> dets;
-    hashmap_type dict;
+    hashmap<int_t, int_t> dict;
 
     OneSpinWfn();
 
@@ -198,12 +196,10 @@ struct OneSpinWfn
 
 struct TwoSpinWfn
 {
-    typedef hashmap<int_t, int_t> hashmap_type;
-
     int_t nword, nword2, nbasis, nocc_up, nocc_dn, nvir_up, nvir_dn;
     int_t ndet, maxdet_up, maxdet_dn;
     std::vector<uint_t> dets;
-    hashmap_type dict;
+    hashmap<int_t, int_t> dict;
 
     TwoSpinWfn();
 

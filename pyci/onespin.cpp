@@ -219,13 +219,13 @@ void OneSpinWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t 
 
 
 int_t OneSpinWfn::index_det(const uint_t *det) const {
-    OneSpinWfn::hashmap_type::const_iterator search = dict.find(rank_det(nbasis, nocc, det));
+    const auto &search = dict.find(rank_det(nbasis, nocc, det));
     return (search == dict.end()) ? -1 : search->second;
 }
 
 
 int_t OneSpinWfn::index_det_from_rank(const int_t rank) const {
-    OneSpinWfn::hashmap_type::const_iterator search = dict.find(rank);
+    const auto &search = dict.find(rank);
     return (search == dict.end()) ? -1 : search->second;
 }
 

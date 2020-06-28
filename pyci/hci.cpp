@@ -299,7 +299,7 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
 void hci_condense_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn) {
     if (thread_wfn.ndet == 0)
         return;
-    for (auto &keyval : thread_wfn.dict)
+    for (const auto &keyval : thread_wfn.dict)
         wfn.add_det_with_rank(&thread_wfn.dets[keyval.second * thread_wfn.nword], keyval.first);
     thread_wfn.dets.resize(0);
     thread_wfn.dets.shrink_to_fit();
@@ -310,7 +310,7 @@ void hci_condense_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn) {
 void hci_condense_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn) {
     if (thread_wfn.ndet == 0)
         return;
-    for (auto &keyval : thread_wfn.dict)
+    for (const auto &keyval : thread_wfn.dict)
         wfn.add_det_with_rank(&thread_wfn.dets[keyval.second * thread_wfn.nword2], keyval.first);
     thread_wfn.dets.resize(0);
     thread_wfn.dets.shrink_to_fit();

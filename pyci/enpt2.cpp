@@ -393,7 +393,7 @@ double OneSpinWfn::compute_enpt2_genci(const double *one_mo, const double *two_m
     }
     // compute enpt2 correction
     double result = 0.0;
-    for (auto& keyval : terms)
+    for (const auto& keyval : terms)
         result += keyval.second.first * keyval.second.first / (energy - keyval.second.second);
     return result;
 }
@@ -420,7 +420,7 @@ double TwoSpinWfn::compute_enpt2_fullci(const double *one_mo, const double *two_
     }
     // compute enpt2 correction
     double result = 0.0;
-    for (auto& keyval : terms)
+    for (const auto& keyval : terms)
         result += keyval.second.first * keyval.second.first / (energy - keyval.second.second);
     return result;
 }
