@@ -46,6 +46,11 @@ OneSpinWfn::OneSpinWfn(const OneSpinWfn &wfn) {
 };
 
 
+OneSpinWfn::OneSpinWfn(const TwoSpinWfn &wfn) {
+    from_twospinwfn(wfn);
+};
+
+
 OneSpinWfn::OneSpinWfn(const char *filename) {
     from_file(filename);
 }
@@ -88,6 +93,35 @@ void OneSpinWfn::from_onespinwfn(const OneSpinWfn &wfn) {
     ndet = wfn.ndet;
     dets = wfn.dets;
     dict = wfn.dict;
+}
+
+
+void OneSpinWfn::from_twospinwfn(const TwoSpinWfn &wfn) {
+    int_t nbasis_ = wfn.nbasis * 2;
+    int_t nword_ = nword_det(nbasis_);
+    int_t nocc_ = wfn.nocc_up + wfn.nocc_dn;
+    if ((binomial(nbasis_, nocc_) >= PYCI_INT_MAX / nbasis_) || (nword_ > PYCI_NWORD_MAX))
+        throw std::runtime_error("nbasis, nocc too large for hash type");
+    nword = nword_;
+    nbasis = nbasis_;
+    nocc = nocc_;
+    nvir = nbasis_ - nocc_;
+    ndet = wfn.ndet;
+    // add determinants
+    dets.resize(wfn.ndet * nword_);
+    dict.clear();
+    std::vector<int_t> occs(nocc_ + 1);
+    int_t i = 0, j = 0, k;
+    for (int_t idet = 0; idet < wfn.ndet; ++idet) {
+        fill_occs(wfn.nword, &wfn.dets[i], &occs[0]);
+        i += wfn.nword;
+        fill_occs(wfn.nword, &wfn.dets[i], &occs[wfn.nocc_up]);
+        i += wfn.nword;
+        for (k = wfn.nocc_up; k < nocc_; ++k)
+            occs[k] += wfn.nbasis;
+        fill_det(nocc_, &occs[0], &dets[j]);
+        j += nword_;
+    }
 }
 
 

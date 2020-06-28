@@ -35,6 +35,107 @@ typedef hashmap<int_t, std::pair<double, double>> phashmap;
 namespace { // anonymous
 
 
+void enpt2_genci_add_terms(const OneSpinWfn &wfn, const double *one_mo, const double *two_mo,
+    std::pair<double, double> &term, const double val, const int_t n3, const int_t n2,
+    const int_t *occs) {
+    // add enpt2 term to terms
+    term.first += val;
+    // check if diagonal element is already computed (i.e. not zero from initialization)
+    if (term.second != (double)0.0)
+        return;
+    // compute diagonal element
+    int_t i, j, k, l, ioffset, koffset;
+    double diag = 0.0;
+    for (i = 0; i < wfn.nocc; ++i) {
+        j = occs[i];
+        ioffset = n3 * j;
+        diag += one_mo[(wfn.nbasis + 1) * j];
+        for (k = i + 1; k < wfn.nocc; ++k) {
+            l = occs[k];
+            koffset = ioffset + n2 * l;
+            diag += two_mo[koffset + wfn.nbasis * j + l] - two_mo[koffset + wfn.nbasis * l + j];
+        }
+    }
+    term.second = diag;
+}
+
+
+void enpt2_genci_run_thread(const OneSpinWfn &wfn, phashmap &terms, const double *one_mo,
+    const double *two_mo, const double *coeffs, const double eps, const int_t istart, const int_t iend) {
+    if (istart >= iend) return;
+    // prepare working vectors
+    std::vector<uint_t> det(wfn.nword);
+    std::vector<int_t> occs(wfn.nocc);
+    std::vector<int_t> virs(wfn.nvir);
+    std::vector<int_t> tmps(wfn.nocc);
+    const uint_t *rdet;
+    // loop over determinants
+    int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset, rank;
+    int_t n1 = wfn.nbasis;
+    int_t n2 = n1 * n1;
+    int_t n3 = n1 * n2;
+    double val;
+    for (int_t idet = istart; idet < iend; ++idet) {
+        // fill working vectors
+        rdet = &wfn.dets[idet * wfn.nword];
+        std::memcpy(&det[0], rdet, sizeof(uint_t) * wfn.nword);
+        fill_occs(wfn.nword, rdet, &occs[0]);
+        fill_virs(wfn.nword, wfn.nbasis, rdet, &virs[0]);
+        std::memcpy(&tmps[0], &occs[0], sizeof(int_t) * wfn.nocc);
+        // loop over occupied indices
+        for (i = 0; i < wfn.nocc; ++i) {
+            ii = occs[i];
+            ioffset = n3 * ii;
+            // loop over virtual indices
+            for (j = 0; j < wfn.nvir; ++j) {
+                jj = virs[j];
+                // single excitation elements
+                excite_det(ii, jj, &det[0]);
+                val = one_mo[n1 * ii + jj];
+                for (k = 0; k < wfn.nocc; ++k) {
+                    kk = occs[k];
+                    koffset = ioffset + n2 * kk;
+                    val += two_mo[koffset + n1 * jj + kk] - two_mo[koffset + n1 * kk + jj];
+                }
+                val *= coeffs[idet];
+                // add determinant if |H*c| > eps and not already in wfn
+                if (std::abs(val) > eps) {
+                    rank = rank_det(n1, wfn.nocc, &det[0]);
+                    if (wfn.index_det_from_rank(rank) == -1) {
+                        val *= phase_single_det(wfn.nword, ii, jj, rdet);
+                        fill_occs(wfn.nword, &det[0], &tmps[0]);
+                        enpt2_genci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, &tmps[0]);
+                    }
+                }
+                // loop over occupied indices
+                for (k = i + 1; k < wfn.nocc; ++k) {
+                    kk = occs[k];
+                    koffset = ioffset + n2 * kk;
+                    // loop over virtual indices
+                    for (l = j + 1; l < wfn.nvir; ++l) {
+                        ll = virs[l];
+                        // double excitation elements
+                        excite_det(kk, ll, &det[0]);
+                        val = (two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj]) * coeffs[idet];
+                        // add determinant if |H*c| > eps and not already in wfn
+                        if (std::abs(val) > eps) {
+                            rank = rank_det(n1, wfn.nocc, &det[0]);
+                            if (wfn.index_det_from_rank(rank) == -1) {
+                                val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet);
+                                fill_occs(wfn.nword, &det[0], &tmps[0]);
+                                enpt2_genci_add_terms(wfn, one_mo, two_mo, terms[rank], val, n3, n2, &tmps[0]);
+                            }
+                        }
+                        excite_det(ll, kk, &det[0]);
+                    }
+                }
+                excite_det(jj, ii, &det[0]);
+            }
+        }
+    }
+}
+
+
 void enpt2_fullci_add_terms(const TwoSpinWfn &wfn, const double *one_mo, const double *two_mo,
     std::pair<double, double> &term, const double val, const int_t n3, const int_t n2,
     const int_t *occs_up, const int_t *occs_dn) {
@@ -262,6 +363,40 @@ void enpt2_condense_thread(phashmap &terms, phashmap &thread_terms, const int_t 
 
 
 } // namespace // anonymous
+
+
+double OneSpinWfn::compute_enpt2_doci(const double *one_mo, const double *two_mo, const double *coeffs,
+    const double energy, const double eps) const {
+    TwoSpinWfn wfn(*this);
+    return wfn.compute_enpt2_fullci(one_mo, two_mo, coeffs, energy, eps);
+}
+
+
+double OneSpinWfn::compute_enpt2_genci(const double *one_mo, const double *two_mo, const double *coeffs,
+    const double energy, const double eps) const {
+    // do computation in chunks by making smaller hashmaps in parallel
+    int_t nthread = omp_get_max_threads();
+    hashmap<int_t, std::pair<double, double>> terms;
+    std::vector<phashmap> vterms(nthread);
+    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    #pragma omp parallel
+    {
+        int_t ithread = omp_get_thread_num();
+        int_t istart = ithread * chunksize;
+        int_t iend = (istart + chunksize < ndet) ? istart + chunksize : ndet;
+        enpt2_genci_run_thread(*this, vterms[ithread], one_mo, two_mo, coeffs, eps, istart, iend);
+        // combine hashmaps into larger terms hashmap
+        #pragma omp for ordered schedule(static,1)
+        for (int_t t = 0; t < nthread; ++t)
+            #pragma omp ordered
+            enpt2_condense_thread(terms, vterms[t], t);
+    }
+    // compute enpt2 correction
+    double result = 0.0;
+    for (auto& keyval : terms)
+        result += keyval.second.first * keyval.second.first / (energy - keyval.second.second);
+    return result;
+}
 
 
 double TwoSpinWfn::compute_enpt2_fullci(const double *one_mo, const double *two_mo, const double *coeffs,

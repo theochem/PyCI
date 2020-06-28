@@ -1153,6 +1153,41 @@ cdef class doci_wfn(one_spin_wfn):
         else:
             raise ValueError('mode must be one of \'d\', \'r\', \'g\'')
 
+    def compute_enpt2(self, hamiltonian ham not None, double[::1] coeffs not None,
+        double energy, double eps=1.0e-6):
+        r"""
+        Compute the second-order Epstein-Nesbet perturbation theory correction to the energy.
+
+        Parameters
+        ----------
+        ham : hamiltonian
+            Hamiltonian object.
+        coeffs : np.ndarray(c_double(ndet))
+            Coefficient vector.
+        energy : float
+            Variational energy.
+        eps : float, default=1.0e-6
+            Threshold value for which determinants to include.
+
+        Returns
+        -------
+        enpt2_energy : float
+           ENPT2-corrected energy.
+
+        """
+        if self._obj.ndet != coeffs.shape[0]:
+            raise ValueError('dimensions of wfn, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
+        elif self._obj.nbasis != ham._nbasis:
+            raise ValueError('dimensions of wfn, ham do not match')
+        elif ham._one_mo is None:
+            raise AttributeError('full integral arrays were not saved')
+        return self._obj.compute_enpt2_doci(
+            <double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
+            <double *>(&coeffs[0]), energy - ham._ecore, eps,
+            ) + energy
+
     def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
         r"""
         Run an iteration of heat-bath CI.
@@ -1551,6 +1586,41 @@ cdef class genci_wfn(one_spin_wfn):
         self._obj.compute_rdms_genci(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]),
                                      <double *>(&rdm2[0, 0, 0, 0]))
         return rdm1_array, rdm2_array
+
+    def compute_enpt2(self, hamiltonian ham not None, double[::1] coeffs not None,
+        double energy, double eps=1.0e-6):
+        r"""
+        Compute the second-order Epstein-Nesbet perturbation theory correction to the energy.
+
+        Parameters
+        ----------
+        ham : hamiltonian
+            Hamiltonian object.
+        coeffs : np.ndarray(c_double(ndet))
+            Coefficient vector.
+        energy : float
+            Variational energy.
+        eps : float, default=1.0e-6
+            Threshold value for which determinants to include.
+
+        Returns
+        -------
+        enpt2_energy : float
+           ENPT2-corrected energy.
+
+        """
+        if self._obj.ndet != coeffs.shape[0]:
+            raise ValueError('dimensions of wfn, coeffs do not match')
+        elif self._obj.ndet == 0:
+            raise ValueError('wfn must contain at least one determinant')
+        elif self._obj.nbasis != ham._nbasis:
+            raise ValueError('dimensions of wfn, ham do not match')
+        elif ham._one_mo is None:
+            raise AttributeError('full integral arrays were not saved')
+        return self._obj.compute_enpt2_genci(
+            <double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
+            <double *>(&coeffs[0]), energy - ham._ecore, eps,
+            ) + energy
 
     def run_hci(self, hamiltonian ham not None, double[::1] coeffs not None, double eps):
         r"""
@@ -2452,8 +2522,8 @@ cdef class fullci_wfn:
             raise ValueError('wfn must contain at least one determinant')
         elif self._obj.nbasis != ham._nbasis:
             raise ValueError('dimensions of wfn, ham do not match')
-        elif ham._h is None:
-            raise AttributeError('seniority-zero integrals were not computed')
+        elif ham._one_mo is None:
+            raise AttributeError('full integral arrays were not saved')
         return self._obj.compute_enpt2_fullci(
             <double *>(&ham._one_mo[0, 0]), <double *>(&ham._two_mo[0, 0, 0, 0]),
             <double *>(&coeffs[0]), energy - ham._ecore, eps,

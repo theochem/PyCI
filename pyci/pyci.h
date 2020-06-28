@@ -61,6 +61,15 @@ using hashmap = phmap::parallel_flat_hash_map<
     Mutex>;
 
 
+struct OneSpinWfn;
+
+
+struct TwoSpinWfn;
+
+
+struct SparseOp;
+
+
 int_t binomial(int_t, int_t);
 
 
@@ -123,6 +132,8 @@ struct OneSpinWfn
 
     OneSpinWfn(const OneSpinWfn &);
 
+    OneSpinWfn(const TwoSpinWfn &);
+
     OneSpinWfn(const char *);
 
     OneSpinWfn(const int_t, const int_t, const int_t, const uint_t *);
@@ -134,6 +145,8 @@ struct OneSpinWfn
     void init(const int_t, const int_t);
 
     void from_onespinwfn(const OneSpinWfn &);
+
+    void from_twospinwfn(const TwoSpinWfn &);
 
     void from_file(const char *);
 
@@ -173,6 +186,10 @@ struct OneSpinWfn
 
     double compute_overlap(const double *, const OneSpinWfn &, const double *) const;
 
+    double compute_enpt2_doci(const double *, const double *, const double *, const double, const double) const;
+
+    double compute_enpt2_genci(const double *, const double *, const double *, const double, const double) const;
+
     int_t run_hci_doci(const double *, const double *, const double);
 
     int_t run_hci_genci(const double *, const double *, const double *, const double);
@@ -192,6 +209,8 @@ struct TwoSpinWfn
 
     TwoSpinWfn(const int_t, const int_t, const int_t);
 
+    TwoSpinWfn(const OneSpinWfn &);
+
     TwoSpinWfn(const TwoSpinWfn &);
 
     TwoSpinWfn(const char *);
@@ -203,6 +222,8 @@ struct TwoSpinWfn
     ~TwoSpinWfn();
 
     void init(const int_t, const int_t, const int_t);
+
+    void from_onespinwfn(const OneSpinWfn &);
 
     void from_twospinwfn(const TwoSpinWfn &);
 

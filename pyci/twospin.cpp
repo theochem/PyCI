@@ -43,6 +43,11 @@ TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t no
 }
 
 
+TwoSpinWfn::TwoSpinWfn(const OneSpinWfn &wfn) {
+    from_onespinwfn(wfn);
+};
+
+
 TwoSpinWfn::TwoSpinWfn(const TwoSpinWfn &wfn) {
     from_twospinwfn(wfn);
 };
@@ -71,10 +76,10 @@ TwoSpinWfn::~TwoSpinWfn() {
 
 
 void TwoSpinWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
+    // check that determinants of this wave function can be hashed
     int_t maxdet_up_ = binomial(nbasis_, nocc_up_);
     int_t maxdet_dn_ = binomial(nbasis_, nocc_dn_);
     int_t nword_ = nword_det(nbasis_);
-    // check that determinants of this wave function can be hashed
     if ((maxdet_up_ * maxdet_dn_ >= PYCI_INT_MAX) || (nword_ > PYCI_NWORD_MAX))
         throw std::runtime_error("nbasis, nocc_up, nocc_dn too large for hash type");
     // set attributes
@@ -91,6 +96,37 @@ void TwoSpinWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t noc
     // prepare determinant array and hashmap
     dets.resize(0);
     dict.clear();
+}
+
+
+void TwoSpinWfn::from_onespinwfn(const OneSpinWfn &wfn) {
+    // check that determinants of this wave function can be hashed
+    int_t maxdet = binomial(wfn.nbasis, wfn.nocc);
+    if (maxdet * maxdet >= PYCI_INT_MAX)
+        throw std::runtime_error("nbasis, nocc_up, nocc_dn too large for hash type");
+    // set attributes
+    nword = wfn.nword;
+    nword2 = wfn.nword * 2;
+    nbasis = wfn.nbasis;
+    nocc_up = wfn.nocc;
+    nocc_dn = wfn.nocc;
+    nvir_up = wfn.nvir;
+    nvir_dn = wfn.nvir;
+    ndet = wfn.ndet;
+    maxdet_up = maxdet;
+    maxdet_dn = maxdet;
+    // add determinants
+    dets.resize(wfn.ndet * nword2);
+    dict.clear();
+    int_t i = 0, j = 0;
+    for (int_t idet = 0; idet < wfn.ndet; ++idet) {
+        std::memcpy(&dets[i], &wfn.dets[j], sizeof(uint_t) * wfn.nword);
+        i += wfn.nword;
+        std::memcpy(&dets[i], &wfn.dets[j], sizeof(uint_t) * wfn.nword);
+        i += wfn.nword;
+        dict[rank_det(wfn.nbasis, wfn.nocc, &wfn.dets[j]) * (maxdet_dn + 1)] = idet;
+        j += wfn.nword;
+    }
 }
 
 

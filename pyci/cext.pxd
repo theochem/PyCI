@@ -101,6 +101,8 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         OneSpinWfn(const OneSpinWfn &) except +
 
+        OneSpinWfn(const TwoSpinWfn &) except +
+
         OneSpinWfn(const char *) except +
 
         OneSpinWfn(const int_t, const int_t, const int_t, const uint_t *) except +
@@ -110,6 +112,8 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
         void init(const int_t, const int_t) except +
 
         void from_onespinwfn(const OneSpinWfn &) except +
+
+        void from_twospinwfn(const TwoSpinWfn &) except +
 
         void from_file(const char *) except +
 
@@ -149,6 +153,10 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         void compute_rdms_genci(const double *, double *, double *) except +
 
+        double compute_enpt2_doci(const double *, const double *, const double *, const double, const double) except +
+
+        double compute_enpt2_genci(const double *, const double *, const double *, const double, const double) except +
+
         int_t run_hci_doci(const double *, const double *, const double) except +
 
         int_t run_hci_genci(const double *, const double *, const double *, const double) except +
@@ -163,6 +171,8 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         TwoSpinWfn(const int_t, const int_t, const int_t) except +
 
+        TwoSpinWfn(const OneSpinWfn &) except +
+
         TwoSpinWfn(const TwoSpinWfn &) except +
 
         TwoSpinWfn(const char *) except +
@@ -172,6 +182,8 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
         TwoSpinWfn(const int_t, const int_t, const int_t, const int_t, const int_t *) except +
 
         void init(const int_t, const int_t, const int_t) except +
+
+        void from_onespinwfn(const OneSpinWfn &) except +
 
         void from_twospinwfn(const TwoSpinWfn &) except +
 
@@ -209,7 +221,7 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         double compute_overlap(const double *, const TwoSpinWfn &, const double *) except +
 
-        double compute_enpt2_fullci(const double *, const double *, const double *, const double, const double)
+        double compute_enpt2_fullci(const double *, const double *, const double *, const double, const double) except +
 
         void compute_rdms_fullci(const double *, double *, double *) except +
 
@@ -233,4 +245,3 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
         void init_genci(const OneSpinWfn &, const double *, const double *, const int_t) except +
 
         void init_fullci(const TwoSpinWfn &, const double *, const double *, const int_t) except +
-
