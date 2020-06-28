@@ -1269,7 +1269,23 @@ cdef class doci_wfn(one_spin_wfn):
             Restricted 2-particle RDM.
 
         """
-        raise NotImplementedError
+        if not (d0.shape[0] == d0.shape[1] == d2.shape[0] == d2.shape[1]):
+            raise ValueError('dimensions of d0, d2 do not match')
+        cdef int_t nbasis = d0.shape[0], p, q
+        cdef np.ndarray rdm1_array = np.zeros((nbasis, nbasis), dtype=c_double)
+        cdef np.ndarray rdm2_array = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=c_double)
+        cdef double[:, ::1] rdm1 = rdm1_array
+        cdef double[:, :, :, ::1] rdm2 = rdm2_array
+        for p in range(nbasis):
+            rdm1[p, p] += d0[p, p]
+            for q in range(nbasis):
+                rdm2[p, p, q, q] += d0[p, q]
+                rdm2[p, q, p, q] += d2[p, q]
+        rdm1_array *= 2
+        rdm2_array -= np.transpose(rdm2_array, axes=(1, 0, 2, 3))
+        rdm2_array -= np.transpose(rdm2_array, axes=(0, 1, 3, 2))
+        return rdm1_array, rdm2_array
+
 
     @staticmethod
     def generate_generalized_rdms(double[:, ::1] d0 not None, double[:, ::1] d2 not None):
@@ -1294,8 +1310,7 @@ cdef class doci_wfn(one_spin_wfn):
         if not (d0.shape[0] == d0.shape[1] == d2.shape[0] == d2.shape[1]):
             raise ValueError('dimensions of d0, d2 do not match')
         cdef int_t nbasis = d0.shape[0]
-        cdef int_t nspin = nbasis * 2
-        cdef int_t p, q
+        cdef int_t nspin = nbasis * 2, p, q
         cdef np.ndarray rdm1_array = np.zeros((nspin, nspin), dtype=c_double)
         cdef np.ndarray rdm2_array = np.zeros((nspin, nspin, nspin, nspin), dtype=c_double)
         cdef double[:, :] rdm1_a = rdm1_array[:nbasis, :nbasis]
