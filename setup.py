@@ -30,17 +30,24 @@ import numpy
 
 name = 'pyci'
 
+
 version = '0.2.0'
+
 
 license = 'GPLv3'
 
+
 author = 'Michael Richer'
+
 
 author_email = 'richerm@mcmaster.ca'
 
+
 url = 'https://github.com/msricher/pyci'
 
+
 description = 'A flexible ab-initio quantum chemistry library for Configuration Interaction.'
+
 
 long_description = open('README.rst', 'r', encoding='utf-8').read()
 
@@ -71,17 +78,17 @@ packages = [
 
 
 package_data = {
-    'pyci': ['*.h', '*.cpp', '*.pxd', '*.pyx'],
-    'pyci.test': ['data/*.fcidump', 'data/*.npz'],
+    'pyci': ['*.h', '*.cpp', '*.pxd', '*.pyx', '*.pxi'],
+    'pyci.test': ['data/*.fcidump', 'data/*.npy', 'data/*.npz'],
     }
 
 
 include_dirs = [
+    path.abspath(path.dirname(__file__)),
     'parallel-hashmap',
     'eigen',
     'spectra/include',
     numpy.get_include(),
-    path.abspath(path.dirname(__file__)),
     ]
 
 
@@ -96,30 +103,21 @@ compile_args = [
 cext = {
     'name': 'pyci.cext',
     'language': 'c++',
-    'sources': [
-        'pyci/common.cpp',
-        'pyci/onespin.cpp',
-        'pyci/twospin.cpp',
-        'pyci/solve.cpp',
-        'pyci/rdm.cpp',
-        'pyci/enpt2.cpp',
-        'pyci/hci.cpp',
-        'pyci/cext.cpp',
-        ],
     'include_dirs': include_dirs,
     'extra_compile_args': compile_args,
     'extra_link_args': compile_args,
+    'sources': ['pyci/pyci.cpp'],
     }
 
 
 try:
     from Cython.Distutils import build_ext, Extension
-    cext['sources'].remove('pyci/cext.cpp')
-    cext['sources'].append('pyci/cext.pyx')
+    cext['sources'].extend(['pyci/cext.pyx', 'pyci/*.pxi'])
     cext['cython_compile_time_env'] = dict(PYCI_VERSION=version)
 except ImportError:
     from setuptools.command.build_ext import build_ext
     from setuptools import Extension
+    cext['sources'].extend(['pyci/cext.cpp'])
 
 
 if __name__ == '__main__':

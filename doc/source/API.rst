@@ -17,8 +17,8 @@
 PyCI API Documentation
 ======================
 
-Constants
----------
+Numerical Types and Constants
+-----------------------------
 
 .. autodata:: pyci.c_int
 
@@ -32,20 +32,44 @@ Constants
 
 .. autodata:: pyci.SPIN_DN
 
-Classes
--------
+Hamiltonians
+------------
 
 .. autoclass:: pyci.hamiltonian
+    :members:
+
+.. autoclass:: pyci.restricted_ham
+    :members:
+
+.. autoclass:: pyci.unrestricted_ham
+    :members:
+
+.. autoclass:: pyci.generalized_ham
+    :members:
+
+Wave functions
+--------------
+
+.. autoclass:: pyci.wavefunction
+    :members:
+
+.. autoclass:: pyci.one_spin_wfn
+    :members:
+
+.. autoclass:: pyci.two_spin_wfn
     :members:
 
 .. autoclass:: pyci.doci_wfn
     :members:
 
+.. autoclass:: pyci.fullci_wfn
+    :members:
+
 .. autoclass:: pyci.genci_wfn
     :members:
 
-.. autoclass:: pyci.fullci_wfn
-    :members:
+Sparse matrix solver
+--------------------
 
 .. autoclass:: pyci.sparse_op
     :members:

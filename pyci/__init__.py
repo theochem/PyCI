@@ -18,10 +18,7 @@ PyCI module.
 
 """
 
-import numpy as np
-
-from pyci.cext import _get_version, SpinLabel, SPIN_UP, SPIN_DN
-from pyci.cext import hamiltonian, doci_wfn, genci_wfn, fullci_wfn, sparse_op
+from pyci.cext import *
 
 
 __all__ = [
@@ -33,9 +30,15 @@ __all__ = [
     'SPIN_UP',
     'SPIN_DN',
     'hamiltonian',
+    'restricted_ham',
+    'unrestricted_ham',
+    'generalized_ham',
+    'wavefunction',
+    'one_spin_wfn',
+    'two_spin_wfn',
     'doci_wfn',
-    'genci_wfn',
     'fullci_wfn',
+    'genci_wfn',
     'sparse_op',
     ]
 
@@ -47,23 +50,23 @@ PyCI version number.
 """
 
 
-c_int = np.dtype(np.int64)
+c_int = _get_c_int()
 r"""
 C extension signed int dtype.
 
 """
 
 
-c_uint = np.dtype(np.uint64)
+c_uint = _get_c_uint()
 r"""
 C extension unsigned int dtype.
 
 """
 
 
-c_double = np.dtype(np.double)
+c_double = _get_c_double()
 r"""
-C extension double-precision floating point dtype.
+C extension double-precision float dtype.
 
 """
 
