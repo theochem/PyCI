@@ -21,7 +21,7 @@
 
 #include <omp.h>
 
-#include <pyci/pyci.h>
+#include <pyci.h>
 
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE pyci::int_t
 #include <Eigen/Core>
@@ -38,7 +38,8 @@ namespace { // anonymous
 void init_doci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *h, const double *v, const double *w,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
-    if (istart >= iend) return;
+    if (istart >= iend)
+        return;
     op.data.reserve(wfn.ndet + 1);
     op.indices.reserve(wfn.ndet + 1);
     op.indptr.reserve(iend - istart + 1);
@@ -98,7 +99,8 @@ void init_doci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *h, 
 void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
-    if (istart >= iend) return;
+    if (istart >= iend)
+        return;
     op.data.reserve(wfn.ndet + 1);
     op.indices.reserve(wfn.ndet + 1);
     op.indptr.reserve(iend - istart + 1);
@@ -194,7 +196,8 @@ void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *on
 void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
-    if (istart >= iend) return;
+    if (istart >= iend)
+        return;
     op.data.reserve(wfn.ndet + 1);
     op.indices.reserve(wfn.ndet + 1);
     op.indptr.reserve(iend - istart + 1);
@@ -210,8 +213,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
     const uint_t *rdet_up, *rdet_dn;
     uint_t *det_up = &det[0], *det_dn = &det[wfn.nword];
     // loop over determinants
-    int_t i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset;
-    int_t rank_up_ref, rank_dn_ref, sign_up, rank_up;
+    int_t i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset, sign_up;
     int_t n1 = wfn.nbasis;
     int_t n2 = n1 * n1;
     int_t n3 = n1 * n2;
@@ -225,8 +227,6 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
         fill_occs(wfn.nword, rdet_dn, &occs_dn[0]);
         fill_virs(wfn.nword, wfn.nbasis, rdet_up, &virs_up[0]);
         fill_virs(wfn.nword, wfn.nbasis, rdet_dn, &virs_dn[0]);
-        rank_up_ref = rank_det(n1, wfn.nocc_up, rdet_up) * wfn.maxdet_dn;
-        rank_dn_ref = rank_det(n1, wfn.nocc_dn, rdet_dn);
         val2 = 0.0;
         // loop over spin-up occupied indices
         for (i = 0; i < wfn.nocc_up; ++i) {
@@ -249,8 +249,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
                 // 1-0 excitation elements
                 excite_det(ii, jj, det_up);
                 sign_up = phase_single_det(wfn.nword, ii, jj, rdet_up);
-                rank_up = rank_det(n1, wfn.nocc_up, det_up) * wfn.maxdet_dn;
-                jdet = wfn.index_det_from_rank(rank_up + rank_dn_ref);
+                jdet = wfn.index_det(det_up);
                 // check if 1-0 excited determinant is in wfn
                 if (jdet != -1) {
                     // compute 1-0 matrix element
@@ -277,7 +276,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
                         ll = virs_dn[l];
                         // 1-1 excitation elements
                         excite_det(kk, ll, det_dn);
-                        jdet = wfn.index_det_from_rank(rank_up + rank_det(n1, wfn.nocc_dn, det_dn));
+                        jdet = wfn.index_det(det_up);
                         // check if 1-1 excited determinant is in wfn
                         if (jdet != -1) {
                             // add 1-1 matrix element
@@ -299,7 +298,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
                         ll = virs_up[l];
                         // 2-0 excitation elements
                         excite_det(kk, ll, det_up);
-                        jdet = wfn.index_det_from_rank(rank_det(n1, wfn.nocc_up, det_up) * wfn.maxdet_dn + rank_dn_ref);
+                        jdet = wfn.index_det(det_up);
                         // check if 2-0 excited determinant is in wfn
                         if (jdet != -1) {
                             // add 2-0 matrix element
@@ -331,7 +330,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
                 jj = virs_dn[j];
                 // 0-1 excitation elements
                 excite_det(ii, jj, det_dn);
-                jdet = wfn.index_det_from_rank(rank_up_ref + rank_det(n1, wfn.nocc_dn, det_dn));
+                jdet = wfn.index_det(det_up);
                 // check if 0-1 excited determinant is in wfn
                 if (jdet != -1) {
                     // compute 0-1 matrix element
@@ -358,7 +357,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
                         ll = virs_dn[l];
                         // 0-2 excitation elements
                         excite_det(kk, ll, det_dn);
-                        jdet = wfn.index_det_from_rank(rank_up_ref + rank_det(n1, wfn.nocc_dn, det_dn));
+                        jdet = wfn.index_det(det_up);
                         // check if excited determinant is in wfn
                         if (jdet != -1) {
                             // add 0-2 matrix element
@@ -423,7 +422,7 @@ void init_condense_thread(SparseOp &op, SparseOp &thread_op, const int_t ithread
 } // namespace // anonymous
 
 
-SparseOp::SparseOp() : nrow(0), ncol(0) {
+SparseOp::SparseOp() {
     return;
 }
 
@@ -431,7 +430,7 @@ SparseOp::SparseOp() : nrow(0), ncol(0) {
 void SparseOp::perform_op(const double *x, double *y) const {
     int_t nthread = omp_get_max_threads();
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t i, j;
         int_t istart = omp_get_thread_num() * chunksize;
@@ -461,7 +460,7 @@ void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const
     eigs.init(coeffs);
     eigs.compute(maxit, tol, Spectra::SMALLEST_ALGE);
     if (eigs.info() != Spectra::SUCCESSFUL)
-        throw std::runtime_error("Did not converge");
+        throw std::runtime_error("did not converge");
     Eigen::Map<Eigen::VectorXd> eigenvalues(evals, n);
     Eigen::Map<Eigen::MatrixXd> eigenvectors(evecs, ncol, n);
     eigenvalues = eigs.eigenvalues();
@@ -482,16 +481,16 @@ void SparseOp::init_doci(const OneSpinWfn &wfn, const double *h, const double *v
     int_t nthread = omp_get_max_threads();
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     std::vector<SparseOp> ops(nthread);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
         init_doci_run_thread(ops[ithread], wfn, h, v, w, istart, iend);
         // construct larger SparseOp (this instance) from chunks
-        #pragma omp for ordered schedule(static,1)
+#pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
-            #pragma omp ordered
+#pragma omp ordered
             init_condense_thread(*this, ops[t], t);
     }
     // finalize vectors
@@ -514,16 +513,16 @@ void SparseOp::init_genci(const OneSpinWfn &wfn, const double *one_mo, const dou
     int_t nthread = omp_get_max_threads();
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     std::vector<SparseOp> ops(nthread);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
         init_genci_run_thread(ops[ithread], wfn, one_mo, two_mo, istart, iend);
         // construct larger SparseOp (this instance) from chunks
-        #pragma omp for ordered schedule(static,1)
+#pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
-            #pragma omp ordered
+#pragma omp ordered
             init_condense_thread(*this, ops[t], t);
     }
     // finalize vectors
@@ -546,16 +545,16 @@ void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double *one_mo, const do
     int_t nthread = omp_get_max_threads();
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     std::vector<SparseOp> ops(nthread);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
         int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
         init_fullci_run_thread(ops[ithread], wfn, one_mo, two_mo, istart, iend);
         // construct larger SparseOp (this instance) from chunks
-        #pragma omp for ordered schedule(static,1)
+#pragma omp for ordered schedule(static,1)
         for (int_t t = 0; t < nthread; ++t)
-            #pragma omp ordered
+#pragma omp ordered
             init_condense_thread(*this, ops[t], t);
     }
     // finalize vectors

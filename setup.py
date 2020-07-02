@@ -20,7 +20,8 @@ Run `python setup.py --help` for help.
 
 """
 
-from io import open
+from glob import glob
+
 from os import path
 
 from setuptools import setup
@@ -31,7 +32,7 @@ import numpy
 name = 'pyci'
 
 
-version = '0.2.0'
+version = '0.3.0'
 
 
 license = 'GPLv3'
@@ -53,66 +54,68 @@ long_description = open('README.rst', 'r', encoding='utf-8').read()
 
 
 classifiers = [
-    'Environment :: Console',
-    'Intended Audience :: Science/Research',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 3',
-    'Topic :: Science/Engineering :: Molecular Science',
-    ]
+        'Environment :: Console',
+        'Intended Audience :: Science/Research',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
+        'Topic :: Science/Engineering :: Molecular Science',
+        ]
 
 
 install_requires = ['numpy>=1.13']
 
 
 extras_require = {
-    'build': ['cython'],
-    'test': ['nose'],
-    'doc': ['sphinx', 'sphinx_rtd_theme'],
-    }
+        'build': ['cython'],
+        'test': ['nose'],
+        'doc': ['sphinx', 'sphinx_rtd_theme'],
+        }
 
 
 packages = [
-    'pyci',
-    'pyci.test',
-    ]
+        'pyci',
+        'pyci.test',
+        ]
 
 
 package_data = {
-    'pyci': ['*.h', '*.cpp', '*.pxd', '*.pyx', '*.pxi'],
-    'pyci.test': ['data/*.fcidump', 'data/*.npy', 'data/*.npz'],
-    }
+        'pyci': ['*.pyx', '*.pxi', 'include/*.h', 'include/*.pxd', 'src/*.cpp'],
+        'pyci.test': ['data/*.fcidump', 'data/*.npy', 'data/*.npz'],
+        }
 
 
 include_dirs = [
-    path.abspath(path.dirname(__file__)),
-    'parallel-hashmap',
-    'eigen',
-    'spectra/include',
-    numpy.get_include(),
-    ]
+        numpy.get_include(),
+        'lib/parallel-hashmap',
+        'lib/eigen',
+        'lib/spectra/include',
+        'pyci',
+        'pyci/include',
+        ]
 
 
-compile_args = [
-    '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
-    '-Wall',
-    '-fopenmp',
-    '-O3',
-    ]
+extra_compile_args = [
+        '-DPYCI_IMPLEMENTATION',
+        '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
+        '-Wall',
+        '-fopenmp',
+        '-O3',
+        ]
 
 
 cext = {
-    'name': 'pyci.cext',
-    'language': 'c++',
-    'include_dirs': include_dirs,
-    'extra_compile_args': compile_args,
-    'extra_link_args': compile_args,
-    'sources': ['pyci/pyci.cpp'],
-    }
+        'name': 'pyci.cext',
+        'language': 'c++',
+        'include_dirs': include_dirs,
+        'extra_compile_args': extra_compile_args,
+        'extra_link_args': extra_compile_args,
+        'sources': glob('pyci/src/*.cpp'),
+        }
 
 
 try:
     from Cython.Distutils import build_ext, Extension
-    cext['sources'].extend(['pyci/cext.pyx', 'pyci/*.pxi'])
+    cext['sources'].extend(['pyci/cext.pyx'])
     cext['cython_compile_time_env'] = dict(PYCI_VERSION=version)
 except ImportError:
     from setuptools.command.build_ext import build_ext
@@ -123,20 +126,20 @@ except ImportError:
 if __name__ == '__main__':
 
     setup(
-        name=name,
-        version=version,
-        license=license,
-        author=author,
-        author_email=author_email,
-        url=url,
-        description=description,
-        long_description=long_description,
-        classifiers=classifiers,
-        install_requires=install_requires,
-        extras_require=extras_require,
-        packages=packages,
-        package_data=package_data,
-        include_package_data=True,
-        ext_modules=[Extension(**cext)],
-        cmdclass={'build_ext': build_ext},
-        )
+            name=name,
+            version=version,
+            license=license,
+            author=author,
+            author_email=author_email,
+            url=url,
+            description=description,
+            long_description=long_description,
+            classifiers=classifiers,
+            install_requires=install_requires,
+            extras_require=extras_require,
+            packages=packages,
+            package_data=package_data,
+            include_package_data=True,
+            ext_modules=[Extension(**cext)],
+            cmdclass={'build_ext': build_ext},
+            )

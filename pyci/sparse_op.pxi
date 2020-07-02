@@ -74,12 +74,12 @@ cdef class sparse_op:
                 if wfn.nbasis != ham.nbasis:
                     raise ValueError('dimension of ham, wfn do not match')
                 self._obj.init_doci(
-                    (<doci_wfn>wfn)._obj,
-                    <double *>(&ham._h[0]),
-                    <double *>(&ham._v[0, 0]),
-                    <double *>(&ham._w[0, 0]),
-                    nrow,
-                    )
+                        (<doci_wfn>wfn)._obj,
+                        <double *>(&ham._h[0]),
+                        <double *>(&ham._v[0, 0]),
+                        <double *>(&ham._w[0, 0]),
+                        nrow,
+                        )
             # Unrestricted DOCI operator
             elif isinstance(ham, unrestricted_ham):
                 if wfn.nbasis != ham.nbasis:
@@ -101,11 +101,11 @@ cdef class sparse_op:
                 if wfn.nbasis != ham.nbasis:
                     raise ValueError('dimension of ham, wfn do not match')
                 self._obj.init_fullci(
-                    (<fullci_wfn>wfn)._obj,
-                    <double *>(&ham._one_mo[0, 0]),
-                    <double *>(&ham._two_mo[0, 0, 0, 0]),
-                    nrow,
-                    )
+                        (<fullci_wfn>wfn)._obj,
+                        <double *>(&ham._one_mo[0, 0]),
+                        <double *>(&ham._two_mo[0, 0, 0, 0]),
+                        nrow,
+                        )
             # Unrestricted FullCI operator
             elif isinstance(ham, unrestricted_ham):
                 if wfn.nbasis != ham.nbasis:
@@ -127,7 +127,7 @@ cdef class sparse_op:
             elif wfn.nbasis != ham.nbasis:
                 raise ValueError('dimension of ham, wfn do not match')
             self._obj.init_genci((<genci_wfn>wfn)._obj, <double *>(&ham._one_mo[0, 0]),
-                                 <double *>(&ham._two_mo[0, 0, 0, 0]), nrow)
+                    <double *>(&ham._two_mo[0, 0, 0, 0]), nrow)
         else:
             raise TypeError('wfn type must be one of \'doci_wfn\', \'fullci_wfn\', \'genci_wfn\'')
         self._shape = self._obj.nrow, self._obj.ncol
@@ -167,22 +167,21 @@ cdef class sparse_op:
 
     def to_csr_matrix(self):
         r"""
-        Convert the sparse matrix operator to a scipy.sparse.csr_matrix instance.
+        Convert the sparse matrix operator to CSR matrix data in NumPy arrays.
 
         Returns
         -------
-        mat : scipy.sparse.csr_matrix
-            CSR matrix instance.
+        csr_mat : tuple(np.ndarray, np.ndarray, np.ndarray)
+            CSR matrix data. Can be passed to `scipy.sparse.csr_matrix`.
 
         """
-        from scipy.sparse import csr_matrix
         cdef double *data_ptr = &self._obj.data[0]
         cdef int_t *indices_ptr = &self._obj.indices[0]
         cdef int_t *indptr_ptr = &self._obj.indptr[0]
-        cdef np.ndarray data = np.asarray(<double[:self._obj.data.size()]>data_ptr)
-        cdef np.ndarray indices = np.asarray(<int_t[:self._obj.indices.size()]>indices_ptr)
-        cdef np.ndarray indptr = np.asarray(<int_t[:self._obj.indptr.size()]>indptr_ptr)
-        return csr_matrix((data, indices, indptr), shape=self._shape, copy=True)
+        cdef np.ndarray data = np.copy(<double[:self._obj.data.size()]>data_ptr)
+        cdef np.ndarray indices = np.copy(<int_t[:self._obj.indices.size()]>indices_ptr)
+        cdef np.ndarray indptr = np.copy(<int_t[:self._obj.indptr.size()]>indptr_ptr)
+        return data, indices, indptr
 
     def solve(self, int_t n=1, int_t ncv=-1, double[::1] c0=None, int_t maxiter=-1, double tol=1.0e-6):
         r"""
@@ -232,7 +231,7 @@ cdef class sparse_op:
         cdef double[::1] evals = evals_array
         cdef double[:, ::1] evecs = evecs_array
         self._obj.solve(<double *>(&c0[0]), n, ncv, maxiter, tol,
-                        <double *>(&evals[0]), <double *>(&evecs[0, 0]))
+                <double *>(&evals[0]), <double *>(&evecs[0, 0]))
         evals_array += self._ecore
         return evals_array, evecs_array
 

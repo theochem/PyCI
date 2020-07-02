@@ -28,13 +28,14 @@ from libcpp.vector cimport vector
 __all__ = [
     'int_t',
     'uint_t',
+    'binomial_raises',
     'binomial',
-    'binomial_nocheck',
     'fill_det',
     'fill_occs',
     'fill_virs',
     'next_colex',
-    'unrank_indices',
+    'rank_colex',
+    'unrank_colex',
     'nword_det',
     'excite_det',
     'setbit_det',
@@ -43,7 +44,6 @@ __all__ = [
     'ctz_det',
     'phase_single_det',
     'phase_double_det',
-    'rank_det',
     'OneSpinWfn',
     'TwoSpinWfn',
     'SparseOp',
@@ -56,11 +56,11 @@ ctypedef int64_t int_t
 ctypedef uint64_t uint_t
 
 
-cdef extern from 'pyci/pyci.h' namespace 'pyci':
+cdef extern from 'pyci.h' namespace 'pyci':
 
-    int_t binomial(int_t, int_t) except +
+    bint binomial_raises(int_t, int_t)
 
-    int_t binomial_nocheck(int_t, int_t)
+    int_t binomial(int_t, int_t)
 
     void fill_det(const int_t, const int_t *, uint_t *)
 
@@ -70,7 +70,9 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
     void next_colex(int_t *)
 
-    void unrank_indices(int_t, const int_t, int_t, int_t *)
+    int_t rank_colex(const int_t, const int_t, const uint_t *)
+
+    void unrank_colex(int_t, const int_t, int_t, int_t *)
 
     int_t nword_det(const int_t)
 
@@ -87,8 +89,6 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
     int_t phase_single_det(const int_t, const int_t, const int_t, const uint_t *)
 
     int_t phase_double_det(const int_t, const int_t, const int_t, const int_t, const int_t, const uint_t *)
-
-    int_t rank_det(const int_t, const int_t, const uint_t *)
 
     cdef cppclass OneSpinWfn:
 
@@ -127,15 +127,17 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         int_t index_det(const uint_t *)
 
-        int_t index_det_from_rank(const int_t)
+        int_t index_det_from_rank(const uint_t)
 
         int_t copy_det(const int_t, uint_t *)
 
         const uint_t * det_ptr(const int_t)
 
+        uint_t rank_det(const uint_t *)
+
         int_t add_det(const uint_t *) except +
 
-        int_t add_det_with_rank(const uint_t *, const int_t) except +
+        int_t add_det_with_rank(const uint_t *, const uint_t) except +
 
         int_t add_det_from_occs(const int_t *) except +
 
@@ -147,11 +149,11 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         void squeeze()
 
-        double compute_overlap(const double *, const OneSpinWfn &, const double *) except +
+        double compute_overlap(const double *, const OneSpinWfn &, const double *)
 
-        void compute_rdms_doci(const double *, double *, double *) except +
+        void compute_rdms_doci(const double *, double *, double *)
 
-        void compute_rdms_genci(const double *, double *, double *) except +
+        void compute_rdms_genci(const double *, double *, double *)
 
         double compute_enpt2_doci(const double *, const double *, const double *, const double, const double) except +
 
@@ -199,15 +201,17 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         int_t index_det(const uint_t *)
 
-        int_t index_det_from_rank(const int_t rank)
+        int_t index_det_from_rank(const uint_t rank)
 
         void copy_det(const int_t, uint_t *)
 
         const uint_t * det_ptr(const int_t)
 
+        uint_t rank_det(const uint_t *)
+
         int_t add_det(const uint_t *) except +
 
-        int_t add_det_with_rank(const uint_t *, const int_t) except +
+        int_t add_det_with_rank(const uint_t *, const uint_t) except +
 
         int_t add_det_from_occs(const int_t *) except +
 
@@ -219,11 +223,11 @@ cdef extern from 'pyci/pyci.h' namespace 'pyci':
 
         void squeeze()
 
-        double compute_overlap(const double *, const TwoSpinWfn &, const double *) except +
+        double compute_overlap(const double *, const TwoSpinWfn &, const double *)
 
         double compute_enpt2_fullci(const double *, const double *, const double *, const double, const double) except +
 
-        void compute_rdms_fullci(const double *, double *, double *) except +
+        void compute_rdms_fullci(const double *, double *, double *)
 
         int_t run_hci_fullci(const double *, const double *, const double *, const double) except +
 

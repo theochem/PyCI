@@ -20,11 +20,17 @@
 
 #include <vector>
 
+#ifdef PYCI_IMPLEMENTATION
 #include <parallel_hashmap/phmap.h>
+#endif
 
 
-#define PYCI_NWORD_MAX 16
+/* Uncomment this to use exact (colexicographical order) hashing.
+ * This will not work for systems where binomial(nbasis, nocc) > 2 ** 63. */
+/* #define PYCI_EXACT_HASH */
 
+
+/* Define integer types, popcnt and ctz functions. */
 #define PYCI_INT_SIZE (std::int64_t)(sizeof(std::int64_t) * CHAR_BIT)
 #define PYCI_UINT_SIZE (std::int64_t)(sizeof(std::uint64_t) * CHAR_BIT)
 #define PYCI_INT_MAX (std::int64_t)INT64_MAX
@@ -38,28 +44,35 @@
 #define PYCI_POPCNT(X) __builtin_popcountll(X)
 #define PYCI_CTZ(X) __builtin_ctzll(X)
 #else
-#error Not compiling for a compatible 64-bit system.
+#error Integer type definitions in pyci.h are incompatible with your compiler.
+#endif
+
+
+/* Seed for SpookyHash. */
+#ifndef PYCI_SPOOKYHASH_SEED
+#define PYCI_SPOOKYHASH_SEED (uint_t)0xdeadbeefdeadbeefU
 #endif
 
 
 namespace pyci {
 
 
+/* Universal signed integer type. */
 typedef std::int64_t int_t;
 
 
+/* Universal unsigned integer type. */
 typedef std::uint64_t uint_t;
 
 
-template<class KeyType, class ValueType, std::size_t N=4, class Mutex=phmap::NullMutex>
-using hashmap = phmap::parallel_flat_hash_map<
-    KeyType,
-    ValueType,
-    phmap::container_internal::hash_default_hash<KeyType>,
-    phmap::container_internal::hash_default_eq<KeyType>,
-    phmap::container_internal::Allocator<phmap::container_internal::Pair<const KeyType, ValueType>>,
-    N,
-    Mutex>;
+/* Hash map template type. */
+#ifdef PYCI_IMPLEMENTATION
+template<class KeyType, class ValueType>
+using hashmap = phmap::flat_hash_map<KeyType, ValueType>;
+#endif
+
+
+/* Forward-declare classes. */
 
 
 struct OneSpinWfn;
@@ -71,10 +84,13 @@ struct TwoSpinWfn;
 struct SparseOp;
 
 
+/* Common functions. */
+
+
+bool binomial_raises(int_t, int_t);
+
+
 int_t binomial(int_t, int_t);
-
-
-int_t binomial_nocheck(int_t, int_t);
 
 
 void fill_det(const int_t, const int_t *, uint_t *);
@@ -89,7 +105,10 @@ void fill_virs(const int_t, int_t, const uint_t *, int_t *);
 void next_colex(int_t *);
 
 
-void unrank_indices(int_t, const int_t, int_t, int_t *);
+int_t rank_colex(const int_t, const int_t, const uint_t *);
+
+
+void unrank_colex(int_t, const int_t, int_t, int_t *);
 
 
 int_t nword_det(const int_t);
@@ -116,16 +135,21 @@ int_t popcnt_det(const int_t, const uint_t *);
 int_t ctz_det(const int_t, const uint_t *);
 
 
-int_t rank_det(const int_t, const int_t, const uint_t *);
-
-
+/* Wave function class with determinants made up of one bitstring. */
 struct OneSpinWfn
 {
     int_t nword, nbasis, nocc, nvir, ndet;
     std::vector<uint_t> dets;
-    hashmap<int_t, int_t> dict;
+#ifdef PYCI_IMPLEMENTATION
 
-    OneSpinWfn();
+    private:
+
+    hashmap<uint_t, int_t> dict;
+
+    public:
+#endif
+
+    OneSpinWfn(void);
 
     OneSpinWfn(const int_t, const int_t);
 
@@ -139,7 +163,7 @@ struct OneSpinWfn
 
     OneSpinWfn(const int_t, const int_t, const int_t, const int_t *);
 
-    ~OneSpinWfn();
+    ~OneSpinWfn(void);
 
     void init(const int_t, const int_t);
 
@@ -159,25 +183,31 @@ struct OneSpinWfn
 
     int_t index_det(const uint_t *) const;
 
-    int_t index_det_from_rank(const int_t) const;
+    int_t index_det_from_rank(const uint_t) const;
 
     void copy_det(const int_t, uint_t *) const;
 
     const uint_t * det_ptr(const int_t) const;
 
+    uint_t rank_det(const uint_t *) const;
+
     int_t add_det(const uint_t *);
 
-    int_t add_det_with_rank(const uint_t *, const int_t);
+    int_t add_det_with_rank(const uint_t *, const uint_t);
 
     int_t add_det_from_occs(const int_t *);
 
-    void add_all_dets();
+    void add_all_dets(void);
 
     void add_excited_dets(const uint_t *, const int_t);
 
+    void add_dets_from_wfn(const OneSpinWfn &);
+
     void reserve(const int_t);
 
-    void squeeze();
+    void squeeze(void);
+
+    void clear(void);
 
     void compute_rdms_doci(const double *, double *, double *) const;
 
@@ -195,14 +225,22 @@ struct OneSpinWfn
 };
 
 
+/* Wave function class with determinants made up of two bitstrings. */
 struct TwoSpinWfn
 {
     int_t nword, nword2, nbasis, nocc_up, nocc_dn, nvir_up, nvir_dn;
     int_t ndet, maxdet_up, maxdet_dn;
     std::vector<uint_t> dets;
-    hashmap<int_t, int_t> dict;
+#ifdef PYCI_IMPLEMENTATION
 
-    TwoSpinWfn();
+    private:
+
+    hashmap<uint_t, int_t> dict;
+
+    public:
+#endif
+
+    TwoSpinWfn(void);
 
     TwoSpinWfn(const int_t, const int_t, const int_t);
 
@@ -216,7 +254,7 @@ struct TwoSpinWfn
 
     TwoSpinWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
 
-    ~TwoSpinWfn();
+    ~TwoSpinWfn(void);
 
     void init(const int_t, const int_t, const int_t);
 
@@ -236,25 +274,31 @@ struct TwoSpinWfn
 
     int_t index_det(const uint_t *) const;
 
-    int_t index_det_from_rank(const int_t) const;
+    int_t index_det_from_rank(const uint_t) const;
 
     void copy_det(const int_t, uint_t *) const;
 
     const uint_t * det_ptr(const int_t) const;
 
+    uint_t rank_det(const uint_t *) const;
+
     int_t add_det(const uint_t *);
 
-    int_t add_det_with_rank(const uint_t *, const int_t);
+    int_t add_det_with_rank(const uint_t *, const uint_t);
 
     int_t add_det_from_occs(const int_t *);
 
-    void add_all_dets();
+    void add_all_dets(void);
 
     void add_excited_dets(const uint_t *, const int_t, const int_t);
 
+    void add_dets_from_wfn(const TwoSpinWfn &);
+
     void reserve(const int_t);
 
-    void squeeze();
+    void squeeze(void);
+
+    void clear(void);
 
     double compute_overlap(const double *, const TwoSpinWfn &, const double *) const;
 
@@ -266,6 +310,7 @@ struct TwoSpinWfn
 };
 
 
+/* Sparse matrix operator with eigensolver. */
 struct SparseOp
 {
     int_t nrow, ncol;
@@ -273,11 +318,11 @@ struct SparseOp
     std::vector<int_t> indices;
     std::vector<int_t> indptr;
 
-    SparseOp();
+    SparseOp(void);
 
-    inline int_t rows() const { return nrow; }
+    inline int_t rows(void) const { return nrow; }
 
-    inline int_t cols() const { return ncol; }
+    inline int_t cols(void) const { return ncol; }
 
     void perform_op(const double *, double *) const;
 

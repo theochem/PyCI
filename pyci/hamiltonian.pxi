@@ -69,7 +69,7 @@ cdef class hamiltonian:
     cdef double[:, ::1] _w
 
     @classmethod
-    def from_file(cls, object filename not None, bint keep_mo=True, bint doci=True):
+    def from_file(cls, str filename not None, bint keep_mo=True, bint doci=True):
         r"""
         Return a Hamiltonian instance by loading an FCIDUMP file.
 
@@ -212,7 +212,7 @@ cdef class hamiltonian:
         return np.asarray(self._w)
 
     def __init__(self, double ecore, double[:, ::1] one_mo not None,
-        double[:, :, :, ::1] two_mo not None, bint keep_mo=True, bint doci=True):
+            double[:, :, :, ::1] two_mo not None, bint keep_mo=True, bint doci=True):
         """
         Initialize a Hamiltonian instance.
 
@@ -230,8 +230,8 @@ cdef class hamiltonian:
             Whether to compute the seniority-zero integral arrays.
 
         """
-        if not (one_mo.shape[0] == one_mo.shape[1] == two_mo.shape[0] == \
-                two_mo.shape[1] == two_mo.shape[2] == two_mo.shape[3]):
+        if not (one_mo.shape[0] == one_mo.shape[1] == two_mo.shape[0] \
+                == two_mo.shape[1] == two_mo.shape[2] == two_mo.shape[3]):
             raise ValueError('(one_mo, two_mo) shapes are incompatible')
         self._nbasis = one_mo.shape[0]
         self._ecore = ecore
@@ -251,7 +251,7 @@ cdef class hamiltonian:
             self._v = None
             self._w = None
 
-    def to_file(self, object filename not None, int_t nelec=0, int_t ms2=0, double tol=1.0e-18):
+    def to_file(self, str filename not None, int_t nelec=0, int_t ms2=0, double tol=1.0e-18):
         r"""
         Write a Hamiltonian instance to an FCIDUMP file.
 
@@ -269,11 +269,10 @@ cdef class hamiltonian:
         """
         cdef int_t nbasis = self.one_mo.shape[0], i, j, k, l
         cdef double val
-        cdef str fmt = '{0:23.16E} {1:4d} {2:4d} {3:4d} {4:4d}\n'
         with open(filename, 'w', encoding='utf-8') as f:
             # write header
-            f.write(' &FCI NORB={0:d},NELEC={1:d},MS2={2:d},\n'.format(nbasis, nelec, ms2))
-            f.write('  ORBSYM={0:s}\n  ISYM=1\n &END\n'.format('1,' * nbasis))
+            f.write(f' &FCI NORB={nbasis},NELEC={nelec},MS2={ms2},\n')
+            f.write(f'  ORBSYM={"1," * nbasis}\n  ISYM=1\n &END\n')
             # write two-electron integrals
             for i in range(nbasis):
                 for j in range(i + 1):
@@ -282,15 +281,15 @@ cdef class hamiltonian:
                             if (i * (i + 1)) // 2 + j >= (k * (k + 1)) // 2 + l:
                                 val = self._two_mo[i, k, j, l]
                                 if abs(val) > tol:
-                                    f.write(fmt.format(val, i + 1, j + 1, k + 1, l + 1))
+                                    f.write(f'{val:23.16E} {i + 1:4d} {j + 1:4d} {k + 1:4d} {l + 1:4d}\n')
             # write one-electron integrals
             for i in range(nbasis):
                 for j in range(i + 1):
                     val = self._one_mo[i, j]
                     if abs(val) > tol:
-                        f.write(fmt.format(val, i + 1, j + 1, 0, 0))
+                        f.write(f'{val:23.16E} {i + 1:4d} {j + 1:4d}    0    0\n')
             # write zero-energy integrals
-            f.write(fmt.format((self._ecore if abs(self._ecore) > tol else 0.0), 0, 0, 0, 0))
+            f.write(f'{self._ecore if abs(self._ecore) > tol else 0:23.16E}    0    0    0    0\n')
 
     def reduced_v(self, int_t nocc):
         r"""
@@ -373,7 +372,7 @@ cdef class unrestricted_ham(hamiltonian):
     """
 
     @classmethod
-    def from_file(cls, object filename not None, bint keep_mo=True, bint doci=True):
+    def from_file(cls, str filename not None, bint keep_mo=True, bint doci=True):
         r"""
         Return a Hamiltonian instance by loading an FCIDUMP file.
 
@@ -445,7 +444,7 @@ cdef class unrestricted_ham(hamiltonian):
         return np.asarray(self._w).reshape(2, self._nbasis, self._nbasis)
 
     def __init__(self, double ecore, double[:, :, ::1] one_mo not None,
-        double[:, :, :, :, ::1] two_mo not None, bint keep_mo=True, bint doci=True):
+            double[:, :, :, :, ::1] two_mo not None, bint keep_mo=True, bint doci=True):
         """
         Initialize a Hamiltonian instance.
 
@@ -465,7 +464,7 @@ cdef class unrestricted_ham(hamiltonian):
         """
         raise NotImplementedError
 
-    def to_file(self, object filename not None, int_t nelec=0, int_t ms2=0, double tol=1.0e-18):
+    def to_file(self, str filename not None, int_t nelec=0, int_t ms2=0, double tol=1.0e-18):
         r"""
         Write a Hamiltonian instance to an FCIDUMP file.
 

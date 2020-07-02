@@ -27,12 +27,12 @@ from pyci.test import datafile
 class TestRoutines:
 
     CASES = [
-        ('h2o_ccpvdz', pyci.doci_wfn,   (5,),   -75.634588422),
-        ('be_ccpvdz',  pyci.doci_wfn,   (2,),   -14.600556994),
-        ('li2_ccpvdz', pyci.doci_wfn,   (3,),   -14.878455349),
-        ('be_ccpvdz',  pyci.fullci_wfn, (2, 2), -14.600556994),
-        ('he_ccpvqz',  pyci.doci_wfn,   (1,),    -2.886809116),
         ('he_ccpvqz',  pyci.fullci_wfn, (1, 1),  -2.886809116),
+        ('li2_ccpvdz', pyci.doci_wfn,   (3,),   -14.878455349),
+        ('be_ccpvdz',  pyci.doci_wfn,   (2,),   -14.600556994),
+        ('he_ccpvqz',  pyci.doci_wfn,   (1,),    -2.886809116),
+        ('be_ccpvdz',  pyci.fullci_wfn, (2, 2), -14.600556994),
+        ('h2o_ccpvdz', pyci.doci_wfn,   (5,),   -75.634588422),
         ]
 
     def test_solve_sparse(self):

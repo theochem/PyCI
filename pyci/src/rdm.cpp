@@ -15,7 +15,7 @@
 
 #include <vector>
 
-#include <pyci/pyci.h>
+#include <pyci.h>
 
 
 namespace pyci {

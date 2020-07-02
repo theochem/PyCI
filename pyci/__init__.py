@@ -22,51 +22,44 @@ from pyci.cext import *
 
 
 __all__ = [
-    '__version__',
-    'c_int',
-    'c_uint',
-    'c_double',
-    'SpinLabel',
-    'SPIN_UP',
-    'SPIN_DN',
-    'hamiltonian',
-    'restricted_ham',
-    'unrestricted_ham',
-    'generalized_ham',
-    'wavefunction',
-    'one_spin_wfn',
-    'two_spin_wfn',
-    'doci_wfn',
-    'fullci_wfn',
-    'genci_wfn',
-    'sparse_op',
-    ]
+        '__version__',
+        'c_int',
+        'c_uint',
+        'c_double',
+        'SpinLabel',
+        'SPIN_UP',
+        'SPIN_DN',
+        'hamiltonian',
+        'restricted_ham',
+        'unrestricted_ham',
+        'generalized_ham',
+        'wavefunction',
+        'one_spin_wfn',
+        'two_spin_wfn',
+        'doci_wfn',
+        'fullci_wfn',
+        'genci_wfn',
+        'sparse_op',
+        ]
 
 
-__version__ = _get_version()
+c_int = c_int
 r"""
-PyCI version number.
+C++ extension signed int dtype.
 
 """
 
 
-c_int = _get_c_int()
+c_uint = c_uint
 r"""
-C extension signed int dtype.
+C++ extension unsigned int dtype.
 
 """
 
 
-c_uint = _get_c_uint()
+c_double = c_double
 r"""
-C extension unsigned int dtype.
-
-"""
-
-
-c_double = _get_c_double()
-r"""
-C extension double-precision float dtype.
+C++ extension double-precision float dtype.
 
 """
 

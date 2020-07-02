@@ -32,7 +32,7 @@ cdef class one_spin_wfn(wavefunction):
     cdef OneSpinWfn _obj
 
     @classmethod
-    def from_file(cls, object filename not None):
+    def from_file(cls, str filename not None):
         r"""
         Return a one_spin_wfn instance by loading a ONESPIN file.
 
@@ -71,9 +71,9 @@ cdef class one_spin_wfn(wavefunction):
             One-spin wave function object.
 
         """
-        cdef one_spin_wfn wfn = cls(nbasis, nocc)
-        if det_array.ndim != 2 or det_array.shape[1] != wfn._obj.nword:
+        if det_array.shape[1] != nword_det(nbasis):
             raise IndexError('nbasis, nocc given do not match up with det_array dimensions')
+        cdef one_spin_wfn wfn = cls(nbasis, nocc)
         wfn._obj.from_det_array(nbasis, nocc, det_array.shape[0], <uint_t *>(&det_array[0, 0]))
         return wfn
 
@@ -88,7 +88,7 @@ cdef class one_spin_wfn(wavefunction):
             Number of orbital basis functions.
         nocc : int
             Number of occupied indices.
-        occs_array : np.ndarray(c_int(n, nword))
+        occs_array : np.ndarray(c_int(n, nocc))
             Array of occupied indices.
 
         Returns
@@ -98,7 +98,7 @@ cdef class one_spin_wfn(wavefunction):
 
         """
         cdef one_spin_wfn wfn = cls(nbasis, nocc)
-        if occs_array.ndim != 2 or occs_array.shape[1] != wfn._obj.nocc:
+        if occs_array.shape[1] != wfn._obj.nocc:
             raise IndexError('nbasis, nocc given do not match up with occs_array dimensions')
         wfn._obj.from_occs_array(nbasis, nocc, occs_array.shape[0], <int_t *>(&occs_array[0, 0]))
         return wfn
@@ -153,7 +153,7 @@ cdef class one_spin_wfn(wavefunction):
         """
         return self.__copy__()
 
-    def to_file(self, object filename not None):
+    def to_file(self, str filename not None):
         r"""
         Write a doci_wfn instance to a DOCI file.
 
@@ -379,6 +379,27 @@ cdef class one_spin_wfn(wavefunction):
         """
         self._obj.squeeze()
 
+    def truncated(self, int_t start=-1, int_t end=-1):
+        r"""
+        Return a truncated version of the wave function instance.
+
+        Parameters
+        ----------
+        start : int, optional
+            Works as in python built-in range function.
+        end : int, optional
+            Works as in python built-in range function.
+
+        Returns
+        -------
+        wfn : one_spin_wfn
+            Truncated wave function.
+
+        """
+        return self.__class__.from_det_array(
+                self._obj.nbasis, self._obj.nocc, self.to_det_array(start, end),
+                )
+
     def occs_to_det(self, int_t[::1] occs not None):
         r"""
         Convert an array of occupied indices to a determinant.
@@ -600,7 +621,7 @@ cdef class one_spin_wfn(wavefunction):
             Rank value.
 
         """
-        return rank_det(self._obj.nbasis, self._obj.nocc, <uint_t *>(&det[0]))
+        return self._obj.rank_det(<uint_t *>(&det[0]))
 
     def new_det(self):
         r"""
@@ -697,7 +718,7 @@ cdef class two_spin_wfn(wavefunction):
     cdef TwoSpinWfn _obj
 
     @classmethod
-    def from_file(cls, object filename not None):
+    def from_file(cls, str filename not None):
         r"""
         Return a two_spin_wfn instance by loading a TWOSPIN file.
 
@@ -738,9 +759,9 @@ cdef class two_spin_wfn(wavefunction):
             Two-spin wave function object.
 
         """
-        cdef two_spin_wfn wfn = cls(nbasis, nocc_up, nocc_dn)
-        if det_array.ndim != 3 or det_array.shape[1] != 2 or det_array.shape[2] != wfn._obj.nword:
+        if det_array.shape[1] != 2 or det_array.shape[2] != nword_det(nbasis):
             raise IndexError('nbasis, nocc_{up,dn} given do not match up with det_array dimensions')
+        cdef two_spin_wfn wfn = cls(nbasis, nocc_up, nocc_dn)
         wfn._obj.from_det_array(nbasis, nocc_up, nocc_dn, det_array.shape[0], <uint_t *>(&det_array[0, 0, 0]))
         return wfn
 
@@ -766,9 +787,9 @@ cdef class two_spin_wfn(wavefunction):
             Two-spin wave function object.
 
         """
-        cdef two_spin_wfn wfn = cls(nbasis, nocc_up, nocc_dn)
-        if occs_array.ndim != 3 or occs_array.shape[1] != 2 or occs_array.shape[2] != nocc_up:
+        if occs_array.shape[1] != 2 or occs_array.shape[2] != nocc_up:
             raise IndexError('nbasis, nocc_{up,dn} given do not match up with det_array dimensions')
+        cdef two_spin_wfn wfn = cls(nbasis, nocc_up, nocc_dn)
         wfn._obj.from_occs_array(nbasis, nocc_up, nocc_dn, occs_array.shape[0], <int_t *>(&occs_array[0, 0, 0]))
         return wfn
 
@@ -858,7 +879,7 @@ cdef class two_spin_wfn(wavefunction):
         """
         return self.__copy__()
 
-    def to_file(self, object filename not None):
+    def to_file(self, str filename not None):
         r"""
         Write a two_spin_wfn instance to a TWOSPIN file.
 
@@ -1066,6 +1087,27 @@ cdef class two_spin_wfn(wavefunction):
 
         """
         self._obj.squeeze()
+
+    def truncated(self, int_t start=-1, int_t end=-1):
+        r"""
+        Return a truncated version of the wave function instance.
+
+        Parameters
+        ----------
+        start : int, optional
+            Works as in python built-in range function.
+        end : int, optional
+            Works as in python built-in range function.
+
+        Returns
+        -------
+        wfn : two_spin_wfn
+            Truncated wave function.
+
+        """
+        return self.__class__.from_det_array(
+                self._obj.nbasis, self._obj.nocc_up, self._obj.nocc_dn, self.to_det_array(start, end),
+                )
 
     def occs_to_det(self, int_t[:, ::1] occs not None):
         r"""
@@ -1346,8 +1388,8 @@ cdef class two_spin_wfn(wavefunction):
         if spin1 == spin2:
             return phase_double_det(self._obj.nword, i, j, a, b, <uint_t *>(&det[<int_t>spin1, 0]))
         else:
-            return phase_single_det(self._obj.nword, i, a, <uint_t *>(&det[<int_t>spin1, 0])) * \
-                   phase_single_det(self._obj.nword, j, b, <uint_t *>(&det[<int_t>spin2, 0]))
+            return phase_single_det(self._obj.nword, i, a, <uint_t *>(&det[<int_t>spin1, 0])) \
+                    * phase_single_det(self._obj.nword, j, b, <uint_t *>(&det[<int_t>spin2, 0]))
 
     def rank_det(self, uint_t[:, ::1] det not None):
         r"""
@@ -1364,9 +1406,7 @@ cdef class two_spin_wfn(wavefunction):
             Rank value.
 
         """
-        return rank_det(self._obj.nbasis, self._obj.nocc_up, <uint_t *>(&det[0, 0])) \
-             * self._obj.maxdet_dn \
-             + rank_det(self._obj.nbasis, self._obj.nocc_dn, <uint_t *>(&det[1, 0]))
+        return self._obj.rank_det(<uint_t *>(&det[0, 0]))
 
     def new_det(self):
         r"""
@@ -1611,12 +1651,12 @@ cdef class doci_wfn(one_spin_wfn):
             if self._obj.nbasis != ham._nbasis:
                 raise ValueError('dimensions of wfn, ham do not match')
             result = self._obj.compute_enpt2_doci(
-                <double *>(&ham._one_mo[0, 0]),
-                <double *>(&ham._two_mo[0, 0, 0, 0]),
-                <double *>(&coeffs[0]),
-                energy - ham._ecore,
-                eps,
-                ) + energy
+                    <double *>(&ham._one_mo[0, 0]),
+                    <double *>(&ham._two_mo[0, 0, 0, 0]),
+                    <double *>(&coeffs[0]),
+                    energy - ham._ecore,
+                    eps,
+                    ) + energy
         # Unrestricted DOCI
         elif isinstance(ham, unrestricted_ham):
             if self._obj.nbasis != ham._nbasis:
@@ -1944,12 +1984,12 @@ cdef class fullci_wfn(two_spin_wfn):
             if self._obj.nbasis != ham._nbasis:
                 raise ValueError('dimensions of wfn, ham do not match')
             result = self._obj.compute_enpt2_fullci(
-                <double *>(&ham._one_mo[0, 0]),
-                <double *>(&ham._two_mo[0, 0, 0, 0]),
-                <double *>(&coeffs[0]),
-                energy - ham._ecore,
-                eps,
-                ) + energy
+                    <double *>(&ham._one_mo[0, 0]),
+                    <double *>(&ham._two_mo[0, 0, 0, 0]),
+                    <double *>(&coeffs[0]),
+                    energy - ham._ecore,
+                    eps,
+                    ) + energy
         # Unrestricted FullCI
         elif isinstance(ham, unrestricted_ham):
             if self._obj.nbasis != ham._nbasis:
@@ -2002,11 +2042,11 @@ cdef class fullci_wfn(two_spin_wfn):
             if self._obj.nbasis != ham._nbasis:
                 raise ValueError('dimensions of wfn, ham do not match')
             n = self._obj.run_hci_fullci(
-                <double *>(&ham._one_mo[0, 0]),
-                <double *>(&ham._two_mo[0, 0, 0, 0]),
-                <double *>(&coeffs[0]),
-                eps,
-                )
+                    <double *>(&ham._one_mo[0, 0]),
+                    <double *>(&ham._two_mo[0, 0, 0, 0]),
+                    <double *>(&coeffs[0]),
+                    eps,
+                    )
         # Unrestricted FullCI
         elif isinstance(ham, unrestricted_ham):
             if self._obj.nbasis != ham._nbasis:
@@ -2189,12 +2229,12 @@ cdef class genci_wfn(one_spin_wfn):
             raise AttributeError('full integral arrays were not saved')
         # Generalized CI
         return self._obj.compute_enpt2_genci(
-            <double *>(&ham._one_mo[0, 0]),
-            <double *>(&ham._two_mo[0, 0, 0, 0]),
-            <double *>(&coeffs[0]),
-            energy - ham._ecore,
-            eps,
-            ) + energy
+                <double *>(&ham._one_mo[0, 0]),
+                <double *>(&ham._two_mo[0, 0, 0, 0]),
+                <double *>(&coeffs[0]),
+                energy - ham._ecore,
+                eps,
+                ) + energy
 
     def run_hci(self, generalized_ham ham not None, double[::1] coeffs not None, double eps):
         r"""
@@ -2231,11 +2271,11 @@ cdef class genci_wfn(one_spin_wfn):
             raise AttributeError('full integral arrays were not saved')
         # Generalized CI
         return self._obj.run_hci_genci(
-            <double *>(&ham._one_mo[0, 0]),
-            <double *>(&ham._two_mo[0, 0, 0, 0]),
-            <double *>(&coeffs[0]),
-            eps,
-            )
+                <double *>(&ham._one_mo[0, 0]),
+                <double *>(&ham._two_mo[0, 0, 0, 0]),
+                <double *>(&coeffs[0]),
+                eps,
+                )
 
 
 # vim: set ft=pyrex:

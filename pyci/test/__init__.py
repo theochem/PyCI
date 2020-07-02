@@ -22,11 +22,11 @@ from os import path
 
 
 __all__ = [
-    'datafile',
-    ]
+        'datafile',
+        ]
 
 
-DATAPATH = path.join(path.abspath(path.dirname(__file__)), 'data/')
+DATAPATH = path.abspath(path.join(path.dirname(__file__), 'data/'))
 
 
 def datafile(name):

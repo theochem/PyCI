@@ -14,7 +14,7 @@
     : You should have received a copy of the GNU General Public License
     : along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-|Python 2.7| |Python 3.8|
+|Python 3.8|
 
 PyCI
 ====
@@ -30,13 +30,13 @@ Dependencies
 
 The following programs/libraries are required to run PyCI:
 
--  Python_ (≥3.x or ≥2.7)
+-  Python_ (≥3.4)
 -  NumPy_ (≥1.13)
 
 The following programs/libraries are required to build PyCI:
 
 -  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
--  Python_ (≥3.x or ≥2.7, including system headers)
+-  Python_ (≥3.4, including system headers)
 -  NumPy_ (≥1.13)
 -  Cython_ (≥0.24)
 
@@ -54,6 +54,8 @@ The following header-only libraries are included as git submodules:
 -  Spectra_
 
 __ Parallel-Hashmap_
+
+The SpookyHash_ library source files (Public Domain) are included directly.
 
 Installation
 ------------
@@ -108,9 +110,7 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
 .. _Eigen:              http://eigen.tuxfamily.org/
 .. _Spectra:            http://spectralib.org/
-
-.. |Python 2.7| image:: http://img.shields.io/badge/python-2.7-blue.svg
-   :target: https://docs.python.org/2.7/
+.. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
 
 .. |Python 3.8| image:: http://img.shields.io/badge/python-3.8-blue.svg
    :target: https://docs.python.org/3.8/

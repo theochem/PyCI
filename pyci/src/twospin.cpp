@@ -26,16 +26,19 @@
 
 #include <parallel_hashmap/phmap.h>
 
-#include <pyci/pyci.h>
+#ifndef PYCI_EXACT_HASH
+#include <SpookyV2.h>
+#endif
+
+#include <pyci.h>
 
 
 namespace pyci {
 
 
-TwoSpinWfn::TwoSpinWfn() : nword(0), nbasis(0), nocc_up(0), nocc_dn(0), nvir_up(0), nvir_dn(0),
-    ndet(0), maxdet_up(0), maxdet_dn(0) {
+TwoSpinWfn::TwoSpinWfn(void) {
     return;
-};
+}
 
 
 TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
@@ -45,12 +48,12 @@ TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t no
 
 TwoSpinWfn::TwoSpinWfn(const OneSpinWfn &wfn) {
     from_onespinwfn(wfn);
-};
+}
 
 
 TwoSpinWfn::TwoSpinWfn(const TwoSpinWfn &wfn) {
     from_twospinwfn(wfn);
-};
+}
 
 
 TwoSpinWfn::TwoSpinWfn(const char *filename) {
@@ -70,19 +73,24 @@ TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t no
 }
 
 
-TwoSpinWfn::~TwoSpinWfn() {
+TwoSpinWfn::~TwoSpinWfn(void) {
     return;
 }
 
 
 void TwoSpinWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
-    // check that determinants of this wave function can be hashed
+    int_t nword_ = nword_det(nbasis_);
     int_t maxdet_up_ = binomial(nbasis_, nocc_up_);
     int_t maxdet_dn_ = binomial(nbasis_, nocc_dn_);
-    int_t nword_ = nword_det(nbasis_);
-    if ((maxdet_up_ * maxdet_dn_ >= PYCI_INT_MAX) || (nword_ > PYCI_NWORD_MAX))
-        throw std::runtime_error("nbasis, nocc_up, nocc_dn too large for hash type");
-    // set attributes
+#ifdef PYCI_EXACT_HASH
+    if (binomial_raises(nbasis_, nocc_up_) || (maxdet_up_ * maxdet_dn_ >= PYCI_INT_MAX))
+        throw std::domain_error("nbasis, nocc_up, nocc_dn too large for hash type");
+#else
+    if (binomial_raises(nbasis_, nocc_up_)) {
+        maxdet_up_ = PYCI_INT_MAX;
+        maxdet_dn_ = PYCI_INT_MAX;
+    }
+#endif
     nword = nword_;
     nword2 = nword_ * 2;
     nbasis = nbasis_;
@@ -93,18 +101,17 @@ void TwoSpinWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t noc
     ndet = 0;
     maxdet_up = maxdet_up_;
     maxdet_dn = maxdet_dn_;
-    // prepare determinant array and hashmap
-    dets.resize(0);
-    dict.clear();
 }
 
 
 void TwoSpinWfn::from_onespinwfn(const OneSpinWfn &wfn) {
-    // check that determinants of this wave function can be hashed
+#ifdef PYCI_EXACT_HASH
     int_t maxdet = binomial(wfn.nbasis, wfn.nocc);
     if (maxdet * maxdet >= PYCI_INT_MAX)
-        throw std::runtime_error("nbasis, nocc_up, nocc_dn too large for hash type");
-    // set attributes
+        throw std::domain_error("nbasis, nocc_up, nocc_dn too large for hash type");
+#else
+    int_t maxdet = PYCI_INT_MAX;
+#endif
     nword = wfn.nword;
     nword2 = wfn.nword * 2;
     nbasis = wfn.nbasis;
@@ -115,15 +122,12 @@ void TwoSpinWfn::from_onespinwfn(const OneSpinWfn &wfn) {
     ndet = wfn.ndet;
     maxdet_up = maxdet;
     maxdet_dn = maxdet;
-    // add determinants
     dets.resize(wfn.ndet * nword2);
     dict.clear();
-    int_t idet;
-    for (const auto &keyval : wfn.dict) {
-        idet = keyval.second;
+    for (int_t idet = 0; idet < wfn.ndet; ++idet) {
         std::memcpy(&dets[idet * nword2], &wfn.dets[idet * nword], sizeof(uint_t) * wfn.nword);
         std::memcpy(&dets[idet * nword2 + nword], &wfn.dets[idet * nword], sizeof(uint_t) * wfn.nword);
-        dict[keyval.first * (maxdet_dn + 1)] = idet;
+        dict[rank_det(&dets[idet * nword2])] = idet;
     }
 }
 
@@ -145,42 +149,34 @@ void TwoSpinWfn::from_twospinwfn(const TwoSpinWfn &wfn) {
 
 
 void TwoSpinWfn::from_file(const char *filename) {
-    // read file
     bool success = false;
     std::ifstream file;
     file.open(filename, std::ios::in | std::ios::binary);
-    if (file.read((char *)&ndet, sizeof(int_t))    &&
-        file.read((char *)&nbasis, sizeof(int_t))  &&
-        file.read((char *)&nocc_up, sizeof(int_t)) &&
-        file.read((char *)&nocc_dn, sizeof(int_t))) {
-        // set attributes
+    do {
+        if (!(file.read((char *)&ndet, sizeof(int_t))    &&
+                    file.read((char *)&nbasis, sizeof(int_t))  &&
+                    file.read((char *)&nocc_up, sizeof(int_t)) &&
+                    file.read((char *)&nocc_dn, sizeof(int_t))))
+            break;
         nword = nword_det(nbasis);
-        // proceed if pyci was built for this many words per determinant
-        if (nword <= PYCI_NWORD_MAX) {
-            nword2 = nword * 2;
-            nvir_up = nbasis - nocc_up;
-            nvir_dn = nbasis - nocc_dn;
-            maxdet_up = binomial(nbasis, nocc_up);
-            maxdet_dn = binomial(nbasis, nocc_dn);
-            // prepare determinant array and hashmap
-            dets.resize(0);
-            dict.clear();
-            dets.resize(nword2 * ndet);
-            dict.reserve(ndet);
-            if (file.read((char *)&dets[0], sizeof(uint_t) * nword2 * ndet))
-                success = true;
-        }
-    }
+        nword2 = nword * 2;
+        nvir_up = nbasis - nocc_up;
+        nvir_dn = nbasis - nocc_dn;
+        maxdet_up = binomial(nbasis, nocc_up);
+        maxdet_dn = binomial(nbasis, nocc_dn);
+        dets.resize(nword2 * ndet);
+        std::fill(dets.begin(), dets.end(), PYCI_UINT_ZERO);
+        dict.clear();
+        dict.reserve(ndet);
+        if (file.read((char *)&dets[0], sizeof(uint_t) * nword2 * ndet))
+            success = true;
+    } while (false);
     file.close();
-    // populate hashmap
-    int_t j = 0;
     if (success)
-        for (int_t i = 0; i < ndet; ++i) {
-            dict[rank_det(nbasis, nocc_up, &dets[j]) * maxdet_dn
-               + rank_det(nbasis, nocc_dn, &dets[j + nword])] = i;
-            j += nword2;
-        }
-    else throw std::runtime_error("Error in file");
+        for (int_t idet = 0; idet < ndet; ++idet)
+            dict[rank_det(&dets[nword2 * idet])] = idet;
+    else
+        throw std::ios_base::failure("error in file");
 }
 
 
@@ -190,12 +186,8 @@ void TwoSpinWfn::from_det_array(const int_t nbasis_, const int_t nocc_up_, const
     ndet = n;
     dets.resize(n * nword2);
     std::memcpy(&dets[0], dets_, sizeof(uint_t) * n * nword2);
-    int_t j = 0;
-    for (int_t i = 0; i < n; ++i) {
-        dict[rank_det(nbasis_, nocc_up_, &dets_[j]) * maxdet_dn
-           + rank_det(nbasis_, nocc_dn_, &dets_[j + nword])] = i;
-        j += nword2;
-    }
+    for (int_t idet = 0; idet < n; ++idet)
+        dict[rank_det(&dets[nword2 * idet])] = idet;
 }
 
 
@@ -206,7 +198,7 @@ void TwoSpinWfn::from_occs_array(const int_t nbasis_, const int_t nocc_up_, cons
     dets.resize(n * nword2);
     int_t nthread = omp_get_max_threads();
     int_t chunksize = n / nthread + ((n % nthread) ? 1 : 0);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t start = omp_get_thread_num() * chunksize;
         int_t end = (start + chunksize < n) ? start + chunksize : n;
@@ -221,12 +213,8 @@ void TwoSpinWfn::from_occs_array(const int_t nbasis_, const int_t nocc_up_, cons
             k += nword;
         }
     }
-    int_t j = 0;
-    for (int_t i = 0; i < n; ++i) {
-        dict[rank_det(nbasis_, nocc_up_, &dets[j]) * maxdet_dn
-           + rank_det(nbasis_, nocc_dn_, &dets[j + nword])] = i;
-        j += nword2;
-    }
+    for (int_t idet = 0; idet < n; ++idet)
+        dict[rank_det(&dets[nword2 * idet])] = idet;
 }
 
 
@@ -234,22 +222,24 @@ void TwoSpinWfn::to_file(const char *filename) const {
     bool success = false;
     std::ofstream file;
     file.open(filename, std::ios::out | std::ios::binary);
-    if (file.write((char *)&ndet, sizeof(int_t))    &&
-        file.write((char *)&nbasis, sizeof(int_t))  &&
-        file.write((char *)&nocc_up, sizeof(int_t)) &&
-        file.write((char *)&nocc_dn, sizeof(int_t)) &&
-        file.write((char *)&dets[0], sizeof(uint_t) * nword2 * ndet)) success = true;
+    if (file.write((char *)&ndet, sizeof(int_t))
+            && file.write((char *)&nbasis, sizeof(int_t))
+            && file.write((char *)&nocc_up, sizeof(int_t))
+            && file.write((char *)&nocc_dn, sizeof(int_t))
+            && file.write((char *)&dets[0], sizeof(uint_t) * nword2 * ndet))
+        success = true;
     file.close();
-    if (!success) throw std::runtime_error("Error writing file");
+    if (!success) throw std::ios_base::failure("error writing file");
 }
 
 
 void TwoSpinWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t *occs) const {
-    if (low_ind == high_ind) return;
+    if (low_ind == high_ind)
+        return;
     int_t range = high_ind - low_ind;
     int_t nthread = omp_get_max_threads();
     int_t chunksize = range / nthread + ((range % nthread) ? 1 : 0);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t start = omp_get_thread_num() * chunksize;
         int_t end = (start + chunksize < range) ? start + chunksize : range;
@@ -268,14 +258,12 @@ void TwoSpinWfn::to_occs_array(const int_t low_ind, const int_t high_ind, int_t 
 
 
 int_t TwoSpinWfn::index_det(const uint_t *det) const {
-    const auto &search = dict.find(
-        rank_det(nbasis, nocc_up, &det[0]) * maxdet_dn + rank_det(nbasis, nocc_dn, &det[nword])
-    );
+    const auto &search = dict.find(rank_det(det));
     return (search == dict.end()) ? -1 : search->second;
 }
 
 
-int_t TwoSpinWfn::index_det_from_rank(const int_t rank) const {
+int_t TwoSpinWfn::index_det_from_rank(const uint_t rank) const {
     const auto &search = dict.find(rank);
     return (search == dict.end()) ? -1 : search->second;
 }
@@ -291,10 +279,17 @@ const uint_t * TwoSpinWfn::det_ptr(const int_t i) const {
 }
 
 
+uint_t TwoSpinWfn::rank_det(const uint_t *det) const {
+#ifdef PYCI_EXACT_HASH
+    return (uint_t)(rank_colex(nbasis, nocc_up, det) * maxdet_dn + rank_colex(nbasis, nocc_dn, &det[nword]));
+#else
+    return (uint_t)SpookyHash::Hash64((void *)det, sizeof(uint_t) * nword2, PYCI_SPOOKYHASH_SEED);
+#endif
+}
+
+
 int_t TwoSpinWfn::add_det(const uint_t *det) {
-    if (dict.insert(std::make_pair(
-            rank_det(nbasis, nocc_up, &det[0]) * maxdet_dn + rank_det(nbasis, nocc_dn, &det[nword]),
-            ndet)).second) {
+    if (dict.insert(std::make_pair(rank_det(det), ndet)).second) {
         dets.resize(dets.size() + nword2);
         std::memcpy(&dets[nword2 * ndet], det, sizeof(uint_t) * nword2);
         return ndet++;
@@ -303,7 +298,7 @@ int_t TwoSpinWfn::add_det(const uint_t *det) {
 }
 
 
-int_t TwoSpinWfn::add_det_with_rank(const uint_t *det, const int_t rank) {
+int_t TwoSpinWfn::add_det_with_rank(const uint_t *det, const uint_t rank) {
     if (dict.insert(std::make_pair(rank, ndet)).second) {
         dets.resize(dets.size() + nword2);
         std::memcpy(&dets[nword2 * ndet], det, sizeof(uint_t) * nword2);
@@ -321,25 +316,24 @@ int_t TwoSpinWfn::add_det_from_occs(const int_t *occs) {
 }
 
 
-void TwoSpinWfn::add_all_dets() {
-    // prepare determinant array and hashmap
+void TwoSpinWfn::add_all_dets(void) {
+    if ((maxdet_up == PYCI_INT_MAX) || (maxdet_dn == PYCI_INT_MAX))
+        throw std::domain_error("cannot generate > 2 ** 63 determinants");
     ndet = maxdet_up * maxdet_dn;
-    dets.resize(0);
-    dict.clear();
     dets.resize(ndet * nword2);
+    std::fill(dets.begin(), dets.end(), PYCI_UINT_ZERO);
+    dict.clear();
     dict.reserve(ndet);
-    for (int_t idet = 0; idet < ndet; ++idet)
-        dict[idet] = idet;
     // add spin-up determinants to array
     int_t nthread = omp_get_max_threads();
     int_t chunksize = maxdet_up / nthread + ((maxdet_up % nthread) ? 1 : 0);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t start = omp_get_thread_num() * chunksize;
         int_t end = (start + chunksize < maxdet_up) ? start + chunksize : maxdet_up;
         std::vector<int_t> occs(nocc_up + 1);
         std::vector<uint_t> det(nword);
-        unrank_indices(nbasis, nocc_up, start, &occs[0]);
+        unrank_colex(nbasis, nocc_up, start, &occs[0]);
         occs[nocc_up] = nbasis + 1;
         int_t j = start * maxdet_dn, k;
         for (int_t idet = start; idet < end; ++idet) {
@@ -352,13 +346,13 @@ void TwoSpinWfn::add_all_dets() {
     }
     // add spin-down determinants to array
     chunksize = maxdet_dn / nthread + ((maxdet_dn % nthread) ? 1 : 0);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t start = omp_get_thread_num() * chunksize;
         int_t end = (start + chunksize < maxdet_dn) ? start + chunksize : maxdet_dn;
         std::vector<int_t> occs(nocc_dn + 1);
         std::vector<uint_t> det(nword);
-        unrank_indices(nbasis, nocc_dn, start, &occs[0]);
+        unrank_colex(nbasis, nocc_dn, start, &occs[0]);
         occs[nocc_dn] = nbasis + 1;
         int_t j, k;
         for (int_t idet = start; idet < end; ++idet) {
@@ -372,36 +366,40 @@ void TwoSpinWfn::add_all_dets() {
             next_colex(&occs[0]);
         }
     }
+    for (int_t idet = 0; idet < ndet; ++idet)
+        dict[rank_det(&dets[nword2 * idet])] = idet;
 }
 
 
 void TwoSpinWfn::add_excited_dets(const uint_t *rdet, const int_t e_up, const int_t e_dn) {
-    // handle trivial case
     if ((e_up == 0) && (e_dn == 0)) {
         add_det(rdet);
         return;
     }
-    // make spin-up and spin-down parts
     OneSpinWfn wfn_up(nbasis, nocc_up);
     OneSpinWfn wfn_dn(nbasis, nocc_dn);
-    #pragma omp parallel sections
+#pragma omp parallel sections
     {
-        #pragma omp section
+#pragma omp section
         wfn_up.add_excited_dets(&rdet[0], e_up);
-        #pragma omp section
+#pragma omp section
         wfn_dn.add_excited_dets(&rdet[nword], e_dn);
     }
-    // add determinants
     std::vector<uint_t> det(nword2);
-    int_t rank_up;
-    for (const auto &keyval_up : wfn_up.dict) {
-        rank_up = keyval_up.first * maxdet_dn;
-        std::memcpy(&det[0], &wfn_up.dets[keyval_up.second * nword], sizeof(uint_t) * nword);
-        for (const auto &keyval_dn : wfn_dn.dict) {
-            std::memcpy(&det[nword], &wfn_dn.dets[keyval_dn.second * nword], sizeof(uint_t) * nword);
-            add_det_with_rank(&det[0], rank_up + keyval_dn.first);
+    int_t j;
+    for (int_t i = 0; i < wfn_up.ndet; ++i) {
+        std::memcpy(&det[0], &wfn_up.dets[i * nword], sizeof(uint_t) * nword);
+        for (j = 0; j < wfn_dn.ndet; ++j) {
+            std::memcpy(&det[nword], &wfn_dn.dets[j * nword], sizeof(uint_t) * nword);
+            add_det(&det[0]);
         }
     }
+}
+
+
+void TwoSpinWfn::add_dets_from_wfn(const TwoSpinWfn &wfn) {
+    for (const auto &keyval : wfn.dict)
+        add_det_with_rank(&wfn.dets[keyval.second * nword2], keyval.first);
 }
 
 
@@ -411,19 +409,28 @@ void TwoSpinWfn::reserve(const int_t n) {
 }
 
 
-void TwoSpinWfn::squeeze() {
+void TwoSpinWfn::squeeze(void) {
     dets.shrink_to_fit();
+}
+
+
+void TwoSpinWfn::clear(void) {
+    dets.resize(0);
+    dets.shrink_to_fit();
+    dict.clear();
+    ndet = 0;
 }
 
 
 double TwoSpinWfn::compute_overlap(const double *coeffs, const TwoSpinWfn &wfn, const double *w_coeffs) const {
     // run this function for the smaller wfn
-    if (ndet > wfn.ndet) return wfn.compute_overlap(w_coeffs, *this, coeffs);
+    if (ndet > wfn.ndet)
+        return wfn.compute_overlap(w_coeffs, *this, coeffs);
     // iterate over this instance's determinants in parallel
     int_t nthread = omp_get_max_threads();
     int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
     double olp = 0.0;
-    #pragma omp parallel reduction(+:olp)
+#pragma omp parallel reduction(+:olp)
     {
         int_t istart = omp_get_thread_num() * chunksize;
         int_t iend = (istart + chunksize < ndet) ? istart + chunksize : ndet;

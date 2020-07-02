@@ -20,9 +20,7 @@
 
 #include <omp.h>
 
-#include <parallel_hashmap/phmap.h>
-
-#include <pyci/pyci.h>
+#include <pyci.h>
 
 
 namespace pyci {
@@ -33,18 +31,21 @@ namespace { // anonymous
 
 void hci_doci_run_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn, const double *v, const double *coeffs,
     const double eps, const int_t istart, const int_t iend) {
-    if (istart >= iend) return;
+    if (istart >= iend)
+        return;
     // set attributes
     thread_wfn.nword = wfn.nword;
     thread_wfn.nbasis = wfn.nbasis;
     thread_wfn.nocc = wfn.nocc;
     thread_wfn.nvir = wfn.nvir;
+    thread_wfn.ndet = 0;
     // prepare working vectors
     std::vector<uint_t> det(wfn.nword);
     std::vector<int_t> occs(wfn.nocc);
     std::vector<int_t> virs(wfn.nvir);
     // loop over determinants
-    int_t i, j, k, l, rank;
+    int_t i, j, k, l;
+    uint_t rank;
     for (int_t idet = istart; idet < iend; ++idet) {
         // fill working vectors
         wfn.copy_det(idet, &det[0]);
@@ -58,7 +59,7 @@ void hci_doci_run_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn, const double *
                 excite_det(k, l, &det[0]);
                 // add determinant if |H*c| > eps and not already in wfn
                 if (std::abs(v[k * wfn.nbasis + l] * coeffs[idet]) > eps) {
-                    rank = rank_det(wfn.nbasis, wfn.nocc, &det[0]);
+                    rank = wfn.rank_det(&det[0]);
                     if (wfn.index_det_from_rank(rank) == -1)
                         thread_wfn.add_det_with_rank(&det[0], rank);
                 }
@@ -71,18 +72,21 @@ void hci_doci_run_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn, const double *
 
 void hci_genci_run_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn, const double *one_mo, const double *two_mo,
     const double *coeffs, const double eps, const int_t istart, const int_t iend) {
-    if (istart >= iend) return;
+    if (istart >= iend)
+        return;
     // set attributes
     thread_wfn.nword = wfn.nword;
     thread_wfn.nbasis = wfn.nbasis;
     thread_wfn.nocc = wfn.nocc;
     thread_wfn.nvir = wfn.nvir;
+    thread_wfn.ndet = 0;
     // prepare working vectors
     std::vector<uint_t> det(wfn.nword);
     std::vector<int_t> occs(wfn.nocc);
     std::vector<int_t> virs(wfn.nvir);
     // loop over determinants
-    int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset, rank;
+    int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
+    uint_t rank;
     int_t n1 = wfn.nbasis;
     int_t n2 = n1 * n1;
     int_t n3 = n1 * n2;
@@ -109,7 +113,7 @@ void hci_genci_run_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn, const double 
                 }
                 // add determinant if |H*c| > eps and not already in wfn
                 if (std::abs(val * coeffs[idet]) > eps) {
-                    rank = rank_det(wfn.nbasis, wfn.nocc, &det[0]);
+                    rank = wfn.rank_det(&det[0]);
                     if (wfn.index_det_from_rank(rank) == -1)
                         thread_wfn.add_det_with_rank(&det[0], rank);
                 }
@@ -125,7 +129,7 @@ void hci_genci_run_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn, const double 
                         val = two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj];
                         // add determinant if |H*c| > eps and not already in wfn
                         if (std::abs(val * coeffs[idet]) > eps) {
-                            rank = rank_det(wfn.nbasis, wfn.nocc, &det[0]);
+                            rank = wfn.rank_det(&det[0]);
                             if (wfn.index_det_from_rank(rank) == -1)
                                 thread_wfn.add_det_with_rank(&det[0], rank);
                         }
@@ -141,7 +145,8 @@ void hci_genci_run_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn, const double 
 
 void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double *one_mo, const double *two_mo,
     const double *coeffs, const double eps, const int_t istart, const int_t iend) {
-    if (istart >= iend) return;
+    if (istart >= iend)
+        return;
     // set attributes
     thread_wfn.nword = wfn.nword;
     thread_wfn.nword2 = wfn.nword2;
@@ -152,6 +157,7 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
     thread_wfn.nvir_dn = wfn.nvir_dn;
     thread_wfn.maxdet_up = wfn.maxdet_up;
     thread_wfn.maxdet_dn = wfn.maxdet_dn;
+    thread_wfn.ndet = 0;
     // prepare working vectors
     std::vector<uint_t> det(wfn.nword2);
     std::vector<int_t> occs_up(wfn.nocc_up);
@@ -162,7 +168,7 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
     uint_t *det_up = &det[0], *det_dn = &det[wfn.nword];
     // loop over determinants
     int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
-    int_t rank_up_ref, rank_dn_ref, rank_up, rank;
+    uint_t rank;
     int_t n1 = wfn.nbasis;
     int_t n2 = n1 * n1;
     int_t n3 = n1 * n2;
@@ -176,8 +182,6 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
         fill_occs(wfn.nword, rdet_dn, &occs_dn[0]);
         fill_virs(wfn.nword, wfn.nbasis, rdet_up, &virs_up[0]);
         fill_virs(wfn.nword, wfn.nbasis, rdet_dn, &virs_dn[0]);
-        rank_up_ref = rank_det(n1, wfn.nocc_up, rdet_up) * wfn.maxdet_dn;
-        rank_dn_ref = rank_det(n1, wfn.nocc_dn, rdet_dn);
         // loop over spin-up occupied indices
         for (i = 0; i < wfn.nocc_up; ++i) {
             ii = occs_up[i];
@@ -187,7 +191,6 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
                 jj = virs_up[j];
                 // 1-0 excitation elements
                 excite_det(ii, jj, det_up);
-                rank_up = rank_det(n1, wfn.nocc_up, det_up) * wfn.maxdet_dn;
                 val = one_mo[n1 * ii + jj];
                 for (k = 0; k < wfn.nocc_up; ++k) {
                     kk = occs_up[k];
@@ -200,7 +203,7 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
                 }
                 // add determinant if |H*c| > eps and not already in wfn
                 if (std::abs(val * coeffs[idet]) > eps) {
-                    rank = rank_up + rank_dn_ref;
+                    rank = wfn.rank_det(det_up);
                     if (wfn.index_det_from_rank(rank) == -1)
                         thread_wfn.add_det_with_rank(det_up, rank);
                 }
@@ -216,7 +219,7 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
                         val = two_mo[koffset + n1 * jj + ll];
                         // add determinant if |H*c| > eps and not already in wfn
                         if (std::abs(val * coeffs[idet]) > eps) {
-                            rank = rank_up + rank_det(n1, wfn.nocc_dn, det_dn);
+                            rank = wfn.rank_det(det_up);
                             if (wfn.index_det_from_rank(rank) == -1)
                                 thread_wfn.add_det_with_rank(det_up, rank);
                         }
@@ -235,7 +238,7 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
                         val = two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj];
                         // add determinant if |H*c| > eps and not already in wfn
                         if (std::abs(val * coeffs[idet]) > eps) {
-                            rank = rank_det(n1, wfn.nocc_up, det_up) * wfn.maxdet_dn + rank_dn_ref;
+                            rank = wfn.rank_det(det_up);
                             if (wfn.index_det_from_rank(rank) == -1)
                                 thread_wfn.add_det_with_rank(det_up, rank);
                         }
@@ -266,7 +269,7 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
                 }
                 // add determinant if |H*c| > eps and not already in wfn
                 if (std::abs(val * coeffs[idet]) > eps) {
-                    rank = rank_up_ref + rank_det(n1, wfn.nocc_dn, det_dn);
+                    rank = wfn.rank_det(det_up);
                     if (wfn.index_det_from_rank(rank) == -1)
                         thread_wfn.add_det_with_rank(det_up, rank);
                 }
@@ -282,7 +285,7 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
                         val = two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj];
                         // add determinant if |H*c| > eps and not already in wfn
                         if (std::abs(val * coeffs[idet]) > eps) {
-                            rank = rank_up_ref + rank_det(n1, wfn.nocc_dn, det_dn);
+                            rank = wfn.rank_det(det_up);
                             if (wfn.index_det_from_rank(rank) == -1)
                                 thread_wfn.add_det_with_rank(det_up, rank);
                         }
@@ -296,25 +299,10 @@ void hci_fullci_run_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn, const double
 }
 
 
-void hci_condense_thread(OneSpinWfn &wfn, OneSpinWfn &thread_wfn) {
-    if (thread_wfn.ndet == 0)
-        return;
-    for (const auto &keyval : thread_wfn.dict)
-        wfn.add_det_with_rank(&thread_wfn.dets[keyval.second * thread_wfn.nword], keyval.first);
-    thread_wfn.dets.resize(0);
-    thread_wfn.dets.shrink_to_fit();
-    thread_wfn.dict.clear();
-}
-
-
-void hci_condense_thread(TwoSpinWfn &wfn, TwoSpinWfn &thread_wfn) {
-    if (thread_wfn.ndet == 0)
-        return;
-    for (const auto &keyval : thread_wfn.dict)
-        wfn.add_det_with_rank(&thread_wfn.dets[keyval.second * thread_wfn.nword2], keyval.first);
-    thread_wfn.dets.resize(0);
-    thread_wfn.dets.shrink_to_fit();
-    thread_wfn.dict.clear();
+template<class WFN>
+void hci_condense_thread(WFN &wfn, WFN &thread_wfn) {
+    wfn.add_dets_from_wfn(thread_wfn);
+    thread_wfn.clear();
 }
 
 
@@ -330,9 +318,9 @@ int_t OneSpinWfn::run_hci_doci(const double *v, const double *coeffs, const doub
         hci_doci_run_thread(*this, *this, v, coeffs, eps, 0, ndet_old);
         return ndet - ndet_old;
     }
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
     std::vector<OneSpinWfn> wfns(nthread);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
@@ -356,9 +344,9 @@ int_t OneSpinWfn::run_hci_genci(const double *one_mo, const double *two_mo, cons
         hci_genci_run_thread(*this, *this, one_mo, two_mo, coeffs, eps, 0, ndet_old);
         return ndet - ndet_old;
     }
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
     std::vector<OneSpinWfn> wfns(nthread);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
@@ -382,9 +370,9 @@ int_t TwoSpinWfn::run_hci_fullci(const double *one_mo, const double *two_mo, con
         hci_fullci_run_thread(*this, *this, one_mo, two_mo, coeffs, eps, 0, ndet_old);
         return ndet - ndet_old;
     }
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
+    int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
     std::vector<TwoSpinWfn> wfns(nthread);
-    #pragma omp parallel
+#pragma omp parallel
     {
         int_t ithread = omp_get_thread_num();
         int_t istart = ithread * chunksize;
