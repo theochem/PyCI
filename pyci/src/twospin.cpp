@@ -106,12 +106,12 @@ void TwoSpinWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t noc
 
 
 void TwoSpinWfn::from_onespinwfn(const OneSpinWfn &wfn) {
-#ifdef PYCI_EXACT_HASH
     int_t maxdet = binomial(wfn.nbasis, wfn.nocc);
     if (maxdet * maxdet >= PYCI_INT_MAX)
+#ifdef PYCI_EXACT_HASH
         throw std::domain_error("nbasis, nocc_up, nocc_dn too large for hash type");
 #else
-    int_t maxdet = PYCI_INT_MAX;
+        maxdet = PYCI_INT_MAX;
 #endif
     nword = wfn.nword;
     nword2 = wfn.nword * 2;
@@ -165,8 +165,8 @@ void TwoSpinWfn::from_file(const char *filename) {
         nvir_dn = nbasis - nocc_dn;
         maxdet_up = binomial(nbasis, nocc_up);
         maxdet_dn = binomial(nbasis, nocc_dn);
-        dets.resize(nword2 * ndet);
         std::fill(dets.begin(), dets.end(), PYCI_UINT_ZERO);
+        dets.resize(nword2 * ndet);
         dict.clear();
         dict.reserve(ndet);
         if (file.read((char *)&dets[0], sizeof(uint_t) * nword2 * ndet))
@@ -320,8 +320,8 @@ void TwoSpinWfn::add_all_dets(void) {
     if ((maxdet_up == PYCI_INT_MAX) || (maxdet_dn == PYCI_INT_MAX))
         throw std::domain_error("cannot generate > 2 ** 63 determinants");
     ndet = maxdet_up * maxdet_dn;
-    dets.resize(ndet * nword2);
     std::fill(dets.begin(), dets.end(), PYCI_UINT_ZERO);
+    dets.resize(ndet * nword2);
     dict.clear();
     dict.reserve(ndet);
     // add spin-up determinants to array

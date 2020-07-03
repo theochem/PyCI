@@ -83,10 +83,13 @@ cdef class one_spin_wfn(wavefunction):
             if isinstance(args[0], one_spin_wfn):
                 wfn = args[0]
                 self._obj.from_onespinwfn(wfn._obj);
-            else:
+                return
+            elif hasattr(args[0], 'encode'):
                 self._obj.from_file(args[0].encode())
+                return
         elif case == 2:
             self._obj.init(args[0], args[1])
+            return
         elif case == 3:
             if isinstance(args[2], np.ndarray):
                 array = args[2]
@@ -102,8 +105,8 @@ cdef class one_spin_wfn(wavefunction):
                     self._obj.from_det_array(args[0], args[1], uarray.shape[0], <uint_t *>(&uarray[0, 0]))
                 else:
                     raise TypeError('invalid array dtype')
-        else:
-            raise TypeError('invalid arguments to __init__')
+                return
+        raise TypeError('invalid arguments to __init__')
 
     def __copy__(self):
         r"""
@@ -749,10 +752,13 @@ cdef class two_spin_wfn(wavefunction):
             if isinstance(args[0], two_spin_wfn):
                 wfn = args[0]
                 self._obj.from_twospinwfn(wfn._obj);
-            else:
+                return
+            elif hasattr(args[0], 'encode'):
                 self._obj.from_file(args[0].encode())
+                return
         elif case == 3:
             self._obj.init(args[0], args[1], args[2])
+            return
         elif case == 4:
             if isinstance(args[3], np.ndarray):
                 array = args[3]
@@ -773,8 +779,8 @@ cdef class two_spin_wfn(wavefunction):
                             )
                 else:
                     raise TypeError('invalid array dtype')
-        else:
-            raise TypeError('invalid arguments to __init__')
+                return
+        raise TypeError('invalid arguments to __init__')
 
     def __len__(self):
         r"""
@@ -1376,7 +1382,7 @@ cdef class two_spin_wfn(wavefunction):
         """
         return np.zeros((2, self._obj.nword), dtype=c_uint)
 
-    def compute_overlap(self, double[::1] coeffs not None, fullci_wfn wfn not None,
+    def compute_overlap(self, double[::1] coeffs not None, two_spin_wfn wfn not None,
         double[::1] wfn_coeffs not None):
         r"""
         Compute the overlap of this wave function with another wave function.
@@ -1385,7 +1391,7 @@ cdef class two_spin_wfn(wavefunction):
         ----------
         coeffs : np.ndarray(c_double(ndet))
             This wave function's coefficient vector.
-        wfn : fullci_wfn
+        wfn : two_spin_wfn
             Wave function with which to compute overlap.
         wfn_coeffs : np.ndarray(c_double(len(wfn)))
             This wave function's coefficient vector.
