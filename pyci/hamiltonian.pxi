@@ -1,5 +1,3 @@
-# cython : language_level=3, boundscheck=False, wraparound=False, initializedcheck=False
-#
 # This file is part of PyCI.
 #
 # PyCI is free software: you can redistribute it and/or modify it under
@@ -14,6 +12,83 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
+
+
+def read_fcidump(str filename not None):
+    r"""
+    Read an FCIDUMP file.
+
+    Parameters
+    ----------
+    filename : str
+        Name of FCIDUMP file to read.
+
+    Returns
+    -------
+    ecore : float
+        Constant/"zero-electron" integral.
+    one_mo : np.ndarray(c_double(nbasis, nbasis))
+        Full one-electron integral array.
+    two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+        Full two-electron integral array.
+
+    """
+    cdef str line, key, val, field
+    cdef list fields
+    cdef dict header_info
+    cdef int_t nbasis, nelec, ms2, i, j, k, l
+    cdef double[:, ::1] one_mo
+    cdef double[:, :, :, ::1] two_mo
+    cdef double ecore = 0.0, fval
+    with open(filename, 'r', encoding='utf-8') as f:
+        # check header
+        line = next(f)
+        if not line.startswith(' &FCI NORB='):
+            raise IOError('Error in FCIDUMP file header')
+        # read info from header
+        fields = line[5:].split(',')
+        header_info = dict()
+        for field in fields:
+            if field.count('=') == 1:
+                key, val = field.split('=')
+                header_info[key.strip()] = val.strip()
+        nbasis = int(header_info['NORB'])
+        nelec = int(header_info.get('NELEC', '0'))
+        ms2 = int(header_info.get('MS2', '0'))
+        # skip rest of header
+        for line in f:
+            field = line.split()[0]
+            if field == '&END' or field == '/END' or field == '/':
+                break
+        # read integrals
+        one_mo = np.zeros((nbasis, nbasis), dtype=np.double)
+        two_mo = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+        for line in f:
+            fields = line.split()
+            if len(fields) != 5:
+                raise IOError('Expecting 5 fields on each data line in FCIDUMP')
+            fval = float(fields[0].strip())
+            if fields[3] != '0':
+                i = int(fields[1].strip()) - 1
+                j = int(fields[2].strip()) - 1
+                k = int(fields[3].strip()) - 1
+                l = int(fields[4].strip()) - 1
+                two_mo[i, k, j, l] = fval
+                two_mo[k, i, l, j] = fval
+                two_mo[j, k, i, l] = fval
+                two_mo[i, l, j, k] = fval
+                two_mo[j, l, i, k] = fval
+                two_mo[l, j, k, i] = fval
+                two_mo[k, j, l, i] = fval
+                two_mo[l, i, k, j] = fval
+            elif fields[1] != '0':
+                i = int(fields[1].strip()) - 1
+                j = int(fields[2].strip()) - 1
+                one_mo[i, j] = fval
+                one_mo[j, i] = fval
+            else:
+                ecore = fval
+    return ecore, one_mo, two_mo
 
 
 cdef class hamiltonian:
@@ -67,83 +142,6 @@ cdef class hamiltonian:
     cdef double[::1] _h
     cdef double[:, ::1] _v
     cdef double[:, ::1] _w
-
-    @classmethod
-    def from_file(cls, str filename not None, bint keep_mo=True, bint doci=True):
-        r"""
-        Return a Hamiltonian instance by loading an FCIDUMP file.
-
-        Parameters
-        ----------
-        filename : str
-            FCIDUMP file from which to load integrals.
-        keep_mo : bool, default=True
-            Whether to keep the full MO arrays.
-        doci : bool, default=True
-            Whether to compute the seniority-zero integral arrays.
-
-        Returns
-        -------
-        ham : hamiltonian
-            Hamiltonian object.
-
-        """
-        cdef str line, key, val, field
-        cdef list fields
-        cdef dict header_info
-        cdef int_t nbasis, nelec, ms2, i, j, k, l
-        cdef double[:, ::1] one_mo
-        cdef double[:, :, :, ::1] two_mo
-        cdef double ecore = 0.0, fval
-        with open(filename, 'r', encoding='utf-8') as f:
-            # check header
-            line = next(f)
-            if not line.startswith(' &FCI NORB='):
-                raise IOError('Error in FCIDUMP file header')
-            # read info from header
-            fields = line[5:].split(',')
-            header_info = dict()
-            for field in fields:
-                if field.count('=') == 1:
-                    key, val = field.split('=')
-                    header_info[key.strip()] = val.strip()
-            nbasis = int(header_info['NORB'])
-            nelec = int(header_info.get('NELEC', '0'))
-            ms2 = int(header_info.get('MS2', '0'))
-            # skip rest of header
-            for line in f:
-                field = line.split()[0]
-                if field == '&END' or field == '/END' or field == '/':
-                    break
-            # read integrals
-            one_mo = np.zeros((nbasis, nbasis), dtype=np.double)
-            two_mo = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
-            for line in f:
-                fields = line.split()
-                if len(fields) != 5:
-                    raise IOError('Expecting 5 fields on each data line in FCIDUMP')
-                fval = float(fields[0].strip())
-                if fields[3] != '0':
-                    i = int(fields[1].strip()) - 1
-                    j = int(fields[2].strip()) - 1
-                    k = int(fields[3].strip()) - 1
-                    l = int(fields[4].strip()) - 1
-                    two_mo[i, k, j, l] = fval
-                    two_mo[k, i, l, j] = fval
-                    two_mo[j, k, i, l] = fval
-                    two_mo[i, l, j, k] = fval
-                    two_mo[j, l, i, k] = fval
-                    two_mo[l, j, k, i] = fval
-                    two_mo[k, j, l, i] = fval
-                    two_mo[l, i, k, j] = fval
-                elif fields[1] != '0':
-                    i = int(fields[1].strip()) - 1
-                    j = int(fields[2].strip()) - 1
-                    one_mo[i, j] = fval
-                    one_mo[j, i] = fval
-                else:
-                    ecore = fval
-        return cls(ecore, one_mo, two_mo, keep_mo=keep_mo, doci=doci)
 
     @property
     def nbasis(self):
@@ -211,10 +209,20 @@ cdef class hamiltonian:
             raise AttributeError('seniority-zero integrals were not computed')
         return np.asarray(self._w)
 
-    def __init__(self, double ecore, double[:, ::1] one_mo not None,
-            double[:, :, :, ::1] two_mo not None, bint keep_mo=True, bint doci=True):
+    def __init__(self, *args, bint keep_mo=True, bint doci=True):
         """
         Initialize a Hamiltonian instance.
+
+        Parameters
+        ----------
+        filename : str
+            FCIDUMP file to read.
+        keep_mo : bool, default=True
+            Whether to keep the full MO arrays.
+        doci : bool, default=True
+            Whether to compute the seniority-zero integral arrays.
+
+        or
 
         Parameters
         ----------
@@ -230,6 +238,16 @@ cdef class hamiltonian:
             Whether to compute the seniority-zero integral arrays.
 
         """
+        cdef double ecore
+        cdef double[:, ::1] one_mo
+        cdef double[:, :, :, ::1] two_mo
+        if len(args) == 1:
+            args = read_fcidump(args[0])
+        elif len(args) != 3:
+            raise TypeError('args must be a filename or (ecore, one_mo, two_mo)')
+        ecore = args[0]
+        one_mo = args[1]
+        two_mo = args[2]
         if not (one_mo.shape[0] == one_mo.shape[1] == two_mo.shape[0] \
                 == two_mo.shape[1] == two_mo.shape[2] == two_mo.shape[3]):
             raise ValueError('(one_mo, two_mo) shapes are incompatible')
@@ -371,28 +389,6 @@ cdef class unrestricted_ham(hamiltonian):
 
     """
 
-    @classmethod
-    def from_file(cls, str filename not None, bint keep_mo=True, bint doci=True):
-        r"""
-        Return a Hamiltonian instance by loading an FCIDUMP file.
-
-        Parameters
-        ----------
-        filename : str
-            FCIDUMP file from which to load integrals.
-        keep_mo : bool, default=True
-            Whether to keep the full MO arrays.
-        doci : bool, default=True
-            Whether to compute the seniority-zero integral arrays.
-
-        Returns
-        -------
-        ham : hamiltonian
-            Hamiltonian object.
-
-        """
-        raise NotImplementedError
-
     @property
     def one_mo(self):
         r"""
@@ -401,7 +397,7 @@ cdef class unrestricted_ham(hamiltonian):
         """
         if self._one_mo is None:
             raise AttributeError('full integral arrays were not saved')
-        return np.asarray(self._one_mo).reshape(2, self._nbasis, self._nbasis, self._nbasis, self._nbasis)
+        raise NotImplementedError
 
     @property
     def two_mo(self):
@@ -411,7 +407,7 @@ cdef class unrestricted_ham(hamiltonian):
         """
         if self._two_mo is None:
             raise AttributeError('full integral arrays were not saved')
-        return np.asarray(self._two_mo).reshape(2, self._nbasis, self._nbasis, self._nbasis, self._nbasis)
+        raise NotImplementedError
 
     @property
     def h(self):
@@ -421,7 +417,7 @@ cdef class unrestricted_ham(hamiltonian):
         """
         if self._h is None:
             raise AttributeError('seniority-zero integrals were not computed')
-        return np.asarray(self._h).reshape(2, self._nbasis)
+        raise NotImplementedError
 
     @property
     def v(self):
@@ -431,7 +427,7 @@ cdef class unrestricted_ham(hamiltonian):
         """
         if self._v is None:
             raise AttributeError('seniority-zero integrals were not computed')
-        return np.asarray(self._v).reshape(2, self._nbasis, self._nbasis)
+        raise NotImplementedError
 
     @property
     def w(self):
@@ -441,20 +437,30 @@ cdef class unrestricted_ham(hamiltonian):
         """
         if self._w is None:
             raise AttributeError('seniority-zero integrals were not computed')
-        return np.asarray(self._w).reshape(2, self._nbasis, self._nbasis)
+        raise NotImplementedError
 
-    def __init__(self, double ecore, double[:, :, ::1] one_mo not None,
-            double[:, :, :, :, ::1] two_mo not None, bint keep_mo=True, bint doci=True):
+    def __init__(self, *args, bint keep_mo=True, bint doci=True):
         """
         Initialize a Hamiltonian instance.
 
         Parameters
         ----------
+        filename : str
+            FCIDUMP file to read.
+        keep_mo : bool, default=True
+            Whether to keep the full MO arrays.
+        doci : bool, default=True
+            Whether to compute the seniority-zero integral arrays.
+
+        or
+
+        Parameters
+        ----------
         ecore : float
             Constant/"zero-electron" integral.
-        one_mo : np.ndarray(c_double(2, nbasis, nbasis))
+        one_mo : np.ndarray(c_double(nbasis, nbasis))
             Full one-electron integral array.
-        two_mo : np.ndarray(c_double(2, nbasis, nbasis, nbasis, nbasis))
+        two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
             Full two-electron integral array.
         keep_mo : bool, default=True
             Whether to keep the full MO arrays.

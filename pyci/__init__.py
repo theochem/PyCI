@@ -66,7 +66,7 @@ C++ extension double-precision float dtype.
 
 SpinLabel = SpinLabel
 r"""
-Spin label enumeration.
+Spin label enumeration type.
 
 """
 

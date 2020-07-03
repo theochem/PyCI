@@ -1,4 +1,4 @@
-# cython : language_level=3, boundscheck=False, wraparound=False, initializedcheck=False
+# cython: language_level=3, boundscheck=False, wraparound=False, initializedcheck=False, binding=False
 #
 # This file is part of PyCI.
 #
@@ -64,15 +64,24 @@ c_uint = np.dtype(np.uint64)
 c_double = np.dtype(np.double)
 
 
+cdef np.dtype int_dtype = np.dtype(np.int64)
+
+
+cdef np.dtype uint_dtype = np.dtype(np.uint64)
+
+
+cdef np.dtype double_dtype = np.dtype(np.double)
+
+
 cpdef enum SpinLabel:
     SPIN_UP = 0
     SPIN_DN = 1
 
 
-include 'hamiltonian.pxi'
+include './hamiltonian.pxi'
 
 
-include 'wavefunction.pxi'
+include './wavefunction.pxi'
 
 
-include 'sparse_op.pxi'
+include './sparse_op.pxi'

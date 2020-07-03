@@ -79,7 +79,8 @@ TwoSpinWfn::~TwoSpinWfn(void) {
 
 
 void TwoSpinWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
-    int_t nword_ = nword_det(nbasis_);
+    if ((nocc_dn_ < 0) || (nocc_dn_ > nocc_up_) || (nocc_up_ > nbasis_))
+        throw std::domain_error("nocc_up cannot be > nbasis and nocc_dn cannot be > nocc_up");
     int_t maxdet_up_ = binomial(nbasis_, nocc_up_);
     int_t maxdet_dn_ = binomial(nbasis_, nocc_dn_);
 #ifdef PYCI_EXACT_HASH
@@ -91,8 +92,8 @@ void TwoSpinWfn::init(const int_t nbasis_, const int_t nocc_up_, const int_t noc
         maxdet_dn_ = PYCI_INT_MAX;
     }
 #endif
-    nword = nword_;
-    nword2 = nword_ * 2;
+    nword = nword_det(nbasis_);
+    nword2 = nword * 2;
     nbasis = nbasis_;
     nocc_up = nocc_up_;
     nocc_dn = nocc_dn_;
@@ -219,17 +220,16 @@ void TwoSpinWfn::from_occs_array(const int_t nbasis_, const int_t nocc_up_, cons
 
 
 void TwoSpinWfn::to_file(const char *filename) const {
-    bool success = false;
     std::ofstream file;
     file.open(filename, std::ios::out | std::ios::binary);
-    if (file.write((char *)&ndet, sizeof(int_t))
-            && file.write((char *)&nbasis, sizeof(int_t))
-            && file.write((char *)&nocc_up, sizeof(int_t))
-            && file.write((char *)&nocc_dn, sizeof(int_t))
-            && file.write((char *)&dets[0], sizeof(uint_t) * nword2 * ndet))
-        success = true;
+    bool success = file.write((char *)&ndet, sizeof(int_t))
+        && file.write((char *)&nbasis, sizeof(int_t))
+        && file.write((char *)&nocc_up, sizeof(int_t))
+        && file.write((char *)&nocc_dn, sizeof(int_t))
+        && file.write((char *)&dets[0], sizeof(uint_t) * nword2 * ndet);
     file.close();
-    if (!success) throw std::ios_base::failure("error writing file");
+    if (!success)
+        throw std::ios_base::failure("error writing file");
 }
 
 

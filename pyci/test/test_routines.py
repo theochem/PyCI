@@ -52,7 +52,7 @@ class TestRoutines:
             yield self.run_run_hci, filename, wfn_type, occs, energy
 
     def run_solve_sparse(self, filename, wfn_type, occs, energy):
-        ham = pyci.restricted_ham.from_file(datafile('{0:s}.fcidump'.format(filename)))
+        ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
         op = pyci.sparse_op(ham, wfn)
@@ -60,7 +60,7 @@ class TestRoutines:
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
     def run_sparse_rectangular(self, filename, wfn_type, occs, energy):
-        ham = pyci.restricted_ham.from_file(datafile('{0:s}.fcidump'.format(filename)))
+        ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
         nrow = len(wfn) - 10
@@ -73,7 +73,7 @@ class TestRoutines:
     def run_compute_rdms(self, filename, wfn_type, occs, energy):
         if wfn_type is pyci.fullci_wfn:
             raise AssertionError('not implemented')
-        ham = pyci.restricted_ham.from_file(datafile('{0:s}.fcidump'.format(filename)))
+        ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
         op = pyci.sparse_op(ham, wfn)
@@ -102,7 +102,7 @@ class TestRoutines:
         npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
 
     def run_run_hci(self, filename, wfn_type, occs, energy):
-        ham = pyci.restricted_ham.from_file(datafile('{0:s}.fcidump'.format(filename)))
+        ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_hartreefock_det()
         es, cs = pyci.sparse_op(ham, wfn).solve(n=1, tol=1.0e-6)

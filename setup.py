@@ -20,11 +20,10 @@ Run `python setup.py --help` for help.
 
 """
 
-from glob import glob
-
 from os import path
 
-from setuptools import setup
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
 import numpy
 
@@ -89,17 +88,19 @@ include_dirs = [
         'lib/parallel-hashmap',
         'lib/eigen',
         'lib/spectra/include',
-        'pyci',
         'pyci/include',
         ]
 
 
 extra_compile_args = [
-        '-DPYCI_IMPLEMENTATION',
-        '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
         '-Wall',
-        '-fopenmp',
         '-O3',
+        '-fopenmp',
+        '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
+        '-DPYCI_IMPLEMENTATION',
+        # Uncomment this to use exact (colexicographical order) hashing.
+        # This supports determinant sets with |D| < 2 ** 63.
+        #'-DPYCI_EXACT_HASH',
         ]
 
 
@@ -109,21 +110,18 @@ cext = {
         'include_dirs': include_dirs,
         'extra_compile_args': extra_compile_args,
         'extra_link_args': extra_compile_args,
-        'sources': glob('pyci/src/*.cpp'),
+        'sources': ['pyci/src/pyci.cpp'],
         }
 
 
-try:
-    from Cython.Distutils import build_ext, Extension
-    cext['sources'].extend(['pyci/cext.pyx'])
-    cext['cython_compile_time_env'] = dict(PYCI_VERSION=version)
-except ImportError:
-    from setuptools.command.build_ext import build_ext
-    from setuptools import Extension
-    cext['sources'].extend(['pyci/cext.cpp'])
-
-
 if __name__ == '__main__':
+
+    try:
+        from Cython.Distutils import Extension, build_ext
+        cext['sources'].append('pyci/cext.pyx')
+        cext['cython_compile_time_env'] = dict(PYCI_VERSION=version)
+    except ImportError:
+        cext['sources'].append('pyci/cext.cpp')
 
     setup(
             name=name,
@@ -141,5 +139,5 @@ if __name__ == '__main__':
             package_data=package_data,
             include_package_data=True,
             ext_modules=[Extension(**cext)],
-            cmdclass={'build_ext': build_ext},
+            cmdclass=dict(build_ext=build_ext),
             )

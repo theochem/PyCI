@@ -47,9 +47,9 @@ class TestHamiltonian:
     def run_to_from_file(self, filename):
         file1 = NamedTemporaryFile()
         file2 = NamedTemporaryFile()
-        ham1 = hamiltonian.from_file(datafile('{0:s}.fcidump'.format(filename)))
+        ham1 = hamiltonian(datafile('{0:s}.fcidump'.format(filename)))
         ham1.to_file(file1.name)
-        ham2 = hamiltonian.from_file(file1.name)
+        ham2 = hamiltonian(file1.name)
         ham2.to_file(file2.name)
         assert compare(file1.name, file2.name, shallow=False)
         npt.assert_allclose(ham2.ecore, ham1.ecore, rtol=0.0, atol=1.0e-12)

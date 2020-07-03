@@ -1,5 +1,3 @@
-# cython : language_level=3, boundscheck=False, wraparound=False, initializedcheck=False
-#
 # This file is part of PyCI.
 #
 # PyCI is free software: you can redistribute it and/or modify it under

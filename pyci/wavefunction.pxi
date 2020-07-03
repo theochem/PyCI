@@ -1,5 +1,3 @@
-# cython : language_level=3, boundscheck=False, wraparound=False, initializedcheck=False
-#
 # This file is part of PyCI.
 #
 # PyCI is free software: you can redistribute it and/or modify it under
@@ -31,78 +29,6 @@ cdef class one_spin_wfn(wavefunction):
     """
     cdef OneSpinWfn _obj
 
-    @classmethod
-    def from_file(cls, str filename not None):
-        r"""
-        Return a one_spin_wfn instance by loading a ONESPIN file.
-
-        Parameters
-        ----------
-        filename : str
-            ONESPIN file from which to load determinants.
-
-        Returns
-        -------
-        wfn : one_spin_wfn
-            One-spin wave function object.
-
-        """
-        cdef one_spin_wfn wfn = cls(2, 1)
-        wfn._obj.from_file(filename.encode())
-        return wfn
-
-    @classmethod
-    def from_det_array(cls, int_t nbasis, int_t nocc, uint_t[:, ::1] det_array not None):
-        r"""
-        Return a one_spin_wfn instance from an array of determinant bitstrings.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc : int
-            Number of occupied indices.
-        det_array : np.ndarray(c_uint(n, nword))
-            Array of determinants.
-
-        Returns
-        -------
-        wfn : one_spin_wfn
-            One-spin wave function object.
-
-        """
-        if det_array.shape[1] != nword_det(nbasis):
-            raise IndexError('nbasis, nocc given do not match up with det_array dimensions')
-        cdef one_spin_wfn wfn = cls(nbasis, nocc)
-        wfn._obj.from_det_array(nbasis, nocc, det_array.shape[0], <uint_t *>(&det_array[0, 0]))
-        return wfn
-
-    @classmethod
-    def from_occs_array(cls, int_t nbasis, int_t nocc, int_t[:, ::1] occs_array not None):
-        r"""
-        Return a single_spin_wfn instance from an array of occupied indices.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc : int
-            Number of occupied indices.
-        occs_array : np.ndarray(c_int(n, nocc))
-            Array of occupied indices.
-
-        Returns
-        -------
-        wfn : doci_wfn
-            One-spin wave function object.
-
-        """
-        cdef one_spin_wfn wfn = cls(nbasis, nocc)
-        if occs_array.shape[1] != wfn._obj.nocc:
-            raise IndexError('nbasis, nocc given do not match up with occs_array dimensions')
-        wfn._obj.from_occs_array(nbasis, nocc, occs_array.shape[0], <int_t *>(&occs_array[0, 0]))
-        return wfn
-
     @property
     def nbasis(self):
         r"""
@@ -111,9 +37,23 @@ cdef class one_spin_wfn(wavefunction):
         """
         return self._obj.nbasis
 
-    def __init__(self, int_t nbasis, int_t nocc):
+    def __init__(self, *args):
         r"""
         Initialize a one_spin_wfn instance.
+
+        Parameters
+        ----------
+        filename : str
+            Name of ONESPIN file to read.
+
+        or
+
+        Parameters
+        ----------
+        wfn : one_spin_wfn
+            Wave function from which to initialize.
+
+        or
 
         Parameters
         ----------
@@ -122,10 +62,48 @@ cdef class one_spin_wfn(wavefunction):
         nocc : int
             Number of occupied indices.
 
+        or
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+        array : (np.ndarray(c_int(n, nocc)) | np.ndarray(c_uint(n, nword)))
+            Array of occupied indices or determinant bitstrings.
+
         """
-        if nbasis <= nocc or nocc < 1:
-            raise ValueError('failed check: nbasis > nocc > 0')
-        self._obj.init(nbasis, nocc)
+        cdef one_spin_wfn wfn
+        cdef np.ndarray array
+        cdef int_t[:, ::1] iarray
+        cdef uint_t[:, ::1] uarray
+        cdef int_t case = len(args)
+        if case == 1:
+            if isinstance(args[0], one_spin_wfn):
+                wfn = args[0]
+                self._obj.from_onespinwfn(wfn._obj);
+            else:
+                self._obj.from_file(args[0].encode())
+        elif case == 2:
+            self._obj.init(args[0], args[1])
+        elif case == 3:
+            if isinstance(args[2], np.ndarray):
+                array = args[2]
+                if array.dtype == int_dtype:
+                    iarray = array
+                    if iarray.shape[1] != args[1]:
+                        raise ValueError('invalid array shape')
+                    self._obj.from_occs_array(args[0], args[1], iarray.shape[0], <int_t *>(&iarray[0, 0]))
+                elif array.dtype == uint_dtype:
+                    uarray = array
+                    if uarray.shape[1] != nword_det(args[0]):
+                        raise ValueError('invalid array shape')
+                    self._obj.from_det_array(args[0], args[1], uarray.shape[0], <uint_t *>(&uarray[0, 0]))
+                else:
+                    raise TypeError('invalid array dtype')
+        else:
+            raise TypeError('invalid arguments to __init__')
 
     def __copy__(self):
         r"""
@@ -137,9 +115,7 @@ cdef class one_spin_wfn(wavefunction):
             One-spin wave function object.
 
         """
-        cdef one_spin_wfn wfn = self.__class__(2, 1)
-        wfn._obj.from_onespinwfn(self._obj)
-        return wfn
+        return self.__class__(self)
 
     def copy(self):
         r"""
@@ -151,7 +127,7 @@ cdef class one_spin_wfn(wavefunction):
             One-spin wave function object.
 
         """
-        return self.__copy__()
+        return self.__class__(self)
 
     def to_file(self, str filename not None):
         r"""
@@ -199,7 +175,7 @@ cdef class one_spin_wfn(wavefunction):
         self._obj.copy_det(index, <uint_t *>(&det[0]))
         return det_array
 
-    def to_det_array(self, int_t start=-1, int_t end=-1):
+    cpdef np.ndarray to_det_array(self, int_t start=-1, int_t end=-1):
         r"""
         Convert the determinant bitstrings to an array of words (bitstrings).
 
@@ -232,7 +208,7 @@ cdef class one_spin_wfn(wavefunction):
         cdef np.ndarray det_array = np.array(<uint_t[:(end - start), :self._obj.nword]>det_ptr)
         return det_array
 
-    def to_occs_array(self, int_t start=-1, int_t end=-1):
+    cpdef np.ndarray to_occs_array(self, int_t start=-1, int_t end=-1):
         r"""
         Convert the determinant bitstrings to an array of integers (occupied indices).
 
@@ -396,9 +372,7 @@ cdef class one_spin_wfn(wavefunction):
             Truncated wave function.
 
         """
-        return self.__class__.from_det_array(
-                self._obj.nbasis, self._obj.nocc, self.to_det_array(start, end),
-                )
+        return self.__class__(self._obj.nbasis, self._obj.nocc, self.to_det_array(start, end))
 
     def occs_to_det(self, int_t[::1] occs not None):
         r"""
@@ -717,82 +691,6 @@ cdef class two_spin_wfn(wavefunction):
     """
     cdef TwoSpinWfn _obj
 
-    @classmethod
-    def from_file(cls, str filename not None):
-        r"""
-        Return a two_spin_wfn instance by loading a TWOSPIN file.
-
-        Parameters
-        ----------
-        filename : str
-            TWOSPIN file from which to load determinants.
-
-        Returns
-        -------
-        wfn : two_spin_wfn
-            FullCI wave function object.
-
-        """
-        cdef two_spin_wfn wfn = cls(2, 1, 1)
-        wfn._obj.from_file(filename.encode())
-        return wfn
-
-    @classmethod
-    def from_det_array(cls, int_t nbasis, int_t nocc_up, int_t nocc_dn, uint_t[:, :, ::1] det_array not None):
-        r"""
-        Return a two_spin_wfn instance from an array of determinant bitstrings.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc_up : int
-            Number of occupied spin-up indices.
-        nocc_dn : int
-            Number of occupied spin-down indices.
-        det_array : np.ndarray(c_uint(n, 2, nword))
-            Array of determinants.
-
-        Returns
-        -------
-        wfn : two_spin_wfn
-            Two-spin wave function object.
-
-        """
-        if det_array.shape[1] != 2 or det_array.shape[2] != nword_det(nbasis):
-            raise IndexError('nbasis, nocc_{up,dn} given do not match up with det_array dimensions')
-        cdef two_spin_wfn wfn = cls(nbasis, nocc_up, nocc_dn)
-        wfn._obj.from_det_array(nbasis, nocc_up, nocc_dn, det_array.shape[0], <uint_t *>(&det_array[0, 0, 0]))
-        return wfn
-
-    @classmethod
-    def from_occs_array(cls, int_t nbasis, int_t nocc_up, int_t nocc_dn, int_t[:, :, ::1] occs_array not None):
-        r"""
-        Return a two_spin_wfn instance from an array of occupied indices.
-
-        Parameters
-        ----------
-        nbasis : int
-            Number of orbital basis functions.
-        nocc_up : int
-            Number of occupied spin-up indices.
-        nocc_dn : int
-            Number of occupied spin-down indices.
-        occs_array : np.ndarray(c_uint(n, 2, nocc_up))
-            Array of occupied indices.
-
-        Returns
-        -------
-        wfn : two_spin_wfn
-            Two-spin wave function object.
-
-        """
-        if occs_array.shape[1] != 2 or occs_array.shape[2] != nocc_up:
-            raise IndexError('nbasis, nocc_{up,dn} given do not match up with det_array dimensions')
-        cdef two_spin_wfn wfn = cls(nbasis, nocc_up, nocc_dn)
-        wfn._obj.from_occs_array(nbasis, nocc_up, nocc_dn, occs_array.shape[0], <int_t *>(&occs_array[0, 0, 0]))
-        return wfn
-
     @property
     def nbasis(self):
         r"""
@@ -801,9 +699,23 @@ cdef class two_spin_wfn(wavefunction):
         """
         return self._obj.nbasis
 
-    def __init__(self, int_t nbasis, int_t nocc_up, int_t nocc_dn):
+    def __init__(self, *args):
         r"""
         Initialize a two_spin_wfn instance.
+
+        Parameters
+        ----------
+        filename : str
+            Name of TWOSPIN file to read.
+
+        or
+
+        Parameters
+        ----------
+        wfn : two_spin_wfn
+            Wave function from which to initialize.
+
+        or
 
         Parameters
         ----------
@@ -814,10 +726,55 @@ cdef class two_spin_wfn(wavefunction):
         nocc_dn : int
             Number of spin-down occupied indices.
 
+        or
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc_up : int
+            Number of spin-up occupied indices.
+        nocc_dn : int
+            Number of spin-down occupied indices.
+        array : (np.ndarray(c_int(n, nocc)) | np.ndarray(c_uint(n, nword)))
+            Array of occupied indices or determinant bitstrings.
+
         """
-        if (nbasis < nocc_up or nbasis <= nocc_dn or nocc_up <= 0 or nocc_dn < 0 or nocc_up < nocc_dn):
-            raise ValueError('failed check: nbasis >= nocc_up > 0, nbasis > nocc_dn >= 0, nocc_up >= nocc_dn')
-        self._obj.init(nbasis, nocc_up, nocc_dn)
+        cdef two_spin_wfn wfn
+        cdef np.ndarray array
+        cdef int_t[:, :, ::1] iarray
+        cdef uint_t[:, :, ::1] uarray
+        cdef int_t case = len(args)
+        if case == 1:
+            if isinstance(args[0], two_spin_wfn):
+                wfn = args[0]
+                self._obj.from_twospinwfn(wfn._obj);
+            else:
+                self._obj.from_file(args[0].encode())
+        elif case == 3:
+            self._obj.init(args[0], args[1], args[2])
+        elif case == 4:
+            if isinstance(args[3], np.ndarray):
+                array = args[3]
+                if array.dtype == int_dtype:
+                    iarray = array
+                    if iarray.shape[1] != 2 or iarray.shape[2] != args[1]:
+                        raise ValueError('invalid array shape')
+                    self._obj.from_occs_array(
+                            args[0], args[1], args[2],
+                            iarray.shape[0], <int_t *>(&iarray[0, 0, 0]),
+                            )
+                elif array.dtype == uint_dtype:
+                    uarray = array
+                    if uarray.shape[1] != 2 or uarray.shape[2] != nword_det(args[0]):
+                        raise ValueError('invalid array shape')
+                    self._obj.from_det_array(args[0], args[1], args[2],
+                            uarray.shape[0], <uint_t *>(&uarray[0, 0, 0]),
+                            )
+                else:
+                    raise TypeError('invalid array dtype')
+        else:
+            raise TypeError('invalid arguments to __init__')
 
     def __len__(self):
         r"""
@@ -863,9 +820,7 @@ cdef class two_spin_wfn(wavefunction):
             Two-spin wave function object.
 
         """
-        cdef two_spin_wfn wfn = self.__class__(2, 1, 1)
-        wfn._obj.from_twospinwfn(self._obj)
-        return wfn
+        return self.__class__(self)
 
     def copy(self):
         r"""
@@ -877,7 +832,7 @@ cdef class two_spin_wfn(wavefunction):
             Two-spin wave function object.
 
         """
-        return self.__copy__()
+        return self.__class__(self)
 
     def to_file(self, str filename not None):
         r"""
@@ -891,7 +846,7 @@ cdef class two_spin_wfn(wavefunction):
         """
         self._obj.to_file(filename.encode())
 
-    def to_det_array(self, int_t start=-1, int_t end=-1):
+    cpdef np.ndarray to_det_array(self, int_t start=-1, int_t end=-1):
         r"""
         Convert the determinant bitstrings to an array of words (bitstrings).
 
@@ -924,7 +879,7 @@ cdef class two_spin_wfn(wavefunction):
         cdef np.ndarray det_array = np.array(<uint_t[:(end - start), :2, :self._obj.nword]>det_ptr)
         return det_array
 
-    def to_occs_array(self, int_t start=-1, int_t end=-1):
+    cpdef np.ndarray to_occs_array(self, int_t start=-1, int_t end=-1):
         r"""
         Convert the determinant bitstrings to an array of occupied indices (integers).
 
@@ -1105,9 +1060,10 @@ cdef class two_spin_wfn(wavefunction):
             Truncated wave function.
 
         """
-        return self.__class__.from_det_array(
-                self._obj.nbasis, self._obj.nocc_up, self._obj.nocc_dn, self.to_det_array(start, end),
-                )
+        return self.__class__(
+            self._obj.nbasis, self._obj.nocc_up, self._obj.nocc_dn,
+            self.to_det_array(start, end),
+            )
 
     def occs_to_det(self, int_t[:, ::1] occs not None):
         r"""
@@ -1520,32 +1476,6 @@ cdef class doci_wfn(one_spin_wfn):
         """
         return self._obj.nvir
 
-    def to_fullci_wfn(self):
-        r"""
-        Convert a DOCI wave function to a FullCI wave function.
-
-        Returns
-        -------
-        wfn : fullci_wfn
-            FullCI wave funtion object.
-
-        """
-        cdef fullci_wfn wfn = fullci_wfn(2, 1, 1)
-        wfn._obj.from_onespinwfn(self._obj)
-        return wfn
-
-    def to_genci_wfn(self):
-        r"""
-        Convert a DOCI wave function to a Generalized CI wave function.
-
-        Returns
-        -------
-        wfn : genci_wfn
-            Generalized CI wave funtion object.
-
-        """
-        return self.to_fullci_wfn().to_genci_wfn()
-
     def compute_rdms(self, double[::1] coeffs not None, str mode='d'):
         r"""
         Compute the 1- and 2- particle reduced density matrices (RDMs) of a wave function.
@@ -1880,19 +1810,53 @@ cdef class fullci_wfn(two_spin_wfn):
         """
         return self._obj.nvir_dn
 
-    def to_genci_wfn(self):
+    def __init__(self, *args):
         r"""
-        Convert a FullCI wave function to a Generalized CI wave function.
+        Initialize a fullci_wfn instance.
 
-        Returns
-        -------
-        wfn : genci_wfn
-            Generalized CI wave funtion object.
+        Parameters
+        ----------
+        filename : str
+            Name of TWOSPIN file to read.
+
+        or
+
+        Parameters
+        ----------
+        wfn : (doci_wfn | fullci_wfn)
+            Wave function from which to initialize.
+
+        or
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc_up : int
+            Number of spin-up occupied indices.
+        nocc_dn : int
+            Number of spin-down occupied indices.
+
+        or
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc_up : int
+            Number of spin-up occupied indices.
+        nocc_dn : int
+            Number of spin-down occupied indices.
+        array : (np.ndarray(c_int(n, nocc)) | np.ndarray(c_uint(n, nword)))
+            Array of occupied indices or determinant bitstrings.
 
         """
-        cdef genci_wfn wfn = genci_wfn(2, 1)
-        wfn._obj.from_twospinwfn(self._obj)
-        return wfn
+        cdef doci_wfn wfn
+        if len(args) == 1 and isinstance(args[0], doci_wfn):
+            wfn = args[0]
+            self._obj.from_onespinwfn(wfn._obj)
+        else:
+            two_spin_wfn.__init__(self, *args)
 
     def compute_rdms(self, double[::1] coeffs not None, str mode='r'):
         r"""
@@ -2152,6 +2116,55 @@ cdef class genci_wfn(one_spin_wfn):
 
         """
         return 0
+
+    def __init__(self, *args):
+        r"""
+        Initialize a genci_wfn instance.
+
+        Parameters
+        ----------
+        filename : str
+            Name of ONESPIN file to read.
+
+        or
+
+        Parameters
+        ----------
+        wfn : (doci_wfn | fullci_wfn | genci_wfn)
+            Wave function from which to initialize.
+
+        or
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+
+        or
+
+        Parameters
+        ----------
+        nbasis : int
+            Number of orbital basis functions.
+        nocc : int
+            Number of occupied indices.
+        array : (np.ndarray(c_int(n, nocc)) | np.ndarray(c_uint(n, nword)))
+            Array of occupied indices or determinant bitstrings.
+
+        """
+        cdef fullci_wfn wfn
+        if len(args) == 1:
+            if isinstance(args[0], doci_wfn):
+                wfn = fullci_wfn(args[0])
+                self._obj.from_twospinwfn(wfn._obj)
+                return
+            elif isinstance(args[0], fullci_wfn):
+                wfn = args[0]
+                self._obj.from_twospinwfn(wfn._obj)
+                return
+        two_spin_wfn.__init__(self, *args)
 
     def compute_rdms(self, double[::1] coeffs not None, str mode='g'):
         r"""

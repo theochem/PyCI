@@ -33,8 +33,6 @@ class TestDOCIWfn:
 
     def test_raises(self):
         assert_raises(ValueError, pyci.doci_wfn, 10, 11)
-        assert_raises(ValueError, pyci.doci_wfn, 10, 0)
-        assert_raises(RuntimeError, pyci.doci_wfn, 100000, 10000)
 
     def test_to_from_file(self):
         for nbasis, nocc in self.CASES:
@@ -66,7 +64,7 @@ class TestDOCIWfn:
         wfn1 = pyci.doci_wfn(nbasis, nocc)
         wfn1.add_all_dets()
         wfn1.to_file(file1.name)
-        wfn2 = pyci.doci_wfn.from_file(file1.name)
+        wfn2 = pyci.doci_wfn(file1.name)
         wfn2.to_file(file2.name)
         assert compare(file1.name, file2.name, shallow=False)
 
@@ -74,7 +72,7 @@ class TestDOCIWfn:
         wfn1 = pyci.doci_wfn(nbasis, nocc)
         wfn1.add_all_dets()
         det1 = wfn1.to_det_array()
-        wfn2 = pyci.doci_wfn.from_det_array(nbasis, nocc, det1)
+        wfn2 = pyci.doci_wfn(nbasis, nocc, det1)
         det2 = wfn2.to_det_array()
         npt.assert_allclose(det1, det2)
 
@@ -82,7 +80,7 @@ class TestDOCIWfn:
         wfn1 = pyci.doci_wfn(nbasis, nocc)
         wfn1.add_all_dets()
         occs1 = wfn1.to_occs_array()
-        wfn2 = pyci.doci_wfn.from_occs_array(nbasis, nocc, occs1)
+        wfn2 = pyci.doci_wfn(nbasis, nocc, occs1)
         occs2 = wfn2.to_occs_array()
         npt.assert_allclose(occs1, occs2)
 

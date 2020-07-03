@@ -77,12 +77,13 @@ OneSpinWfn::~OneSpinWfn(void) {
 
 
 void OneSpinWfn::init(const int_t nbasis_, const int_t nocc_) {
-    int_t nword_ = nword_det(nbasis_);
+    if ((nocc_ < 0) || (nocc_ > nbasis_))
+        throw std::domain_error("nocc cannot be greater than nbasis");
 #ifdef PYCI_EXACT_HASH
-    if (binomial_raises(nbasis_, nocc_))
+    else if (binomial_raises(nbasis_, nocc_))
         throw std::domain_error("nbasis, nocc too large for hash type");
 #endif
-    nword = nword_;
+    nword = nword_det(nbasis_);
     nbasis = nbasis_;
     nocc = nocc_;
     nvir = nbasis_ - nocc_;
@@ -110,8 +111,8 @@ void OneSpinWfn::from_twospinwfn(const TwoSpinWfn &wfn) {
     nocc = nocc_;
     nvir = nbasis_ - nocc_;
     ndet = wfn.ndet;
-    dets.resize(wfn.ndet * nword_);
     std::fill(dets.begin(), dets.end(), PYCI_UINT_ZERO);
+    dets.resize(wfn.ndet * nword_);
     dict.clear();
     std::vector<int_t> occs(nocc_ + 1);
     int_t i = 0, j = 0, k;
@@ -140,8 +141,8 @@ void OneSpinWfn::from_file(const char *filename) {
             break;
         nword = nword_det(nbasis);
         nvir = nbasis - nocc;
-        dets.resize(nword * ndet);
         std::fill(dets.begin(), dets.end(), PYCI_UINT_ZERO);
+        dets.resize(nword * ndet);
         dict.clear();
         dict.reserve(ndet);
         if (file.read((char *)&dets[0], sizeof(uint_t) * nword * ndet))
@@ -191,14 +192,12 @@ void OneSpinWfn::from_occs_array(const int_t nbasis_, const int_t nocc_, const i
 
 
 void OneSpinWfn::to_file(const char *filename) const {
-    bool success = false;
     std::ofstream file;
     file.open(filename, std::ios::out | std::ios::binary);
-    if (file.write((char *)&ndet, sizeof(int_t))
-            && file.write((char *)&nbasis, sizeof(int_t))
-            && file.write((char *)&nocc, sizeof(int_t))
-            && file.write((char *)&dets[0], sizeof(uint_t) * nword * ndet))
-        success = true;
+    bool success = file.write((char *)&ndet, sizeof(int_t))
+        && file.write((char *)&nbasis, sizeof(int_t))
+        && file.write((char *)&nocc, sizeof(int_t))
+        && file.write((char *)&dets[0], sizeof(uint_t) * nword * ndet);
     file.close();
     if (!success)
         throw std::ios_base::failure("error writing file");
@@ -287,8 +286,8 @@ void OneSpinWfn::add_all_dets(void) {
     if (binomial_raises(nbasis, nocc))
         throw std::domain_error("cannot generate > 2 ** 63 determinants");
     ndet = binomial(nbasis, nocc);
-    dets.resize(ndet * nword);
     std::fill(dets.begin(), dets.end(), PYCI_UINT_ZERO);
+    dets.resize(ndet * nword);
     dict.clear();
     dict.reserve(ndet);
     int_t nthread = omp_get_max_threads();
