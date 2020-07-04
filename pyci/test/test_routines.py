@@ -71,8 +71,6 @@ class TestRoutines:
         assert y.shape[0] == op.shape[0]
 
     def run_compute_rdms(self, filename, wfn_type, occs, energy):
-        if wfn_type is pyci.fullci_wfn:
-            raise AssertionError('not implemented')
         ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
@@ -88,11 +86,12 @@ class TestRoutines:
             energy += np.einsum('ij,ij', k0, d0)
             energy += np.einsum('ij,ij', k2, d2)
             npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
-            rdm1, rdm2 = wfn.generate_generalized_rdms(d0, d2)
+            rdm1, rdm2 = wfn.make_rdms(d0, d2)
         elif isinstance(wfn, pyci.fullci_wfn):
-            rdm1, rdm2 = wfn.compute_rdms(cs[0])
+            aa, bb, aaaa, bbbb, abab = wfn.compute_rdms(cs[0])
+            rdm1, rdm2 = wfn.make_rdms(aa, bb, aaaa, bbbb, abab)
         else:
-            raise ValueError('wfn_type must be doci_wfn or fullci_wfn')
+            rdm1, rdm2 = wfn.compute_rdms(cs[0])
         with np.load(datafile('{0:s}_spinres.npz'.format(filename))) as f:
             one_mo = f['one_mo']
             two_mo = f['two_mo']

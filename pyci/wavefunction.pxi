@@ -1482,7 +1482,7 @@ cdef class doci_wfn(one_spin_wfn):
         """
         return self._obj.nvir
 
-    def compute_rdms(self, double[::1] coeffs not None, str mode='d'):
+    def compute_rdms(self, double[::1] coeffs not None):
         r"""
         Compute the 1- and 2- particle reduced density matrices (RDMs) of a wave function.
 
@@ -1494,7 +1494,7 @@ cdef class doci_wfn(one_spin_wfn):
 
             D_{pqrs} = \left<pq|rs\right>
 
-        This method returns two nbasis-by-nbasis matrices by default, which include the
+        This method returns two nbasis-by-nbasis matrices, which include the
         unique seniority-zero and seniority-two terms from the full 2-RDMs:
 
         .. math::
@@ -1511,46 +1511,27 @@ cdef class doci_wfn(one_spin_wfn):
         ----------
         coeffs : np.ndarray(c_double(ndet))
             Coefficient vector.
-        mode : ('d' | 'r' | 'g'), default='d'
-            Whether to return the :math:`D_0` and :math:`D2` matrices, or the restricted or
-            generalized 1- and 2- particle RDMs.
 
         Returns
         -------
-        rdm1 : np.ndarray(c_double(...))
-            :math:`D_0` matrix or 1-particle reduced density matrix, :math:`d`.
-        rdm2 : np.ndarray(c_double(...))
-            :math:`D_2` matrix or 2-particle reduced density matrix, :math:`D`.
+        d0 : np.ndarray(c_double(...))
+            :math:`D_0` matrix.
+        d2 : np.ndarray(c_double(...))
+            :math:`D_2` matrix.
 
         """
-        cdef tuple result = None
-        mode = mode.lower()[0]
         # Check params
         if self._obj.ndet != coeffs.shape[0]:
             raise ValueError('dimensions of wfn, coeffs do not match')
         elif self._obj.ndet == 0:
             raise ValueError('wfn must contain at least one determinant')
-        elif mode not in 'drg':
-            raise ValueError('mode must be one of \'d\', \'r\', \'g\'')
         # Compute DOCI matrices
         cdef np.ndarray d0_array = np.zeros((self._obj.nbasis, self._obj.nbasis), dtype=c_double)
         cdef np.ndarray d2_array = np.zeros((self._obj.nbasis, self._obj.nbasis), dtype=c_double)
         cdef double[:, ::1] d0 = d0_array
         cdef double[:, ::1] d2 = d2_array
         self._obj.compute_rdms_doci(<double *>(&coeffs[0]), <double *>(&d0[0, 0]), <double *>(&d2[0, 0]))
-        # DOCI matrices
-        if mode == 'd':
-            result = d0_array, d2_array
-        # Restricted RDMs
-        elif mode == 'r':
-            result = self.generate_restricted_rdms(d0, d2)
-        # Generalized RDMs
-        elif mode == 'g':
-            result = self.generate_generalized_rdms(d0, d2)
-        # Invalid mode
-        else:
-            raise ValueError('mode must be one of \'d\', \'r\', \'g\'')
-        return result
+        return d0_array, d2_array
 
     def compute_enpt2(self, hamiltonian ham not None, double[::1] coeffs not None,
         double energy, double eps=1.0e-6):
@@ -1660,47 +1641,9 @@ cdef class doci_wfn(one_spin_wfn):
         return n
 
     @staticmethod
-    def generate_restricted_rdms(double[:, ::1] d0 not None, double[:, ::1] d2 not None):
+    def make_rdms(double[:, ::1] d0 not None, double[:, ::1] d2 not None):
         r"""
-        Generate restricted one- and two- particle RDMs from the :math:`D_0` and :math:`D_2` matrices.
-
-        Parameters
-        ----------
-        d0 : np.ndarray(c_double(nbasis, nbasis))
-            :math:`D_0` matrix.
-        d2 : np.ndarray(c_double(nbasis, nbasis))
-            :math:`D_2` matrix.
-
-        Returns
-        -------
-        rdm1 : np.ndarray(c_double(nbasis, nbasis))
-            Restricted 1-particle RDM.
-        rdm2 : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
-            Restricted 2-particle RDM.
-
-        """
-        # TODO: test this!
-        if not (d0.shape[0] == d0.shape[1] == d2.shape[0] == d2.shape[1]):
-            raise ValueError('dimensions of d0, d2 do not match')
-        cdef int_t nbasis = d0.shape[0], p, q
-        cdef np.ndarray rdm1_array = np.zeros((nbasis, nbasis), dtype=c_double)
-        cdef np.ndarray rdm2_array = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=c_double)
-        cdef double[:, ::1] rdm1 = rdm1_array
-        cdef double[:, :, :, ::1] rdm2 = rdm2_array
-        for p in range(nbasis):
-            rdm1[p, p] += d0[p, p]
-            for q in range(nbasis):
-                rdm2[p, p, q, q] += d0[p, q]
-                rdm2[p, q, p, q] += d2[p, q]
-        rdm1_array *= 2
-        rdm2_array -= np.transpose(rdm2_array, axes=(1, 0, 2, 3))
-        rdm2_array -= np.transpose(rdm2_array, axes=(0, 1, 3, 2))
-        return rdm1_array, rdm2_array
-
-    @staticmethod
-    def generate_generalized_rdms(double[:, ::1] d0 not None, double[:, ::1] d2 not None):
-        r"""
-        Generate generalized one- and two- particle RDMs from the :math:`D_0` and :math:`D_2` matrices.
+        Generate generalized 1- and 2- particle RDMs from the :math:`D_0` and :math:`D_2` matrices.
 
         Parameters
         ----------
@@ -1864,7 +1807,7 @@ cdef class fullci_wfn(two_spin_wfn):
         else:
             two_spin_wfn.__init__(self, *args)
 
-    def compute_rdms(self, double[::1] coeffs not None, str mode='r'):
+    def compute_rdms(self, double[::1] coeffs not None):
         r"""
         Compute the 1- and 2- particle reduced density matrices (RDMs) of a wave function.
 
@@ -1880,44 +1823,45 @@ cdef class fullci_wfn(two_spin_wfn):
         ----------
         coeffs : np.ndarray(c_double(ndet))
             Coefficient vector.
-        mode : ('r' | 'g'), default='r'
-            Whether to return the restricted or generalized RDMs.
 
         Returns
         -------
-        rdm1 : np.ndarray(c_double(:, :))
-            1-particle reduced density matrix, :math:`d`.
-        rdm2 : np.ndarray(c_double(:, :, :, :))
-            2-particle reduced density matrix, :math:`D`.
+        aa : np.ndarray(c_double(nbasis, nbasis))
+            Up-up 1-RDM spin-block.
+        bb : np.ndarray(c_double(nbasis, nbasis))
+            Down-down 1-RDM spin-block.
+        aaaa : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            Up-up-up-up 2-particle RDM spin-block.
+        bbbb : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            Down-down-down-down 2-particle RDM spin-block.
+        abab : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            Up-down-up-down 2-particle RDM spin-block.
 
         """
-        mode = mode.lower()[0]
-        cdef tuple result = None
         # Check parameters
         if self._obj.ndet != coeffs.shape[0]:
             raise ValueError('dimensions of wfn, coeffs do not match')
         elif self._obj.ndet == 0:
             raise ValueError('wfn must contain at least one determinant')
-        elif mode not in 'rg':
-            raise ValueError('mode must be one of \'r\', \'g\'')
         # Compute restricted RDMs
         cdef tuple nbasis2 = (self._obj.nbasis, self._obj.nbasis)
         cdef tuple nbasis4 = (self._obj.nbasis, self._obj.nbasis, self._obj.nbasis, self._obj.nbasis)
-        cdef np.ndarray rdm1_array = np.zeros(nbasis2, dtype=c_double)
-        cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
-        cdef double[:, ::1] rdm1 = rdm1_array
-        cdef double[:, :, :, ::1] rdm2 = rdm2_array
-        self._obj.compute_rdms_fullci(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]), <double *>(&rdm2[0, 0, 0, 0]))
-        # Restricted RDMs
-        if mode == 'r':
-            result = rdm1_array, rdm2_array
-        # Generalized RDMs
-        elif mode == 'g':
-            result = fullci_wfn.generate_generalized_rdms(rdm1, rdm2)
-        # Invalid mode
-        else:
-            raise ValueError('mode must be one of \'r\', \'g\'')
-        return result
+        cdef np.ndarray aa_array = np.zeros(nbasis2, dtype=c_double)
+        cdef np.ndarray bb_array = np.zeros(nbasis2, dtype=c_double)
+        cdef np.ndarray aaaa_array = np.zeros(nbasis4, dtype=c_double)
+        cdef np.ndarray bbbb_array = np.zeros(nbasis4, dtype=c_double)
+        cdef np.ndarray abab_array = np.zeros(nbasis4, dtype=c_double)
+        cdef double[:, ::1] aa = aa_array
+        cdef double[:, ::1] bb = bb_array
+        cdef double[:, :, :, ::1] aaaa = aaaa_array
+        cdef double[:, :, :, ::1] bbbb = bbbb_array
+        cdef double[:, :, :, ::1] abab = abab_array
+        self._obj.compute_rdms_fullci(
+                <double *>(&coeffs[0]), <double *>(&aa[0, 0]), <double *>(&bb[0, 0]),
+                <double *>(&aaaa[0, 0, 0, 0]), <double *>(&bbbb[0, 0, 0, 0]),
+                <double *>(&abab[0, 0, 0, 0]),
+                )
+        return aa_array, bb_array, aaaa_array, bbbb_array, abab_array
 
     def compute_enpt2(self, hamiltonian ham not None, double[::1] coeffs not None,
         double energy, double eps=1.0e-6):
@@ -2030,16 +1974,24 @@ cdef class fullci_wfn(two_spin_wfn):
         return n
 
     @staticmethod
-    def generate_generalized_rdms(double[:, ::1] rdm1 not None, double[:, :, :, ::1] rdm2 not None):
+    def make_rdms(double[:, ::1] aa not None, double[:, ::1] bb not None,
+            double[:, :, :, ::1] aaaa not None, double[:, :, :, ::1] bbbb not None,
+            double[:, :, :, ::1] abab not None):
         r"""
-        Generate generalized one- and two- particle RDMs from the restricted RDMs.
+        Generate generalized 1- and 2- particle RDMs from the RDM spin-blocks.
 
         Parameters
         ----------
-        rdm1 : np.ndarray(c_double(:, :))
-            Restricted 1-particle RDM.
-        rdm2 : np.ndarray(c_double(:, :, :, :))
-            Restricted 2-particle RDM.
+        aa : np.ndarray(c_double(nbasis, nbasis))
+            Up-up 1-RDM spin-block.
+        bb : np.ndarray(c_double(nbasis, nbasis))
+            Down-down 1-RDM spin-block.
+        aaaa : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            Up-up-up-up 2-particle RDM spin-block.
+        bbbb : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            Down-down-down-down 2-particle RDM spin-block.
+        abab : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+            Up-down-up-down 2-particle RDM spin-block.
 
         Returns
         -------
@@ -2049,7 +2001,24 @@ cdef class fullci_wfn(two_spin_wfn):
             Generalized 2-particle RDM.
 
         """
-        raise NotImplementedError
+        if not (aa.shape[0] == aa.shape[1] == bb.shape[0] == bb.shape[1]
+                == aaaa.shape[0] == aaaa.shape[1] == aaaa.shape[2] == aaaa.shape[3]
+                == bbbb.shape[0] == bbbb.shape[1] == bbbb.shape[2] == bbbb.shape[3]
+                == abab.shape[0] == abab.shape[1] == abab.shape[2] == abab.shape[3]):
+            raise ValueError('dimensions of d0, d2 do not match')
+        cdef int_t nbasis = aa.shape[0]
+        cdef nspin = nbasis * 2
+        cdef np.ndarray rdm1 = np.zeros((nspin, nspin), dtype=double_dtype)
+        cdef np.ndarray rdm2 = np.zeros((nspin, nspin, nspin, nspin), dtype=double_dtype)
+        rdm1[:nbasis, :nbasis] = aa
+        rdm1[nbasis:, nbasis:] = bb
+        rdm2[:nbasis, :nbasis, :nbasis, :nbasis] = aaaa
+        rdm2[nbasis:, nbasis:, nbasis:, nbasis:] = bbbb
+        rdm2[:nbasis, nbasis:, :nbasis, nbasis:] = abab  #abab
+        rdm2[nbasis:, :nbasis, nbasis:, :nbasis] = abab  #baba
+        rdm2[:nbasis, nbasis:, nbasis:, :nbasis] -= abab #abba
+        rdm2[nbasis:, :nbasis, :nbasis, nbasis:] -= abab #baab
+        return rdm1, rdm2
 
 
 cdef class genci_wfn(one_spin_wfn):
@@ -2172,7 +2141,7 @@ cdef class genci_wfn(one_spin_wfn):
                 return
         two_spin_wfn.__init__(self, *args)
 
-    def compute_rdms(self, double[::1] coeffs not None, str mode='g'):
+    def compute_rdms(self, double[::1] coeffs not None):
         r"""
         Compute the 1- and 2- particle reduced density matrices (RDMs) of a wave function.
 
@@ -2197,10 +2166,6 @@ cdef class genci_wfn(one_spin_wfn):
             Generalized 2-particle reduced density matrix, :math:`D`.
 
         """
-        mode = mode.lower()[0]
-        # Check parameters
-        if mode != 'g':
-            raise ValueError('mode must be \'g\'')
         if self._obj.ndet != coeffs.shape[0]:
             raise ValueError('dimensions of wfn, coeffs do not match')
         elif self._obj.ndet == 0:
@@ -2208,8 +2173,8 @@ cdef class genci_wfn(one_spin_wfn):
         # Compute generalized RDMs
         cdef tuple nbasis2 = (self._obj.nbasis, self._obj.nbasis)
         cdef tuple nbasis4 = (self._obj.nbasis, self._obj.nbasis, self._obj.nbasis, self._obj.nbasis)
-        cdef np.ndarray rdm1_array = np.zeros(nbasis2, dtype=c_double)
-        cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=c_double)
+        cdef np.ndarray rdm1_array = np.zeros(nbasis2, dtype=double_dtype)
+        cdef np.ndarray rdm2_array = np.zeros(nbasis4, dtype=double_dtype)
         cdef double[:, ::1] rdm1 = rdm1_array
         cdef double[:, :, :, ::1] rdm2 = rdm2_array
         self._obj.compute_rdms_genci(<double *>(&coeffs[0]), <double *>(&rdm1[0, 0]), <double *>(&rdm2[0, 0, 0, 0]))

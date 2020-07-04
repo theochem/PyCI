@@ -96,103 +96,6 @@ void init_doci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *h, 
 }
 
 
-void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *one_mo, const double *two_mo,
-    const int_t istart, const int_t iend) {
-    // prepare sparse matrix
-    if (istart >= iend)
-        return;
-    op.data.reserve(wfn.ndet + 1);
-    op.indices.reserve(wfn.ndet + 1);
-    op.indptr.reserve(iend - istart + 1);
-    op.indptr.push_back(0);
-    // set nrow and ncol
-    op.nrow = iend - istart;
-    // working vectors
-    std::vector<uint_t> det(wfn.nword);
-    std::vector<int_t> occs(wfn.nocc);
-    std::vector<int_t> virs(wfn.nvir);
-    const uint_t *rdet;
-    // loop over determinants
-    int_t i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset;
-    int_t n1 = wfn.nbasis;
-    int_t n2 = n1 * n1;
-    int_t n3 = n1 * n2;
-    double val1, val2;
-    for (int_t idet = istart; idet < iend; ++idet) {
-        // fill working vectors
-        rdet = &wfn.dets[idet * wfn.nword];
-        std::memcpy(&det[0], rdet, sizeof(uint_t) * wfn.nword);
-        fill_occs(wfn.nword, rdet, &occs[0]);
-        fill_virs(wfn.nword, wfn.nbasis, rdet, &virs[0]);
-        val2 = 0.0;
-        // loop over occupied indices
-        for (i = 0; i < wfn.nocc; ++i) {
-            ii = occs[i];
-            ioffset = n3 * ii;
-            // compute part of diagonal matrix element
-            val2 += one_mo[(n1 + 1) * ii];
-            for (k = i + 1; k < wfn.nocc; ++k) {
-                kk = occs[k];
-                koffset = ioffset + n2 * kk;
-                val2 += two_mo[koffset + n1 * ii + kk] - two_mo[koffset + n1 * kk + ii];
-            }
-            // loop over virtual indices
-            for (j = 0; j < wfn.nvir; ++j) {
-                jj = virs[j];
-                // single excitation elements
-                excite_det(ii, jj, &det[0]);
-                jdet = wfn.index_det(&det[0]);
-                // check if singly-excited determinant is in wfn
-                if (jdet != -1) {
-                    // compute single excitation matrix element
-                    val1 = one_mo[n1 * ii + jj];
-                    for (k = 0; k < wfn.nocc; ++k) {
-                        kk = occs[k];
-                        koffset = ioffset + n2 * kk;
-                        val1 += two_mo[koffset + n1 * jj + kk] - two_mo[koffset + n1 * kk + jj];
-                    }
-                    // add single excitation matrix element
-                    op.data.push_back(phase_single_det(wfn.nword, ii, jj, rdet) * val1);
-                    op.indices.push_back(jdet);
-                }
-                // loop over occupied indices
-                for (k = i + 1; k < wfn.nocc; ++k) {
-                    kk = occs[k];
-                    koffset = ioffset + n2 * kk;
-                    // loop over virtual indices
-                    for (l = j + 1; l < wfn.nvir; ++l) {
-                        ll = virs[l];
-                        // double excitation elements
-                        excite_det(kk, ll, &det[0]);
-                        jdet = wfn.index_det(&det[0]);
-                        // check if double excited determinant is in wfn
-                        if (jdet != -1) {
-                            // add double matrix element
-                            op.data.push_back(
-                                phase_double_det(wfn.nword, ii, kk, jj, ll, rdet)
-                              * (two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj])
-                            );
-                            op.indices.push_back(jdet);
-                        }
-                        excite_det(ll, kk, &det[0]);
-                    }
-                }
-                excite_det(jj, ii, &det[0]);
-            }
-        }
-        // add diagonal element to matrix
-        op.data.push_back(val2);
-        op.indices.push_back(idet);
-        // add pointer to next row's indices
-        op.indptr.push_back(op.indices.size());
-    }
-    // finalize vectors
-    op.data.shrink_to_fit();
-    op.indices.shrink_to_fit();
-    op.indptr.shrink_to_fit();
-}
-
-
 void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
@@ -416,6 +319,103 @@ void init_condense_thread(SparseOp &op, SparseOp &thread_op, const int_t ithread
         op.indptr.push_back(thread_op.indptr[i] + indptr_val);
     thread_op.indptr.resize(0);
     thread_op.indptr.shrink_to_fit();
+}
+
+
+void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *one_mo, const double *two_mo,
+    const int_t istart, const int_t iend) {
+    // prepare sparse matrix
+    if (istart >= iend)
+        return;
+    op.data.reserve(wfn.ndet + 1);
+    op.indices.reserve(wfn.ndet + 1);
+    op.indptr.reserve(iend - istart + 1);
+    op.indptr.push_back(0);
+    // set nrow and ncol
+    op.nrow = iend - istart;
+    // working vectors
+    std::vector<uint_t> det(wfn.nword);
+    std::vector<int_t> occs(wfn.nocc);
+    std::vector<int_t> virs(wfn.nvir);
+    const uint_t *rdet;
+    // loop over determinants
+    int_t i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset;
+    int_t n1 = wfn.nbasis;
+    int_t n2 = n1 * n1;
+    int_t n3 = n1 * n2;
+    double val1, val2;
+    for (int_t idet = istart; idet < iend; ++idet) {
+        // fill working vectors
+        rdet = &wfn.dets[idet * wfn.nword];
+        std::memcpy(&det[0], rdet, sizeof(uint_t) * wfn.nword);
+        fill_occs(wfn.nword, rdet, &occs[0]);
+        fill_virs(wfn.nword, wfn.nbasis, rdet, &virs[0]);
+        val2 = 0.0;
+        // loop over occupied indices
+        for (i = 0; i < wfn.nocc; ++i) {
+            ii = occs[i];
+            ioffset = n3 * ii;
+            // compute part of diagonal matrix element
+            val2 += one_mo[(n1 + 1) * ii];
+            for (k = i + 1; k < wfn.nocc; ++k) {
+                kk = occs[k];
+                koffset = ioffset + n2 * kk;
+                val2 += two_mo[koffset + n1 * ii + kk] - two_mo[koffset + n1 * kk + ii];
+            }
+            // loop over virtual indices
+            for (j = 0; j < wfn.nvir; ++j) {
+                jj = virs[j];
+                // single excitation elements
+                excite_det(ii, jj, &det[0]);
+                jdet = wfn.index_det(&det[0]);
+                // check if singly-excited determinant is in wfn
+                if (jdet != -1) {
+                    // compute single excitation matrix element
+                    val1 = one_mo[n1 * ii + jj];
+                    for (k = 0; k < wfn.nocc; ++k) {
+                        kk = occs[k];
+                        koffset = ioffset + n2 * kk;
+                        val1 += two_mo[koffset + n1 * jj + kk] - two_mo[koffset + n1 * kk + jj];
+                    }
+                    // add single excitation matrix element
+                    op.data.push_back(phase_single_det(wfn.nword, ii, jj, rdet) * val1);
+                    op.indices.push_back(jdet);
+                }
+                // loop over occupied indices
+                for (k = i + 1; k < wfn.nocc; ++k) {
+                    kk = occs[k];
+                    koffset = ioffset + n2 * kk;
+                    // loop over virtual indices
+                    for (l = j + 1; l < wfn.nvir; ++l) {
+                        ll = virs[l];
+                        // double excitation elements
+                        excite_det(kk, ll, &det[0]);
+                        jdet = wfn.index_det(&det[0]);
+                        // check if double excited determinant is in wfn
+                        if (jdet != -1) {
+                            // add double matrix element
+                            op.data.push_back(
+                                phase_double_det(wfn.nword, ii, kk, jj, ll, rdet)
+                              * (two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj])
+                            );
+                            op.indices.push_back(jdet);
+                        }
+                        excite_det(ll, kk, &det[0]);
+                    }
+                }
+                excite_det(jj, ii, &det[0]);
+            }
+        }
+        // add diagonal element to matrix
+        op.data.push_back(val2);
+        op.indices.push_back(idet);
+        // add pointer to next row's indices
+        op.indptr.push_back(op.indices.size());
+    }
+    // finalize vectors
+    op.data.shrink_to_fit();
+    op.indices.shrink_to_fit();
+    op.indptr.shrink_to_fit();
 }
 
 

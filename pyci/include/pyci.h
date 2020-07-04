@@ -302,7 +302,7 @@ struct TwoSpinWfn
 
     double compute_overlap(const double *, const TwoSpinWfn &, const double *) const;
 
-    void compute_rdms_fullci(const double *, double *, double *) const;
+    void compute_rdms_fullci(const double *, double *, double *, double *, double *, double *) const;
 
     double compute_enpt2_fullci(const double *, const double *, const double *, const double, const double) const;
 

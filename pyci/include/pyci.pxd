@@ -227,7 +227,7 @@ cdef extern from 'pyci.h' namespace 'pyci':
 
         double compute_enpt2_fullci(const double *, const double *, const double *, const double, const double) except +
 
-        void compute_rdms_fullci(const double *, double *, double *)
+        void compute_rdms_fullci(const double *, double *, double *, double *, double *, double *)
 
         int_t run_hci_fullci(const double *, const double *, const double *, const double) except +
 
