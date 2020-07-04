@@ -19,9 +19,9 @@
 PyCI
 ====
 
-PyCI is a flexible *ab-initio* quantum chemistry library for Configuration Interaction.
+PyCI_ is a flexible *ab-initio* quantum chemistry library for Configuration Interaction.
 
-PyCI is distributed under the GNU General Public License version 3 (GPLv3+).
+PyCI is distributed under the GNU General Public License version 3 (GPLv3).
 
 See http://www.gnu.org/licenses/ for more information.
 
@@ -36,9 +36,9 @@ The following programs/libraries are required to run PyCI:
 The following programs/libraries are required to build PyCI:
 
 -  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
--  Python_ (≥3.4, including system headers)
--  NumPy_ (≥1.13)
--  Cython_ (≥0.24)
+-  Python_ (≥3.4, including C headers)
+-  NumPy_ (≥1.13, including C headers)
+-  Cython_ (≥0.24 or ≥3.0.0)
 
 The following programs/libraries are required to build the PyCI documentation:
 
@@ -100,6 +100,7 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 
     cd doc && make html
 
+.. _PyCI:               http://github.com/msricher/PyCI/
 .. _Python:             http://python.org/
 .. _NumPy:              http://numpy.org/
 .. _Cython:             http://cython.org/

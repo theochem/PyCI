@@ -84,3 +84,7 @@ tags
 .spyderproject
 .spyproject
 .vscode/
+
+# PyCI
+doc/build/
+pyci/pyci.cpp

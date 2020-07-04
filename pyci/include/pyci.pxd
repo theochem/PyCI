@@ -22,8 +22,6 @@ PyCI Cython header.
 
 from libc.stdint cimport int64_t, uint64_t
 
-from libcpp.vector cimport vector
-
 
 __all__ = [
     'int_t',
@@ -93,7 +91,6 @@ cdef extern from 'pyci.h' namespace 'pyci':
     cdef cppclass OneSpinWfn:
 
         int_t nword, nbasis, nocc, nvir, ndet
-        vector[uint_t] dets
 
         OneSpinWfn()
 
@@ -167,7 +164,6 @@ cdef extern from 'pyci.h' namespace 'pyci':
 
         int_t nword, nword2, nbasis, nocc_up, nocc_dn, nvir_up, nvir_dn
         int_t ndet, maxdet_up, maxdet_dn
-        vector[uint_t] dets
 
         TwoSpinWfn()
 
@@ -233,12 +229,15 @@ cdef extern from 'pyci.h' namespace 'pyci':
 
     cdef cppclass SparseOp:
 
-        int_t nrow, ncol
-        vector[double] data
-        vector[int_t] indices
-        vector[int_t] indptr
+        int_t nrow, ncol, size
 
         SparseOp()
+
+        const double * data_ptr(const int_t index)
+
+        const int_t * indices_ptr(const int_t index)
+
+        const int_t * indptr_ptr(const int_t index)
 
         void perform_op(const double *, double *)
 

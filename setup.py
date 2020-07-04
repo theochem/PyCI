@@ -22,16 +22,24 @@ Run `python setup.py --help` for help.
 
 from os import path
 
-from setuptools import Extension, setup
-from setuptools.command.build_ext import build_ext
+from setuptools import setup
 
 import numpy
+
+
+# Uncomment this to use exact (colexicographical order) hashing.
+# This only supports determinant sets with |D| < 2 ** 63.
+#PYCI_EXACT_HASH = True
+
+
+# Uncomment this to use a specific non-negative integer seed for the SpookyHash algorithm.
+#PYCI_SPOOKYHASH_SEED = 0
 
 
 name = 'pyci'
 
 
-version = '0.3.0'
+version = '0.3.5'
 
 
 license = 'GPLv3'
@@ -43,7 +51,7 @@ author = 'Michael Richer'
 author_email = 'richerm@mcmaster.ca'
 
 
-url = 'https://github.com/msricher/pyci'
+url = 'https://github.com/msricher/PyCI'
 
 
 description = 'A flexible ab-initio quantum chemistry library for Configuration Interaction.'
@@ -55,13 +63,14 @@ long_description = open('README.rst', 'r', encoding='utf-8').read()
 classifiers = [
         'Environment :: Console',
         'Intended Audience :: Science/Research',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
         'Topic :: Science/Engineering :: Molecular Science',
         ]
 
 
-install_requires = ['numpy>=1.13']
+install_requires = [
+        'numpy>=1.13',
+        ]
 
 
 extras_require = {
@@ -78,9 +87,15 @@ packages = [
 
 
 package_data = {
-        'pyci': ['*.pyx', '*.pxi', 'include/*.h', 'include/*.pxd', 'src/*.cpp'],
+        'pyci': ['pyci.pyx', 'pyci.cpp', 'include/*.h', 'include/*.pxd', 'src/*.cpp'],
         'pyci.test': ['data/*.fcidump', 'data/*.npy', 'data/*.npz'],
         }
+
+
+sources = [
+        'pyci/src/pyci.cpp',
+        'pyci/pyci.cpp',
+        ]
 
 
 include_dirs = [
@@ -93,35 +108,81 @@ include_dirs = [
 
 
 extra_compile_args = [
-        '-Wall',
-        '-O3',
-        '-fopenmp',
         '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
-        '-DPYCI_IMPLEMENTATION',
-        # Uncomment this to use exact (colexicographical order) hashing.
-        # This supports determinant sets with |D| < 2 ** 63.
-        #'-DPYCI_EXACT_HASH',
+        '-Wall',
+        '-fopenmp',
         ]
 
 
+extra_link_args = [
+        '-fopenmp',
+        ]
+
+
+cython_compile_time_env = {
+        'PYCI_VERSION': version,
+        }
+
+
 cext = {
-        'name': 'pyci.cext',
+        'name': 'pyci.pyci',
         'language': 'c++',
+        'sources': sources,
         'include_dirs': include_dirs,
         'extra_compile_args': extra_compile_args,
-        'extra_link_args': extra_compile_args,
-        'sources': ['pyci/src/pyci.cpp'],
+        'extra_link_args': extra_link_args,
         }
 
 
 if __name__ == '__main__':
 
+
     try:
+
         from Cython.Distutils import Extension, build_ext
-        cext['sources'].append('pyci/cext.pyx')
-        cext['cython_compile_time_env'] = dict(PYCI_VERSION=version)
+
+        sources.clear()
+        sources.extend(('pyci/src/pyci.cpp', 'pyci/pyci.pyx'))
+        cext.update(cython_compile_time_env=cython_compile_time_env)
+
     except ImportError:
-        cext['sources'].append('pyci/cext.cpp')
+
+        from setuptools import Extension
+        from setuptools.command.build_ext import build_ext
+
+
+    try:
+
+        if PYCI_EXACT_HASH:
+            extra_compile_args.append('-DPYCI_EXACT_HASH')
+
+    except NameError:
+
+        pass
+
+
+    try:
+
+        hex_seed = hex(abs(PYCI_SPOOKYHASH_SEED)) + 'UL'
+        extra_compile_args.append('-DPYCI_SPOOKYHASH_SEED=' + hex_seed)
+
+    except NameError:
+
+        pass
+
+
+    pyci_extension = Extension(**cext)
+
+
+    ext_modules = [
+            pyci_extension,
+            ]
+
+
+    cmdclass = {
+            'build_ext': build_ext,
+            }
+
 
     setup(
             name=name,
@@ -138,6 +199,6 @@ if __name__ == '__main__':
             packages=packages,
             package_data=package_data,
             include_package_data=True,
-            ext_modules=[Extension(**cext)],
-            cmdclass=dict(build_ext=build_ext),
+            ext_modules=ext_modules,
+            cmdclass=cmdclass,
             )

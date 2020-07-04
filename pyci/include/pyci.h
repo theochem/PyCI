@@ -20,9 +20,7 @@
 
 #include <vector>
 
-#ifdef PYCI_IMPLEMENTATION
 #include <parallel_hashmap/phmap.h>
-#endif
 
 
 /* Uncomment this to use exact (colexicographical order) hashing.
@@ -66,10 +64,8 @@ typedef std::uint64_t uint_t;
 
 
 /* Hash map template type. */
-#ifdef PYCI_IMPLEMENTATION
 template<class KeyType, class ValueType>
 using hashmap = phmap::flat_hash_map<KeyType, ValueType>;
-#endif
 
 
 /* Forward-declare classes. */
@@ -140,14 +136,12 @@ struct OneSpinWfn
 {
     int_t nword, nbasis, nocc, nvir, ndet;
     std::vector<uint_t> dets;
-#ifdef PYCI_IMPLEMENTATION
 
     private:
 
     hashmap<uint_t, int_t> dict;
 
     public:
-#endif
 
     OneSpinWfn(void);
 
@@ -231,14 +225,12 @@ struct TwoSpinWfn
     int_t nword, nword2, nbasis, nocc_up, nocc_dn, nvir_up, nvir_dn;
     int_t ndet, maxdet_up, maxdet_dn;
     std::vector<uint_t> dets;
-#ifdef PYCI_IMPLEMENTATION
 
     private:
 
     hashmap<uint_t, int_t> dict;
 
     public:
-#endif
 
     TwoSpinWfn(void);
 
@@ -313,7 +305,7 @@ struct TwoSpinWfn
 /* Sparse matrix operator with eigensolver. */
 struct SparseOp
 {
-    int_t nrow, ncol;
+    int_t nrow, ncol, size;
     std::vector<double> data;
     std::vector<int_t> indices;
     std::vector<int_t> indptr;
@@ -323,6 +315,12 @@ struct SparseOp
     inline int_t rows(void) const { return nrow; }
 
     inline int_t cols(void) const { return ncol; }
+
+    const double * data_ptr(const int_t index) const;
+
+    const int_t * indices_ptr(const int_t index) const;
+
+    const int_t * indptr_ptr(const int_t index) const;
 
     void perform_op(const double *, double *) const;
 

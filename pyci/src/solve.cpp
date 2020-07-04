@@ -289,39 +289,6 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
 }
 
 
-void init_condense_thread(SparseOp &op, SparseOp &thread_op, const int_t ithread) {
-    if (ithread == 0) {
-        std::swap(op.data, thread_op.data);
-        std::swap(op.indices, thread_op.indices);
-        std::swap(op.indptr, thread_op.indptr);
-        op.indptr.pop_back();
-        return;
-    } else if (thread_op.nrow == 0)
-        return;
-    int_t indptr_val = op.indices.size();
-    // copy over data array
-    int_t istart = op.data.size();
-    int_t iend = thread_op.data.size();
-    op.data.resize(istart + iend);
-    std::memcpy(&op.data[istart], &thread_op.data[0], sizeof(double) * iend);
-    thread_op.data.resize(0);
-    thread_op.data.shrink_to_fit();
-    // copy over indices array
-    istart = op.indices.size();
-    iend = thread_op.indices.size();
-    op.indices.resize(istart + iend);
-    std::memcpy(&op.indices[istart], &thread_op.indices[0], sizeof(int_t) * iend);
-    thread_op.indices.resize(0);
-    thread_op.indices.shrink_to_fit();
-    // copy over indptr array
-    iend = thread_op.indptr.size() - 1;
-    for (int_t i = 0; i < iend; ++i)
-        op.indptr.push_back(thread_op.indptr[i] + indptr_val);
-    thread_op.indptr.resize(0);
-    thread_op.indptr.shrink_to_fit();
-}
-
-
 void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *one_mo, const double *two_mo,
     const int_t istart, const int_t iend) {
     // prepare sparse matrix
@@ -419,11 +386,59 @@ void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *on
 }
 
 
+void init_condense_thread(SparseOp &op, SparseOp &thread_op, const int_t ithread) {
+    if (ithread == 0) {
+        std::swap(op.data, thread_op.data);
+        std::swap(op.indices, thread_op.indices);
+        std::swap(op.indptr, thread_op.indptr);
+        op.indptr.pop_back();
+        return;
+    } else if (thread_op.nrow == 0)
+        return;
+    int_t indptr_val = op.indices.size();
+    // copy over data array
+    int_t istart = op.data.size();
+    int_t iend = thread_op.data.size();
+    op.data.resize(istart + iend);
+    std::memcpy(&op.data[istart], &thread_op.data[0], sizeof(double) * iend);
+    thread_op.data.resize(0);
+    thread_op.data.shrink_to_fit();
+    // copy over indices array
+    istart = op.indices.size();
+    iend = thread_op.indices.size();
+    op.indices.resize(istart + iend);
+    std::memcpy(&op.indices[istart], &thread_op.indices[0], sizeof(int_t) * iend);
+    thread_op.indices.resize(0);
+    thread_op.indices.shrink_to_fit();
+    // copy over indptr array
+    iend = thread_op.indptr.size() - 1;
+    for (int_t i = 0; i < iend; ++i)
+        op.indptr.push_back(thread_op.indptr[i] + indptr_val);
+    thread_op.indptr.resize(0);
+    thread_op.indptr.shrink_to_fit();
+}
+
+
 } // namespace // anonymous
 
 
 SparseOp::SparseOp() {
     return;
+}
+
+
+const double * SparseOp::data_ptr(const int_t index) const {
+    return &data[index];
+}
+
+
+const int_t * SparseOp::indices_ptr(const int_t index) const {
+    return &indices[index];
+}
+
+
+const int_t * SparseOp::indptr_ptr(const int_t index) const {
+    return &indptr[index];
 }
 
 
@@ -494,39 +509,8 @@ void SparseOp::init_doci(const OneSpinWfn &wfn, const double *h, const double *v
             init_condense_thread(*this, ops[t], t);
     }
     // finalize vectors
-    indptr.push_back(indices.size());
-    data.shrink_to_fit();
-    indices.shrink_to_fit();
-    indptr.shrink_to_fit();
-}
-
-
-void SparseOp::init_genci(const OneSpinWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
-    // set attributes
-    nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
-    ncol = wfn.ndet;
-    // prepare vectors
-    data.resize(0);
-    indices.resize(0);
-    indptr.resize(0);
-    // do computations in chunks by making smaller SparseOps in parallel
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-    std::vector<SparseOp> ops(nthread);
-#pragma omp parallel
-    {
-        int_t ithread = omp_get_thread_num();
-        int_t istart = ithread * chunksize;
-        int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-        init_genci_run_thread(ops[ithread], wfn, one_mo, two_mo, istart, iend);
-        // construct larger SparseOp (this instance) from chunks
-#pragma omp for ordered schedule(static,1)
-        for (int_t t = 0; t < nthread; ++t)
-#pragma omp ordered
-            init_condense_thread(*this, ops[t], t);
-    }
-    // finalize vectors
-    indptr.push_back(indices.size());
+    size = indices.size();
+    indptr.push_back(size);
     data.shrink_to_fit();
     indices.shrink_to_fit();
     indptr.shrink_to_fit();
@@ -558,7 +542,41 @@ void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double *one_mo, const do
             init_condense_thread(*this, ops[t], t);
     }
     // finalize vectors
-    indptr.push_back(indices.size());
+    size = indices.size();
+    indptr.push_back(size);
+    data.shrink_to_fit();
+    indices.shrink_to_fit();
+    indptr.shrink_to_fit();
+}
+
+
+void SparseOp::init_genci(const OneSpinWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+    // set attributes
+    nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
+    ncol = wfn.ndet;
+    // prepare vectors
+    data.resize(0);
+    indices.resize(0);
+    indptr.resize(0);
+    // do computations in chunks by making smaller SparseOps in parallel
+    int_t nthread = omp_get_max_threads();
+    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
+    std::vector<SparseOp> ops(nthread);
+#pragma omp parallel
+    {
+        int_t ithread = omp_get_thread_num();
+        int_t istart = ithread * chunksize;
+        int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
+        init_genci_run_thread(ops[ithread], wfn, one_mo, two_mo, istart, iend);
+        // construct larger SparseOp (this instance) from chunks
+#pragma omp for ordered schedule(static,1)
+        for (int_t t = 0; t < nthread; ++t)
+#pragma omp ordered
+            init_condense_thread(*this, ops[t], t);
+    }
+    // finalize vectors
+    size = indices.size();
+    indptr.push_back(size);
     data.shrink_to_fit();
     indices.shrink_to_fit();
     indptr.shrink_to_fit();
