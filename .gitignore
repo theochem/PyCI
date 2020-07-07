@@ -46,8 +46,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -85,6 +83,5 @@ tags
 .spyproject
 .vscode/
 
-# PyCI
+# Documentation
 doc/build/
-pyci/pyci.cpp

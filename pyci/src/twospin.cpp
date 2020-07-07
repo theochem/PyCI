@@ -41,6 +41,16 @@ TwoSpinWfn::TwoSpinWfn(void) {
 }
 
 
+TwoSpinWfn::TwoSpinWfn(TwoSpinWfn &&wfn) noexcept
+    : nword(std::exchange(wfn.nword, 0)), nword2(std::exchange(wfn.nword2, 0)),
+      nbasis(std::exchange(wfn.nbasis, 0)), nocc_up(std::exchange(wfn.nocc_up, 0)),
+      nocc_dn(std::exchange(wfn.nocc_dn, 0)), nvir_up(std::exchange(wfn.nvir_up, 0)),
+      nvir_dn(std::exchange(wfn.nvir_dn, 0)), ndet(std::exchange(wfn.ndet, 0)),
+      maxdet_up(std::exchange(wfn.maxdet_up, 0)), maxdet_dn(std::exchange(wfn.maxdet_dn, 0)),
+      dets(std::move(wfn.dets)), dict(std::move(wfn.dict)) {
+}
+
+
 TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
     init(nbasis_, nocc_up_, nocc_dn_);
 }
@@ -70,11 +80,6 @@ TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t no
 TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_, const int_t n,
     const int_t *occs) {
     from_occs_array(nbasis_, nocc_up_, nocc_dn_, n, occs);
-}
-
-
-TwoSpinWfn::~TwoSpinWfn(void) {
-    return;
 }
 
 
@@ -313,6 +318,26 @@ int_t TwoSpinWfn::add_det_from_occs(const int_t *occs) {
     fill_det(nocc_up, &occs[0], &det[0]);
     fill_det(nocc_dn, &occs[nocc_up], &det[nword]);
     return add_det(&det[0]);
+}
+
+
+void TwoSpinWfn::add_hartreefock_det(void) {
+    std::vector<uint_t> det(nword2);
+    int_t n = nocc_up, i = 0;
+    while (n >= PYCI_UINT_SIZE) {
+        det[i++] = PYCI_UINT_MAX;
+        n -= PYCI_UINT_SIZE;
+    }
+    if (n)
+        det[i] = (PYCI_UINT_ONE << n) - 1;
+    n = nocc_dn; i = nword;
+    while (n >= PYCI_UINT_SIZE) {
+        det[i++] = PYCI_UINT_MAX;
+        n -= PYCI_UINT_SIZE;
+    }
+    if (n)
+        det[i] = (PYCI_UINT_ONE << n) - 1;
+    add_det(&det[0]);
 }
 
 

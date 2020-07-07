@@ -79,15 +79,15 @@ class TestDOCIWfn:
     def run_to_from_occs_array(self, nbasis, nocc):
         wfn1 = pyci.doci_wfn(nbasis, nocc)
         wfn1.add_all_dets()
-        occs1 = wfn1.to_occs_array()
+        occs1 = wfn1.to_occ_array()
         wfn2 = pyci.doci_wfn(nbasis, nocc, occs1)
-        occs2 = wfn2.to_occs_array()
+        occs2 = wfn2.to_occ_array()
         npt.assert_allclose(occs1, occs2)
 
     def run_copy(self, nbasis, nocc):
         wfn1 = pyci.doci_wfn(nbasis, nocc)
         wfn1.add_all_dets()
-        wfn2 = wfn1.copy()
+        wfn2 = wfn1.__class__(wfn1)
         det1 = wfn1.to_det_array()
         det2 = wfn2.to_det_array()
         npt.assert_allclose(det1, det2)
@@ -95,15 +95,13 @@ class TestDOCIWfn:
     def run_add_all_dets(self, nbasis, nocc):
         wfn = pyci.doci_wfn(nbasis, nocc)
         wfn.add_all_dets()
-        for det in wfn:
-            assert wfn.popcnt_det(det) == wfn.nocc_up == wfn.nocc_dn == wfn.nocc // 2
+        for det in wfn.to_det_array():
+            assert pyci.popcnt(det) == wfn.nocc_up == wfn.nocc_dn == wfn.nocc // 2
         assert len(wfn) == comb(wfn.nbasis, wfn.nocc_up, exact=True)
 
     def run_add_excited_dets(self, nbasis, nocc):
         wfn = pyci.doci_wfn(nbasis, nocc)
         wfn.reserve(comb(wfn.nbasis, wfn.nocc_up, exact=True))
-        assert_raises(ValueError, wfn.add_excited_dets, -1)
-        assert_raises(ValueError, wfn.add_excited_dets, 100)
         length = 0
         for i in range(wfn.nocc_up + 1):
             length += comb(wfn.nocc_up, i, exact=True) * comb(wfn.nvir_up, i, exact=True)

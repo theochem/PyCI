@@ -28,8 +28,14 @@ void OneSpinWfn::compute_rdms_doci(const double *coeffs, double *d0, double *d2)
     std::vector<uint_t> det(nword);
     std::vector<int_t> occs(nocc);
     std::vector<int_t> virs(nvir);
+    // fill rdms with zeros
+    int_t i = nbasis * nbasis, j = 0;
+    while (j < i) {
+        d0[j] = 0;
+        d2[j++] = 0;
+    }
     // iterate over determinants
-    int_t idet, jdet, i, j, k, l;
+    int_t idet, jdet, k, l;
     double val1, val2;
     for (idet = 0; idet < ndet; ++idet) {
         // fill working vectors
@@ -74,8 +80,23 @@ void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *b
     std::vector<int_t> virs_dn(nvir_dn);
     const uint_t *rdet_up, *rdet_dn;
     uint_t *det_up = &det[0], *det_dn = &det[nword];
+    // fill rdms with zeros
+    int_t i = nbasis * nbasis, j = 0;
+    while (j < i) {
+        aa[j] = 0;
+        bb[j] = 0;
+        aaaa[j] = 0;
+        bbbb[j] = 0;
+        abab[j++] = 0;
+    }
+    i *= nbasis * nbasis;
+    while (j < i) {
+        aaaa[j] = 0;
+        bbbb[j] = 0;
+        abab[j++] = 0;
+    }
     // iterate over determinants
-    int_t i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset, sign_up;
+    int_t k, l, ii, jj, kk, ll, jdet, ioffset, koffset, sign_up;
     int_t n1 = nbasis;
     int_t n2 = n1 * n1;
     int_t n3 = n1 * n2;
@@ -262,8 +283,17 @@ void OneSpinWfn::compute_rdms_genci(const double *coeffs, double *rdm1, double *
     std::vector<int_t> occs(nocc);
     std::vector<int_t> virs(nvir);
     const uint_t *rdet;
+    // fill rdms with zeros
+    int_t i = nbasis * nbasis, j = 0;
+    while (j < i) {
+        rdm1[j] = 0;
+        rdm2[j++] = 0;
+    }
+    i *= nbasis * nbasis;
+    while (j < i)
+        rdm2[j++] = 0;
     // loop over determinants
-    int_t i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset;
+    int_t k, l, ii, jj, kk, ll, jdet, ioffset, koffset;
     int_t n1 = nbasis;
     int_t n2 = n1 * n1;
     int_t n3 = n1 * n2;

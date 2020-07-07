@@ -88,16 +88,17 @@ class TestFullCIWfn:
     def run_to_from_occs_array(self, nbasis, nocc_up, nocc_dn):
         wfn1 = pyci.fullci_wfn(nbasis, nocc_up, nocc_dn)
         wfn1.add_all_dets()
-        occs1 = wfn1.to_occs_array()
+        occs1 = wfn1.to_occ_array()
         assert occs1.shape[2] == nocc_up
         wfn2 = pyci.fullci_wfn(nbasis, nocc_up, nocc_dn, occs1)
-        occs2 = wfn2.to_occs_array()
-        npt.assert_allclose(occs1, occs2)
+        occs2 = wfn2.to_occ_array()
+        npt.assert_allclose(occs1[:, 0, :nocc_up], occs2[:, 0, :nocc_up])
+        npt.assert_allclose(occs1[:, 1, :nocc_dn], occs2[:, 1, :nocc_dn])
 
     def run_copy(self, nbasis, nocc_up, nocc_dn):
         wfn1 = pyci.fullci_wfn(nbasis, nocc_up, nocc_dn)
         wfn1.add_all_dets()
-        wfn2 = wfn1.copy()
+        wfn2 = wfn1.__class__(wfn1)
         det1 = wfn1.to_det_array()
         det2 = wfn2.to_det_array()
         npt.assert_allclose(det1, det2)
@@ -106,9 +107,9 @@ class TestFullCIWfn:
         ndet = comb(nbasis, nocc_up, exact=True) * comb(nbasis, nocc_dn, exact=True)
         wfn = pyci.fullci_wfn(nbasis, nocc_up, nocc_dn)
         wfn.add_all_dets()
-        for det in wfn:
-            assert wfn.popcnt_det(det, pyci.SPIN_UP) == wfn.nocc_up
-            assert wfn.popcnt_det(det, pyci.SPIN_DN) == wfn.nocc_dn
+        for det in wfn.to_det_array():
+            assert pyci.popcnt(det[0]) == wfn.nocc_up
+            assert pyci.popcnt(det[1]) == wfn.nocc_dn
         assert len(wfn) == ndet
 
     def run_add_excited_dets(self, nbasis, nocc_up, nocc_dn):

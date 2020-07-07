@@ -22,7 +22,7 @@ Run `python setup.py --help` for help.
 
 from os import path
 
-from setuptools import setup
+from setuptools import Extension, setup
 
 import numpy
 
@@ -74,7 +74,6 @@ install_requires = [
 
 
 extras_require = {
-        'build': ['cython'],
         'test': ['nose'],
         'doc': ['sphinx', 'sphinx_rtd_theme'],
         }
@@ -87,14 +86,13 @@ packages = [
 
 
 package_data = {
-        'pyci': ['pyci.pyx', 'pyci.cpp', 'include/*.h', 'include/*.pxd', 'src/*.cpp'],
+        'pyci': ['include/*.h', 'src/*.cpp'],
         'pyci.test': ['data/*.fcidump', 'data/*.npy', 'data/*.npz'],
         }
 
 
 sources = [
         'pyci/src/pyci.cpp',
-        'pyci/pyci.cpp',
         ]
 
 
@@ -103,25 +101,23 @@ include_dirs = [
         'lib/parallel-hashmap',
         'lib/eigen',
         'lib/spectra/include',
+        'lib/pybind11/include',
         'pyci/include',
         ]
 
 
 extra_compile_args = [
         '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
-        '-Wall',
+        '-DPYCI_VERSION=' + version,
+        '-fvisibility=hidden',
         '-fopenmp',
+        '-Wall',
         ]
 
 
 extra_link_args = [
         '-fopenmp',
         ]
-
-
-cython_compile_time_env = {
-        'PYCI_VERSION': version,
-        }
 
 
 cext = {
@@ -138,36 +134,15 @@ if __name__ == '__main__':
 
 
     try:
-
-        from Cython.Distutils import Extension, build_ext
-
-        sources.clear()
-        sources.extend(('pyci/src/pyci.cpp', 'pyci/pyci.pyx'))
-        cext.update(cython_compile_time_env=cython_compile_time_env)
-
-    except ImportError:
-
-        from setuptools import Extension
-        from setuptools.command.build_ext import build_ext
-
-
-    try:
-
-        if PYCI_EXACT_HASH:
-            extra_compile_args.append('-DPYCI_EXACT_HASH')
-
+        extra_compile_args.append('-DPYCI_EXACT_HASH' if PYCI_EXACT_HASH else '')
     except NameError:
-
         pass
 
 
     try:
-
         hex_seed = hex(abs(PYCI_SPOOKYHASH_SEED)) + 'UL'
         extra_compile_args.append('-DPYCI_SPOOKYHASH_SEED=' + hex_seed)
-
     except NameError:
-
         pass
 
 
@@ -177,11 +152,6 @@ if __name__ == '__main__':
     ext_modules = [
             pyci_extension,
             ]
-
-
-    cmdclass = {
-            'build_ext': build_ext,
-            }
 
 
     setup(
@@ -200,5 +170,4 @@ if __name__ == '__main__':
             package_data=package_data,
             include_package_data=True,
             ext_modules=ext_modules,
-            cmdclass=cmdclass,
             )

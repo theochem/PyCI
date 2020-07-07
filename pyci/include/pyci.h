@@ -145,6 +145,8 @@ struct OneSpinWfn
 
     OneSpinWfn(void);
 
+    OneSpinWfn(OneSpinWfn &&) noexcept;
+
     OneSpinWfn(const int_t, const int_t);
 
     OneSpinWfn(const OneSpinWfn &);
@@ -156,8 +158,6 @@ struct OneSpinWfn
     OneSpinWfn(const int_t, const int_t, const int_t, const uint_t *);
 
     OneSpinWfn(const int_t, const int_t, const int_t, const int_t *);
-
-    ~OneSpinWfn(void);
 
     void init(const int_t, const int_t);
 
@@ -190,6 +190,8 @@ struct OneSpinWfn
     int_t add_det_with_rank(const uint_t *, const uint_t);
 
     int_t add_det_from_occs(const int_t *);
+
+    void add_hartreefock_det(void);
 
     void add_all_dets(void);
 
@@ -234,6 +236,8 @@ struct TwoSpinWfn
 
     TwoSpinWfn(void);
 
+    TwoSpinWfn(TwoSpinWfn &&) noexcept;
+
     TwoSpinWfn(const int_t, const int_t, const int_t);
 
     TwoSpinWfn(const OneSpinWfn &);
@@ -245,8 +249,6 @@ struct TwoSpinWfn
     TwoSpinWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *);
 
     TwoSpinWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
-
-    ~TwoSpinWfn(void);
 
     void init(const int_t, const int_t, const int_t);
 
@@ -280,6 +282,8 @@ struct TwoSpinWfn
 
     int_t add_det_from_occs(const int_t *);
 
+    void add_hartreefock_det(void);
+
     void add_all_dets(void);
 
     void add_excited_dets(const uint_t *, const int_t, const int_t);
@@ -306,11 +310,14 @@ struct TwoSpinWfn
 struct SparseOp
 {
     int_t nrow, ncol, size;
+    double ecore;
     std::vector<double> data;
     std::vector<int_t> indices;
     std::vector<int_t> indptr;
 
     SparseOp(void);
+
+    SparseOp(SparseOp &&) noexcept;
 
     inline int_t rows(void) const { return nrow; }
 
@@ -326,11 +333,11 @@ struct SparseOp
 
     void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) const;
 
-    void init_doci(const OneSpinWfn &, const double *, const double *, const double *, const int_t);
+    void init_doci(const OneSpinWfn &, const double, const double *, const double *, const double *, const int_t);
 
-    void init_fullci(const TwoSpinWfn &, const double *, const double *, const int_t);
+    void init_fullci(const TwoSpinWfn &, const double, const double *, const double *, const int_t);
 
-    void init_genci(const OneSpinWfn &, const double *, const double *, const int_t);
+    void init_genci(const OneSpinWfn &, const double, const double *, const double *, const int_t);
 };
 
 

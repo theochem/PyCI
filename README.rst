@@ -38,7 +38,6 @@ The following programs/libraries are required to build PyCI:
 -  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
 -  Python_ (≥3.4, including C headers)
 -  NumPy_ (≥1.13, including C headers)
--  Cython_ (≥0.24 or ≥3.0.0)
 
 The following programs/libraries are required to build the PyCI documentation:
 
@@ -52,6 +51,7 @@ The following header-only libraries are included as git submodules:
 -  `Parallel Hashmap`__
 -  Eigen_
 -  Spectra_
+-  Pybind11_
 
 __ Parallel-Hashmap_
 
@@ -103,7 +103,6 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 .. _PyCI:               http://github.com/msricher/PyCI/
 .. _Python:             http://python.org/
 .. _NumPy:              http://numpy.org/
-.. _Cython:             http://cython.org/
 .. _GCC:                http://gcc.gnu.org/
 .. _`Clang/LLVM`:       http://clang.llvm.org/
 .. _Sphinx:             http://sphinx-doc.org/
@@ -111,6 +110,7 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
 .. _Eigen:              http://eigen.tuxfamily.org/
 .. _Spectra:            http://spectralib.org/
+.. _Pybind11:           http://pybind11.readthedocs.io/en/stable/
 .. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
 
 .. |Python 3.8| image:: http://img.shields.io/badge/python-3.8-blue.svg

@@ -77,21 +77,20 @@ class TestRoutines:
         op = pyci.sparse_op(ham, wfn)
         es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
         if isinstance(wfn, pyci.doci_wfn):
-            d0, d2 = wfn.compute_rdms(cs[0])
+            d0, d2 = pyci.compute_rdms(wfn, cs[0])
             npt.assert_allclose(np.trace(d0), wfn.nocc_up, rtol=0, atol=1.0e-9)
             npt.assert_allclose(np.sum(d2), wfn.nocc_up * (wfn.nocc_up - 1), rtol=0, atol=1.0e-9)
-            k0 = ham.reduced_v(wfn.nocc_up)
-            k2 = ham.reduced_w(wfn.nocc_up)
+            k0, k2 = pyci.reduce_senzero_integrals(ham.h, ham.v, ham.w, wfn.nocc_up)
             energy = ham.ecore
             energy += np.einsum('ij,ij', k0, d0)
             energy += np.einsum('ij,ij', k2, d2)
             npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
-            rdm1, rdm2 = wfn.make_rdms(d0, d2)
+            rdm1, rdm2 = pyci.make_rdms(d0, d2)
         elif isinstance(wfn, pyci.fullci_wfn):
-            aa, bb, aaaa, bbbb, abab = wfn.compute_rdms(cs[0])
-            rdm1, rdm2 = wfn.make_rdms(aa, bb, aaaa, bbbb, abab)
+            d1, d2 = pyci.compute_rdms(wfn, cs[0])
+            rdm1, rdm2 = pyci.make_rdms(d1, d2)
         else:
-            rdm1, rdm2 = wfn.compute_rdms(cs[0])
+            rdm1, rdm2 = pyci.compute_rdms(wfn, cs[0])
         with np.load(datafile('{0:s}_spinres.npz'.format(filename))) as f:
             one_mo = f['one_mo']
             two_mo = f['two_mo']
@@ -108,7 +107,7 @@ class TestRoutines:
         dets_added = 1
         niter = 0
         while dets_added:
-            dets_added = wfn.run_hci(ham, cs[0], eps=1.0e-5)
+            dets_added = pyci.run_hci(ham, wfn, cs[0], eps=1.0e-5)
             es, cs = pyci.sparse_op(ham, wfn).solve(n=1, tol=1.0e-6)
             niter += 1
         assert niter > 1
@@ -116,7 +115,7 @@ class TestRoutines:
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-6)
         dets_added = 1
         while dets_added:
-            dets_added = wfn.run_hci(ham, cs[0], eps=0.0)
+            dets_added = pyci.run_hci(ham, wfn, cs[0], eps=0.0)
             op = pyci.sparse_op(ham, wfn)
             es, cs = op.solve(n=1, tol=1.0e-6)
         assert len(wfn) == np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])

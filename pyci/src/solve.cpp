@@ -422,8 +422,15 @@ void init_condense_thread(SparseOp &op, SparseOp &thread_op, const int_t ithread
 } // namespace // anonymous
 
 
-SparseOp::SparseOp() {
+SparseOp::SparseOp(void) {
     return;
+}
+
+
+SparseOp::SparseOp(SparseOp &&op) noexcept
+    : nrow(std::exchange(op.nrow, 0)), ncol(std::exchange(op.ncol, 0)),
+      size(std::exchange(op.size, 0)), ecore(std::exchange(op.ecore, 0)), 
+      data(std::move(op.data)), indices(std::move(op.indices)), indptr(std::move(op.indptr)) {
 }
 
 
@@ -479,15 +486,18 @@ void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const
     Eigen::Map<Eigen::VectorXd> eigenvalues(evals, n);
     Eigen::Map<Eigen::MatrixXd> eigenvectors(evecs, ncol, n);
     eigenvalues = eigs.eigenvalues();
+    for (int_t i = 0; i < n; ++i)
+        evals[i] += ecore;
     eigenvectors = eigs.eigenvectors();
 }
 
 
-void SparseOp::init_doci(const OneSpinWfn &wfn, const double *h, const double *v, const double *w,
-    const int_t nrow_) {
+void SparseOp::init_doci(const OneSpinWfn &wfn, const double ecore_, const double *h,
+        const double *v, const double *w, const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
     ncol = wfn.ndet;
+    ecore = ecore_;
     // prepare vectors
     data.resize(0);
     indices.resize(0);
@@ -517,10 +527,12 @@ void SparseOp::init_doci(const OneSpinWfn &wfn, const double *h, const double *v
 }
 
 
-void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double ecore_, const double *one_mo,
+        const double *two_mo, const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
     ncol = wfn.ndet;
+    ecore = ecore_;
     // prepare vectors
     data.resize(0);
     indices.resize(0);
@@ -550,10 +562,12 @@ void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double *one_mo, const do
 }
 
 
-void SparseOp::init_genci(const OneSpinWfn &wfn, const double *one_mo, const double *two_mo, const int_t nrow_) {
+void SparseOp::init_genci(const OneSpinWfn &wfn, const double ecore_, const double *one_mo,
+        const double *two_mo, const int_t nrow_) {
     // set attributes
     nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
     ncol = wfn.ndet;
+    ecore = ecore_;
     // prepare vectors
     data.resize(0);
     indices.resize(0);

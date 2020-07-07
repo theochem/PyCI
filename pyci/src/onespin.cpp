@@ -41,6 +41,13 @@ OneSpinWfn::OneSpinWfn(void) {
 }
 
 
+OneSpinWfn::OneSpinWfn(OneSpinWfn &&wfn) noexcept
+    : nword(std::exchange(wfn.nword, 0)), nbasis(std::exchange(wfn.nbasis, 0)),
+      nocc(std::exchange(wfn.nocc, 0)), nvir(std::exchange(wfn.nvir, 0)),
+      ndet(std::exchange(wfn.ndet, 0)), dets(std::move(wfn.dets)), dict(std::move(wfn.dict)) {
+}
+
+
 OneSpinWfn::OneSpinWfn(const int_t nbasis_, const int_t nocc_) {
     init(nbasis_, nocc_);
 }
@@ -68,11 +75,6 @@ OneSpinWfn::OneSpinWfn(const int_t nbasis_, const int_t nocc_, const int_t n, co
 
 OneSpinWfn::OneSpinWfn(const int_t nbasis_, const int_t nocc_, const int_t n, const int_t *occs) {
     from_occs_array(nbasis_, nocc_, n, occs);
-}
-
-
-OneSpinWfn::~OneSpinWfn(void) {
-    return;
 }
 
 
@@ -279,6 +281,19 @@ int_t OneSpinWfn::add_det_from_occs(const int_t *occs) {
     std::vector<uint_t> det(nword);
     fill_det(nocc, occs, &det[0]);
     return add_det(&det[0]);
+}
+
+
+void OneSpinWfn::add_hartreefock_det(void) {
+    std::vector<uint_t> det(nword);
+    int_t n = nocc, i = 0;
+    while (n >= PYCI_UINT_SIZE) {
+        det[i++] = PYCI_UINT_MAX;
+        n -= PYCI_UINT_SIZE;
+    }
+    if (n)
+        det[i] = (PYCI_UINT_ONE << n) - 1;
+    add_det(&det[0]);
 }
 
 

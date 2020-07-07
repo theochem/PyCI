@@ -18,4 +18,7 @@ PyCI module.
 
 """
 
+from .pyci import __version__
 from .pyci import *
+
+from .utils import *
