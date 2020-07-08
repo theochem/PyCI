@@ -73,12 +73,15 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
 
     # Check specified seniorities
     smin = wfn.nocc_up - wfn.nocc_dn
-    smax = min(wfn.nocc, wfn.nvir)
+    smax = min(wfn.nocc_up, wfn.nvir_up)
     if any(s < smin or s > smax or s % 2 != smin % 2 for s in seniorities):
         raise ValueError('invalid seniority number specified')
 
     # Make seniority-zero occupation vectors
-    occ_up_array = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up).to_occ_array()
+    sz_wfn = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up)
+    sz_wfn.add_all_dets()
+    occ_up_array = sz_wfn.to_occ_array()
+    del sz_wfn
 
     # Make working arrays
     brange = np.arange(wfn.nbasis, dtype=pyci.c_int)
