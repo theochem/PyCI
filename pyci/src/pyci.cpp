@@ -2048,8 +2048,8 @@ seniority-zero and seniority-two terms from the full 2-RDMs:
 The diagonal elements of :math:`D_0` are equal to the 1-RDM elements :math:`\left<p|p\right>`.
 
 For FullCI wave functions, the leading dimension of ``rdm1`` has length 2 and specifies the
-spin-block "up-up" or "down-down", and the leading dimensions of ``rdm2`` has length 2 and
-specifies the spin-block "up-up-up-up", "down-down-down-down', or "up-down-up-down".
+spin-block 0) "up-up" or 1) "down-down", and the leading dimensions of ``rdm2`` has length 3 and
+specifies the spin-block 0) "up-up-up-up", 1) "down-down-down-down', or 2) "up-down-up-down".
 
 )""",
 py::arg("wfn"), py::arg("c"));
@@ -2136,7 +2136,7 @@ m.def("run_hci", [](const RestrictedHam &ham, const FullCIWfn &wfn, const d_arra
 py::arg("ham"), py::arg("wfn"), py::arg("c"), py::arg("eps"));
 
 
-m.def("run_hci", [](const RestrictedHam &ham, const GenCIWfn &wfn, const d_array_t c, const double eps) {
+m.def("run_hci", [](const GeneralizedHam &ham, const GenCIWfn &wfn, const d_array_t c, const double eps) {
     py::buffer_info buf = c.request();
     if ((buf.ndim != 1) || (buf.shape[0] != wfn.ndet))
         throw std::domain_error("c has mismatched dimensions");
@@ -2202,7 +2202,7 @@ py::arg("ham"), py::arg("wfn"), py::arg("c"), py::arg("energy"), py::arg("eps") 
 
 
 m.def("compute_enpt2",
-    [](const RestrictedHam &ham, const GenCIWfn &wfn, const d_array_t c, const double energy, const double eps) {
+    [](const GeneralizedHam &ham, const GenCIWfn &wfn, const d_array_t c, const double energy, const double eps) {
         py::buffer_info buf = c.request();
         if ((buf.ndim != 1) || (buf.shape[0] != wfn.ndet))
             throw std::domain_error("c has mismatched dimensions");

@@ -1,6 +1,3 @@
-# cython: language_level=3, wraparound=False, binding=False
-# cython: initializedcheck=False, nonecheck=False, boundscheck=False
-#
 # This file is part of PyCI.
 #
 # PyCI is free software: you can redistribute it and/or modify it under
@@ -46,10 +43,14 @@ def read_fcidump(filename):
     -------
     ecore : float
         Constant/"zero-electron" integral.
-    one_mo : np.ndarray(c_double(nbasis, nbasis))
+    one_mo : np.ndarray
         Full one-electron integral array.
-    two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+    two_mo : np.ndarray
         Full two-electron integral array.
+
+    Notes
+    -----
+    Currently only works for restricted/generalized integrals.
 
     """
     ecore = 0.
@@ -106,9 +107,9 @@ def write_fcidump(filename, ecore, one_mo, two_mo, nelec=0, ms2=0, tol=1.0e-18):
         Name of FCIDUMP file to write.
     ecore : float
         Constant/"zero-electron" integral.
-    one_mo : np.ndarray(c_double(nbasis, nbasis))
+    one_mo : np.ndarray
         Full one-electron integral array.
-    two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+    two_mo : np.ndarray
         Full two-electron integral array.
     nelec : int, default=0
         Electron number to write to FCIDUMP file.
@@ -116,6 +117,10 @@ def write_fcidump(filename, ecore, one_mo, two_mo, nelec=0, ms2=0, tol=1.0e-18):
         Spin number to write to FCIDUMP file.
     tol : float, default=1.0e-18
         Write elements with magnitude larger than this value.
+
+    Notes
+    -----
+    Currently only works for restricted/generalized integrals.
 
     """
     nbasis = one_mo.shape[0]
@@ -144,23 +149,27 @@ def write_fcidump(filename, ecore, one_mo, two_mo, nelec=0, ms2=0, tol=1.0e-18):
 
 def make_senzero_integrals(one_mo, two_mo):
     r"""
-    Return the seniority-zero chunks of the full one- and two- electron integrals.
+    Return the non-zero chunks for seniority-zero of the full one- and two- electron integrals.
 
     Parameters
     ----------
-    one_mo : np.ndarray(c_double(nbasis, nbasis))
+    one_mo : np.ndarray
         Full one-electron integral array.
-    two_mo : np.ndarray(c_double(nbasis, nbasis, nbasis, nbasis))
+    two_mo : np.ndarray
         Full two-electron integral array.
 
     Returns
     -------
-    h : np.ndarray(c_double(nbasis))
+    h : np.ndarray
         Seniority-zero one-electron integrals.
-    v : np.ndarray(c_double(nbasis, nbasis))
+    v : np.ndarray
         Seniority-zero two-electron integrals.
-    w : np.ndarray(c_double(nbasis, nbasis))
+    w : np.ndarray
         Seniority-two two-electron integrals.
+
+    Notes
+    -----
+    Currently only works for restricted/generalized integrals.
 
     """
     h = np.copy(np.diagonal(one_mo))
@@ -173,23 +182,27 @@ def make_senzero_integrals(one_mo, two_mo):
 
 def reduce_senzero_integrals(h, v, w, nocc):
     r"""
-    Reduce the reduced seniority-zero one- and two- electron integrals.
+    Reduce the non-zero chunks for seniority-zero of the one- and two- electron integrals.
 
     Parameters
     ----------
-    h : np.ndarray(c_double(nbasis))
+    h : np.ndarray
         Seniority-zero one-electron integrals.
-    v : np.ndarray(c_double(nbasis, nbasis))
+    v : np.ndarray
         Seniority-zero two-electron integrals.
-    w : np.ndarray(c_double(nbasis, nbasis))
+    w : np.ndarray
         Seniority-two two-electron integrals.
 
     Returns
     -------
-    rv : np.ndarray(c_double(nbasis, nbasis))
+    rv : np.ndarray
         Reduced seniority-zero two-electron integrals.
-    rw : np.ndarray(c_double(nbasis, nbasis))
+    rw : np.ndarray
         Reduced seniority-two two-electron integrals.
+
+    Notes
+    -----
+    Currently only works for restricted/generalized integrals.
 
     """
     nbasis = h.shape[0]
@@ -220,9 +233,9 @@ def make_rdms(d1, d2):
 
     Returns
     -------
-    rdm1 : np.ndarray(c_double(nbasis * 2, nbasis * 2))
+    rdm1 : np.ndarray
         Generalized one-electron RDM.
-    rdm2 : np.ndarray(c_double(nbasis * 2, nbasis * 2, nbasis * 2, nbasis * 2))
+    rdm2 : np.ndarray
         Generalized two-electron RDM.
 
     """

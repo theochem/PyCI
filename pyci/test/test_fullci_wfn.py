@@ -116,8 +116,8 @@ class TestFullCIWfn:
         ndet = comb(nbasis, nocc_up, exact=True) * comb(nbasis, nocc_dn, exact=True)
         wfn = pyci.fullci_wfn(nbasis, nocc_up, nocc_dn)
         wfn.reserve(ndet)
-        assert_raises(ValueError, wfn.add_excited_dets, -1)
-        assert_raises(ValueError, wfn.add_excited_dets, 100)
+        assert_raises(IndexError, wfn.add_excited_dets, -1)
+        assert_raises(IndexError, wfn.add_excited_dets, 100)
         for i in range(wfn.nocc_up + wfn.nocc_dn + 1):
             wfn.add_excited_dets(i)
         assert len(wfn) == ndet
