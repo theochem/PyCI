@@ -22,3 +22,4 @@ from .pyci import __version__
 from .pyci import *
 
 from .utils import *
+from .routines import *
