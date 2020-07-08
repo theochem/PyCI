@@ -20,7 +20,7 @@ PyCI additional routines module.
 
 from itertools import combinations
 
-from typing import Sequence
+from typing import List, Sequence
 
 import numpy as np
 
@@ -166,10 +166,60 @@ def add_gkci(wfn: pyci.wavefunction, t: float = -0.5, p: float = 1.0, mode: str 
 
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
-        # TODO
-        raise NotImplementedError
+        _odometer_one_spin(wfn, nodes, t, p)
     elif isinstance(wfn, pyci.fullci_wfn):
-        # TODO
-        raise NotImplementedError
+        _odometer_two_spin(wfn, nodes, t, p)
     else:
-        raise TypeError('wfn must be pyci.{doci,fullci,genci}_wfn')
+        raise TypeError('wfn must be a pyci.{doci,fullci,genci}_wfn')
+
+
+def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: float) -> None:
+    r"""
+    Run the odometer algorithm for a one-spin wave function.
+
+    """
+    aufbau_occs = np.arange(wfn.nocc_up, dtype=pyci.c_int)
+    new_occs = np.copy(aufbau_occs)
+    old_occs = np.copy(aufbau_occs)
+    # Index of last electron
+    j_electron = wfn.nocc_up  - 1
+    # Compute cost of the most important neglected determinant
+    nodes_s = nodes[new_occs]
+    qs_neg = np.sum(nodes_s[:-1]) * p + (t + 1) * nodes[-1] * p
+    # Select determinants
+    while True:
+        if new_occs[wfn.nocc_up - 1] >= wfn.nbasis:
+            # Reject determinant b/c of occupying an inactive or non-existant orbital;
+            # go back to last-accepted determinant and excite the previous electron
+            new_occs[:] = old_occs
+            j_electron -= 1
+        else:
+            # Compute nodes and cost of occupied orbitals
+            nodes_s = nodes[new_occs]
+            qs = np.sum(nodes_s) + t * np.max(nodes_s)
+            if qs < qs_neg:
+                # Accept determinant and excite the last electron again
+                wfn.add_occs(new_occs)
+                j_electron = wfn.nocc_up - 1
+            else:
+                # Reject determinant because of high cost; go back to last-accepted
+                # determinant and excite the previous electron
+                new_occs[:] = old_occs
+                j_electron -= 1
+        if j_electron < 0:
+            # Done
+            break
+        # Record last-accepted determinant and excite j_electron
+        old_occs[:] = new_occs
+        new_occs[j_electron] += 1
+        if j_electron != wfn.nocc_up - 1:
+            for k in range(j_electron + 1, wfn.nocc_up):
+                new_occs[k] = new_occs[j_electron] + k - j_electron
+
+
+def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: float) -> None:
+    r"""
+    Run the odometer algorithm for a two-spin wave function.
+
+    """
+    raise NotImplementedError
