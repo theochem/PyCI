@@ -18,6 +18,8 @@ PyCI utilities module.
 
 """
 
+from typing import TextIO, Tuple
+
 import numpy as np
 
 
@@ -30,14 +32,14 @@ __all__ = [
         ]
 
 
-def read_fcidump(filename):
+def read_fcidump(filename: TextIO) -> Tuple[float, np.ndarray, np.ndarray]:
     r"""
     Read an FCIDUMP file.
 
     Parameters
     ----------
-    filename : str
-        Name of FCIDUMP file to read.
+    filename : TextIO
+        FCIDUMP file to read.
 
     Returns
     -------
@@ -97,14 +99,15 @@ def read_fcidump(filename):
     return ecore, one_mo, two_mo
 
 
-def write_fcidump(filename, ecore, one_mo, two_mo, nelec=0, ms2=0, tol=1.0e-18):
+def write_fcidump(filename: TextIO, ecore: float, one_mo: np.ndarray, two_mo: np.ndarray,
+        nelec: int = 0, ms2: int = 0, tol: float = 1.0e-18) -> None:
     r"""
     Write a Hamiltonian instance to an FCIDUMP file.
 
     Parameters
     ----------
-    filename : str
-        Name of FCIDUMP file to write.
+    filename : TextIO
+        FCIDUMP file to write.
     ecore : float
         Constant/"zero-electron" integral.
     one_mo : np.ndarray
@@ -147,7 +150,8 @@ def write_fcidump(filename, ecore, one_mo, two_mo, nelec=0, ms2=0, tol=1.0e-18):
         f.write(f'{ecore if abs(ecore) > tol else 0:23.16E}    0    0    0    0\n')
 
 
-def make_senzero_integrals(one_mo, two_mo):
+def make_senzero_integrals(one_mo: np.ndarray, two_mo: np.ndarray) \
+        -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     r"""
     Return the non-zero chunks for seniority-zero of the full one- and two- electron integrals.
 
@@ -180,7 +184,8 @@ def make_senzero_integrals(one_mo, two_mo):
     return h, v, w
 
 
-def reduce_senzero_integrals(h, v, w, nocc):
+def reduce_senzero_integrals(h: np.ndarray, v: np.ndarray, w: np.ndarray, nocc: int) \
+        -> Tuple[np.ndarray, np.ndarray]:
     r"""
     Reduce the non-zero chunks for seniority-zero of the one- and two- electron integrals.
 
@@ -192,6 +197,8 @@ def reduce_senzero_integrals(h, v, w, nocc):
         Seniority-zero two-electron integrals.
     w : np.ndarray
         Seniority-two two-electron integrals.
+    nocc : int
+        Number of pair-occupied orbitals.
 
     Returns
     -------
@@ -219,7 +226,7 @@ def reduce_senzero_integrals(h, v, w, nocc):
     return rv, rw
 
 
-def make_rdms(d1, d2):
+def make_rdms(d1: np.ndarray, d2: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     r"""
     Convert the DOCI matrices :math:`D0` and :math:`D2` or the FullCI RDM spin-blocks to full,
     generalized RDMs.
