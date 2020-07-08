@@ -364,13 +364,92 @@ where
 )""";
 
 
-hamiltonian.def_readonly("nbasis", &Hamiltonian::nbasis, "Number of orbital basis functions.");
-hamiltonian.def_readonly("ecore", &Hamiltonian::ecore,   "Constant/\"zero-electron\" integral");
-hamiltonian.def_readonly("one_mo", &Hamiltonian::one_mo, "Full one-electron integral array.");
-hamiltonian.def_readonly("two_mo", &Hamiltonian::two_mo, "Full two-electron integral array.");
-hamiltonian.def_readonly("h", &Hamiltonian::h, "Seniority-zero one-electron integral array.");
-hamiltonian.def_readonly("v", &Hamiltonian::v, "Seniority-zero two-electron integral array.");
-hamiltonian.def_readonly("w", &Hamiltonian::w, "Seniority-two two-electron integral array.");
+hamiltonian.def_readonly("nbasis", &Hamiltonian::nbasis,
+R"""(
+Number of orbital basis functions.
+
+Returns
+-------
+nbasis : int
+    Number of orbital basis functions.
+
+)""");
+
+
+hamiltonian.def_readonly("ecore", &Hamiltonian::ecore,
+R"""(
+Constant/"zero-electron" integral.
+
+Returns
+-------
+ecore : float
+    Constant/"zero-electron" integral.
+
+)""");
+
+
+hamiltonian.def_readonly("one_mo", &Hamiltonian::one_mo,
+R"""(
+Full one-electron integral array.
+
+Returns
+-------
+one_mo : np.ndarray
+    Full one-electron integral array.
+
+)""");
+
+
+hamiltonian.def_readonly("two_mo", &Hamiltonian::two_mo,
+R"""(
+Full two-electron integral array.
+
+Returns
+-------
+two_mo : np.ndarray
+    Full two-electron integral array.
+
+)""");
+
+
+
+hamiltonian.def_readonly("h", &Hamiltonian::h,
+R"""(
+Seniority-zero one-electron integral array.
+
+Returns
+-------
+h : np.ndarray
+    Seniority-zero one-electron integral array.
+
+)""");
+
+
+
+hamiltonian.def_readonly("v", &Hamiltonian::v,
+R"""(
+Seniority-zero two-electron integral array.
+
+Returns
+-------
+v : np.ndarray
+    Seniority-zero two-electron integral array.
+
+)""");
+
+
+
+hamiltonian.def_readonly("w", &Hamiltonian::w,
+R"""(
+Seniority-two two-electron integral array.
+
+Returns
+-------
+w : np.ndarray
+    Seniority-two two-electron integral array.
+
+)""");
+
 
 
 hamiltonian.def("to_file", &Hamiltonian::to_file,
@@ -545,7 +624,16 @@ py::class_<OneSpinWfn> one_spin_wfn(m, "one_spin_wfn", "wavefunction");
 one_spin_wfn.doc() = "One-spin wave function class.";
 
 
-one_spin_wfn.def_readonly("nbasis", &OneSpinWfn::nbasis, "Number of orbital basis functions.");
+one_spin_wfn.def_readonly("nbasis", &OneSpinWfn::nbasis,
+R"""(
+Number of orbital basis functions.
+
+Returns
+-------
+nbasis : int
+    Number of orbital basis functions.
+
+)""");
 
 
 one_spin_wfn.def("to_file", &OneSpinWfn::to_file,
@@ -794,7 +882,16 @@ py::class_<TwoSpinWfn> two_spin_wfn(m, "two_spin_wfn", "wavefunction");
 two_spin_wfn.doc() = "Two-spin wave function class.";
 
 
-two_spin_wfn.def_readonly("nbasis", &TwoSpinWfn::nbasis);
+two_spin_wfn.def_readonly("nbasis", &TwoSpinWfn::nbasis,
+R"""(
+Number of orbital basis functions.
+
+Returns
+-------
+nbasis : int
+    Number of orbital basis functions.
+
+)""");
 
 
 two_spin_wfn.def("to_file", &TwoSpinWfn::to_file,
@@ -1067,37 +1164,83 @@ doci_wfn.doc() = "DOCI wave function class.";
 doci_wfn.def_property_readonly("nocc", [](const OneSpinWfn &self) {
         return self.nocc * 2;
     },
-"Number of occupied orbitals.");
+R"""(
+Number of occupied orbitals.
+
+Returns
+-------
+nocc : int
+    Number of occupied orbitals.
+
+)""");
 
 
 doci_wfn.def_property_readonly("nocc_up", [](const OneSpinWfn &self) {
         return self.nocc;
     },
-"Number of spin-up occupied orbitals.");
+R"""(
+Number of spin-up occupied orbitals.
+
+Returns
+-------
+nocc_up : int
+    Number of spin-up occupied orbitals.
+)""");
 
 
 doci_wfn.def_property_readonly("nocc_dn", [](const OneSpinWfn &self) {
         return self.nocc;
     },
-"Number of spin-down occupied orbitals.");
+R"""(
+Number of spin-down occupied orbitals.
+
+Returns
+-------
+nocc_dn : int
+    Number of spin-down occupied orbitals.
+)""");
 
 
 doci_wfn.def_property_readonly("nvir", [](const OneSpinWfn &self) {
         return self.nvir * 2;
     },
-"Number of virtual orbitals.");
+R"""(
+Number of virtual orbitals.
+
+Returns
+-------
+nvir : int
+    Number of virtual orbitals.
+
+)""");
 
 
 doci_wfn.def_property_readonly("nvir_up", [](const OneSpinWfn &self) {
         return self.nvir;
     },
-"Number of spin-up virtual orbitals.");
+R"""(
+Number of spin-up virtual orbitals.
+
+Returns
+-------
+nvir_up : int
+    Number of spin-up virtual orbitals.
+
+)""");
 
 
 doci_wfn.def_property_readonly("nvir_dn", [](const OneSpinWfn &self) {
         return self.nvir;
     },
-"Number of spin-down virtual orbitals.");
+R"""(
+Number of spin-down virtual orbitals.
+
+Returns
+-------
+nvir_dn : int
+    Number of spin-down virtual orbitals.
+
+)""");
 
 
 doci_wfn.def(py::init<const char *>(),
@@ -1206,37 +1349,83 @@ fullci_wfn.doc() = "FullCI wave function class.";
 fullci_wfn.def_property_readonly("nocc", [](const TwoSpinWfn &self) {
         return self.nocc_up + self.nocc_dn;
     },
-"Number of occupied orbitals.");
+R"""(
+Number of occupied orbitals.
+
+Returns
+-------
+nocc : int
+    Number of occupied orbitals.
+
+)""");
 
 
 fullci_wfn.def_property_readonly("nocc_up", [](const TwoSpinWfn &self) {
         return self.nocc_up;
     },
-"Number of spin-up occupied orbitals.");
+R"""(
+Number of spin-up occupied orbitals.
+
+Returns
+-------
+nocc_up : int
+    Number of spin-up occupied orbitals.
+)""");
 
 
 fullci_wfn.def_property_readonly("nocc_dn", [](const TwoSpinWfn &self) {
         return self.nocc_dn;
     },
-"Number of spin-down occupied orbitals.");
+R"""(
+Number of spin-down occupied orbitals.
+
+Returns
+-------
+nocc_dn : int
+    Number of spin-down occupied orbitals.
+)""");
 
 
 fullci_wfn.def_property_readonly("nvir", [](const TwoSpinWfn &self) {
         return self.nvir_up + self.nvir_dn;
     },
-"Number of virtual orbitals.");
+R"""(
+Number of virtual orbitals.
+
+Returns
+-------
+nvir : int
+    Number of virtual orbitals.
+
+)""");
 
 
 fullci_wfn.def_property_readonly("nvir_up", [](const TwoSpinWfn &self) {
         return self.nvir_up;
     },
-"Number of spin-up virtual orbitals.");
+R"""(
+Number of spin-up virtual orbitals.
+
+Returns
+-------
+nvir_up : int
+    Number of spin-up virtual orbitals.
+
+)""");
 
 
 fullci_wfn.def_property_readonly("nvir_dn", [](const TwoSpinWfn &self) {
         return self.nvir_dn;
     },
-"Number of spin-down virtual orbitals.");
+R"""(
+Number of spin-down virtual orbitals.
+
+Returns
+-------
+nvir_dn : int
+    Number of spin-down virtual orbitals.
+
+)""");
 
 
 fullci_wfn.def(py::init<const char *>(),
@@ -1355,37 +1544,83 @@ genci_wfn.doc() = "Generalized CI wave function class.";
 genci_wfn.def_property_readonly("nocc", [](const OneSpinWfn &self) {
         return self.nocc;
     },
-"Number of occupied orbitals.");
+R"""(
+Number of occupied orbitals.
+
+Returns
+-------
+nocc : int
+    Number of occupied orbitals.
+
+)""");
 
 
 genci_wfn.def_property_readonly("nocc_up", [](const OneSpinWfn &self) {
         return self.nocc;
     },
-"Number of spin-up occupied orbitals.");
+R"""(
+Number of spin-up occupied orbitals.
+
+Returns
+-------
+nocc_up : int
+    Number of spin-up occupied orbitals.
+)""");
 
 
 genci_wfn.def_property_readonly("nocc_dn", [](const OneSpinWfn &self) {
         return 0;
     },
-"Number of spin-down occupied orbitals.");
+R"""(
+Number of spin-down occupied orbitals.
+
+Returns
+-------
+nocc_dn : int
+    Number of spin-down occupied orbitals.
+)""");
 
 
 genci_wfn.def_property_readonly("nvir", [](const OneSpinWfn &self) {
         return self.nvir;
     },
-"Number of virtual orbitals.");
+R"""(
+Number of virtual orbitals.
+
+Returns
+-------
+nvir : int
+    Number of virtual orbitals.
+
+)""");
 
 
 genci_wfn.def_property_readonly("nvir_up", [](const OneSpinWfn &self) {
         return self.nvir;
     },
-"Number of spin-up virtual orbitals.");
+R"""(
+Number of spin-up virtual orbitals.
+
+Returns
+-------
+nvir_up : int
+    Number of spin-up virtual orbitals.
+
+)""");
 
 
 genci_wfn.def_property_readonly("nvir_dn", [](const OneSpinWfn &self) {
         return 0;
     },
-"Number of spin-down virtual orbitals.");
+R"""(
+Number of spin-down virtual orbitals.
+
+Returns
+-------
+nvir_dn : int
+    Number of spin-down virtual orbitals.
+
+)""");
 
 
 genci_wfn.def(py::init<const char *>(),
@@ -1502,7 +1737,17 @@ sparse_op.doc() = "Sparse CI matrix operator class.";
 sparse_op.def_property_readonly("shape", [](const SparseOp &self) {
         return py::make_tuple(self.nrow, self.ncol);
     },
-"The shape of the sparse CI matrix.");
+R"""(
+The shape of the sparse CI matrix.
+
+Returns
+-------
+rows : int
+    Number of rows in the sparse matrix.
+cols : int
+    Number of columns in the sparse matrix.
+
+)""");
 
 
 sparse_op.def(py::init([](const RestrictedHam &ham, const DOCIWfn &wfn, const int_t rows) {
@@ -1777,14 +2022,14 @@ Parameters
 ----------
 wfn : (doci_wfn | fullci_wfn | genci_wfn)
     Wave function.
-coeffs : np.ndarray(c_double(ndet))
+coeffs : np.ndarray
     Coefficient vector.
 
 Returns
 -------
 rdm1 : np.ndarray
     One-electron reduced density matrix.
-rdm2 : np.ndarray(c_double(...))
+rdm2 : np.ndarray
     Two-electron reduced density matrix.
 
 Notes
@@ -1864,7 +2109,7 @@ ham : (restricted_ham | unrestricted_ham | generalized_ham)
     Hamiltonian of the system.
 wfn : (doci_wfn | fullci_wfn | genci_wfn)
     Wave function of the system.
-coeffs : np.ndarray(c_double(ndet))
+coeffs : np.ndarray
     Coefficient vector.
 eps : float
     Threshold value for which determinants to include.
@@ -1925,7 +2170,7 @@ ham : (restricted_ham | unrestricted_ham | generalized_ham)
     Hamiltonian of the system.
 wfn : (doci_wfn | fullci_wfn | genci_wfn)
     Wave function of the system.
-coeffs : np.ndarray(c_double(ndet))
+coeffs : np.ndarray
     Coefficient vector.
 energy : float
     Variational energy of the system.
