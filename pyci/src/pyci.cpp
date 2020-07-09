@@ -703,7 +703,7 @@ one_spin_wfn.def("__getitem__", [](const OneSpinWfn &self, const int_t index) {
         return u_array_t({self.nword}, {sizeof(uint_t)}, self.det_ptr(index));
     },
 R"""(
-Return the :math:`index`th determinant from the wave function.
+Return the :math:`i`th determinant from the wave function.
 
 Parameters
 ----------
@@ -964,7 +964,7 @@ two_spin_wfn.def("__getitem__", [](const TwoSpinWfn &self, const int_t index) {
         );
     },
 R"""(
-Return the :math:`index`th determinant from the wave function.
+Return the :math:`i`th determinant from the wave function.
 
 Parameters
 ----------
@@ -1329,6 +1329,11 @@ doci_wfn.def("truncated", [](const DOCIWfn &self, const int_t n) {
 R"""(
 Return a truncated copy of the wave function.
 
+Parameters
+----------
+n : int
+    Truncate to the first :math:`n` parameters.
+
 Returns
 -------
 wfn : doci_wfn
@@ -1524,6 +1529,11 @@ fullci_wfn.def("truncated", [](const FullCIWfn &self, const int_t n) {
 R"""(
 Return a truncated copy of the wave function.
 
+Parameters
+----------
+n : int
+    Truncate to the first :math:`n` parameters.
+
 Returns
 -------
 wfn : fullci_wfn
@@ -1716,6 +1726,11 @@ genci_wfn.def("truncated", [](const GenCIWfn &self, const int_t n) {
     },
 R"""(
 Return a truncated copy of the wave function.
+
+Parameters
+----------
+n : int
+    Truncate to the first :math:`n` parameters.
 
 Returns
 -------
@@ -2078,7 +2093,7 @@ m.def("compute_rdms", [](const GenCIWfn &wfn, const d_array_t c) {
             throw std::domain_error("c has mismatched dimensions");
         d_array_t rdm1({(unsigned)wfn.nbasis, (unsigned)wfn.nbasis});
         d_array_t rdm2({(unsigned)wfn.nbasis, (unsigned)wfn.nbasis, (unsigned)wfn.nbasis, (unsigned)wfn.nbasis});
-        wfn.compute_rdms_doci((const double *)buf.ptr, (double *)rdm1.request().ptr, (double *)rdm2.request().ptr);
+        wfn.compute_rdms_genci((const double *)buf.ptr, (double *)rdm1.request().ptr, (double *)rdm2.request().ptr);
         return py::make_tuple(rdm1, rdm2);
     },
 py::arg("wfn"), py::arg("c"));

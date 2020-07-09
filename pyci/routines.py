@@ -42,7 +42,7 @@ def add_excitations(wfn: pyci.wavefunction, *excitations: Sequence[int], ref=Non
     ----------
     wfn : pyci.wavefunction
         Wave function.
-    seniorities : Sequence[int]
+    excitations : Sequence[int]
         List of excitation levels of determinants to add.
     ref : np.ndarray, optional
         Reference determinant by which to determine excitation levels.
