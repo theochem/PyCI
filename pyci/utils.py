@@ -228,7 +228,7 @@ def reduce_senzero_integrals(h: np.ndarray, v: np.ndarray, w: np.ndarray, nocc: 
 
 def make_rdms(d1: np.ndarray, d2: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     r"""
-    Convert the DOCI matrices :math:`D0` and :math:`D2` or the FullCI RDM spin-blocks to full, generalized RDMs.
+    Convert the DOCI matrices or FullCI RDM spin-blocks to full, generalized RDMs.
 
     Parameters
     ----------

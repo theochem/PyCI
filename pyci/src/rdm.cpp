@@ -154,19 +154,19 @@ void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *b
                             aaaa[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
                             //aaaa(ii, kk, kk, jj) -= val2;
                             aaaa[ii * n3 + kk * n2 + kk * n1 + jj] -= val2;
-                            // aaaa(kk, ii, kk, jj)
+                            // aaaa(kk, ii, kk, jj) += val2;
                             aaaa[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
-                            // aaaa(kk, ii, jj, kk)
+                            // aaaa(kk, ii, jj, kk) -= val2;
                             aaaa[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
                             // switch particles
-                            //aaaa(jj, kk, ii, kk)
+                            //aaaa(jj, kk, ii, kk) += val2;
                             aaaa[n3 * jj + n2 * kk + n1 * ii + kk] += val2;
-                            //aaaa(jj, kk, kk, ii)
+                            //aaaa(jj, kk, kk, ii) -= val2;
                             aaaa[n3 * jj + n2 * kk + n1 * kk + ii] -= val2;
                             // switch above
-                            //aaaa(kk, jj, ii, kk)
+                            //aaaa(kk, jj, ii, kk) -= val2;
                             aaaa[n3 * kk + n2 * jj + n1 * ii + kk] -= val2;
-                            //aaaa(kk, jj, kk, ii)
+                            //aaaa(kk, jj, kk, ii) += val2;
                             aaaa[n3 * kk + n2 * jj + n1 * kk + ii] += val2;
                         }
                     }
@@ -174,8 +174,7 @@ void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *b
                         kk = occs_dn[k];
                         //abab(ii, kk, jj, kk) += val2;
                         abab[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
-                        // TODO: check
-                        //abab(jj, kk, ii, kk)
+                        //abab(jj, kk, ii, kk) += val2;
                         abab[n3 * jj + kk * n2 + ii * n1 + kk] += val2;
                     }
                 }
@@ -195,7 +194,7 @@ void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *b
                                  * sign_up * phase_single_det(nword, kk, ll, rdet_dn);
                             //abab(ii, kk, jj, ll) += val2;
                             abab[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
-                            //abab(jj, ll, ii, kk)
+                            //abab(jj, ll, ii, kk) += val2;
                             abab[n3 * jj + n2 * ll + n1 * ii + kk] += val2;
                         }
                         excite_det(ll, kk, det_dn);
@@ -219,13 +218,13 @@ void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *b
                             aaaa[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
                             //aaaa(ii, kk, ll, jj) -= val2;
                             aaaa[ii * n3 + kk * n2 + ll * n1 + jj] -= val2;
-                            //aaaa(kk, ii, jj, ll)
+                            //aaaa(kk, ii, jj, ll) -= val2;
                             aaaa[n3 * kk + n2 * ii + n1 * jj + ll] -= val2;
-                            //aaaa(kk, ii, ll, jj)
+                            //aaaa(kk, ii, ll, jj) += val2;
                             aaaa[n3 * kk + n2 * ii + n1 * ll + jj] += val2;
                             //aaaa(jj, ll, ii, kk) += val2;
                             aaaa[jj * n3 + ll * n2 + ii * n1 + kk] += val2;
-                            //aaaa(jj, ll, kk, ii)
+                            //aaaa(jj, ll, kk, ii) -= val2;
                             aaaa[jj * n3 + ll * n2 + kk * n1 + ii] -= val2;
                             //aaaa(ll, jj, ii, kk) -= val2;
                             aaaa[n3 * ll + n2 * jj + n1 * ii + kk] -= val2;
@@ -250,7 +249,6 @@ void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *b
                 bbbb[ii * n3 + kk * n2 + ii * n1 + kk] += val1;
                 //bbbb(ii, kk, kk, ii) -= val1;
                 bbbb[ii * n3 + kk * n2 + kk * n1 + ii] -= val1;
-                // TODO: Double check the indices work.
                 bbbb[kk * n3 +  ii * n2 + ii * n1 + kk] -= val1;
                 //rdm2(ii, kk, kk, ii) -= val1;
                 bbbb[kk * n3 + ii * n2 + kk * n1 + ii] += val1;
@@ -273,7 +271,7 @@ void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *b
                         kk = occs_up[k];
                         //abab(ii, kk, jj, kk) += val2;
                         abab[n3 * kk + n2 * ii + kk * n1 + jj] += val2;
-                        //abab(kk, jj, kk, ii)
+                        //abab(kk, jj, kk, ii) += val2;
                         abab[n3 * kk + jj * n2 + kk * n1 + ii] += val2;
                     }
                     for (k = 0; k < nocc_dn; ++k) {
@@ -283,19 +281,19 @@ void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *b
                             bbbb[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
                             //bbbb(ii, kk, kk, jj) -= val2;
                             bbbb[ii * n3 + kk * n2 + kk * n1 + jj] -= val2;
-                            // bbbb(kk, ii, kk, jj)
+                            // bbbb(kk, ii, kk, jj) += val2;
                             bbbb[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
-                            // bbbb(kk, ii, jj, kk)
+                            // bbbb(kk, ii, jj, kk) -= val2;
                             bbbb[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
                             // switch particles
-                            //bbbb(jj, kk, ii, kk)
+                            //bbbb(jj, kk, ii, kk) += val2;
                             bbbb[n3 * jj + n2 * kk + n1 * ii + kk] += val2;
-                            //bbbb(jj, kk, kk, ii)
+                            //bbbb(jj, kk, kk, ii) -= val2;
                             bbbb[n3 * jj + n2 * kk + n1 * kk + ii] -= val2;
                             // switch above
-                            //bbbb(kk, jj, ii, kk)
+                            //bbbb(kk, jj, ii, kk) -= val2;
                             bbbb[n3 * kk + n2 * jj + n1 * ii + kk] -= val2;
-                            //bbbb(kk, jj, kk, ii)
+                            //bbbb(kk, jj, kk, ii) += val2;
                             bbbb[n3 * kk + n2 * jj + n1 * kk + ii] += val2;
                         }
                     }
@@ -318,17 +316,17 @@ void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *b
                             bbbb[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
                             //bbbb(ii, kk, ll, jj) -= val2;
                             bbbb[ii * n3 + kk * n2 + ll * n1 + jj] -= val2;
-                            //bbbb(kk, ii, jj, ll)
+                            //bbbb(kk, ii, jj, ll) -= val2;
                             bbbb[n3 * kk + n2 * ii + n1 * jj + ll] -= val2;
-                            //bbbb(kk, ii, ll, jj)
+                            //bbbb(kk, ii, ll, jj) += val2;
                             bbbb[n3 * kk + n2 * ii + n1 * ll + jj] += val2;
                              //bbbb(jj, ll, ii, kk) += val2;
                             bbbb[jj * n3 + ll * n2 + ii * n1 + kk] += val2;
                             //bbbb(ll, jj, ii, kk) -= val2;
                             bbbb[n3 * ll + n2 * jj + n1 * ii + kk] -= val2;
-                            //bbbb(jj, ll, kk, ii)
+                            //bbbb(jj, ll, kk, ii) -= val2;
                             bbbb[jj * n3 + ll * n2 + kk * n1 + ii] -= val2;
-                            //bbbb(ll, jj, kk, ii)
+                            //bbbb(ll, jj, kk, ii) += val2;
                             bbbb[n3 * ll + n2 * jj + n1 * kk + ii] += val2;
                         }
                         excite_det(ll, kk, det_dn);

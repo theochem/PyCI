@@ -222,4 +222,49 @@ def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: fl
     Run the odometer algorithm for a two-spin wave function.
 
     """
-    raise NotImplementedError
+    aufbau_occs = np.arange(wfn.nocc, dtype=pyci.c_int)
+    aufbau_occs[wfn.nocc_up:] -= wfn.nocc_up
+    new_occs = np.copy(aufbau_occs)
+    old_occs = np.copy(aufbau_occs)
+    # Index of last electron
+    j_electron = wfn.nocc  - 1
+    # Compute cost of the most important neglected determinant
+    nodes_up = nodes[new_occs[:wfn.nocc_up]]
+    nodes_dn = nodes[new_occs[wfn.nocc_up:]]
+    q_up_neg = np.sum(nodes_up[:-1]) * p + (t + 1) * nodes_up[-1] * p
+    q_dn_neg = np.sum(nodes_dn[:-1]) * p + (t + 1) * nodes_dn[-1] * p
+    # Select determinants
+    while True:
+        if max(new_occs[wfn.nocc_up - 1], new_occs[wfn.nocc - 1]) >= wfn.nbasis:
+            # Reject determinant b/c of occupying an inactive or non-existant orbital;
+            # go back to last-accepted determinant and excite the previous electron
+            new_occs[:] = old_occs
+            j_electron -= 1
+        else:
+            # Compute nodes and cost of occupied orbitals
+            nodes_s = nodes[new_occs]
+            q_up = np.sum(nodes_up) + t * np.max(nodes_up)
+            q_dn = np.sum(nodes_dn) + t * np.max(nodes_dn)
+            if q_up < q_up_neg and q_dn < q_dn_neg:
+                # Accept determinant and excite the last electron again
+                wfn.add_occs(new_occs)
+                j_electron = wfn.nocc - 1
+            else:
+                # Reject determinant because of high cost; go back to last-accepted
+                # determinant and excite the previous electron
+                new_occs[:] = old_occs
+                j_electron -= 1
+        if j_electron < 0:
+            # Done
+            break
+        # Record last-accepted determinant and excite j_electron
+        old_occs[:] = new_occs
+        new_occs[j_electron] += 1
+        if j_electron < wfn.nocc_up:
+            # excite spin-up electron
+            for k in range(j_electron + 1, wfn.nocc_up):
+                new_occs[k] = new_occs[j_electron] + k - j_electron
+        elif j_electron < wfn.nocc - 1:
+            # excite spin-down electron
+            for k in range(j_electron + 1, wfn.nocc):
+                new_occs[k] = new_occs[j_electron] + k - j_electron
