@@ -429,7 +429,7 @@ SparseOp::SparseOp(void) {
 
 SparseOp::SparseOp(SparseOp &&op) noexcept
     : nrow(std::exchange(op.nrow, 0)), ncol(std::exchange(op.ncol, 0)),
-      size(std::exchange(op.size, 0)), ecore(std::exchange(op.ecore, 0)), 
+      size(std::exchange(op.size, 0)), ecore(std::exchange(op.ecore, 0)),
       data(std::move(op.data)), indices(std::move(op.indices)), indptr(std::move(op.indptr)) {
 }
 
@@ -468,6 +468,42 @@ void SparseOp::perform_op(const double *x, double *y) const {
             y[i] = val;
         }
     }
+}
+
+
+void SparseOp::cepa0_shift(const double *coeffs) {
+    int_t i, j, jstart, jend, index;
+    double ecorr = 0.0;
+    // ecorr = {1/c_0} * \sum_{i=1}^{nrow}{c_i * <0|H|i>}
+    for (i = 1; i < nrow; ++i) {
+        jstart = indptr[i];
+        jend = indptr[i + 1];
+        for (j = jstart; j < jend; ++j) {
+            index = indices[j];
+            if (!(index)) {
+                ecorr += coeffs[i] * data[j];
+                continue;
+            }
+        }
+    }
+    ecorr /= coeffs[0];
+    // <i|H|j> -= \delta_{ij} * ecorr (for i > 0)
+    i = 1;
+    while (i < nrow)
+        // diagonal elements are the last ones in each row
+        data[indptr[++i] - 1] += ecorr;
+    /* If the above structure is no longer good, use this more general version: */
+    /* for (i = 1; i < nrow; ++i) { */
+    /*     jstart = indptr[i]; */
+    /*     jend = indptr[i + 1]; */
+    /*     for (j = jstart; j < jend; ++j) { */
+    /*         index = indices[j]; */
+    /*         if (index == i) { */
+    /*             data[j] += ecorr; */
+    /*             continue; */
+    /*         } */
+    /*     } */
+    /* } */
 }
 
 

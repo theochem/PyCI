@@ -19,6 +19,8 @@
 #include <utility>
 #include <vector>
 
+#include <omp.h>
+
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
@@ -1843,6 +1845,26 @@ y : np.ndarray
 py::arg("x"));
 
 
+sparse_op.def("cepa0_shift",
+    [](SparseOp &self, const d_array_t coeffs) {
+    if (self.nrow != self.ncol)
+        throw std::domain_error("cannot CEPA0-shift a rectangular operator");
+    py::buffer_info buf = coeffs.request();
+    if ((buf.ndim != 1) || (buf.shape[0] != self.nrow))
+        throw std::domain_error("x has mismatched dimensions");
+    self.cepa0_shift((const double *)buf.ptr);
+    },
+R"""(
+Shift the diagonal elements of the sparse operator to solve the CEPA0 problem.
+
+Parameters
+----------
+coeffs : np.ndarray
+    Coefficient vector.
+)""",
+py::arg("coeffs"));
+
+
 sparse_op.def("__call__",
     [](const SparseOp &self, const d_array_t x, d_array_t out) {
     py::buffer_info bufx = x.request(), bufy = out.request();
@@ -2229,6 +2251,30 @@ m.def("compute_enpt2",
             ) + energy;
         },
 py::arg("ham"), py::arg("wfn"), py::arg("c"), py::arg("energy"), py::arg("eps") = 1.0e-6);
+
+
+m.def("get_max_threads", &omp_get_max_threads,
+R"""(
+Return the allowed number of OMP threads.
+
+Returns
+-------
+nthread : int
+    Number of threads.
+)""");
+
+
+m.def("set_num_threads", &omp_set_num_threads,
+R"""(
+Set the number of OMP threads.
+
+Parameters
+----------
+nthread : int
+    Number of threads.
+
+)""",
+py::arg("nthread"));
 
 
 } // PYBIND11_MODULE(pyci, m)

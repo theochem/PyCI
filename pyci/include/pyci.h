@@ -331,6 +331,8 @@ struct SparseOp
 
     void perform_op(const double *, double *) const;
 
+    void cepa0_shift(const double *);
+
     void solve(const double *, const int_t, const int_t, const int_t, const double, double *, double *) const;
 
     void init_doci(const OneSpinWfn &, const double, const double *, const double *, const double *, const int_t);
