@@ -24,6 +24,12 @@ Functions
 
 .. autofunction:: pyci.set_num_threads
 
+.. autofunction:: pyci.add_excitations
+
+.. autofunction:: pyci.add_seniorities
+
+.. autofunction:: pyci.add_gkci
+
 Numerical Types and Constants
 -----------------------------
 
