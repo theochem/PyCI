@@ -17,6 +17,13 @@
 PyCI API Documentation
 ======================
 
+Functions
+---------
+
+.. autofunction:: pyci.get_num_threads
+
+.. autofunction:: pyci.set_num_threads
+
 Numerical Types and Constants
 -----------------------------
 

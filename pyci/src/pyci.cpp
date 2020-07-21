@@ -2262,7 +2262,7 @@ m.def("compute_enpt2",
 py::arg("ham"), py::arg("wfn"), py::arg("c"), py::arg("energy"), py::arg("eps") = 1.0e-6);
 
 
-m.def("get_max_threads", &omp_get_max_threads,
+m.def("get_num_threads", &omp_get_max_threads,
 R"""(
 Return the allowed number of OMP threads.
 
