@@ -14,6 +14,8 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 
+#include <cstdlib>
+
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -330,6 +332,13 @@ m.attr("__version__") = STRINGIZE(PYCI_VERSION);
 m.attr("c_int") = py::dtype::of<int_t>();
 m.attr("c_uint") = py::dtype::of<uint_t>();
 m.attr("c_double") = py::dtype::of<double>();
+
+
+/* Set number of threads to 1 if OMP_NUM_THREADS not defined. */
+
+
+if (std::getenv("OMP_NUM_THREADS") == nullptr)
+    omp_set_num_threads(1);
 
 
 /* Hamiltonian Python class. */
