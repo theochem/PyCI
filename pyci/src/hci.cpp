@@ -306,10 +306,10 @@ int_t OneSpinWfn::run_hci_doci(const double *v, const double *coeffs, const doub
   int_t ndet_old = ndet;
   // do computation in chunks by making smaller OneSpinWfns in parallel
   int_t nthread = omp_get_max_threads();
-  if (nthread == 1) {
-    hci_doci_run_thread(*this, *this, v, coeffs, eps, 0, ndet_old);
-    return ndet - ndet_old;
-  }
+  /* if (nthread == 1) { */
+  /*   hci_doci_run_thread(*this, *this, v, coeffs, eps, 0, ndet_old); */
+  /*   return ndet - ndet_old; */
+  /* } */
   int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
   std::vector<OneSpinWfn> wfns(nthread);
 #pragma omp parallel
@@ -332,10 +332,10 @@ int_t OneSpinWfn::run_hci_genci(const double *one_mo, const double *two_mo, cons
   int_t ndet_old = ndet;
   // do computation in chunks by making smaller OneSpinWfns in parallel
   int_t nthread = omp_get_max_threads();
-  if (nthread == 1) {
-    hci_genci_run_thread(*this, *this, one_mo, two_mo, coeffs, eps, 0, ndet_old);
-    return ndet - ndet_old;
-  }
+  /* if (nthread == 1) { */
+  /*   hci_genci_run_thread(*this, *this, one_mo, two_mo, coeffs, eps, 0, ndet_old); */
+  /*   return ndet - ndet_old; */
+  /* } */
   int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
   std::vector<OneSpinWfn> wfns(nthread);
 #pragma omp parallel
@@ -358,10 +358,10 @@ int_t TwoSpinWfn::run_hci_fullci(const double *one_mo, const double *two_mo, con
   int_t ndet_old = ndet;
   // do computation in chunks by making smaller OneSpinWfns in parallel
   int_t nthread = omp_get_max_threads();
-  if (nthread == 1) {
-    hci_fullci_run_thread(*this, *this, one_mo, two_mo, coeffs, eps, 0, ndet_old);
-    return ndet - ndet_old;
-  }
+  /* if (nthread == 1) { */
+  /*   hci_fullci_run_thread(*this, *this, one_mo, two_mo, coeffs, eps, 0, ndet_old); */
+  /*   return ndet - ndet_old; */
+  /* } */
   int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
   std::vector<TwoSpinWfn> wfns(nthread);
 #pragma omp parallel
