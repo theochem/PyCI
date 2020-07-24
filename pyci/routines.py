@@ -28,10 +28,10 @@ from . import pyci
 
 
 __all__ = [
-        'add_excitations',
-        'add_seniorities',
-        'add_gkci',
-        ]
+    "add_excitations",
+    "add_seniorities",
+    "add_gkci",
+]
 
 
 def add_excitations(wfn: pyci.wavefunction, *excitations: Sequence[int], ref=None) -> None:
@@ -57,8 +57,6 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
     r"""
     Add determinants of the specified seniority/ies to the wave function.
 
-    Adapted from Gaby's original code.
-
     Parameters
     ----------
     wfn : pyci.fullci_wfn
@@ -69,13 +67,13 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
     """
     # Check wave function
     if not isinstance(wfn, pyci.fullci_wfn):
-        raise TypeError('wfn must be a pyci.fullci_wfn')
+        raise TypeError("wfn must be a pyci.fullci_wfn")
 
     # Check specified seniorities
     smin = wfn.nocc_up - wfn.nocc_dn
     smax = min(wfn.nocc_up, wfn.nvir_up)
     if any(s < smin or s > smax or s % 2 != smin % 2 for s in seniorities):
-        raise ValueError('invalid seniority number specified')
+        raise ValueError("invalid seniority number specified")
 
     # Make seniority-zero occupation vectors
     sz_wfn = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up)
@@ -102,14 +100,14 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
                 for occs_up in occ_up_array:
                     occs[0, :] = occs_up
                     for occs_dn in combinations(occs_up, wfn.nocc_dn):
-                        occs[1, :wfn.nocc_dn] = occs_dn
+                        occs[1, : wfn.nocc_dn] = occs_dn
                         wfn.add_occs(occs)
             elif not pairs:
                 for occs_up in occ_up_array:
                     occs[0, :] = occs_up
                     virs_up = np.setdiff1d(brange, occs_up, assume_unique=True)
                     for occs_dn in combinations(virs_up, wfn.nocc_dn):
-                        occs[1, :wfn.nocc_dn] = occs_dn
+                        occs[1, : wfn.nocc_dn] = occs_dn
                         wfn.add_occs(occs)
             else:
                 for occs_up in occ_up_array:
@@ -118,12 +116,17 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
                     for occs_i_dn in combinations(occs_up, pairs):
                         occs[1, :pairs] = occs_i_dn
                         for occs_a_dn in combinations(virs_up, wfn.nocc_dn - pairs):
-                            occs[1, pairs:wfn.nocc_dn] = occs_a_dn
+                            occs[1, pairs : wfn.nocc_dn] = occs_a_dn
                             wfn.add_occs(occs)
 
 
-def add_gkci(wfn: pyci.wavefunction, t: float = -0.5, p: float = 1.0, mode: str = 'cntsp',
-        node_dim: int = None) -> None:
+def add_gkci(
+    wfn: pyci.wavefunction,
+    t: float = -0.5,
+    p: float = 1.0,
+    mode: str = "cntsp",
+    node_dim: int = None,
+) -> None:
     r"""
     Add determinants to the wave function according to the odometer algorithm (Griebel-Knapeck CI).
 
@@ -144,25 +147,25 @@ def add_gkci(wfn: pyci.wavefunction, t: float = -0.5, p: float = 1.0, mode: str 
 
     """
     # Check arguments
-    if mode != 'gamma' and node_dim is not None:
-        raise ValueError('node_dim must not be specified with mode ' + mode)
-    elif mode == 'gamma' and node_dim is None:
-        raise ValueError('node_dim must be specified with mode \'gamma\'')
+    if mode != "gamma" and node_dim is not None:
+        raise ValueError("node_dim must not be specified with mode " + mode)
+    elif mode == "gamma" and node_dim is None:
+        raise ValueError("node_dim must be specified with mode 'gamma'")
 
     # Construct nodes
-    if mode == 'cntsp':
+    if mode == "cntsp":
         nodes = list()
         shell = 1
         while len(nodes) < wfn.nbasis:
             nodes.extend([shell - 1.0] * shell ** 2)
             shell += 1
-    elif mode == 'gamma':
+    elif mode == "gamma":
         raise NotImplementedError
-    elif mode == 'cubic':
+    elif mode == "cubic":
         raise NotImplementedError
     else:
-        raise ValueError('mode must be one of (\'cntsp\', \'gamma\', \'cubic\'')
-    nodes = np.array(nodes[:wfn.nbasis])
+        raise ValueError("mode must be one of ('cntsp', 'gamma', 'cubic'")
+    nodes = np.array(nodes[: wfn.nbasis])
 
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
@@ -170,7 +173,7 @@ def add_gkci(wfn: pyci.wavefunction, t: float = -0.5, p: float = 1.0, mode: str 
     elif isinstance(wfn, pyci.fullci_wfn):
         _odometer_two_spin(wfn, nodes, t, p)
     else:
-        raise TypeError('wfn must be a pyci.{doci,fullci,genci}_wfn')
+        raise TypeError("wfn must be a pyci.{doci,fullci,genci}_wfn")
 
 
 def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: float) -> None:
@@ -182,7 +185,7 @@ def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: fl
     new_occs = np.copy(aufbau_occs)
     old_occs = np.copy(aufbau_occs)
     # Index of last electron
-    j_electron = wfn.nocc_up  - 1
+    j_electron = wfn.nocc_up - 1
     # Compute cost of the most important neglected determinant
     nodes_s = nodes[new_occs]
     qs_neg = np.sum(nodes_s[:-1]) * p + (t + 1) * nodes[-1] * p
@@ -223,14 +226,14 @@ def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: fl
 
     """
     aufbau_occs = np.arange(wfn.nocc, dtype=pyci.c_int)
-    aufbau_occs[wfn.nocc_up:] -= wfn.nocc_up
+    aufbau_occs[wfn.nocc_up :] -= wfn.nocc_up
     new_occs = np.copy(aufbau_occs)
     old_occs = np.copy(aufbau_occs)
     # Index of last electron
-    j_electron = wfn.nocc  - 1
+    j_electron = wfn.nocc - 1
     # Compute cost of the most important neglected determinant
-    nodes_up = nodes[new_occs[:wfn.nocc_up]]
-    nodes_dn = nodes[new_occs[wfn.nocc_up:]]
+    nodes_up = nodes[new_occs[: wfn.nocc_up]]
+    nodes_dn = nodes[new_occs[wfn.nocc_up :]]
     q_up_neg = np.sum(nodes_up[:-1]) * p + (t + 1) * nodes_up[-1] * p
     q_dn_neg = np.sum(nodes_dn[:-1]) * p + (t + 1) * nodes_dn[-1] * p
     # Select determinants

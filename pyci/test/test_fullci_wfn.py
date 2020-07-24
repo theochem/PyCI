@@ -33,9 +33,9 @@ class TestFullCIWfn:
         (8, 3, 3),
         (64, 1, 1),
         (64, 2, 1),
-        #(65, 2, 1),
-        #(129, 2, 1),
-        ]
+        # (65, 2, 1),
+        # (129, 2, 1),
+    ]
 
     def test_raises(self):
         assert_raises(ValueError, pyci.fullci_wfn, 10, 11, 1)

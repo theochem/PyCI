@@ -24,12 +24,12 @@ import numpy as np
 
 
 __all__ = [
-        'read_fcidump',
-        'write_fcidump',
-        'make_senzero_integrals',
-        'reduce_senzero_integrals',
-        'make_rdms',
-        ]
+    "read_fcidump",
+    "write_fcidump",
+    "make_senzero_integrals",
+    "reduce_senzero_integrals",
+    "make_rdms",
+]
 
 
 def read_fcidump(filename: TextIO) -> Tuple[float, np.ndarray, np.ndarray]:
@@ -55,18 +55,18 @@ def read_fcidump(filename: TextIO) -> Tuple[float, np.ndarray, np.ndarray]:
     Currently only works for restricted/generalized integrals.
 
     """
-    ecore = 0.
-    with open(filename, 'r', encoding='utf-8') as f:
+    ecore = 0.0
+    with open(filename, "r", encoding="utf-8") as f:
         # check header
         line = next(f)
-        if not line.startswith(' &FCI NORB='):
-            raise IOError('Error in FCIDUMP file header')
+        if not line.startswith(" &FCI NORB="):
+            raise IOError("Error in FCIDUMP file header")
         # read nbasis from header
-        nbasis = int(line[11:line.find(',')])
+        nbasis = int(line[11 : line.find(",")])
         # skip rest of header
         for line in f:
             field = line.split()[0]
-            if field == '&END' or field == '/END' or field == '/':
+            if field == "&END" or field == "/END" or field == "/":
                 break
         # read integrals
         one_mo = np.zeros((nbasis, nbasis), dtype=np.double)
@@ -74,9 +74,9 @@ def read_fcidump(filename: TextIO) -> Tuple[float, np.ndarray, np.ndarray]:
         for line in f:
             fields = line.split()
             if len(fields) != 5:
-                raise IOError('Expecting 5 fields on each data line in FCIDUMP')
+                raise IOError("Expecting 5 fields on each data line in FCIDUMP")
             val = float(fields[0])
-            if fields[3] != '0':
+            if fields[3] != "0":
                 i = int(fields[1]) - 1
                 j = int(fields[2]) - 1
                 k = int(fields[3]) - 1
@@ -89,7 +89,7 @@ def read_fcidump(filename: TextIO) -> Tuple[float, np.ndarray, np.ndarray]:
                 two_mo[l, j, k, i] = val
                 two_mo[k, j, l, i] = val
                 two_mo[l, i, k, j] = val
-            elif fields[1] != '0':
+            elif fields[1] != "0":
                 i = int(fields[1]) - 1
                 j = int(fields[2]) - 1
                 one_mo[i, j] = val
@@ -99,8 +99,15 @@ def read_fcidump(filename: TextIO) -> Tuple[float, np.ndarray, np.ndarray]:
     return ecore, one_mo, two_mo
 
 
-def write_fcidump(filename: TextIO, ecore: float, one_mo: np.ndarray, two_mo: np.ndarray,
-        nelec: int = 0, ms2: int = 0, tol: float = 1.0e-18) -> None:
+def write_fcidump(
+    filename: TextIO,
+    ecore: float,
+    one_mo: np.ndarray,
+    two_mo: np.ndarray,
+    nelec: int = 0,
+    ms2: int = 0,
+    tol: float = 1.0e-18,
+) -> None:
     r"""
     Write a Hamiltonian instance to an FCIDUMP file.
 
@@ -127,9 +134,9 @@ def write_fcidump(filename: TextIO, ecore: float, one_mo: np.ndarray, two_mo: np
 
     """
     nbasis = one_mo.shape[0]
-    with open(filename, 'w', encoding='utf-8') as f:
+    with open(filename, "w", encoding="utf-8") as f:
         # write header
-        f.write(f' &FCI NORB={nbasis},NELEC={nelec},MS2={ms2},\n')
+        f.write(f" &FCI NORB={nbasis},NELEC={nelec},MS2={ms2},\n")
         f.write(f'  ORBSYM={"1," * nbasis}\n  ISYM=1\n &END\n')
         # write two-electron integrals
         for i in range(nbasis):
@@ -139,19 +146,22 @@ def write_fcidump(filename: TextIO, ecore: float, one_mo: np.ndarray, two_mo: np
                         if (i * (i + 1)) // 2 + j >= (k * (k + 1)) // 2 + l:
                             val = two_mo[i, k, j, l]
                             if abs(val) > tol:
-                                f.write(f'{val:23.16E} {i + 1:4d} {j + 1:4d} {k + 1:4d} {l + 1:4d}\n')
+                                f.write(
+                                    f"{val:23.16E} {i + 1:4d} {j + 1:4d} {k + 1:4d} {l + 1:4d}\n"
+                                )
         # write one-electron integrals
         for i in range(nbasis):
             for j in range(i + 1):
                 val = one_mo[i, j]
                 if abs(val) > tol:
-                    f.write(f'{val:23.16E} {i + 1:4d} {j + 1:4d}    0    0\n')
+                    f.write(f"{val:23.16E} {i + 1:4d} {j + 1:4d}    0    0\n")
         # write zero-energy integrals
-        f.write(f'{ecore if abs(ecore) > tol else 0:23.16E}    0    0    0    0\n')
+        f.write(f"{ecore if abs(ecore) > tol else 0:23.16E}    0    0    0    0\n")
 
 
-def make_senzero_integrals(one_mo: np.ndarray, two_mo: np.ndarray) \
-        -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def make_senzero_integrals(
+    one_mo: np.ndarray, two_mo: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     r"""
     Return the non-zero chunks for seniority-zero of the full one- and two- electron integrals.
 
@@ -184,8 +194,9 @@ def make_senzero_integrals(one_mo: np.ndarray, two_mo: np.ndarray) \
     return h, v, w
 
 
-def reduce_senzero_integrals(h: np.ndarray, v: np.ndarray, w: np.ndarray, nocc: int) \
-        -> Tuple[np.ndarray, np.ndarray]:
+def reduce_senzero_integrals(
+    h: np.ndarray, v: np.ndarray, w: np.ndarray, nocc: int
+) -> Tuple[np.ndarray, np.ndarray]:
     r"""
     Reduce the non-zero chunks for seniority-zero of the one- and two- electron integrals.
 
@@ -274,12 +285,12 @@ def make_rdms(d1: np.ndarray, d2: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         rdm2 *= 0.5
     else:
         # FullCI RDM spin-blocks
-        aa += d1[0]   #+aa
-        bb += d1[1]   #+bb
-        aaaa += d2[0] #+aaaa
-        bbbb += d2[1] #+bbbb
-        abab += d2[2] #+abab
-        baba += np.swapaxes(np.swapaxes(d2[2], 0, 1), 2, 3) #+abab
-        abba -= np.swapaxes(d2[2], 2, 3) #-abab
-        baab -= np.swapaxes(d2[2], 0, 1) #-abab
+        aa += d1[0]  # +aa
+        bb += d1[1]  # +bb
+        aaaa += d2[0]  # +aaaa
+        bbbb += d2[1]  # +bbbb
+        abab += d2[2]  # +abab
+        baba += np.swapaxes(np.swapaxes(d2[2], 0, 1), 2, 3)  # +abab
+        abba -= np.swapaxes(d2[2], 2, 3)  # -abab
+        baab -= np.swapaxes(d2[2], 0, 1)  # -abab
     return rdm1, rdm2

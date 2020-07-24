@@ -18,47 +18,46 @@ import sphinx_rtd_theme
 import pyci
 
 
-project = 'PyCI'
+project = "PyCI"
 
 
-copyright = '2020, Michael Richer'
+copyright = "2020, Michael Richer"
 
 
-author = 'Michael Richer'
+author = "Michael Richer"
 
 
 release = pyci.__version__
 
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.mathjax',
-    ]
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.mathjax",
+]
 
 
 templates_path = [
-    '_templates',
-    ]
+    "_templates",
+]
 
 
-exclude_patterns = [
-    ]
+exclude_patterns = []
 
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 
 html_static_path = [
-    '_static',
-    ]
+    "_static",
+]
 
 
-mathjax_path = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js'
+mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js"
 
 
 mathjax_config = {
-    'extensions': ['tex2jax.js'],
-    'jax': ['input/TeX', 'output/HTML-CSS'],
-    }
+    "extensions": ["tex2jax.js"],
+    "jax": ["input/TeX", "output/HTML-CSS"],
+}

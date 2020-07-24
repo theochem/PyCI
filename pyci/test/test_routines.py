@@ -25,11 +25,9 @@ from pyci.test import datafile
 
 
 def parity2(p):
-    return sum(
-        1 for (x,px) in enumerate(p)
-          for (y,py) in enumerate(p)
-          if x<y and px>py
-        )%2==0
+    return (
+        sum(1 for (x, px) in enumerate(p) for (y, py) in enumerate(p) if x < y and px > py) % 2 == 0
+    )
 
 
 def parity(p):
@@ -42,13 +40,13 @@ def parity(p):
 class TestRoutines:
 
     CASES = [
-        ('he_ccpvqz',  pyci.fullci_wfn, (1, 1),  -2.886809116),
-        ('li2_ccpvdz', pyci.doci_wfn,   (3,),   -14.878455349),
-        ('be_ccpvdz',  pyci.doci_wfn,   (2,),   -14.600556994),
-        ('he_ccpvqz',  pyci.doci_wfn,   (1,),    -2.886809116),
-        ('be_ccpvdz',  pyci.fullci_wfn, (2, 2), -14.600556994),
-        ('h2o_ccpvdz', pyci.doci_wfn,   (5,),   -75.634588422),
-        ]
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
+        ("li2_ccpvdz", pyci.doci_wfn, (3,), -14.878455349),
+        ("be_ccpvdz", pyci.doci_wfn, (2,), -14.600556994),
+        ("he_ccpvqz", pyci.doci_wfn, (1,), -2.886809116),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5,), -75.634588422),
+    ]
 
     def test_solve_sparse(self):
         for filename, wfn_type, occs, energy in self.CASES:
@@ -71,7 +69,7 @@ class TestRoutines:
             yield self.run_cepa0, filename, wfn_type, occs, energy
 
     def run_solve_sparse(self, filename, wfn_type, occs, energy):
-        ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
+        ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
         op = pyci.sparse_op(ham, wfn)
@@ -79,7 +77,7 @@ class TestRoutines:
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
     def run_sparse_rectangular(self, filename, wfn_type, occs, energy):
-        ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
+        ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
         nrow = len(wfn) - 10
@@ -90,7 +88,7 @@ class TestRoutines:
         assert y.shape[0] == op.shape[0]
 
     def run_compute_rdms(self, filename, wfn_type, occs, energy):
-        ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
+        ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
         op = pyci.sparse_op(ham, wfn)
@@ -101,8 +99,8 @@ class TestRoutines:
             npt.assert_allclose(np.sum(d2), wfn.nocc_up * (wfn.nocc_up - 1), rtol=0, atol=1.0e-9)
             k0, k2 = pyci.reduce_senzero_integrals(ham.h, ham.v, ham.w, wfn.nocc_up)
             energy = ham.ecore
-            energy += np.einsum('ij,ij', k0, d0)
-            energy += np.einsum('ij,ij', k2, d2)
+            energy += np.einsum("ij,ij", k0, d0)
+            energy += np.einsum("ij,ij", k2, d2)
             npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
             rdm1, rdm2 = pyci.make_rdms(d0, d2)
         elif isinstance(wfn, pyci.fullci_wfn):
@@ -110,9 +108,9 @@ class TestRoutines:
             rdm1, rdm2 = pyci.make_rdms(d1, d2)
         else:
             rdm1, rdm2 = pyci.compute_rdms(wfn, cs[0])
-        with np.load(datafile('{0:s}_spinres.npz'.format(filename))) as f:
-            one_mo = f['one_mo']
-            two_mo = f['two_mo']
+        with np.load(datafile("{0:s}_spinres.npz".format(filename))) as f:
+            one_mo = f["one_mo"]
+            two_mo = f["two_mo"]
         assert np.all(np.abs(rdm1 - rdm1.T) < 1e-5)
         # Test RDM2 is antisymmetric
         for i in range(0, wfn.nbasis * 2):
@@ -126,12 +124,12 @@ class TestRoutines:
             assert np.all(np.abs(rdm2[i, i, :, :]) < 1e-5)
             assert np.all(np.abs(rdm2[:, :, i, i]) < 1e-5)
         energy = ham.ecore
-        energy += np.einsum('ij,ij', one_mo, rdm1)
-        energy += 0.25 * np.einsum('ijkl,ijkl', two_mo, rdm2)
+        energy += np.einsum("ij,ij", one_mo, rdm1)
+        energy += 0.25 * np.einsum("ijkl,ijkl", two_mo, rdm2)
         npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
 
     def run_run_hci(self, filename, wfn_type, occs, energy):
-        ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
+        ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_hartreefock_det()
         es, cs = pyci.sparse_op(ham, wfn).solve(n=1, tol=1.0e-6)
@@ -153,7 +151,7 @@ class TestRoutines:
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
     def run_cepa0(self, filename, wfn_type, occs, energy):
-        ham = pyci.restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
+        ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         pyci.add_excitations(wfn, *range(wfn.nocc - 1))
         op = pyci.sparse_op(ham, wfn)
@@ -164,7 +162,7 @@ class TestRoutines:
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 
-class TestRDMAnalyticExamples():
+class TestRDMAnalyticExamples:
     r"""
     Test for rdm1, rdm2 of comparing against very simple, analytic examples.
 
@@ -174,7 +172,7 @@ class TestRDMAnalyticExamples():
         wfn = pyci.fullci_wfn(2, 1, 1)
         wfn.add_all_dets()
 
-        coeffs = np.sqrt(np.array([1., 2., 3., 4.]))
+        coeffs = np.sqrt(np.array([1.0, 2.0, 3.0, 4.0]))
         coeffs /= np.linalg.norm(coeffs)
 
         d0, d1 = pyci.compute_rdms(wfn, coeffs)
@@ -212,7 +210,7 @@ class TestRDMAnalyticExamples():
         wfn = pyci.fullci_wfn(2, 1, 1)
         wfn.add_all_dets()
 
-        coeffs = np.sqrt(np.array([1., 2., 3., 4.]))
+        coeffs = np.sqrt(np.array([1.0, 2.0, 3.0, 4.0]))
         coeffs /= np.linalg.norm(coeffs)
 
         d0, d1 = pyci.compute_rdms(wfn, coeffs)
@@ -344,7 +342,7 @@ class TestRDMAnalyticExamples():
         wfn = pyci.fullci_wfn(2, 1, 1)
         wfn.add_all_dets()
 
-        coeffs = np.sqrt(np.array([1., 2., 3., 4.]))
+        coeffs = np.sqrt(np.array([1.0, 2.0, 3.0, 4.0]))
         coeffs /= np.linalg.norm(coeffs)
 
         d0, d1 = pyci.compute_rdms(wfn, coeffs)
@@ -374,7 +372,7 @@ class TestRDMAnalyticExamples():
         wfn = pyci.fullci_wfn(3, 2, 1)
         wfn.add_all_dets()
 
-        coeffs = np.sqrt(np.array([1., 2., 3., 4., 5., 6., 7., 8., 9.]))
+        coeffs = np.sqrt(np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]))
         coeffs /= np.linalg.norm(coeffs)
 
         d0, d1 = pyci.compute_rdms(wfn, coeffs)
@@ -391,23 +389,44 @@ class TestRDMAnalyticExamples():
 
         aaaa = d1[0]
         # assert Diagonal elements of aaaa.
-        assert np.abs(
-            aaaa[0, 1, 0, 1] - coeffs[0] ** 2.0 - coeffs[1] ** 2.0 - coeffs[2] ** 2.0) < 1e-5
-        assert np.abs(
-            aaaa[0, 2, 0, 2] - coeffs[3] ** 2.0 - coeffs[4] ** 2.0 - coeffs[5] ** 2.0) < 1e-5
-        assert np.abs(
-            aaaa[1, 2, 1, 2] - coeffs[6] ** 2.0 - coeffs[7] ** 2.0 - coeffs[8] ** 2.0) < 1e-5
+        assert (
+            np.abs(aaaa[0, 1, 0, 1] - coeffs[0] ** 2.0 - coeffs[1] ** 2.0 - coeffs[2] ** 2.0) < 1e-5
+        )
+        assert (
+            np.abs(aaaa[0, 2, 0, 2] - coeffs[3] ** 2.0 - coeffs[4] ** 2.0 - coeffs[5] ** 2.0) < 1e-5
+        )
+        assert (
+            np.abs(aaaa[1, 2, 1, 2] - coeffs[6] ** 2.0 - coeffs[7] ** 2.0 - coeffs[8] ** 2.0) < 1e-5
+        )
 
         # assert non-diagonal elements of aaaa
-        assert np.abs(
-            aaaa[0, 1, 0, 2] - coeffs[0] * coeffs[3] - coeffs[1] * coeffs[4] - coeffs[2] * coeffs[
-                5]) < 1e-5
-        assert np.abs(
-            aaaa[0, 1, 1, 2] - coeffs[0] * coeffs[6] - coeffs[1] * coeffs[7] - coeffs[2] * coeffs[
-                8]) < 1e-5
-        assert np.abs(
-            aaaa[0, 2, 1, 2] - coeffs[3] * coeffs[6] - coeffs[4] * coeffs[7] - coeffs[5] * coeffs[
-                8]) < 1e-5
+        assert (
+            np.abs(
+                aaaa[0, 1, 0, 2]
+                - coeffs[0] * coeffs[3]
+                - coeffs[1] * coeffs[4]
+                - coeffs[2] * coeffs[5]
+            )
+            < 1e-5
+        )
+        assert (
+            np.abs(
+                aaaa[0, 1, 1, 2]
+                - coeffs[0] * coeffs[6]
+                - coeffs[1] * coeffs[7]
+                - coeffs[2] * coeffs[8]
+            )
+            < 1e-5
+        )
+        assert (
+            np.abs(
+                aaaa[0, 2, 1, 2]
+                - coeffs[3] * coeffs[6]
+                - coeffs[4] * coeffs[7]
+                - coeffs[5] * coeffs[8]
+            )
+            < 1e-5
+        )
 
         # Assert that bbbb is all zeros.
         assert np.all(d1[1] < 1e-5)

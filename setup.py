@@ -29,145 +29,140 @@ import numpy
 
 # Uncomment this to use exact (colexicographical order) hashing.
 # This only supports determinant sets with |D| < 2 ** 63.
-#PYCI_EXACT_HASH = True
+# PYCI_EXACT_HASH = True
 
 
 # Uncomment this to use a specific non-negative integer seed for the SpookyHash algorithm.
-#PYCI_SPOOKYHASH_SEED = 0
+# PYCI_SPOOKYHASH_SEED = 0
 
 
-name = 'pyci'
+name = "pyci"
 
 
-version = '0.3.5'
+version = "0.3.5"
 
 
-license = 'GPLv3'
+license = "GPLv3"
 
 
-author = 'Michael Richer'
+author = "Michael Richer"
 
 
-author_email = 'richerm@mcmaster.ca'
+author_email = "richerm@mcmaster.ca"
 
 
-url = 'https://github.com/msricher/PyCI'
+url = "https://github.com/msricher/PyCI"
 
 
-description = 'A flexible ab-initio quantum chemistry library for Configuration Interaction.'
+description = "A flexible ab-initio quantum chemistry library for Configuration Interaction."
 
 
-long_description = open('README.rst', 'r', encoding='utf-8').read()
+long_description = open("README.rst", "r", encoding="utf-8").read()
 
 
 classifiers = [
-        'Environment :: Console',
-        'Intended Audience :: Science/Research',
-        'Programming Language :: Python :: 3',
-        'Topic :: Science/Engineering :: Molecular Science',
-        ]
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Science/Engineering :: Molecular Science",
+]
 
 
 install_requires = [
-        'numpy>=1.13',
-        ]
+    "numpy>=1.13",
+]
 
 
 extras_require = {
-        'test': ['nose'],
-        'doc': ['sphinx', 'sphinx_rtd_theme'],
-        }
+    "test": ["nose"],
+    "doc": ["sphinx", "sphinx_rtd_theme"],
+}
 
 
 packages = [
-        'pyci',
-        'pyci.test',
-        ]
+    "pyci",
+    "pyci.test",
+]
 
 
 package_data = {
-        'pyci': ['include/*.h', 'src/*.cpp'],
-        'pyci.test': ['data/*.fcidump', 'data/*.npy', 'data/*.npz'],
-        }
+    "pyci": ["include/*.h", "src/*.cpp"],
+    "pyci.test": ["data/*.fcidump", "data/*.npy", "data/*.npz"],
+}
 
 
 sources = [
-        'pyci/src/pyci.cpp',
-        ]
+    "pyci/src/pyci.cpp",
+]
 
 
 include_dirs = [
-        numpy.get_include(),
-        'lib/parallel-hashmap',
-        'lib/eigen',
-        'lib/spectra/include',
-        'lib/pybind11/include',
-        'pyci/include',
-        ]
+    numpy.get_include(),
+    "lib/parallel-hashmap",
+    "lib/eigen",
+    "lib/spectra/include",
+    "lib/pybind11/include",
+    "pyci/include",
+]
 
 
 extra_compile_args = [
-        '-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION',
-        '-DPYCI_VERSION=' + version,
-        '-fvisibility=hidden',
-        '-fopenmp',
-        '-Wall',
-        ]
+    "-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION",
+    "-DPYCI_VERSION=" + version,
+    "-fvisibility=hidden",
+    "-fopenmp",
+    "-Wall",
+]
 
 
 extra_link_args = [
-        '-fopenmp',
-        ]
+    "-fopenmp",
+]
 
 
 cext = {
-        'name': 'pyci.pyci',
-        'language': 'c++',
-        'sources': sources,
-        'include_dirs': include_dirs,
-        'extra_compile_args': extra_compile_args,
-        'extra_link_args': extra_link_args,
-        }
+    "name": "pyci.pyci",
+    "language": "c++",
+    "sources": sources,
+    "include_dirs": include_dirs,
+    "extra_compile_args": extra_compile_args,
+    "extra_link_args": extra_link_args,
+}
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
 
     try:
-        extra_compile_args.append('-DPYCI_EXACT_HASH' if PYCI_EXACT_HASH else '')
+        extra_compile_args.append("-DPYCI_EXACT_HASH" if PYCI_EXACT_HASH else "")
     except NameError:
         pass
 
-
     try:
-        hex_seed = hex(abs(PYCI_SPOOKYHASH_SEED)) + 'UL'
-        extra_compile_args.append('-DPYCI_SPOOKYHASH_SEED=' + hex_seed)
+        hex_seed = hex(abs(PYCI_SPOOKYHASH_SEED)) + "UL"
+        extra_compile_args.append("-DPYCI_SPOOKYHASH_SEED=" + hex_seed)
     except NameError:
         pass
-
 
     pyci_extension = Extension(**cext)
 
-
     ext_modules = [
-            pyci_extension,
-            ]
-
+        pyci_extension,
+    ]
 
     setup(
-            name=name,
-            version=version,
-            license=license,
-            author=author,
-            author_email=author_email,
-            url=url,
-            description=description,
-            long_description=long_description,
-            classifiers=classifiers,
-            install_requires=install_requires,
-            extras_require=extras_require,
-            packages=packages,
-            package_data=package_data,
-            include_package_data=True,
-            ext_modules=ext_modules,
-            )
+        name=name,
+        version=version,
+        license=license,
+        author=author,
+        author_email=author_email,
+        url=url,
+        description=description,
+        long_description=long_description,
+        classifiers=classifiers,
+        install_requires=install_requires,
+        extras_require=extras_require,
+        packages=packages,
+        package_data=package_data,
+        include_package_data=True,
+        ext_modules=ext_modules,
+    )

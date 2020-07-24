@@ -27,11 +27,15 @@ from pyci.test import datafile
 
 class TestHamiltonian:
 
-    CASES = ['he_ccpvqz', 'be_ccpvdz', 'h2o_ccpvdz', 'li2_ccpvdz']
+    CASES = ["he_ccpvqz", "be_ccpvdz", "h2o_ccpvdz", "li2_ccpvdz"]
 
     def test_raises(self):
-        assert_raises(ValueError, restricted_ham, 1.0, np.zeros((10, 11)), np.zeros((10, 10, 10, 10)))
-        assert_raises(ValueError, restricted_ham, 1.0, np.zeros((10, 10)), np.zeros((10, 10, 10, 11)))
+        assert_raises(
+            ValueError, restricted_ham, 1.0, np.zeros((10, 11)), np.zeros((10, 10, 10, 10))
+        )
+        assert_raises(
+            ValueError, restricted_ham, 1.0, np.zeros((10, 10)), np.zeros((10, 10, 10, 11))
+        )
 
     def test_to_from_file(self):
         for filename in self.CASES:
@@ -40,7 +44,7 @@ class TestHamiltonian:
     def run_to_from_file(self, filename):
         file1 = NamedTemporaryFile()
         file2 = NamedTemporaryFile()
-        ham1 = restricted_ham(datafile('{0:s}.fcidump'.format(filename)))
+        ham1 = restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         ham1.to_file(file1.name)
         ham2 = restricted_ham(file1.name)
         ham2.to_file(file2.name)
