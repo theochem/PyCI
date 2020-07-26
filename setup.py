@@ -21,7 +21,6 @@ Run `python setup.py --help` for help.
 """
 
 from glob import glob
-from os import path
 
 from setuptools import Extension, setup
 
