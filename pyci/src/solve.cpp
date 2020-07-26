@@ -404,18 +404,27 @@ void init_condense_thread(SparseOp &op, SparseOp &thread_op, const int_t ithread
 
 } // namespace
 
-SparseOp::SparseOp(void) { return; }
+SparseOp::SparseOp(void) {
+  return;
+}
 
 SparseOp::SparseOp(SparseOp &&op) noexcept
     : nrow(std::exchange(op.nrow, 0)), ncol(std::exchange(op.ncol, 0)),
       size(std::exchange(op.size, 0)), ecore(std::exchange(op.ecore, 0)), data(std::move(op.data)),
-      indices(std::move(op.indices)), indptr(std::move(op.indptr)) {}
+      indices(std::move(op.indices)), indptr(std::move(op.indptr)) {
+}
 
-const double *SparseOp::data_ptr(const int_t index) const { return &data[index]; }
+const double *SparseOp::data_ptr(const int_t index) const {
+  return &data[index];
+}
 
-const int_t *SparseOp::indices_ptr(const int_t index) const { return &indices[index]; }
+const int_t *SparseOp::indices_ptr(const int_t index) const {
+  return &indices[index];
+}
 
-const int_t *SparseOp::indptr_ptr(const int_t index) const { return &indptr[index]; }
+const int_t *SparseOp::indptr_ptr(const int_t index) const {
+  return &indptr[index];
+}
 
 void SparseOp::perform_op(const double *x, double *y) const {
   int_t nthread = omp_get_max_threads();

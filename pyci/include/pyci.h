@@ -286,9 +286,13 @@ public:
 
   SparseOp(SparseOp &&) noexcept;
 
-  inline int_t rows(void) const { return nrow; }
+  inline int_t rows(void) const {
+    return nrow;
+  }
 
-  inline int_t cols(void) const { return ncol; }
+  inline int_t cols(void) const {
+    return ncol;
+  }
 
   const double *data_ptr(const int_t index) const;
 

@@ -24,15 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "SpookyV2.cpp"
-#include "common.cpp"
-#include "enpt2.cpp"
-#include "hci.cpp"
-#include "onespin.cpp"
-#include "rdm.cpp"
-#include "solve.cpp"
-#include "twospin.cpp"
-
 namespace py = pybind11;
 
 using namespace pyci;
@@ -56,16 +47,19 @@ PYBIND11_MODULE(pyci, m) {
     double ecore;
     d_array_t one_mo, two_mo, h, v, w;
 
-    Hamiltonian(void) {}
+    Hamiltonian(void) {
+    }
 
     Hamiltonian(Hamiltonian &&ham) noexcept
         : nbasis(std::exchange(ham.nbasis, 0)), ecore(std::exchange(ham.ecore, 0)),
           one_mo(std::move(one_mo)), two_mo(std::move(two_mo)), h(std::move(h)), v(std::move(v)),
-          w(std::move(w)) {}
+          w(std::move(w)) {
+    }
 
     Hamiltonian(const Hamiltonian &ham)
         : nbasis(ham.nbasis), ecore(ham.ecore), one_mo(ham.one_mo), two_mo(ham.two_mo), h(ham.h),
-          v(ham.v), w(ham.w) {}
+          v(ham.v), w(ham.w) {
+    }
 
     void init_rest(const double ecore_, const d_array_t one_mo_, const d_array_t two_mo_,
                    const bool keep_mo, const bool doci) {
@@ -137,9 +131,11 @@ PYBIND11_MODULE(pyci, m) {
 
   struct RestrictedHam : public Hamiltonian {
   public:
-    RestrictedHam(RestrictedHam &&ham) noexcept : Hamiltonian((Hamiltonian &&) ham) {}
+    RestrictedHam(RestrictedHam &&ham) noexcept : Hamiltonian((Hamiltonian &&) ham) {
+    }
 
-    RestrictedHam(const RestrictedHam &ham) : Hamiltonian((const Hamiltonian &)ham) {}
+    RestrictedHam(const RestrictedHam &ham) : Hamiltonian((const Hamiltonian &)ham) {
+    }
 
     RestrictedHam(const double ecore_, const d_array_t one_mo_, const d_array_t two_mo_,
                   const bool keep_mo, const bool doci) {
@@ -155,9 +151,11 @@ PYBIND11_MODULE(pyci, m) {
 
   struct UnrestrictedHam : public Hamiltonian {
   public:
-    UnrestrictedHam(UnrestrictedHam &&ham) noexcept : Hamiltonian((Hamiltonian &&) ham) {}
+    UnrestrictedHam(UnrestrictedHam &&ham) noexcept : Hamiltonian((Hamiltonian &&) ham) {
+    }
 
-    UnrestrictedHam(const UnrestrictedHam &ham) : Hamiltonian((const Hamiltonian &)ham) {}
+    UnrestrictedHam(const UnrestrictedHam &ham) : Hamiltonian((const Hamiltonian &)ham) {
+    }
 
     UnrestrictedHam(const double ecore_, const d_array_t one_mo_, const d_array_t two_mo_,
                     const bool keep_mo, const bool doci) {
@@ -173,9 +171,11 @@ PYBIND11_MODULE(pyci, m) {
 
   struct GeneralizedHam : public Hamiltonian {
   public:
-    GeneralizedHam(GeneralizedHam &&ham) noexcept : Hamiltonian((Hamiltonian &&) ham) {}
+    GeneralizedHam(GeneralizedHam &&ham) noexcept : Hamiltonian((Hamiltonian &&) ham) {
+    }
 
-    GeneralizedHam(const GeneralizedHam &ham) : Hamiltonian((const Hamiltonian &)ham) {}
+    GeneralizedHam(const GeneralizedHam &ham) : Hamiltonian((const Hamiltonian &)ham) {
+    }
 
     GeneralizedHam(const double ecore_, const d_array_t one_mo_, const d_array_t two_mo_,
                    const bool keep_mo, const bool doci) {
@@ -195,62 +195,83 @@ PYBIND11_MODULE(pyci, m) {
 
   struct DOCIWfn : public OneSpinWfn {
   public:
-    DOCIWfn(DOCIWfn &&wfn) noexcept : OneSpinWfn((OneSpinWfn &&) wfn) {}
+    DOCIWfn(DOCIWfn &&wfn) noexcept : OneSpinWfn((OneSpinWfn &&) wfn) {
+    }
 
-    DOCIWfn(const DOCIWfn &wfn) : OneSpinWfn((const OneSpinWfn &)wfn) {}
+    DOCIWfn(const DOCIWfn &wfn) : OneSpinWfn((const OneSpinWfn &)wfn) {
+    }
 
-    DOCIWfn(const int_t nbasis, const int_t nocc) : OneSpinWfn(nbasis, nocc) {}
+    DOCIWfn(const int_t nbasis, const int_t nocc) : OneSpinWfn(nbasis, nocc) {
+    }
 
-    DOCIWfn(const char *filename) : OneSpinWfn(filename) {}
+    DOCIWfn(const char *filename) : OneSpinWfn(filename) {
+    }
 
     DOCIWfn(const int_t nbasis, const int_t nocc, const int_t ndet, const uint_t *det_array)
-        : OneSpinWfn(nbasis, nocc, ndet, det_array) {}
+        : OneSpinWfn(nbasis, nocc, ndet, det_array) {
+    }
 
     DOCIWfn(const int_t nbasis, const int_t nocc, const int_t ndet, const int_t *occs_array)
-        : OneSpinWfn(nbasis, nocc, ndet, occs_array) {}
+        : OneSpinWfn(nbasis, nocc, ndet, occs_array) {
+    }
   };
 
   struct FullCIWfn : public TwoSpinWfn {
   public:
-    FullCIWfn(FullCIWfn &&wfn) noexcept : TwoSpinWfn((TwoSpinWfn &&) wfn) {}
+    FullCIWfn(FullCIWfn &&wfn) noexcept : TwoSpinWfn((TwoSpinWfn &&) wfn) {
+    }
 
-    FullCIWfn(const FullCIWfn &wfn) : TwoSpinWfn((const TwoSpinWfn &)wfn) {}
+    FullCIWfn(const FullCIWfn &wfn) : TwoSpinWfn((const TwoSpinWfn &)wfn) {
+    }
 
     FullCIWfn(const int_t nbasis, const int_t nocc_up, const int_t nocc_dn)
-        : TwoSpinWfn(nbasis, nocc_up, nocc_dn) {}
+        : TwoSpinWfn(nbasis, nocc_up, nocc_dn) {
+    }
 
-    FullCIWfn(const char *filename) : TwoSpinWfn(filename) {}
+    FullCIWfn(const char *filename) : TwoSpinWfn(filename) {
+    }
 
     FullCIWfn(const int_t nbasis, const int_t nocc_up, const int_t nocc_dn, const int_t ndet,
               const uint_t *det_array)
-        : TwoSpinWfn(nbasis, nocc_up, nocc_dn, ndet, det_array) {}
+        : TwoSpinWfn(nbasis, nocc_up, nocc_dn, ndet, det_array) {
+    }
 
     FullCIWfn(const int_t nbasis, const int_t nocc_up, const int_t nocc_dn, const int_t ndet,
               const int_t *occs_array)
-        : TwoSpinWfn(nbasis, nocc_up, nocc_dn, ndet, occs_array) {}
+        : TwoSpinWfn(nbasis, nocc_up, nocc_dn, ndet, occs_array) {
+    }
 
-    FullCIWfn(const DOCIWfn &wfn) : TwoSpinWfn((const OneSpinWfn &)wfn) {}
+    FullCIWfn(const DOCIWfn &wfn) : TwoSpinWfn((const OneSpinWfn &)wfn) {
+    }
   };
 
   struct GenCIWfn : public OneSpinWfn {
   public:
-    GenCIWfn(GenCIWfn &&wfn) noexcept : OneSpinWfn((OneSpinWfn &&) wfn) {}
+    GenCIWfn(GenCIWfn &&wfn) noexcept : OneSpinWfn((OneSpinWfn &&) wfn) {
+    }
 
-    GenCIWfn(const GenCIWfn &wfn) : OneSpinWfn((const OneSpinWfn &)wfn) {}
+    GenCIWfn(const GenCIWfn &wfn) : OneSpinWfn((const OneSpinWfn &)wfn) {
+    }
 
-    GenCIWfn(const int_t nbasis, const int_t nocc) : OneSpinWfn(nbasis, nocc) {}
+    GenCIWfn(const int_t nbasis, const int_t nocc) : OneSpinWfn(nbasis, nocc) {
+    }
 
-    GenCIWfn(const char *filename) : OneSpinWfn(filename) {}
+    GenCIWfn(const char *filename) : OneSpinWfn(filename) {
+    }
 
     GenCIWfn(const int_t nbasis, const int_t nocc, const int_t ndet, const uint_t *det_array)
-        : OneSpinWfn(nbasis, nocc, ndet, det_array) {}
+        : OneSpinWfn(nbasis, nocc, ndet, det_array) {
+    }
 
     GenCIWfn(const int_t nbasis, const int_t nocc, const int_t ndet, const int_t *occs_array)
-        : OneSpinWfn(nbasis, nocc, ndet, occs_array) {}
+        : OneSpinWfn(nbasis, nocc, ndet, occs_array) {
+    }
 
-    GenCIWfn(const DOCIWfn &wfn) : OneSpinWfn(TwoSpinWfn((const OneSpinWfn)wfn)) {}
+    GenCIWfn(const DOCIWfn &wfn) : OneSpinWfn(TwoSpinWfn((const OneSpinWfn)wfn)) {
+    }
 
-    GenCIWfn(const FullCIWfn &wfn) : OneSpinWfn((const TwoSpinWfn &)wfn) {}
+    GenCIWfn(const FullCIWfn &wfn) : OneSpinWfn((const TwoSpinWfn &)wfn) {
+    }
   };
 
   /* Module documentation. */

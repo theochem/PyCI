@@ -127,7 +127,9 @@ void unrank_colex(int_t nbasis, const int_t nocc, int_t rank, int_t *occs) {
   }
 }
 
-int_t nword_det(const int_t n) { return n / PYCI_UINT_SIZE + ((n % PYCI_UINT_SIZE) ? 1 : 0); }
+int_t nword_det(const int_t n) {
+  return n / PYCI_UINT_SIZE + ((n % PYCI_UINT_SIZE) ? 1 : 0);
+}
 
 void excite_det(const int_t i, const int_t a, uint_t *det) {
   det[i / PYCI_UINT_SIZE] &= ~(PYCI_UINT_ONE << (i % PYCI_UINT_SIZE));

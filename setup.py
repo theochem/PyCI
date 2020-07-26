@@ -20,6 +20,7 @@ Run `python setup.py --help` for help.
 
 """
 
+from glob import glob
 from os import path
 
 from setuptools import Extension, setup
@@ -91,9 +92,7 @@ package_data = {
 }
 
 
-sources = [
-    "pyci/src/pyci.cpp",
-]
+sources = glob("pyci/src/*.cpp")
 
 
 include_dirs = [

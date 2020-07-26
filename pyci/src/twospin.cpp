@@ -32,7 +32,9 @@
 
 namespace pyci {
 
-TwoSpinWfn::TwoSpinWfn(void) { return; }
+TwoSpinWfn::TwoSpinWfn(void) {
+  return;
+}
 
 TwoSpinWfn::TwoSpinWfn(TwoSpinWfn &&wfn) noexcept
     : nword(std::exchange(wfn.nword, 0)), nword2(std::exchange(wfn.nword2, 0)),
@@ -40,17 +42,24 @@ TwoSpinWfn::TwoSpinWfn(TwoSpinWfn &&wfn) noexcept
       nocc_dn(std::exchange(wfn.nocc_dn, 0)), nvir_up(std::exchange(wfn.nvir_up, 0)),
       nvir_dn(std::exchange(wfn.nvir_dn, 0)), ndet(std::exchange(wfn.ndet, 0)),
       maxdet_up(std::exchange(wfn.maxdet_up, 0)), maxdet_dn(std::exchange(wfn.maxdet_dn, 0)),
-      dets(std::move(wfn.dets)), dict(std::move(wfn.dict)) {}
+      dets(std::move(wfn.dets)), dict(std::move(wfn.dict)) {
+}
 
 TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_) {
   init(nbasis_, nocc_up_, nocc_dn_);
 }
 
-TwoSpinWfn::TwoSpinWfn(const OneSpinWfn &wfn) { from_onespinwfn(wfn); }
+TwoSpinWfn::TwoSpinWfn(const OneSpinWfn &wfn) {
+  from_onespinwfn(wfn);
+}
 
-TwoSpinWfn::TwoSpinWfn(const TwoSpinWfn &wfn) { from_twospinwfn(wfn); }
+TwoSpinWfn::TwoSpinWfn(const TwoSpinWfn &wfn) {
+  from_twospinwfn(wfn);
+}
 
-TwoSpinWfn::TwoSpinWfn(const char *filename) { from_file(filename); }
+TwoSpinWfn::TwoSpinWfn(const char *filename) {
+  from_file(filename);
+}
 
 TwoSpinWfn::TwoSpinWfn(const int_t nbasis_, const int_t nocc_up_, const int_t nocc_dn_,
                        const int_t n, const uint_t *dets_) {
@@ -244,7 +253,9 @@ void TwoSpinWfn::copy_det(const int_t i, uint_t *det) const {
   std::memcpy(det, &dets[i * nword2], sizeof(uint_t) * nword2);
 }
 
-const uint_t *TwoSpinWfn::det_ptr(const int_t i) const { return &dets[i * nword2]; }
+const uint_t *TwoSpinWfn::det_ptr(const int_t i) const {
+  return &dets[i * nword2];
+}
 
 uint_t TwoSpinWfn::rank_det(const uint_t *det) const {
 #ifdef PYCI_EXACT_HASH
@@ -389,7 +400,9 @@ void TwoSpinWfn::reserve(const int_t n) {
   dict.reserve(n);
 }
 
-void TwoSpinWfn::squeeze(void) { dets.shrink_to_fit(); }
+void TwoSpinWfn::squeeze(void) {
+  dets.shrink_to_fit();
+}
 
 void TwoSpinWfn::clear(void) {
   dets.resize(0);

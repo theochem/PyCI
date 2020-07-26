@@ -32,20 +32,31 @@
 
 namespace pyci {
 
-OneSpinWfn::OneSpinWfn(void) { return; }
+OneSpinWfn::OneSpinWfn(void) {
+  return;
+}
 
 OneSpinWfn::OneSpinWfn(OneSpinWfn &&wfn) noexcept
     : nword(std::exchange(wfn.nword, 0)), nbasis(std::exchange(wfn.nbasis, 0)),
       nocc(std::exchange(wfn.nocc, 0)), nvir(std::exchange(wfn.nvir, 0)),
-      ndet(std::exchange(wfn.ndet, 0)), dets(std::move(wfn.dets)), dict(std::move(wfn.dict)) {}
+      ndet(std::exchange(wfn.ndet, 0)), dets(std::move(wfn.dets)), dict(std::move(wfn.dict)) {
+}
 
-OneSpinWfn::OneSpinWfn(const int_t nbasis_, const int_t nocc_) { init(nbasis_, nocc_); }
+OneSpinWfn::OneSpinWfn(const int_t nbasis_, const int_t nocc_) {
+  init(nbasis_, nocc_);
+}
 
-OneSpinWfn::OneSpinWfn(const OneSpinWfn &wfn) { from_onespinwfn(wfn); }
+OneSpinWfn::OneSpinWfn(const OneSpinWfn &wfn) {
+  from_onespinwfn(wfn);
+}
 
-OneSpinWfn::OneSpinWfn(const TwoSpinWfn &wfn) { from_twospinwfn(wfn); }
+OneSpinWfn::OneSpinWfn(const TwoSpinWfn &wfn) {
+  from_twospinwfn(wfn);
+}
 
-OneSpinWfn::OneSpinWfn(const char *filename) { from_file(filename); }
+OneSpinWfn::OneSpinWfn(const char *filename) {
+  from_file(filename);
+}
 
 OneSpinWfn::OneSpinWfn(const int_t nbasis_, const int_t nocc_, const int_t n, const uint_t *dets_) {
   from_det_array(nbasis_, nocc_, n, dets_);
@@ -211,7 +222,9 @@ void OneSpinWfn::copy_det(const int_t i, uint_t *det) const {
   std::memcpy(det, &dets[i * nword], sizeof(uint_t) * nword);
 }
 
-const uint_t *OneSpinWfn::det_ptr(const int_t i) const { return &dets[i * nword]; }
+const uint_t *OneSpinWfn::det_ptr(const int_t i) const {
+  return &dets[i * nword];
+}
 
 uint_t OneSpinWfn::rank_det(const uint_t *det) const {
 #ifdef PYCI_EXACT_HASH
@@ -320,7 +333,9 @@ void OneSpinWfn::reserve(const int_t n) {
   dict.reserve(n);
 }
 
-void OneSpinWfn::squeeze(void) { dets.shrink_to_fit(); }
+void OneSpinWfn::squeeze(void) {
+  dets.shrink_to_fit();
+}
 
 void OneSpinWfn::clear(void) {
   dets.resize(0);
