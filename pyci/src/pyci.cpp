@@ -343,7 +343,7 @@ nbasis : int
 
 )""");
 
-  hamiltonian.def_readonly("ecore", &Hamiltonian::ecore,
+  hamiltonian.def_readwrite("ecore", &Hamiltonian::ecore,
                            R"""(
 Constant/"zero-electron" integral.
 
