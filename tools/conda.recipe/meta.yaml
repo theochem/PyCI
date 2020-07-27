@@ -1,0 +1,40 @@
+package:
+  name: "pyci"
+  version: "0.3.5"
+
+source:
+  path: ../../
+
+build:
+  number: 0
+  string: py{{ CONDA_PY }}_1
+  script:
+    - export CFLAGS="${CFLAGS} -isysroot ${CONDA_BUILD_SYSROOT}"
+    - python setup.py build_ext -I {{ PREFIX }}/include
+    - python setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+  build:
+    - {{ compiler("c") }}
+    - {{ compiler("cxx") }}
+  host:
+    - python
+    - setuptools
+    - numpy >=1.13
+  run:
+      #- python
+    - numpy >=1.13
+
+test:
+  requires:
+    - nose
+    - numpy >=1.13
+    - scipy >=0.17
+  imports:
+    - pyci
+  # commands:
+  #   - python -m nose -v pyci
+
+about:
+  home: https://github.com/msricher/pyci
+  license: GNU Version 3
