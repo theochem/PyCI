@@ -448,38 +448,21 @@ void SparseOp::perform_op(const double *x, double *y) const {
 }
 
 void SparseOp::cepa0_shift(const double *coeffs) {
-  int_t i, j, jstart, jend, index;
+  //
+  // ecorr = {1/c_0} * \sum_{i=1}^{ncol}{c_i * <0|H|i>}
+  //
+  // Note: diagonal elements are the last ones in each row
+  //
+  int_t i = indptr[0], j = indptr[1] - 1;
   double ecorr = 0.0;
-  // ecorr = {1/c_0} * \sum_{i=1}^{nrow}{c_i * <0|H|i>}
-  for (i = 1; i < nrow; ++i) {
-    jstart = indptr[i];
-    jend = indptr[i + 1];
-    for (j = jstart; j < jend; ++j) {
-      index = indices[j];
-      if (!(index)) {
-        ecorr += coeffs[i] * data[j];
-        continue;
-      }
-    }
-  }
+  for (; i < j; ++i)
+    ecorr += coeffs[indices[i]] * data[i];
   ecorr /= coeffs[0];
-  // <i|H|j> -= \delta_{ij} * ecorr (for i > 0)
-  i = 1;
-  while (i < nrow)
-    // diagonal elements are the last ones in each row
+  //
+  // <i|H|i> += ecorr (for i > 0)
+  //
+  for (i = 1; i < nrow;)
     data[indptr[++i] - 1] += ecorr;
-  /* If the above structure is no longer good, use this more general version: */
-  /* for (i = 1; i < nrow; ++i) { */
-  /*     jstart = indptr[i]; */
-  /*     jend = indptr[i + 1]; */
-  /*     for (j = jstart; j < jend; ++j) { */
-  /*         index = indices[j]; */
-  /*         if (index == i) { */
-  /*             data[j] += ecorr; */
-  /*             continue; */
-  /*         } */
-  /*     } */
-  /* } */
 }
 
 void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit,
