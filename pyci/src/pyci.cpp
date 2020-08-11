@@ -52,8 +52,8 @@ PYBIND11_MODULE(pyci, m) {
 
     Hamiltonian(Hamiltonian &&ham) noexcept
         : nbasis(std::exchange(ham.nbasis, 0)), ecore(std::exchange(ham.ecore, 0)),
-          one_mo(std::move(one_mo)), two_mo(std::move(two_mo)), h(std::move(h)), v(std::move(v)),
-          w(std::move(w)) {
+          one_mo(std::move(ham.one_mo)), two_mo(std::move(ham.two_mo)), h(std::move(ham.h)),
+          v(std::move(ham.v)), w(std::move(ham.w)) {
     }
 
     Hamiltonian(const Hamiltonian &ham)
@@ -344,7 +344,7 @@ nbasis : int
 )""");
 
   hamiltonian.def_readwrite("ecore", &Hamiltonian::ecore,
-                           R"""(
+                            R"""(
 Constant/"zero-electron" integral.
 
 Returns

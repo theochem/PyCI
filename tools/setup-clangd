@@ -1,0 +1,14 @@
+#!/bin/sh
+cat > compile_flags.txt <<EOF
+-xc++
+-Wall
+-fopenmp
+-I$(python -c "import numpy; print(numpy.get_include())")
+-I$(python -c "import sysconfig; print(sysconfig.get_paths()['include'])")
+-Ilib/pybind11/include
+-Ilib/eigen
+-Ilib/spectra/include
+-Ilib/parallel-hashmap
+-Ipyci/include
+EOF
+
