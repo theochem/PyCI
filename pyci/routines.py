@@ -13,10 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-r"""
-PyCI additional routines module.
-
-"""
+r"""PyCI additional routines module."""
 
 from itertools import combinations
 
@@ -36,7 +33,9 @@ __all__ = [
 
 def add_excitations(wfn: pyci.wavefunction, *excitations: Sequence[int], ref=None) -> None:
     r"""
-    Convenience function for adding multiple excitation levels of determinants to a wave function.
+    Add multiple excitation levels of determinants to a wave function.
+
+    Convenience function.
 
     Parameters
     ----------
@@ -116,7 +115,7 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
                     for occs_i_dn in combinations(occs_up, pairs):
                         occs[1, :pairs] = occs_i_dn
                         for occs_a_dn in combinations(virs_up, wfn.nocc_dn - pairs):
-                            occs[1, pairs : wfn.nocc_dn] = occs_a_dn
+                            occs[1, pairs:wfn.nocc_dn] = occs_a_dn
                             wfn.add_occs(occs)
 
 
@@ -177,10 +176,7 @@ def add_gkci(
 
 
 def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: float) -> None:
-    r"""
-    Run the odometer algorithm for a one-spin wave function.
-
-    """
+    r"""Run the odometer algorithm for a one-spin wave function."""
     aufbau_occs = np.arange(wfn.nocc_up, dtype=pyci.c_int)
     new_occs = np.copy(aufbau_occs)
     old_occs = np.copy(aufbau_occs)
@@ -221,19 +217,16 @@ def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: fl
 
 
 def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: float) -> None:
-    r"""
-    Run the odometer algorithm for a two-spin wave function.
-
-    """
+    r"""Run the odometer algorithm for a two-spin wave function."""
     aufbau_occs = np.arange(wfn.nocc, dtype=pyci.c_int)
-    aufbau_occs[wfn.nocc_up :] -= wfn.nocc_up
+    aufbau_occs[wfn.nocc_up:] -= wfn.nocc_up
     new_occs = np.copy(aufbau_occs)
     old_occs = np.copy(aufbau_occs)
     # Index of last electron
     j_electron = wfn.nocc - 1
     # Compute cost of the most important neglected determinant
-    nodes_up = nodes[new_occs[: wfn.nocc_up]]
-    nodes_dn = nodes[new_occs[wfn.nocc_up :]]
+    nodes_up = nodes[new_occs[:wfn.nocc_up]]
+    nodes_dn = nodes[new_occs[wfn.nocc_up:]]
     q_up_neg = np.sum(nodes_up[:-1]) * p + (t + 1) * nodes_up[-1] * p
     q_dn_neg = np.sum(nodes_dn[:-1]) * p + (t + 1) * nodes_dn[-1] * p
     # Select determinants

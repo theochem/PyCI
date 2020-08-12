@@ -16,6 +16,7 @@
 #include <omp.h>
 #include <pyci.h>
 
+#include <cmath>
 #include <cstring>
 #include <stdexcept>
 #include <utility>
@@ -447,7 +448,7 @@ void SparseOp::perform_op(const double *x, double *y) const {
   }
 }
 
-void SparseOp::cepa0_shift(const double *coeffs) {
+void SparseOp::cepa0_shift(const double *coeffs, const double sigma) {
   //
   // ecorr = {1/c_0} * \sum_{i=1}^{ncol}{c_i * <0|H|i>}
   //
@@ -459,10 +460,12 @@ void SparseOp::cepa0_shift(const double *coeffs) {
     ecorr += coeffs[indices[i]] * data[i];
   ecorr /= coeffs[0];
   //
-  // <i|H|i> += ecorr (for i > 0)
+  // <i|H|i> -= ecorr * exp(-(c_i ^ 2) / (sigma * c_0) ^ 2)     (for i > 0)
   //
-  for (i = 1; i < nrow;)
-    data[indptr[++i] - 1] += ecorr;
+  double sigma2 = sigma * coeffs[0];
+  sigma2 *= sigma2;
+  for (i = 1; i < nrow; ++i)
+    data[indptr[i + 1] - 1] -= exp(-0.5 * (coeffs[i] * coeffs[i]) / sigma2) * ecorr;
 }
 
 void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit,

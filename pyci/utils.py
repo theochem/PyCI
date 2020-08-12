@@ -13,10 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-r"""
-PyCI utilities module.
-
-"""
+r"""PyCI utilities module."""
 
 from typing import TextIO, Tuple
 
@@ -62,7 +59,7 @@ def read_fcidump(filename: TextIO) -> Tuple[float, np.ndarray, np.ndarray]:
         if not line.startswith(" &FCI NORB="):
             raise IOError("Error in FCIDUMP file header")
         # read nbasis from header
-        nbasis = int(line[11 : line.find(",")])
+        nbasis = int(line[11:line.find(",")])
         # skip rest of header
         for line in f:
             field = line.split()[0]
@@ -77,23 +74,23 @@ def read_fcidump(filename: TextIO) -> Tuple[float, np.ndarray, np.ndarray]:
                 raise IOError("Expecting 5 fields on each data line in FCIDUMP")
             val = float(fields[0])
             if fields[3] != "0":
-                i = int(fields[1]) - 1
-                j = int(fields[2]) - 1
-                k = int(fields[3]) - 1
-                l = int(fields[4]) - 1
-                two_mo[i, k, j, l] = val
-                two_mo[k, i, l, j] = val
-                two_mo[j, k, i, l] = val
-                two_mo[i, l, j, k] = val
-                two_mo[j, l, i, k] = val
-                two_mo[l, j, k, i] = val
-                two_mo[k, j, l, i] = val
-                two_mo[l, i, k, j] = val
+                ii = int(fields[1]) - 1
+                jj = int(fields[2]) - 1
+                kk = int(fields[3]) - 1
+                ll = int(fields[4]) - 1
+                two_mo[ii, kk, jj, ll] = val
+                two_mo[kk, ii, ll, jj] = val
+                two_mo[jj, kk, ii, ll] = val
+                two_mo[ii, ll, jj, kk] = val
+                two_mo[jj, ll, ii, kk] = val
+                two_mo[ll, jj, kk, ii] = val
+                two_mo[kk, jj, ll, ii] = val
+                two_mo[ll, ii, kk, jj] = val
             elif fields[1] != "0":
-                i = int(fields[1]) - 1
-                j = int(fields[2]) - 1
-                one_mo[i, j] = val
-                one_mo[j, i] = val
+                ii = int(fields[1]) - 1
+                jj = int(fields[2]) - 1
+                one_mo[ii, jj] = val
+                one_mo[jj, ii] = val
             else:
                 ecore = val
     return ecore, one_mo, two_mo
@@ -139,24 +136,25 @@ def write_fcidump(
         f.write(f" &FCI NORB={nbasis},NELEC={nelec},MS2={ms2},\n")
         f.write(f'  ORBSYM={"1," * nbasis}\n  ISYM=1\n &END\n')
         # write two-electron integrals
-        for i in range(nbasis):
-            for j in range(i + 1):
-                for k in range(nbasis):
-                    for l in range(k + 1):
-                        if (i * (i + 1)) // 2 + j >= (k * (k + 1)) // 2 + l:
-                            val = two_mo[i, k, j, l]
+        for ii in range(nbasis):
+            for jj in range(ii + 1):
+                for kk in range(nbasis):
+                    for ll in range(kk + 1):
+                        if (ii * (ii + 1)) // 2 + jj >= (kk * (kk + 1)) // 2 + ll:
+                            val = two_mo[ii, kk, jj, ll]
                             if abs(val) > tol:
-                                f.write(
-                                    f"{val:23.16E} {i + 1:4d} {j + 1:4d} {k + 1:4d} {l + 1:4d}\n"
+                                print(
+                                    f"{val:23.16E} {ii + 1:4d} {jj + 1:4d} {kk + 1:4d} {ll + 1:4d}",
+                                    file=f,
                                 )
         # write one-electron integrals
-        for i in range(nbasis):
-            for j in range(i + 1):
-                val = one_mo[i, j]
+        for ii in range(nbasis):
+            for jj in range(ii + 1):
+                val = one_mo[ii, jj]
                 if abs(val) > tol:
-                    f.write(f"{val:23.16E} {i + 1:4d} {j + 1:4d}    0    0\n")
+                    print(f"{val:23.16E} {ii + 1:4d} {jj + 1:4d}    0    0", file=f)
         # write zero-energy integrals
-        f.write(f"{ecore if abs(ecore) > tol else 0:23.16E}    0    0    0    0\n")
+        print(f"{ecore if abs(ecore) > tol else 0:23.16E}    0    0    0    0", file=f)
 
 
 def make_senzero_integrals(

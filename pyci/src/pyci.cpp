@@ -1723,23 +1723,29 @@ y : np.ndarray
 
   sparse_op.def(
       "cepa0_shift",
-      [](SparseOp &self, const d_array_t coeffs) {
+      [](SparseOp &self, const d_array_t coeffs, const double sigma) {
         if (self.nrow != self.ncol)
           throw std::domain_error("cannot CEPA0-shift a rectangular operator");
         py::buffer_info buf = coeffs.request();
         if ((buf.ndim != 1) || (buf.shape[0] != self.nrow))
           throw std::domain_error("x has mismatched dimensions");
-        self.cepa0_shift((const double *)buf.ptr);
+        self.cepa0_shift((const double *)buf.ptr, sigma);
       },
       R"""(
 Shift the diagonal elements of the sparse operator to solve the CEPA0 problem.
+
+.. math::
+
+    \left<i|\hat{H}|i\right> -= E_\text{corr} e^{-\frac{c_i^2}{2{\left(\sigma c_0\right)}^2}}
 
 Parameters
 ----------
 coeffs : np.ndarray
     Coefficient vector.
+sigma : float
+    Damping term.
 )""",
-      py::arg("coeffs"));
+      py::arg("coeffs"), py::arg("sigma") = 1.0e-3);
 
   sparse_op.def(
       "__call__",

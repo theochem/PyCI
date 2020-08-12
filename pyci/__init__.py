@@ -13,10 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-r"""
-PyCI module.
-
-"""
+r"""PyCI module."""
 
 from .pyci import __version__
 from .pyci import *

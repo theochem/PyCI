@@ -302,7 +302,7 @@ public:
 
   void perform_op(const double *, double *) const;
 
-  void cepa0_shift(const double *);
+  void cepa0_shift(const double *, const double);
 
   void solve(const double *, const int_t, const int_t, const int_t, const double, double *,
              double *) const;
