@@ -1730,14 +1730,14 @@ y : np.ndarray
 
   sparse_op.def(
       "solve_cepa0",
-      [](SparseOp &self) {
+      [](SparseOp &self, const int_t refind) {
         if (self.nrow != self.ncol)
           throw std::domain_error("cannot solve a rectangular operator");
         d_array_t energy(1);
         d_array_t coeffs({1, (int)self.nrow});
         py::buffer_info ebuf = energy.request();
         py::buffer_info cbuf = coeffs.request();
-        self.solve_cepa0((double *)ebuf.ptr, (double *)cbuf.ptr);
+        self.solve_cepa0((double *)ebuf.ptr, (double *)cbuf.ptr, refind);
         return py::make_tuple(energy, coeffs);
       },
       R"""(
@@ -1749,7 +1749,8 @@ energy : float
     Energy.
 coeffs : np.ndarray
     Coefficient vector.
-)""");
+)""",
+      py::arg("refind") = 0);
 
   sparse_op.def(
       "__call__",

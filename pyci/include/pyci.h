@@ -304,7 +304,7 @@ public:
 
   void perform_op(const double *, double *) const;
 
-  void solve_cepa0(double *, double *);
+  void solve_cepa0(double *, double *, const int_t);
 
   void solve(const double *, const int_t, const int_t, const int_t, const double, double *,
              double *) const;
