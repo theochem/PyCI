@@ -18,17 +18,139 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE pyci::int_t
-#include <Spectra/SymEigsSolver.h>
-
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
-#include <Eigen/SparseLU>
+#include <Eigen/SparseQR>
+
+#include <Spectra/SymEigsSolver.h>
+
+// See https://stackoverflow.com/a/46370189
+namespace std {
+
+namespace sort_helper {
+
+template <typename _Data, typename _Order> struct value_reference_t;
+
+template <typename _Data, typename _Order> struct value_t {
+  _Data data;
+  _Order val;
+  inline value_t(_Data _data, _Order _val) : data(_data), val(_val) {
+  }
+  inline value_t(const value_reference_t<_Data, _Order> &rhs);
+};
+
+template <typename _Data, typename _Order> struct value_reference_t {
+  _Data *pdata;
+  _Order *pval;
+  value_reference_t(_Data *_itData, _Order *_itVal) : pdata(_itData), pval(_itVal) {
+  }
+  inline value_reference_t &operator=(const value_reference_t &rhs) {
+    *pdata = *rhs.pdata;
+    *pval = *rhs.pval;
+    return *this;
+  }
+  inline value_reference_t &operator=(const value_t<_Data, _Order> &rhs) {
+    *pdata = rhs.data;
+    *pval = rhs.val;
+    return *this;
+  }
+  inline bool operator<(const value_reference_t &rhs) {
+    return *pval < *rhs.pval;
+  }
+};
+
+template <typename _Data, typename _Order>
+struct value_iterator_t : iterator<random_access_iterator_tag, value_t<_Data, _Order>, ptrdiff_t,
+                                   value_t<_Data, _Order> *, value_reference_t<_Data, _Order>> {
+  _Data *itData;
+  _Order *itVal;
+  value_iterator_t(_Data *_itData, _Order *_itVal) : itData(_itData), itVal(_itVal) {
+  }
+
+  inline ptrdiff_t operator-(const value_iterator_t &rhs) const {
+    return itVal - rhs.itVal;
+  }
+
+  inline value_iterator_t operator+(ptrdiff_t off) const {
+    return value_iterator_t(itData + off, itVal + off);
+  }
+
+  inline value_iterator_t operator-(ptrdiff_t off) const {
+    return value_iterator_t(itData - off, itVal - off);
+  }
+
+  inline value_iterator_t &operator++() {
+    ++itData;
+    ++itVal;
+    return *this;
+  }
+
+  inline value_iterator_t &operator--() {
+    --itData;
+    --itVal;
+    return *this;
+  }
+
+  inline value_iterator_t operator++(int) {
+    return value_iterator_t(itData++, itVal++);
+  }
+
+  inline value_iterator_t operator--(int) {
+    return value_iterator_t(itData--, itVal--);
+  }
+
+  inline value_t<_Data, _Order> operator*() const {
+    return value_t<_Data, _Order>(*itData, *itVal);
+  }
+
+  inline value_reference_t<_Data, _Order> operator*() {
+    return value_reference_t<_Data, _Order>(itData, itVal);
+  }
+
+  inline bool operator<(const value_iterator_t &rhs) const {
+    return itVal < rhs.itVal;
+  }
+
+  inline bool operator==(const value_iterator_t &rhs) const {
+    return itVal == rhs.itVal;
+  }
+
+  inline bool operator!=(const value_iterator_t &rhs) const {
+    return itVal != rhs.itVal;
+  }
+};
+
+template <typename _Data, typename _Order>
+inline value_t<_Data, _Order>::value_t(const value_reference_t<_Data, _Order> &rhs)
+    : data(*rhs.pdata), val(*rhs.pval) {
+}
+
+template <typename _Data, typename _Order>
+bool operator<(const value_t<_Data, _Order> &lhs, const value_reference_t<_Data, _Order> &rhs) {
+  return lhs.val < *rhs.pval;
+}
+
+template <typename _Data, typename _Order>
+bool operator<(const value_reference_t<_Data, _Order> &lhs, const value_t<_Data, _Order> &rhs) {
+  return *lhs.pval < rhs.val;
+}
+
+template <typename _Data, typename _Order>
+void swap(value_reference_t<_Data, _Order> lhs, value_reference_t<_Data, _Order> rhs) {
+  std::swap(*lhs.pdata, *rhs.pdata);
+  std::swap(*lhs.pval, *rhs.pval);
+}
+
+} // namespace sort_helper
+
+} // namespace std
 
 namespace pyci {
 
@@ -460,9 +582,6 @@ void SparseOp::perform_op(const double *x, double *y) const {
 
 void SparseOp::solve_cepa0(double *energy, double *coeffs, const int_t refind) {
   // use Eigen to solve our sparse linear system
-  // Eigen sparse matrix (left hand side, transposed to save us effort)
-  Eigen::Map<Eigen::SparseMatrix<double, Eigen::ColMajor, int_t>> lhs(
-      nrow, ncol, data.size(), &indptr[0], &indices[0], &data[0], nullptr);
   // Eigen vector (left hand side)
   Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>> eigencoeffs(coeffs, nrow);
   // Eigen vector (right hand side)
@@ -488,12 +607,24 @@ void SparseOp::solve_cepa0(double *energy, double *coeffs, const int_t refind) {
     data[i] *= -1;
   // finally, element (refind, refind) is 1
   data[indptr[refind + 1] - 1] = 1.0;
+  // sort elements of this SparseOp by row index
+  typedef std::sort_helper::value_iterator_t<double, int_t> sort_iter;
+  for (i = 0; i < nrow; ++i) {
+    std::sort(sort_iter(&data[indptr[i]], &indices[indptr[i]]),
+              sort_iter(&data[indptr[i + 1]], &indices[indptr[i + 1]]));
+  }
+  // Eigen sparse matrix (left hand side, transposed to save us effort)
+  Eigen::Map<Eigen::SparseMatrix<double, Eigen::ColMajor, int_t>> lhs(
+      nrow, ncol, data.size(), &indptr[0], &indices[0], &data[0], nullptr);
   // now solve this thing
-  Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor, int_t>, Eigen::COLAMDOrdering<int_t>>
+  Eigen::SparseQR<Eigen::SparseMatrix<double, Eigen::ColMajor, int_t>, Eigen::COLAMDOrdering<int_t>>
       solver;
-  solver.analyzePattern(lhs);
-  solver.factorize(lhs);
+  solver.compute(lhs);
+  if (solver.info() != Eigen::Success)
+    throw std::runtime_error("decomposition failed");
   eigencoeffs = solver.solve(rhs);
+  if (solver.info() != Eigen::Success)
+    throw std::runtime_error("did not converge");
   // energy is eigenvector element "refind" + core energy
   *energy = coeffs[refind] + ecore;
   // coefficient vector element "refind" is 1; the rest is the eigenvector
