@@ -26,6 +26,7 @@
 
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE pyci::int_t
 #include <Eigen/Core>
+#include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseCore>
 #include <Eigen/SparseQR>
 
@@ -528,6 +529,21 @@ void init_condense_thread(SparseOp &op, SparseOp &thread_op, const int_t ithread
   thread_op.indptr.shrink_to_fit();
 }
 
+void sort_op_rows(SparseOp &op) {
+  typedef std::sort_helper::value_iterator_t<double, int_t> sort_iter;
+  int_t nthread = omp_get_max_threads();
+  int_t chunksize = op.nrow / nthread + ((op.nrow % nthread) ? 1 : 0);
+#pragma omp parallel
+  {
+    int_t ithread = omp_get_thread_num();
+    int_t istart = ithread * chunksize;
+    int_t iend = (istart + chunksize < op.nrow) ? istart + chunksize : op.nrow;
+    for (int_t i = istart; i < iend; ++i)
+      std::sort(sort_iter(&op.data[op.indptr[i]], &op.indices[op.indptr[i]]),
+                sort_iter(&op.data[op.indptr[i + 1]], &op.indices[op.indptr[i + 1]]));
+  }
+}
+
 } // namespace
 
 SparseOp::SparseOp(void) {
@@ -580,57 +596,6 @@ void SparseOp::perform_op(const double *x, double *y) const {
   }
 }
 
-void SparseOp::solve_cepa0(double *energy, double *coeffs, const int_t refind) {
-  // use Eigen to solve our sparse linear system
-  // Eigen vector (left hand side)
-  Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>> eigencoeffs(coeffs, nrow);
-  // Eigen vector (right hand side)
-  Eigen::Vector<double, Eigen::Dynamic> rhs(nrow);
-  // construct the cepa0 problem
-  int_t i = indptr[refind], j = indptr[refind + 1];
-  double h00 = data[j - 1];
-  for (; i < j; ++i) {
-    // set rhs elements (Eigen uses parentheses for indexing)
-    rhs(indices[i]) = data[i];
-    // set row "refind" of this SparseOp to zero
-    data[i] = 0.0;
-  }
-  // we subtract <0|H|0> from the diagonal elements (for i != refind)
-  // Note: diagonal elements are the last ones in each row
-  for (i = 0; i < refind; ++i)
-    data[indptr[i + 1] - 1] -= h00;
-  for (i = refind + 1; i < nrow; ++i)
-    data[indptr[i + 1] - 1] -= h00;
-  // everything is made its negative
-  j = data.size();
-  for (i = 0; i < j; ++i)
-    data[i] *= -1;
-  // finally, element (refind, refind) is 1
-  data[indptr[refind + 1] - 1] = 1.0;
-  // sort elements of this SparseOp by row index
-  typedef std::sort_helper::value_iterator_t<double, int_t> sort_iter;
-  for (i = 0; i < nrow; ++i) {
-    std::sort(sort_iter(&data[indptr[i]], &indices[indptr[i]]),
-              sort_iter(&data[indptr[i + 1]], &indices[indptr[i + 1]]));
-  }
-  // Eigen sparse matrix (left hand side, transposed to save us effort)
-  Eigen::Map<Eigen::SparseMatrix<double, Eigen::ColMajor, int_t>> lhs(
-      nrow, ncol, data.size(), &indptr[0], &indices[0], &data[0], nullptr);
-  // now solve this thing
-  Eigen::SparseQR<Eigen::SparseMatrix<double, Eigen::ColMajor, int_t>, Eigen::COLAMDOrdering<int_t>>
-      solver;
-  solver.compute(lhs);
-  if (solver.info() != Eigen::Success)
-    throw std::runtime_error("decomposition failed");
-  eigencoeffs = solver.solve(rhs);
-  if (solver.info() != Eigen::Success)
-    throw std::runtime_error("did not converge");
-  // energy is eigenvector element "refind" + core energy
-  *energy = coeffs[refind] + ecore;
-  // coefficient vector element "refind" is 1; the rest is the eigenvector
-  coeffs[refind] = 1;
-}
-
 void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit,
                      const double tol, double *evals, double *evecs) const {
   if (nrow == 1) {
@@ -649,6 +614,70 @@ void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const
   for (int_t i = 0; i < n; ++i)
     evals[i] += ecore;
   eigenvectors = eigs.eigenvectors();
+}
+
+void SparseOp::solve_cepa0(const double *guess, const int_t refind, double sigma, const double tol,
+                           const int_t maxiter, double *energy, double *coeffs) {
+  // handle ``damping`` parameter; if it's less than zero, damping is disabled
+  bool damping;
+  if (sigma < 0.0) {
+    damping = false;
+  } else {
+    damping = true;
+    sigma = 0.5 / (sigma * sigma * guess[refind] * guess[refind]);
+  }
+  // use Eigen to solve our sparse linear system
+  // Eigen vector (left hand side)
+  Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>> eigencoeffs(coeffs, nrow);
+  // Eigen vector (right hand side)
+  Eigen::Vector<double, Eigen::Dynamic> rhs(nrow);
+  // construct the cepa0 problem
+  double h00 = get_element(refind, refind);
+  int_t i, j = indptr[refind + 1];
+  // set rhs vector elements (Eigen uses parentheses for indexing)
+  for (i = indptr[refind]; i < j; ++i)
+    rhs(indices[i]) = data[i];
+  // set lhs matrix elements
+  int_t *start, *end, *e;
+  end = &indices[indptr[0]];
+  for (i = 0; i < nrow; ++i) {
+    start = end;
+    end = &indices[indptr[i + 1]];
+    // set column "refind" to zero
+    e = std::find(start, end, refind);
+    if (e != end)
+      data[indptr[i] + e - start] = 0.0;
+    // we subtract <refind|H|refind> from the diagonal elements, with damping if its' enabled
+    data[indptr[i] + std::find(start, end, i) - start] -=
+        h00 * (damping ? exp(coeffs[i] * coeffs[i] * sigma) : 1);
+  }
+  // everything is made its negative
+  j = data.size();
+  for (i = 0; i < j; ++i)
+    data[i] *= -1;
+  // finally, element (refind, refind) is 1
+  start = &indices[indptr[refind]];
+  end = &indices[indptr[refind + 1]];
+  data[indptr[refind] + std::find(start, end, refind) - start] = 1.0;
+  // Eigen sparse matrix (left hand side matrix)
+  Eigen::Map<Eigen::SparseMatrix<double, Eigen::RowMajor, int_t>> lhs(
+      nrow, ncol, data.size(), &indptr[0], &indices[0], &data[0], nullptr);
+  // Eigen vector (left hand side guess)
+  Eigen::Map<const Eigen::Vector<double, Eigen::Dynamic>> eigenguess(guess, nrow);
+  // now solve this thing
+  Eigen::BiCGSTAB<Eigen::SparseMatrix<double, Eigen::RowMajor, int_t>> solver;
+  solver.setTolerance(tol);
+  solver.setMaxIterations(maxiter);
+  solver.compute(lhs);
+  if (solver.info() != Eigen::Success)
+    throw std::runtime_error("decomposition failed");
+  eigencoeffs = solver.solveWithGuess(rhs, eigenguess);
+  if (solver.info() != Eigen::Success)
+    throw std::runtime_error("did not converge");
+  // energy is eigenvector element "refind" + core energy
+  *energy = coeffs[refind] + ecore;
+  // coefficient vector element "refind" is 1; the rest is the eigenvector
+  coeffs[refind] = 1;
 }
 
 void SparseOp::init_doci(const OneSpinWfn &wfn, const double ecore_, const double *h,
@@ -678,6 +707,7 @@ void SparseOp::init_doci(const OneSpinWfn &wfn, const double ecore_, const doubl
       init_condense_thread(*this, ops[t], t);
   }
   // finalize vectors
+  sort_op_rows(*this);
   size = indices.size();
   indptr.push_back(size);
   data.shrink_to_fit();
@@ -712,6 +742,7 @@ void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double ecore_, const dou
       init_condense_thread(*this, ops[t], t);
   }
   // finalize vectors
+  sort_op_rows(*this);
   size = indices.size();
   indptr.push_back(size);
   data.shrink_to_fit();
@@ -746,6 +777,7 @@ void SparseOp::init_genci(const OneSpinWfn &wfn, const double ecore_, const doub
       init_condense_thread(*this, ops[t], t);
   }
   // finalize vectors
+  sort_op_rows(*this);
   size = indices.size();
   indptr.push_back(size);
   data.shrink_to_fit();

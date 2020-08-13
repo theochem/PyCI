@@ -1729,42 +1729,6 @@ y : np.ndarray
       py::arg("i"), py::arg("j"));
 
   sparse_op.def(
-      "solve_cepa0",
-      [](SparseOp &self, const int_t refind) {
-        if (self.nrow != self.ncol)
-          throw std::domain_error("cannot solve a rectangular operator");
-        d_array_t energy(1);
-        d_array_t coeffs({1, (int)self.nrow});
-        py::buffer_info ebuf = energy.request();
-        py::buffer_info cbuf = coeffs.request();
-        self.solve_cepa0((double *)ebuf.ptr, (double *)cbuf.ptr, refind);
-        return py::make_tuple(energy, coeffs);
-      },
-      R"""(
-Solve the CEPA0 problem.
-
-Returns
--------
-energy : float
-    Energy.
-coeffs : np.ndarray
-    Coefficient vector.
-)""",
-      py::arg("refind") = 0);
-
-  sparse_op.def(
-      "__call__",
-      [](const SparseOp &self, const d_array_t x, d_array_t out) {
-        py::buffer_info bufx = x.request(), bufy = out.request();
-        if ((bufx.ndim != 1) || (bufx.shape[0] != self.ncol) || (bufy.ndim != 1) ||
-            (bufy.shape[0] != self.nrow))
-          throw std::domain_error("x,y have mismatched dimensions");
-        self.perform_op((const double *)bufx.ptr, (double *)bufy.ptr);
-        return out;
-      },
-      py::arg("x"), py::arg("out"));
-
-  sparse_op.def(
       "solve",
       [](const SparseOp &self, const int_t n, int_t ncv, py::object c0, int_t maxit,
          const double tol) {
@@ -1822,6 +1786,82 @@ evecs : np.ndarray
 )""",
       py::arg("n") = 1, py::arg("ncv") = -1, py::arg("c0") = py::none(), py::arg("maxit") = -1,
       py::arg("tol") = 1.e-6);
+
+  sparse_op.def(
+      "solve_cepa0",
+      [](SparseOp &self, py::object e0, py::object c0, const int_t refind, py::object damping,
+         const int_t maxiter, const double tol) {
+        double *gptr;
+        double e = py::cast<py::object>(e0).is(py::none()) ? self.get_element(refind, refind)
+                                                           : e0.cast<double>();
+        double sigma = py::cast<py::object>(damping).is(py::none()) ? -1.0 : damping.cast<double>();
+        std::vector<double> g;
+        py::buffer_info gbuf;
+        if (self.nrow != self.ncol)
+          throw std::domain_error("cannot solve a rectangular operator");
+        // construct guess
+        if (py::cast<py::object>(c0).is(py::none())) {
+          g.resize(self.nrow);
+          gptr = &g[0];
+        } else {
+          gbuf = c0.cast<d_array_t>().request();
+          if ((gbuf.ndim != 1) || (gbuf.shape[0] != self.nrow))
+            throw std::domain_error("c0 has mismatched dimensions");
+          gptr = (double *)gbuf.ptr;
+          // set intermediate normalization for guess
+          double cref = gptr[refind];
+          for (int_t i = 0; i < gbuf.shape[0]; ++i)
+            gptr[i] /= cref;
+        }
+        // set guess energy
+        gptr[refind] = e;
+        // solve
+        d_array_t energy(1);
+        d_array_t coeffs({1, (int)self.nrow});
+        py::buffer_info ebuf = energy.request();
+        py::buffer_info cbuf = coeffs.request();
+        self.solve_cepa0(gptr, refind, sigma, tol, maxiter, (double *)ebuf.ptr, (double *)cbuf.ptr);
+        return py::make_tuple(energy, coeffs);
+      },
+      R"""(
+Solve the CEPA0 problem.
+
+Parameters
+----------
+e0: float, optional
+    Initial guess for energy.
+c0 : np.ndarray, optional
+    Initial guess for coefficient vector. If not provided, the default is [1, 0, 0, ..., 0, 0].
+refind : int, default=0
+    Index of reference determinant.
+damping: float, optional
+    Coefficient to use for damping. Default is to not use damping.
+maxiter : int, default=1000*n
+    Maximum number of iterations for eigensolver to run.
+tol : float, default=1.0e-9
+    Convergence tolerance for linear solver.
+
+Returns
+-------
+energy : float
+    Energy.
+coeffs : np.ndarray
+    Coefficient vector.
+)""",
+      py::arg("e0") = py::none(), py::arg("c0") = py::none(), py::arg("refind") = 0,
+      py::arg("damping") = py::none(), py::arg("maxiter") = 1000, py::arg("tol") = 1.0e-9);
+
+  sparse_op.def(
+      "__call__",
+      [](const SparseOp &self, const d_array_t x, d_array_t out) {
+        py::buffer_info bufx = x.request(), bufy = out.request();
+        if ((bufx.ndim != 1) || (bufx.shape[0] != self.ncol) || (bufy.ndim != 1) ||
+            (bufy.shape[0] != self.nrow))
+          throw std::domain_error("x,y have mismatched dimensions");
+        self.perform_op((const double *)bufx.ptr, (double *)bufy.ptr);
+        return out;
+      },
+      py::arg("x"), py::arg("out"));
 
   /* Python functions. */
 
