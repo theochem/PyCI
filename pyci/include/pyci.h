@@ -294,15 +294,17 @@ public:
     return ncol;
   }
 
-  const double *data_ptr(const int_t index) const;
+  const double *data_ptr(const int_t) const;
 
-  const int_t *indices_ptr(const int_t index) const;
+  const int_t *indices_ptr(const int_t) const;
 
-  const int_t *indptr_ptr(const int_t index) const;
+  const int_t *indptr_ptr(const int_t) const;
+
+  double get_element(const int_t, const int_t) const;
 
   void perform_op(const double *, double *) const;
 
-  void cepa0_shift(const double *, const double);
+  void solve_cepa0(double *, double *);
 
   void solve(const double *, const int_t, const int_t, const int_t, const double, double *,
              double *) const;

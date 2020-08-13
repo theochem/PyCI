@@ -16,6 +16,7 @@
 #include <omp.h>
 #include <pyci.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <stdexcept>
@@ -26,6 +27,8 @@
 #include <Spectra/SymEigsSolver.h>
 
 #include <Eigen/Core>
+#include <Eigen/SparseCore>
+#include <Eigen/SparseLU>
 
 namespace pyci {
 
@@ -427,6 +430,13 @@ const int_t *SparseOp::indptr_ptr(const int_t index) const {
   return &indptr[index];
 }
 
+double SparseOp::get_element(const int_t i, const int_t j) const {
+  const int_t *start = &indices[indptr[i]];
+  const int_t *end = &indices[indptr[i + 1]];
+  const int_t *e = std::find(start, end, j);
+  return (e == end) ? 0.0 : data[indptr[i] + e - start];
+}
+
 void SparseOp::perform_op(const double *x, double *y) const {
   int_t nthread = omp_get_max_threads();
   int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
@@ -448,24 +458,44 @@ void SparseOp::perform_op(const double *x, double *y) const {
   }
 }
 
-void SparseOp::cepa0_shift(const double *coeffs, const double sigma) {
-  //
-  // ecorr = {1/c_0} * \sum_{i=1}^{ncol}{c_i * <0|H|i>}
-  //
+void SparseOp::solve_cepa0(double *energy, double *coeffs) {
+  // use Eigen to solve our sparse linear system
+  // Eigen sparse matrix (left hand side, transposed to save us effort)
+  Eigen::Map<Eigen::SparseMatrix<double, Eigen::ColMajor, int_t>> lhs(
+      nrow, ncol, data.size(), &indptr[0], &indices[0], &data[0], nullptr);
+  // Eigen vector (left hand side)
+  Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>> eigencoeffs(coeffs, nrow);
+  // Eigen vector (right hand side)
+  Eigen::Vector<double, Eigen::Dynamic> rhs(nrow);
+  // construct the cepa0 problem
+  int_t i, j = indptr[1];
+  double h00 = data[j - 1];
+  for (i = indptr[0]; i < j; ++i) {
+    // set rhs elements (Eigen uses parentheses for indexing)
+    rhs(indices[i]) = data[i];
+    // set row 0 of this SparseOp to zero
+    data[i] = 0.0;
+  }
+  // we subtract <0|H|0> from the diagonal elements (for i > 0)
   // Note: diagonal elements are the last ones in each row
-  //
-  int_t i = indptr[0], j = indptr[1] - 1;
-  double ecorr = 0.0;
-  for (; i < j; ++i)
-    ecorr += coeffs[indices[i]] * data[i];
-  ecorr /= coeffs[0];
-  //
-  // <i|H|i> -= ecorr * exp(-(c_i ^ 2) / (sigma * c_0) ^ 2)     (for i > 0)
-  //
-  double sigma2 = sigma * coeffs[0];
-  sigma2 *= sigma2;
   for (i = 1; i < nrow; ++i)
-    data[indptr[i + 1] - 1] -= exp(-0.5 * (coeffs[i] * coeffs[i]) / sigma2) * ecorr;
+    data[indptr[i + 1] - 1] -= h00;
+  // everything is made its negative
+  j = data.size();
+  for (i = 0; i < j; ++i)
+    data[i] *= -1;
+  // finally, element (0, 0) is 1
+  data[indptr[1] - 1] = 1.0;
+  // now solve this thing
+  Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor, int_t>, Eigen::COLAMDOrdering<int_t>>
+      solver;
+  solver.analyzePattern(lhs);
+  solver.factorize(lhs);
+  eigencoeffs = solver.solve(rhs);
+  // energy is eigenvector element 0 + core energy
+  *energy = *coeffs + ecore;
+  // coefficient vector element 0 is 1; the rest is the eigenvector
+  *coeffs = 1;
 }
 
 void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit,
