@@ -17,7 +17,7 @@ r"""PyCI additional routines module."""
 
 from itertools import combinations
 
-from typing import List, Sequence
+from typing import List, Sequence, Union
 
 import numpy as np
 
@@ -123,7 +123,7 @@ def add_gkci(
     wfn: pyci.wavefunction,
     t: float = -0.5,
     p: float = 1.0,
-    mode: str = "cntsp",
+    mode: Union[str, List[int]] = "cntsp",
     node_dim: int = None,
 ) -> None:
     r"""
@@ -139,32 +139,35 @@ def add_gkci(
         ???
     p : float, default=1.0
         ???
-    mode : ('cntsp' | 'gamma' | 'cubic'), default='cntsp'
+    mode : List[int] or ('cntsp' | 'gamma' | 'cubic'), default='cntsp'
         Node pattern.
     node_dim : int, default=None
         Number of nodes (if specified).
 
     """
     # Check arguments
-    if mode != "gamma" and node_dim is not None:
-        raise ValueError("node_dim must not be specified with mode " + mode)
-    elif mode == "gamma" and node_dim is None:
-        raise ValueError("node_dim must be specified with mode 'gamma'")
+    if isinstance(mode, str):
+        if mode != "gamma" and node_dim is not None:
+            raise ValueError("node_dim must not be specified with mode " + mode)
+        elif mode == "gamma" and node_dim is None:
+            raise ValueError("node_dim must be specified with mode 'gamma'")
 
-    # Construct nodes
-    if mode == "cntsp":
-        nodes = list()
-        shell = 1
-        while len(nodes) < wfn.nbasis:
-            nodes.extend([shell - 1.0] * shell ** 2)
-            shell += 1
-    elif mode == "gamma":
-        raise NotImplementedError
-    elif mode == "cubic":
-        raise NotImplementedError
+        # Construct nodes
+        if mode == "cntsp":
+            nodes = list()
+            shell = 1
+            while len(nodes) < wfn.nbasis:
+                nodes.extend([shell - 1.0] * shell ** 2)
+                shell += 1
+        elif mode == "gamma":
+            raise NotImplementedError
+        elif mode == "cubic":
+            raise NotImplementedError
+        else:
+            raise ValueError("mode must be one of ('cntsp', 'gamma', 'cubic'")
     else:
-        raise ValueError("mode must be one of ('cntsp', 'gamma', 'cubic'")
-    nodes = np.array(nodes[: wfn.nbasis])
+        nodes = mode
+    nodes = np.array(nodes[:wfn.nbasis])
 
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
