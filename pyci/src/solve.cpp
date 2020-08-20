@@ -26,10 +26,6 @@
 
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE pyci::int_t
 #include <Eigen/Core>
-#include <Eigen/IterativeLinearSolvers>
-#include <Eigen/SparseCore>
-#include <Eigen/SparseQR>
-
 #include <Spectra/SymEigsSolver.h>
 
 // See https://stackoverflow.com/a/46370189
@@ -166,8 +162,6 @@ void init_doci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *h, 
   op.indices.reserve(wfn.ndet + 1);
   op.indptr.reserve(iend - istart + 1);
   op.indptr.push_back(0);
-  // set nrow and ncol
-  op.nrow = iend - istart;
   // prepare working vectors
   std::vector<uint_t> det(wfn.nword);
   std::vector<int_t> occs(wfn.nocc);
@@ -197,7 +191,7 @@ void init_doci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *h, 
         excite_det(k, l, &det[0]);
         jdet = wfn.index_det(&det[0]);
         // check if excited determinant is in wfn
-        if (jdet != -1) {
+        if ((jdet != -1) && (jdet < op.ncol)) {
           // add single/"pair"-excited matrix element
           op.data.push_back(v[k * wfn.nbasis + l]);
           op.indices.push_back(jdet);
@@ -206,8 +200,10 @@ void init_doci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *h, 
       }
     }
     // add diagonal element to matrix
-    op.data.push_back(val1 + val2 * 2);
-    op.indices.push_back(idet);
+    if (idet < op.ncol) {
+      op.data.push_back(val1 + val2 * 2);
+      op.indices.push_back(idet);
+    }
     // add pointer to next row's indices
     op.indptr.push_back(op.indices.size());
   }
@@ -226,8 +222,6 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
   op.indices.reserve(wfn.ndet + 1);
   op.indptr.reserve(iend - istart + 1);
   op.indptr.push_back(0);
-  // set nrow and ncol
-  op.nrow = iend - istart;
   // working vectors
   std::vector<uint_t> det(wfn.nword2);
   std::vector<int_t> occs_up(wfn.nocc_up);
@@ -275,7 +269,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
         sign_up = phase_single_det(wfn.nword, ii, jj, rdet_up);
         jdet = wfn.index_det(det_up);
         // check if 1-0 excited determinant is in wfn
-        if (jdet != -1) {
+        if ((jdet != -1) && (jdet < op.ncol)) {
           // compute 1-0 matrix element
           val1 = one_mo[n1 * ii + jj];
           for (k = 0; k < wfn.nocc_up; ++k) {
@@ -302,7 +296,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
             excite_det(kk, ll, det_dn);
             jdet = wfn.index_det(det_up);
             // check if 1-1 excited determinant is in wfn
-            if (jdet != -1) {
+            if ((jdet != -1) && (jdet < op.ncol)) {
               // add 1-1 matrix element
               op.data.push_back(sign_up * phase_single_det(wfn.nword, kk, ll, rdet_dn) *
                                 two_mo[koffset + n1 * jj + ll]);
@@ -322,7 +316,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
             excite_det(kk, ll, det_up);
             jdet = wfn.index_det(det_up);
             // check if 2-0 excited determinant is in wfn
-            if (jdet != -1) {
+            if ((jdet != -1) && (jdet < op.ncol)) {
               // add 2-0 matrix element
               op.data.push_back(phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
                                 (two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj]));
@@ -352,7 +346,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
         excite_det(ii, jj, det_dn);
         jdet = wfn.index_det(det_up);
         // check if 0-1 excited determinant is in wfn
-        if (jdet != -1) {
+        if ((jdet != -1) && (jdet < op.ncol)) {
           // compute 0-1 matrix element
           val1 = one_mo[n1 * ii + jj];
           for (k = 0; k < wfn.nocc_up; ++k) {
@@ -379,7 +373,7 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
             excite_det(kk, ll, det_dn);
             jdet = wfn.index_det(det_up);
             // check if excited determinant is in wfn
-            if (jdet != -1) {
+            if ((jdet != -1) && (jdet < op.ncol)) {
               // add 0-2 matrix element
               op.data.push_back(phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn) *
                                 (two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj]));
@@ -392,8 +386,10 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
       }
     }
     // add diagonal element to matrix
-    op.data.push_back(val2);
-    op.indices.push_back(idet);
+    if (idet < op.ncol) {
+      op.data.push_back(val2);
+      op.indices.push_back(idet);
+    }
     // add pointer to next row's indices
     op.indptr.push_back(op.indices.size());
   }
@@ -412,8 +408,6 @@ void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *on
   op.indices.reserve(wfn.ndet + 1);
   op.indptr.reserve(iend - istart + 1);
   op.indptr.push_back(0);
-  // set nrow and ncol
-  op.nrow = iend - istart;
   // working vectors
   std::vector<uint_t> det(wfn.nword);
   std::vector<int_t> occs(wfn.nocc);
@@ -450,7 +444,7 @@ void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *on
         excite_det(ii, jj, &det[0]);
         jdet = wfn.index_det(&det[0]);
         // check if singly-excited determinant is in wfn
-        if (jdet != -1) {
+        if ((jdet != -1) && (jdet < op.ncol)) {
           // compute single excitation matrix element
           val1 = one_mo[n1 * ii + jj];
           for (k = 0; k < wfn.nocc; ++k) {
@@ -473,7 +467,7 @@ void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *on
             excite_det(kk, ll, &det[0]);
             jdet = wfn.index_det(&det[0]);
             // check if double excited determinant is in wfn
-            if (jdet != -1) {
+            if ((jdet != -1) && (jdet < op.ncol)) {
               // add double matrix element
               op.data.push_back(phase_double_det(wfn.nword, ii, kk, jj, ll, rdet) *
                                 (two_mo[koffset + n1 * jj + ll] - two_mo[koffset + n1 * ll + jj]));
@@ -486,8 +480,10 @@ void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *on
       }
     }
     // add diagonal element to matrix
-    op.data.push_back(val2);
-    op.indices.push_back(idet);
+    if (idet < op.ncol) {
+      op.data.push_back(val2);
+      op.indices.push_back(idet);
+    }
     // add pointer to next row's indices
     op.indptr.push_back(op.indices.size());
   }
@@ -596,6 +592,51 @@ void SparseOp::perform_op(const double *x, double *y) const {
   }
 }
 
+void SparseOp::perform_op_cepa0(const double *x, double *y, const int_t refind) const {
+  int_t nthread = omp_get_max_threads();
+  int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
+#pragma omp parallel
+  {
+    int_t i, j;
+    int_t istart = omp_get_thread_num() * chunksize;
+    int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
+    int_t jstart;
+    int_t jend = indptr[istart];
+    double h_refind = get_element(refind, refind);
+    double val;
+    for (i = istart; i < iend; ++i) {
+      jstart = jend;
+      jend = indptr[i + 1];
+      val = 0.0;
+      if (i == refind) {
+        for (j = jstart; j < jend; ++j) {
+          if (indices[j] == refind)
+            val -= x[indices[j]];
+          else
+            val += data[j] * x[indices[j]];
+        }
+      } else {
+        for (j = jstart; j < jend; ++j) {
+          if (indices[j] == i)
+            val += (data[j] - h_refind) * x[indices[j]];
+          else if (indices[j] != refind)
+            val += data[j] * x[indices[j]];
+        }
+      }
+      y[i] = -val;
+    }
+  }
+}
+
+void SparseOp::rhs_cepa0(double *b, const int_t refind) const {
+  int_t iend = indptr[refind + 1];
+  for (int_t i = indptr[refind]; i != iend; ++i) {
+    if (indices[i] >= nrow)
+      break;
+    b[indices[i]] = data[i];
+  }
+}
+
 void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit,
                      const double tol, double *evals, double *evecs) const {
   if (nrow == 1) {
@@ -616,75 +657,11 @@ void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const
   eigenvectors = eigs.eigenvectors();
 }
 
-void SparseOp::solve_cepa0(const double *guess, const int_t refind, double sigma, const double tol,
-                           const int_t maxiter, double *energy, double *coeffs) {
-  // handle ``damping`` parameter; if it's less than zero, damping is disabled
-  bool damping;
-  if (sigma < 0.0) {
-    damping = false;
-  } else {
-    damping = true;
-    sigma = 0.5 / (sigma * sigma * guess[refind] * guess[refind]);
-  }
-  // use Eigen to solve our sparse linear system
-  // Eigen vector (left hand side)
-  Eigen::Map<Eigen::Vector<double, Eigen::Dynamic>> eigencoeffs(coeffs, nrow);
-  // Eigen vector (right hand side)
-  Eigen::Vector<double, Eigen::Dynamic> rhs(nrow);
-  // construct the cepa0 problem
-  double h00 = get_element(refind, refind);
-  int_t i, j = indptr[refind + 1];
-  // set rhs vector elements (Eigen uses parentheses for indexing)
-  for (i = indptr[refind]; i < j; ++i)
-    rhs(indices[i]) = data[i];
-  // set lhs matrix elements
-  int_t *start, *end, *e;
-  end = &indices[indptr[0]];
-  for (i = 0; i < nrow; ++i) {
-    start = end;
-    end = &indices[indptr[i + 1]];
-    // set column "refind" to zero
-    e = std::find(start, end, refind);
-    if (e != end)
-      data[indptr[i] + e - start] = 0.0;
-    // we subtract <refind|H|refind> from the diagonal elements, with damping if its' enabled
-    data[indptr[i] + std::find(start, end, i) - start] -=
-        h00 * (damping ? exp(coeffs[i] * coeffs[i] * sigma) : 1);
-  }
-  // everything is made its negative
-  j = data.size();
-  for (i = 0; i < j; ++i)
-    data[i] *= -1;
-  // finally, element (refind, refind) is 1
-  start = &indices[indptr[refind]];
-  end = &indices[indptr[refind + 1]];
-  data[indptr[refind] + std::find(start, end, refind) - start] = 1.0;
-  // Eigen sparse matrix (left hand side matrix)
-  Eigen::Map<Eigen::SparseMatrix<double, Eigen::RowMajor, int_t>> lhs(
-      nrow, ncol, data.size(), &indptr[0], &indices[0], &data[0], nullptr);
-  // Eigen vector (left hand side guess)
-  Eigen::Map<const Eigen::Vector<double, Eigen::Dynamic>> eigenguess(guess, nrow);
-  // now solve this thing
-  Eigen::BiCGSTAB<Eigen::SparseMatrix<double, Eigen::RowMajor, int_t>> solver;
-  solver.setTolerance(tol);
-  solver.setMaxIterations(maxiter);
-  solver.compute(lhs);
-  if (solver.info() != Eigen::Success)
-    throw std::runtime_error("decomposition failed");
-  eigencoeffs = solver.solveWithGuess(rhs, eigenguess);
-  if (solver.info() != Eigen::Success)
-    throw std::runtime_error("did not converge");
-  // energy is eigenvector element "refind" + core energy
-  *energy = coeffs[refind] + ecore;
-  // coefficient vector element "refind" is 1; the rest is the eigenvector
-  coeffs[refind] = 1;
-}
-
 void SparseOp::init_doci(const OneSpinWfn &wfn, const double ecore_, const double *h,
-                         const double *v, const double *w, const int_t nrow_) {
+                         const double *v, const double *w, const int_t nrow_, const int_t ncol_) {
   // set attributes
-  nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
-  ncol = wfn.ndet;
+  nrow = (nrow_ > -1) ? nrow_ : wfn.ndet;
+  ncol = (ncol_ > -1) ? ncol_ : wfn.ndet;
   ecore = ecore_;
   // prepare vectors
   data.resize(0);
@@ -699,6 +676,8 @@ void SparseOp::init_doci(const OneSpinWfn &wfn, const double ecore_, const doubl
     int_t ithread = omp_get_thread_num();
     int_t istart = ithread * chunksize;
     int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
+    ops[ithread].nrow = nrow;
+    ops[ithread].ncol = ncol;
     init_doci_run_thread(ops[ithread], wfn, h, v, w, istart, iend);
     // construct larger SparseOp (this instance) from chunks
 #pragma omp for ordered schedule(static, 1)
@@ -716,10 +695,10 @@ void SparseOp::init_doci(const OneSpinWfn &wfn, const double ecore_, const doubl
 }
 
 void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double ecore_, const double *one_mo,
-                           const double *two_mo, const int_t nrow_) {
+                           const double *two_mo, const int_t nrow_, const int_t ncol_) {
   // set attributes
-  nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
-  ncol = wfn.ndet;
+  nrow = (nrow_ > -1) ? nrow_ : wfn.ndet;
+  ncol = (ncol_ > -1) ? ncol_ : wfn.ndet;
   ecore = ecore_;
   // prepare vectors
   data.resize(0);
@@ -734,6 +713,8 @@ void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double ecore_, const dou
     int_t ithread = omp_get_thread_num();
     int_t istart = ithread * chunksize;
     int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
+    ops[ithread].nrow = nrow;
+    ops[ithread].ncol = ncol;
     init_fullci_run_thread(ops[ithread], wfn, one_mo, two_mo, istart, iend);
     // construct larger SparseOp (this instance) from chunks
 #pragma omp for ordered schedule(static, 1)
@@ -751,10 +732,10 @@ void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double ecore_, const dou
 }
 
 void SparseOp::init_genci(const OneSpinWfn &wfn, const double ecore_, const double *one_mo,
-                          const double *two_mo, const int_t nrow_) {
+                          const double *two_mo, const int_t nrow_, const int_t ncol_) {
   // set attributes
-  nrow = (nrow_ > 0) ? nrow_ : wfn.ndet;
-  ncol = wfn.ndet;
+  nrow = (nrow_ > -1) ? nrow_ : wfn.ndet;
+  ncol = (ncol_ > -1) ? ncol_ : wfn.ndet;
   ecore = ecore_;
   // prepare vectors
   data.resize(0);
@@ -769,6 +750,8 @@ void SparseOp::init_genci(const OneSpinWfn &wfn, const double ecore_, const doub
     int_t ithread = omp_get_thread_num();
     int_t istart = ithread * chunksize;
     int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
+    ops[ithread].nrow = nrow;
+    ops[ithread].ncol = ncol;
     init_genci_run_thread(ops[ithread], wfn, one_mo, two_mo, istart, iend);
     // construct larger SparseOp (this instance) from chunks
 #pragma omp for ordered schedule(static, 1)

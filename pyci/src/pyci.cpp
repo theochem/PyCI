@@ -1636,6 +1636,17 @@ wfn : genci_wfn
 
   sparse_op.doc() = "Sparse CI matrix operator class.";
 
+  sparse_op.def_readwrite("ecore", &SparseOp::ecore,
+                          R"""(
+Constant/"zero-electron" integral.
+
+Returns
+-------
+ecore : float
+    Constant/"zero-electron" integral.
+
+)""");
+
   sparse_op.def_property_readonly(
       "shape", [](const SparseOp &self) { return py::make_tuple(self.nrow, self.ncol); },
       R"""(
@@ -1650,12 +1661,14 @@ cols : int
 
 )""");
 
-  sparse_op.def(py::init([](const RestrictedHam &ham, const DOCIWfn &wfn, const int_t rows) {
+  sparse_op.def(py::init([](const RestrictedHam &ham, const DOCIWfn &wfn, const int_t rows,
+                            const int_t cols) {
                   if (py::cast<py::object>(ham.h).is(py::none()))
                     throw std::invalid_argument("ham does not have seniority-zero integrals");
                   SparseOp obj;
                   obj.init_doci(wfn, ham.ecore, (double *)ham.h.request().ptr,
-                                (double *)ham.v.request().ptr, (double *)ham.w.request().ptr, rows);
+                                (double *)ham.v.request().ptr, (double *)ham.w.request().ptr, rows,
+                                cols);
                   return obj;
                 }),
                 R"""(
@@ -1671,55 +1684,29 @@ rows : int, default=(number of columns)
     Number of rows (<= number of columns) of the matrix to construct.
 
 )""",
-                py::arg("ham"), py::arg("wfn"), py::arg("rows") = -1);
+                py::arg("ham"), py::arg("wfn"), py::arg("rows") = -1, py::arg("cols") = -1);
 
-  sparse_op.def(py::init([](const RestrictedHam &ham, const FullCIWfn &wfn, const int_t rows) {
+  sparse_op.def(py::init([](const RestrictedHam &ham, const FullCIWfn &wfn, const int_t rows,
+                            const int_t cols) {
                   if (py::cast<py::object>(ham.one_mo).is(py::none()))
                     throw std::invalid_argument("ham does not have full integrals");
                   SparseOp obj;
                   obj.init_fullci(wfn, ham.ecore, (double *)ham.one_mo.request().ptr,
-                                  (double *)ham.two_mo.request().ptr, rows);
+                                  (double *)ham.two_mo.request().ptr, rows, cols);
                   return obj;
                 }),
-                py::arg("ham"), py::arg("wfn"), py::arg("rows") = -1);
+                py::arg("ham"), py::arg("wfn"), py::arg("rows") = -1, py::arg("cols") = -1);
 
-  sparse_op.def(py::init([](const GeneralizedHam &ham, const GenCIWfn &wfn, const int_t rows) {
+  sparse_op.def(py::init([](const GeneralizedHam &ham, const GenCIWfn &wfn, const int_t rows,
+                            const int_t cols) {
                   if (py::cast<py::object>(ham.one_mo).is(py::none()))
                     throw std::invalid_argument("ham does not have full integrals");
                   SparseOp obj;
                   obj.init_genci(wfn, ham.ecore, (double *)ham.one_mo.request().ptr,
-                                 (double *)ham.two_mo.request().ptr, rows);
+                                 (double *)ham.two_mo.request().ptr, rows, cols);
                   return obj;
                 }),
-                py::arg("ham"), py::arg("wfn"), py::arg("rows") = -1);
-
-  sparse_op.def(
-      "__call__",
-      [](const SparseOp &self, const d_array_t x) {
-        py::buffer_info buf = x.request();
-        if ((buf.ndim != 1) || (buf.shape[0] != self.ncol))
-          throw std::domain_error("x has mismatched dimensions");
-        d_array_t y(self.nrow);
-        self.perform_op((const double *)buf.ptr, (double *)y.request().ptr);
-        return y;
-      },
-      R"""(
-Compute the result of the sparse CI matrix :math:`A` applied to vector :math:`x`.
-
-Parameters
-----------
-x : np.ndarray
-    Operand vector.
-out : np.ndarray, optional
-    Output parameter, as in NumPy (e.g., numpy.dot).
-
-Returns
--------
-y : np.ndarray
-   Result vector.
-
-)""",
-      py::arg("x"));
+                py::arg("ham"), py::arg("wfn"), py::arg("rows") = -1, py::arg("cols") = -1);
 
   sparse_op.def(
       "get_element",
@@ -1788,68 +1775,32 @@ evecs : np.ndarray
       py::arg("tol") = 1.e-6);
 
   sparse_op.def(
-      "solve_cepa0",
-      [](SparseOp &self, py::object e0, py::object c0, const int_t refind, py::object damping,
-         const int_t maxiter, const double tol) {
-        double *gptr;
-        double e = py::cast<py::object>(e0).is(py::none()) ? self.get_element(refind, refind)
-                                                           : e0.cast<double>();
-        double sigma = py::cast<py::object>(damping).is(py::none()) ? -1.0 : damping.cast<double>();
-        std::vector<double> g;
-        py::buffer_info gbuf;
-        if (self.nrow != self.ncol)
-          throw std::domain_error("cannot solve a rectangular operator");
-        // construct guess
-        if (py::cast<py::object>(c0).is(py::none())) {
-          g.resize(self.nrow);
-          gptr = &g[0];
-        } else {
-          gbuf = c0.cast<d_array_t>().request();
-          if ((gbuf.ndim != 1) || (gbuf.shape[0] != self.nrow))
-            throw std::domain_error("c0 has mismatched dimensions");
-          gptr = (double *)gbuf.ptr;
-          // set intermediate normalization for guess
-          double cref = gptr[refind];
-          for (int_t i = 0; i < gbuf.shape[0]; ++i)
-            gptr[i] /= cref;
-        }
-        // set guess energy
-        gptr[refind] = e;
-        // solve
-        d_array_t energy(1);
-        d_array_t coeffs({1, (int)self.nrow});
-        py::buffer_info ebuf = energy.request();
-        py::buffer_info cbuf = coeffs.request();
-        self.solve_cepa0(gptr, refind, sigma, tol, maxiter, (double *)ebuf.ptr, (double *)cbuf.ptr);
-        return py::make_tuple(energy, coeffs);
+      "__call__",
+      [](const SparseOp &self, const d_array_t x) {
+        py::buffer_info buf = x.request();
+        if ((buf.ndim != 1) || (buf.shape[0] != self.ncol))
+          throw std::domain_error("x has mismatched dimensions");
+        d_array_t y(self.nrow);
+        self.perform_op((const double *)buf.ptr, (double *)y.request().ptr);
+        return y;
       },
       R"""(
-Solve the CEPA0 problem.
+Compute the result of the sparse CI matrix :math:`A` applied to vector :math:`x`.
 
 Parameters
 ----------
-e0: float, optional
-    Initial guess for energy.
-c0 : np.ndarray, optional
-    Initial guess for coefficient vector. If not provided, the default is [1, 0, 0, ..., 0, 0].
-refind : int, default=0
-    Index of reference determinant.
-damping: float, optional
-    Coefficient to use for damping. Default is to not use damping.
-maxiter : int, default=1000*n
-    Maximum number of iterations for eigensolver to run.
-tol : float, default=1.0e-9
-    Convergence tolerance for linear solver.
+x : np.ndarray
+    Operand vector.
+out : np.ndarray, optional
+    Output parameter, as in NumPy (e.g., numpy.dot).
 
 Returns
 -------
-energy : float
-    Energy.
-coeffs : np.ndarray
-    Coefficient vector.
+y : np.ndarray
+   Result vector.
+
 )""",
-      py::arg("e0") = py::none(), py::arg("c0") = py::none(), py::arg("refind") = 0,
-      py::arg("damping") = py::none(), py::arg("maxiter") = 1000, py::arg("tol") = 1.0e-9);
+      py::arg("x"));
 
   sparse_op.def(
       "__call__",
@@ -1862,6 +1813,58 @@ coeffs : np.ndarray
         return out;
       },
       py::arg("x"), py::arg("out"));
+
+  sparse_op.def(
+      "matvec_cepa0",
+      [](const SparseOp &self, const d_array_t x, const int_t refind) {
+        py::buffer_info buf = x.request();
+        if ((buf.ndim != 1) || (buf.shape[0] != self.ncol))
+          throw std::domain_error("x has mismatched dimensions");
+        d_array_t y(self.nrow);
+        self.perform_op_cepa0((const double *)buf.ptr, (double *)y.request().ptr, refind);
+        return y;
+      },
+      R"""(
+Compute the result of the sparse CEPA matrix :math:`A` applied to vector :math:`x`.
+
+Parameters
+----------
+x : np.ndarray
+    Operand vector.
+out : np.ndarray, optional
+    Output parameter, as in NumPy (e.g., numpy.dot).
+
+Returns
+-------
+y : np.ndarray
+   Result vector.
+
+)""",
+      py::arg("x"), py::arg("refind") = 0);
+
+  sparse_op.def(
+      "matvec_cepa0",
+      [](const SparseOp &self, const d_array_t x, d_array_t out, const int_t refind) {
+        py::buffer_info bufx = x.request(), bufy = out.request();
+        if ((bufx.ndim != 1) || (bufx.shape[0] != self.ncol) || (bufy.ndim != 1) ||
+            (bufy.shape[0] != self.nrow))
+          throw std::domain_error("x,y have mismatched dimensions");
+        self.perform_op_cepa0((const double *)bufx.ptr, (double *)bufy.ptr, refind);
+        return out;
+      },
+      py::arg("x"), py::arg("out"), py::arg("refind") = 0);
+
+  sparse_op.def(
+      "rhs_cepa0",
+      [](const SparseOp &self, const int_t refind) {
+        d_array_t b(self.nrow);
+        py::buffer_info buf = b.request();
+        self.rhs_cepa0((double *)buf.ptr, refind);
+        return b;
+      },
+      R"""(
+)""",
+      py::arg("refind") = 0);
 
   /* Python functions. */
 

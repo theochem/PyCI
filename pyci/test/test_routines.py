@@ -155,8 +155,9 @@ class TestRoutines:
         wfn = wfn_type(ham.nbasis, *occs)
         pyci.add_excitations(wfn, *range(wfn.nocc - 1))
         op = pyci.sparse_op(ham, wfn)
-        es, cs = op.solve_cepa0()
-        npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
+        es, cs = op.solve()
+        e, t = pyci.run_cepa0(op, e0=es[0], c0=cs[0])
+        npt.assert_allclose(e, energy, rtol=0.0, atol=1.0e-9)
 
 
 class TestRDMAnalyticExamples:

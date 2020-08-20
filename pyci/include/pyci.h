@@ -304,18 +304,21 @@ public:
 
   void perform_op(const double *, double *) const;
 
+  void perform_op_cepa0(const double *, double *, const int_t) const;
+
+  void rhs_cepa0(double *, const int_t) const;
+
   void solve(const double *, const int_t, const int_t, const int_t, const double, double *,
              double *) const;
 
-  void solve_cepa0(const double *, const int_t, const double, const double, const int_t, double *,
-                   double *);
-
   void init_doci(const OneSpinWfn &, const double, const double *, const double *, const double *,
-                 const int_t);
+                 const int_t, const int_t);
 
-  void init_fullci(const TwoSpinWfn &, const double, const double *, const double *, const int_t);
+  void init_fullci(const TwoSpinWfn &, const double, const double *, const double *, const int_t,
+                   const int_t);
 
-  void init_genci(const OneSpinWfn &, const double, const double *, const double *, const int_t);
+  void init_genci(const OneSpinWfn &, const double, const double *, const double *, const int_t,
+                  const int_t);
 };
 
 } // namespace pyci

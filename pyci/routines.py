@@ -15,11 +15,13 @@
 
 r"""PyCI additional routines module."""
 
+from functools import partial
 from itertools import combinations
 
 from typing import List, Sequence, Union
 
 import numpy as np
+import scipy.sparse.linalg as sp
 
 from . import pyci
 
@@ -28,6 +30,7 @@ __all__ = [
     "add_excitations",
     "add_seniorities",
     "add_gkci",
+    "run_cepa0",
 ]
 
 
@@ -115,7 +118,7 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
                     for occs_i_dn in combinations(occs_up, pairs):
                         occs[1, :pairs] = occs_i_dn
                         for occs_a_dn in combinations(virs_up, wfn.nocc_dn - pairs):
-                            occs[1, pairs:wfn.nocc_dn] = occs_a_dn
+                            occs[1, pairs : wfn.nocc_dn] = occs_a_dn
                             wfn.add_occs(occs)
 
 
@@ -167,7 +170,7 @@ def add_gkci(
             raise ValueError("mode must be one of ('cntsp', 'gamma', 'cubic'")
     else:
         nodes = mode
-    nodes = np.array(nodes[:wfn.nbasis])
+    nodes = np.array(nodes[: wfn.nbasis])
 
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
@@ -222,16 +225,16 @@ def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: fl
 def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: float) -> None:
     r"""Run the odometer algorithm for a two-spin wave function."""
     aufbau_occs = np.arange(wfn.nocc, dtype=pyci.c_int)
-    aufbau_occs[wfn.nocc_up:] -= wfn.nocc_up
+    aufbau_occs[wfn.nocc_up :] -= wfn.nocc_up
     new_occs = np.copy(aufbau_occs)
     old_occs = np.copy(aufbau_occs)
     # Index of last electron
     j_electron = wfn.nocc - 1
     # Compute cost of the most important neglected determinant
-    nodes_up = nodes[new_occs[:wfn.nocc_up]]
-    nodes_dn = nodes[new_occs[wfn.nocc_up:]]
-    q_up_neg = np.sum(nodes_up[:-1]) * p + (t + 1) * nodes_up[-1] * p
-    q_dn_neg = np.sum(nodes_dn[:-1]) * p + (t + 1) * nodes_dn[-1] * p
+    nodes_up = nodes[new_occs[: wfn.nocc_up]]
+    nodes_dn = nodes[new_occs[wfn.nocc_up :]]
+    q_up_neg = np.sum(nodes_up[:-1]) * p + (t + 1) * nodes[-1] * p
+    q_dn_neg = np.sum(nodes_dn[:-1]) * p + (t + 1) * nodes[-1] * p
     # Select determinants
     while True:
         if max(new_occs[wfn.nocc_up - 1], new_occs[wfn.nocc - 1]) >= wfn.nbasis:
@@ -241,12 +244,13 @@ def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: fl
             j_electron -= 1
         else:
             # Compute nodes and cost of occupied orbitals
-            nodes_s = nodes[new_occs]
+            nodes_up = nodes[new_occs[: wfn.nocc_up]]
+            nodes_dn = nodes[new_occs[wfn.nocc_up :]]
             q_up = np.sum(nodes_up) + t * np.max(nodes_up)
             q_dn = np.sum(nodes_dn) + t * np.max(nodes_dn)
             if q_up < q_up_neg and q_dn < q_dn_neg:
                 # Accept determinant and excite the last electron again
-                wfn.add_occs(new_occs)
+                wfn.add_occs(new_occs.reshape(2, -1))
                 j_electron = wfn.nocc - 1
             else:
                 # Reject determinant because of high cost; go back to last-accepted
@@ -267,3 +271,27 @@ def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: fl
             # excite spin-down electron
             for k in range(j_electron + 1, wfn.nocc):
                 new_occs[k] = new_occs[j_electron] + k - j_electron
+
+
+def run_cepa0(*args, e0=None, c0=None, refind=0, tol=1.0e-12):
+    r"""
+    """
+    if len(args) == 1:
+        op = args[0]
+    elif len(args) == 2:
+        op = pyci.sparse_op(*args)
+    else:
+        raise ValueError("must pass `ham, wfn` or `op`")
+    # c0 = np.zeros(op.shape[1]) if c0 is None else c0.copy()
+    c0 = np.zeros(op.shape[1]) if c0 is None else c0 / np.abs(c0[refind])
+    c0[refind] = op.get_element(refind, refind) if e0 is None else e0
+    x0 = np.zeros(op.shape[1])
+    x0[refind] = -0.01
+    lhs = sp.LinearOperator(matvec=partial(op.matvec_cepa0, refind=refind), shape=op.shape)
+    rhs = op.rhs_cepa0(refind=refind)
+    rhs -= op.matvec_cepa0(c0, refind=refind)
+    x, info = sp.lgmres(lhs, rhs, tol=tol, atol=tol, x0=x0)
+    x += c0
+    e = x[refind]
+    x[refind] = 1
+    return e + op.ecore, x
