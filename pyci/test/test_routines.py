@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-import itertools
-
 import numpy as np
 import numpy.testing as npt
 
@@ -72,8 +70,7 @@ class TestRoutines:
         ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
-        op = pyci.sparse_op(ham, wfn)
-        es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
+        es, cs = pyci.solve(ham, wfn, n=1, ncv=30, tol=1.0e-6)
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
     def run_sparse_rectangular(self, filename, wfn_type, occs, energy):
@@ -91,8 +88,7 @@ class TestRoutines:
         ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_all_dets()
-        op = pyci.sparse_op(ham, wfn)
-        es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
+        es, cs = pyci.solve(ham, wfn, n=1, ncv=30, tol=1.0e-6)
         if isinstance(wfn, pyci.doci_wfn):
             d0, d2 = pyci.compute_rdms(wfn, cs[0])
             npt.assert_allclose(np.trace(d0), wfn.nocc_up, rtol=0, atol=1.0e-9)
@@ -132,32 +128,31 @@ class TestRoutines:
         ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
         wfn.add_hartreefock_det()
-        es, cs = pyci.sparse_op(ham, wfn).solve(n=1, tol=1.0e-6)
+        es, cs = pyci.solve(ham, wfn, n=1, tol=1.0e-6)
         dets_added = 1
         niter = 0
         while dets_added:
-            dets_added = pyci.run_hci(ham, wfn, cs[0], eps=1.0e-5)
-            es, cs = pyci.sparse_op(ham, wfn).solve(n=1, tol=1.0e-6)
+            dets_added = pyci.add_hci(ham, wfn, cs[0], eps=1.0e-5)
+            es, cs = pyci.solve(ham, wfn, n=1, tol=1.0e-6)
             niter += 1
         assert niter > 1
         assert len(wfn) < np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-6)
         dets_added = 1
         while dets_added:
-            dets_added = pyci.run_hci(ham, wfn, cs[0], eps=0.0)
-            op = pyci.sparse_op(ham, wfn)
-            es, cs = op.solve(n=1, tol=1.0e-6)
+            dets_added = pyci.add_hci(ham, wfn, cs[0], eps=0.0)
+            es, cs = pyci.solve(ham, wfn, n=1, tol=1.0e-6)
         assert len(wfn) == np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
         npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
     def run_cepa0(self, filename, wfn_type, occs, energy):
         ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
         wfn = wfn_type(ham.nbasis, *occs)
-        pyci.add_excitations(wfn, *range(wfn.nocc - 1))
+        pyci.add_excitations(wfn, *range(0, max(wfn.nocc - 1, 1)))
         op = pyci.sparse_op(ham, wfn)
-        es, cs = op.solve()
-        e, t = pyci.run_cepa0(op, e0=es[0], c0=cs[0])
-        npt.assert_allclose(e, energy, rtol=0.0, atol=1.0e-9)
+        es, cs = pyci.solve(op)
+        es, cs = pyci.solve_cepa0(op, e0=es[0], c0=cs[0])
+        npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 
 class TestRDMAnalyticExamples:

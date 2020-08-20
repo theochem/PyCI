@@ -32,6 +32,7 @@ The following programs/libraries are required to run PyCI:
 
 -  Python_ (≥3.4)
 -  NumPy_ (≥1.13)
+-  SciPy_ (≥1.0)
 
 The following programs/libraries are required to build PyCI:
 
@@ -49,8 +50,6 @@ __ Sphinx-RTD-Theme_
 The following header-only libraries are included as git submodules:
 
 -  `Parallel Hashmap`__
--  Eigen_
--  Spectra_
 -  Pybind11_
 
 __ Parallel-Hashmap_
@@ -103,13 +102,12 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 .. _PyCI:               http://github.com/msricher/PyCI/
 .. _Python:             http://python.org/
 .. _NumPy:              http://numpy.org/
+.. _SciPy:              http://docs.scipy.org/doc/scipy/reference/
 .. _GCC:                http://gcc.gnu.org/
 .. _`Clang/LLVM`:       http://clang.llvm.org/
 .. _Sphinx:             http://sphinx-doc.org/
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
-.. _Eigen:              http://eigen.tuxfamily.org/
-.. _Spectra:            http://spectralib.org/
 .. _Pybind11:           http://pybind11.readthedocs.io/en/stable/
 .. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
 

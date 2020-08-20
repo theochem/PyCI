@@ -97,8 +97,6 @@ sources = glob("pyci/src/*.cpp")
 include_dirs = [
     numpy.get_include(),
     "lib/parallel-hashmap",
-    "lib/eigen",
-    "lib/spectra/include",
     "lib/pybind11/include",
     "pyci/include",
 ]

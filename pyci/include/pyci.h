@@ -306,6 +306,8 @@ public:
 
   void perform_op_cepa0(const double *, double *, const int_t) const;
 
+  void perform_op_transpose_cepa0(const double *, double *, const int_t) const;
+
   void rhs_cepa0(double *, const int_t) const;
 
   void solve(const double *, const int_t, const int_t, const int_t, const double, double *,

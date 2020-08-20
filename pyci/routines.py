@@ -18,7 +18,7 @@ r"""PyCI additional routines module."""
 from functools import partial
 from itertools import combinations
 
-from typing import List, Sequence, Union
+from typing import Any, List, Sequence, Union
 
 import numpy as np
 import scipy.sparse.linalg as sp
@@ -30,7 +30,8 @@ __all__ = [
     "add_excitations",
     "add_seniorities",
     "add_gkci",
-    "run_cepa0",
+    "solve",
+    "solve_cepa0",
 ]
 
 
@@ -273,25 +274,128 @@ def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: fl
                 new_occs[k] = new_occs[j_electron] + k - j_electron
 
 
-def run_cepa0(*args, e0=None, c0=None, refind=0, tol=1.0e-12):
+def solve(
+    *args: Any,
+    n: int = 1,
+    c0: np.ndarray = None,
+    ncv: int = None,
+    maxiter: int = 5000,
+    tol: float = 1.0e-12,
+):
     r"""
+    Solve a CI eigenproblem.
+
+    Parameters
+    ----------
+    args : (pyci.sparse_op,) or (pyci.hamiltonian, pyci.wavefunction)
+        System to solve.
+    n : int, optional
+        Number of lowest eigenpairs to find.
+    c0 : np.ndarray, optional
+        Initial guess for lowest eigenvector.
+    ncv : int, optional
+        Number of Lanczos vectors to use.
+    maxiter : int, optional
+        Maximum number of iterations to perform.
+    tol : float, optional
+        Convergence tolerance.
+
+    Returns
+    -------
+    es : np.ndarray
+        Energies.
+    cs : np.ndarray
+        Coefficient vectors.
+
     """
+    # Handle inputs
     if len(args) == 1:
         op = args[0]
     elif len(args) == 2:
         op = pyci.sparse_op(*args)
     else:
         raise ValueError("must pass `ham, wfn` or `op`")
-    # c0 = np.zeros(op.shape[1]) if c0 is None else c0.copy()
-    c0 = np.zeros(op.shape[1]) if c0 is None else c0 / np.abs(c0[refind])
+    # Handle length-1 eigenproblem
+    if op.shape[1] == 1:
+        return (
+            np.full(1, op.get_element(0, 0) + op.ecore, dtype=pyci.c_double),
+            np.ones((1, 1), dtype=pyci.c_double),
+        )
+    # Prepare initial guess
+    if c0 is None:
+        c0 = np.zeros(op.shape[1], dtype=pyci.c_double)
+        c0[0] = 1
+    else:
+        c0 = np.concatenate((c0, np.zeros(op.shape[1] - c0.shape[0], dtype=pyci.c_double)))
+    # Solve eigenproblem
+    es, cs = sp.eigsh(
+        sp.LinearOperator(matvec=op, shape=op.shape),
+        k=n,
+        v0=c0,
+        ncv=ncv,
+        maxiter=maxiter,
+        tol=tol,
+        which="SA",
+    )
+    # Return result
+    es += op.ecore
+    return es, cs.transpose()
+
+
+def solve_cepa0(*args, e0=None, c0=None, refind=0, maxiter=5000, tol=1.0e-12, lstsq=False):
+    r"""
+    Solve a CEPA0 problem.
+
+    Parameters
+    ----------
+    args : (pyci.sparse_op,) or (pyci.hamiltonian, pyci.wavefunction)
+        System to solve.
+    c0 : np.ndarray, optional
+        Initial guess for lowest eigenvector.
+    refind : int, optional
+        Index of determinant to use as reference.
+    maxiter : int, optional
+        Maximum number of iterations to perform.
+    tol : float, optional
+        Convergence tolerance.
+    lstsq : bool, optional
+        Whether to find the least-squares solution.
+
+    Returns
+    -------
+    e : float
+        Energy.
+    c : np.ndarray
+        Coefficient vector.
+
+    """
+    # Handle inputs
+    if len(args) == 1:
+        op = args[0]
+    elif len(args) == 2:
+        op = pyci.sparse_op(*args)
+    else:
+        raise ValueError("must pass `ham, wfn` or `op`")
+    # Prepare initial guess
+    c0 = np.zeros(op.shape[1], dtype=pyci.c_double) if c0 is None else c0 / c0[refind]
     c0[refind] = op.get_element(refind, refind) if e0 is None else e0
-    x0 = np.zeros(op.shape[1])
-    x0[refind] = -0.01
-    lhs = sp.LinearOperator(matvec=partial(op.matvec_cepa0, refind=refind), shape=op.shape)
+    # Prepare left-hand side matrix
+    lhs = sp.LinearOperator(
+        matvec=partial(op.matvec_cepa0, refind=refind),
+        rmatvec=partial(op.rmatvec_cepa0, refind=refind),
+        shape=op.shape,
+    )
+    # Prepare right-hand side vector
     rhs = op.rhs_cepa0(refind=refind)
     rhs -= op.matvec_cepa0(c0, refind=refind)
-    x, info = sp.lgmres(lhs, rhs, tol=tol, atol=tol, x0=x0)
-    x += c0
-    e = x[refind]
-    x[refind] = 1
-    return e + op.ecore, x
+    # Solve equations
+    if lstsq:
+        result = sp.lsqr(lhs, rhs, iter_lime=maxiter, btol=tol, atol=tol)
+    else:
+        result = sp.lgmres(lhs, rhs, maxiter=maxiter, tol=tol, atol=tol)
+    # Return result
+    c = result[0]
+    c += c0
+    e = np.full(1, c[refind] + op.ecore, dtype=pyci.c_double)
+    c[refind] = 1
+    return e, c[None, :]

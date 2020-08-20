@@ -1712,67 +1712,21 @@ rows : int, default=(number of columns)
       "get_element",
       [](const SparseOp &self, const int_t i, const int_t j) { return self.get_element(i, j); },
       R"""(
-)""",
-      py::arg("i"), py::arg("j"));
-
-  sparse_op.def(
-      "solve",
-      [](const SparseOp &self, const int_t n, int_t ncv, py::object c0, int_t maxit,
-         const double tol) {
-        py::buffer_info buf;
-        const double *c_ptr;
-        std::vector<double> c;
-        if (self.nrow != self.ncol)
-          throw std::invalid_argument("cannot solve a rectangular op");
-        if (ncv == -1) {
-          ncv = self.nrow < 20 ? self.nrow : 20;
-          ncv = ncv < n + 1 ? n + 1 : ncv;
-        }
-        if (py::cast<py::object>(c0).is(py::none())) {
-          c.resize(self.nrow);
-          c[0] = 1.;
-          c_ptr = &c[0];
-        } else {
-          buf = c0.cast<d_array_t>().request();
-          if ((buf.ndim != 1) || (buf.shape[0] != self.nrow))
-            throw std::domain_error("c0 has mismatched dimensions");
-          c_ptr = (const double *)buf.ptr;
-        }
-        if (maxit == -1) {
-          maxit = 1000 * n;
-        }
-        d_array_t evals(n);
-        d_array_t evecs({(unsigned)n, (unsigned)self.nrow});
-        self.solve(c_ptr, n, ncv, maxit, tol, (double *)(evals.request().ptr),
-                   (double *)(evecs.request().ptr));
-        return py::make_tuple(evals, evecs);
-      },
-      R"""(
-Solve the CI problem for the energy/energies and coefficient vector(s).
+Return the specified matrix element.
 
 Parameters
 ----------
-n : int, default=1
-    Number of lowest-energy solutions for which to solve.
-ncv : int, default=max(n + 1, min(20, rows))
-    Number of Lanczos vectors to use for eigensolver. More is generally faster and more reliably convergent.
-c0 : np.ndarray, optional
-    Initial guess for lowest-energy coefficient vector. If not provided, the default is [1, 0, 0, ..., 0, 0].
-maxiter : int, default=1000*n
-    Maximum number of iterations for eigensolver to run.
-tol : float, default=1.0e-6
-    Convergence tolerance for eigensolver.
+i : int
+    Row index.
+j : int
+    Column index.
 
 Returns
 -------
-evals : np.ndarray
-    Energies.
-evecs : np.ndarray
-    Coefficient vectors.
-
+elem : float
+    Element.
 )""",
-      py::arg("n") = 1, py::arg("ncv") = -1, py::arg("c0") = py::none(), py::arg("maxit") = -1,
-      py::arg("tol") = 1.e-6);
+      py::arg("i"), py::arg("j"));
 
   sparse_op.def(
       "__call__",
@@ -1826,6 +1780,34 @@ y : np.ndarray
       },
       R"""(
 Compute the result of the sparse CEPA matrix :math:`A` applied to vector :math:`x`.
+
+Parameters
+----------
+x : np.ndarray
+    Operand vector.
+out : np.ndarray, optional
+    Output parameter, as in NumPy (e.g., numpy.dot).
+
+Returns
+-------
+y : np.ndarray
+   Result vector.
+
+)""",
+      py::arg("x"), py::arg("refind") = 0);
+
+  sparse_op.def(
+      "rmatvec_cepa0",
+      [](const SparseOp &self, const d_array_t x, const int_t refind) {
+        py::buffer_info buf = x.request();
+        if ((buf.ndim != 1) || (buf.shape[0] != self.nrow))
+          throw std::domain_error("x has mismatched dimensions");
+        d_array_t y(self.ncol);
+        self.perform_op_transpose_cepa0((const double *)buf.ptr, (double *)y.request().ptr, refind);
+        return y;
+      },
+      R"""(
+Compute the result of the sparse CEPA matrix :math:`A^T` applied to vector :math:`x`.
 
 Parameters
 ----------
@@ -2071,7 +2053,7 @@ specifies the spin-block 0) "up-up-up-up", 1) "down-down-down-down', or 2) "up-d
       py::arg("wfn"), py::arg("c"));
 
   m.def(
-      "run_hci",
+      "add_hci",
       [](const RestrictedHam &ham, const DOCIWfn &wfn, const d_array_t c, const double eps) {
         py::buffer_info buf = c.request();
         if ((buf.ndim != 1) || (buf.shape[0] != wfn.ndet))
@@ -2112,7 +2094,7 @@ n : int
       py::arg("ham"), py::arg("wfn"), py::arg("c"), py::arg("eps"));
 
   m.def(
-      "run_hci",
+      "add_hci",
       [](const RestrictedHam &ham, const FullCIWfn &wfn, const d_array_t c, const double eps) {
         py::buffer_info buf = c.request();
         if ((buf.ndim != 1) || (buf.shape[0] != wfn.ndet))
@@ -2126,7 +2108,7 @@ n : int
       py::arg("ham"), py::arg("wfn"), py::arg("c"), py::arg("eps"));
 
   m.def(
-      "run_hci",
+      "add_hci",
       [](const GeneralizedHam &ham, const GenCIWfn &wfn, const d_array_t c, const double eps) {
         py::buffer_info buf = c.request();
         if ((buf.ndim != 1) || (buf.shape[0] != wfn.ndet))

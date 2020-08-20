@@ -24,10 +24,6 @@
 #include <utility>
 #include <vector>
 
-#define EIGEN_DEFAULT_DENSE_INDEX_TYPE pyci::int_t
-#include <Eigen/Core>
-#include <Spectra/SymEigsSolver.h>
-
 // See https://stackoverflow.com/a/46370189
 namespace std {
 
@@ -211,6 +207,11 @@ void init_doci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *h, 
   op.data.shrink_to_fit();
   op.indices.shrink_to_fit();
   op.indptr.shrink_to_fit();
+  typedef std::sort_helper::value_iterator_t<double, int_t> sort_iter;
+  for (int_t i = 0; i < op.nrow; ++i) {
+    std::sort(sort_iter(&op.data[op.indptr[i]], &op.indices[op.indptr[i]]),
+              sort_iter(&op.data[op.indptr[i + 1]], &op.indices[op.indptr[i + 1]]));
+  }
 }
 
 void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *one_mo,
@@ -397,6 +398,11 @@ void init_fullci_run_thread(SparseOp &op, const TwoSpinWfn &wfn, const double *o
   op.data.shrink_to_fit();
   op.indices.shrink_to_fit();
   op.indptr.shrink_to_fit();
+  typedef std::sort_helper::value_iterator_t<double, int_t> sort_iter;
+  for (int_t i = 0; i < op.nrow; ++i) {
+    std::sort(sort_iter(&op.data[op.indptr[i]], &op.indices[op.indptr[i]]),
+              sort_iter(&op.data[op.indptr[i + 1]], &op.indices[op.indptr[i + 1]]));
+  }
 }
 
 void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *one_mo,
@@ -491,6 +497,11 @@ void init_genci_run_thread(SparseOp &op, const OneSpinWfn &wfn, const double *on
   op.data.shrink_to_fit();
   op.indices.shrink_to_fit();
   op.indptr.shrink_to_fit();
+  typedef std::sort_helper::value_iterator_t<double, int_t> sort_iter;
+  for (int_t i = 0; i < op.nrow; ++i) {
+    std::sort(sort_iter(&op.data[op.indptr[i]], &op.indices[op.indptr[i]]),
+              sort_iter(&op.data[op.indptr[i + 1]], &op.indices[op.indptr[i + 1]]));
+  }
 }
 
 void init_condense_thread(SparseOp &op, SparseOp &thread_op, const int_t ithread) {
@@ -523,21 +534,6 @@ void init_condense_thread(SparseOp &op, SparseOp &thread_op, const int_t ithread
     op.indptr.push_back(thread_op.indptr[i] + indptr_val);
   thread_op.indptr.resize(0);
   thread_op.indptr.shrink_to_fit();
-}
-
-void sort_op_rows(SparseOp &op) {
-  typedef std::sort_helper::value_iterator_t<double, int_t> sort_iter;
-  int_t nthread = omp_get_max_threads();
-  int_t chunksize = op.nrow / nthread + ((op.nrow % nthread) ? 1 : 0);
-#pragma omp parallel
-  {
-    int_t ithread = omp_get_thread_num();
-    int_t istart = ithread * chunksize;
-    int_t iend = (istart + chunksize < op.nrow) ? istart + chunksize : op.nrow;
-    for (int_t i = istart; i < iend; ++i)
-      std::sort(sort_iter(&op.data[op.indptr[i]], &op.indices[op.indptr[i]]),
-                sort_iter(&op.data[op.indptr[i + 1]], &op.indices[op.indptr[i + 1]]));
-  }
 }
 
 } // namespace
@@ -628,6 +624,25 @@ void SparseOp::perform_op_cepa0(const double *x, double *y, const int_t refind) 
   }
 }
 
+void SparseOp::perform_op_transpose_cepa0(const double *x, double *y, const int_t refind) const {
+  int_t i;
+  for (i = 0; i < ncol; ++i)
+    y[i] = 0;
+  int_t j, jstart, jend = indptr[0];
+  double h_refind = get_element(refind, refind);
+  for (i = 0; i < nrow; ++i) {
+    jstart = jend;
+    jend = indptr[i + 1];
+    for (j = jstart; j < jend; ++j) {
+      if (indices[j] == i)
+        y[indices[j]] += (h_refind - data[j]) * x[i];
+      else
+        y[indices[j]] -= data[j] * x[i];
+    }
+  }
+  y[refind] = x[refind];
+}
+
 void SparseOp::rhs_cepa0(double *b, const int_t refind) const {
   int_t iend = indptr[refind + 1];
   for (int_t i = indptr[refind]; i != iend; ++i) {
@@ -635,26 +650,6 @@ void SparseOp::rhs_cepa0(double *b, const int_t refind) const {
       break;
     b[indices[i]] = data[i];
   }
-}
-
-void SparseOp::solve(const double *coeffs, const int_t n, const int_t ncv, const int_t maxit,
-                     const double tol, double *evals, double *evecs) const {
-  if (nrow == 1) {
-    *evals = data[0];
-    *evecs = 1.0;
-    return;
-  }
-  Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE, const SparseOp> eigs(this, n, ncv);
-  eigs.init(coeffs);
-  eigs.compute(maxit, tol, Spectra::SMALLEST_ALGE);
-  if (eigs.info() != Spectra::SUCCESSFUL)
-    throw std::runtime_error("did not converge");
-  Eigen::Map<Eigen::VectorXd> eigenvalues(evals, n);
-  Eigen::Map<Eigen::MatrixXd> eigenvectors(evecs, ncol, n);
-  eigenvalues = eigs.eigenvalues();
-  for (int_t i = 0; i < n; ++i)
-    evals[i] += ecore;
-  eigenvectors = eigs.eigenvectors();
 }
 
 void SparseOp::init_doci(const OneSpinWfn &wfn, const double ecore_, const double *h,
@@ -676,7 +671,7 @@ void SparseOp::init_doci(const OneSpinWfn &wfn, const double ecore_, const doubl
     int_t ithread = omp_get_thread_num();
     int_t istart = ithread * chunksize;
     int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-    ops[ithread].nrow = nrow;
+    ops[ithread].nrow = iend - istart;
     ops[ithread].ncol = ncol;
     init_doci_run_thread(ops[ithread], wfn, h, v, w, istart, iend);
     // construct larger SparseOp (this instance) from chunks
@@ -686,7 +681,6 @@ void SparseOp::init_doci(const OneSpinWfn &wfn, const double ecore_, const doubl
       init_condense_thread(*this, ops[t], t);
   }
   // finalize vectors
-  sort_op_rows(*this);
   size = indices.size();
   indptr.push_back(size);
   data.shrink_to_fit();
@@ -713,7 +707,7 @@ void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double ecore_, const dou
     int_t ithread = omp_get_thread_num();
     int_t istart = ithread * chunksize;
     int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-    ops[ithread].nrow = nrow;
+    ops[ithread].nrow = iend - istart;
     ops[ithread].ncol = ncol;
     init_fullci_run_thread(ops[ithread], wfn, one_mo, two_mo, istart, iend);
     // construct larger SparseOp (this instance) from chunks
@@ -723,7 +717,6 @@ void SparseOp::init_fullci(const TwoSpinWfn &wfn, const double ecore_, const dou
       init_condense_thread(*this, ops[t], t);
   }
   // finalize vectors
-  sort_op_rows(*this);
   size = indices.size();
   indptr.push_back(size);
   data.shrink_to_fit();
@@ -750,7 +743,7 @@ void SparseOp::init_genci(const OneSpinWfn &wfn, const double ecore_, const doub
     int_t ithread = omp_get_thread_num();
     int_t istart = ithread * chunksize;
     int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-    ops[ithread].nrow = nrow;
+    ops[ithread].nrow = iend - istart;
     ops[ithread].ncol = ncol;
     init_genci_run_thread(ops[ithread], wfn, one_mo, two_mo, istart, iend);
     // construct larger SparseOp (this instance) from chunks
@@ -760,7 +753,6 @@ void SparseOp::init_genci(const OneSpinWfn &wfn, const double ecore_, const doub
       init_condense_thread(*this, ops[t], t);
   }
   // finalize vectors
-  sort_op_rows(*this);
   size = indices.size();
   indptr.push_back(size);
   data.shrink_to_fit();
