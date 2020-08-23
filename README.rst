@@ -33,6 +33,7 @@ The following programs/libraries are required to run PyCI:
 -  Python_ (≥3.4)
 -  NumPy_ (≥1.13)
 -  SciPy_ (≥1.0)
+-  Pytest_ (optional: to run tests)
 
 The following programs/libraries are required to build PyCI:
 
@@ -109,6 +110,7 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
 .. _Pybind11:           http://pybind11.readthedocs.io/en/stable/
+.. _Pytest:             http://docs.pytest.org/en/latest/
 .. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
 
 .. |Python 3.8| image:: http://img.shields.io/badge/python-3.8-blue.svg
