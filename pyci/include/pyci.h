@@ -142,7 +142,7 @@ double compute_enpt2(const Ham &, const GenCIWfn &, const double *, const double
 
 /* Hamiltonian class. */
 
-struct Ham {
+struct Ham final {
 public:
     int_t nbasis;
     double ecore, *one_mo, *two_mo, *h, *v, *w;
@@ -362,7 +362,7 @@ public:
     int_t py_add_excited_dets(const int_t, const pybind11::object);
 };
 
-struct DOCIWfn : public OneSpinWfn {
+struct DOCIWfn final : public OneSpinWfn {
 public:
     using Wfn::maxrank_dn;
     using Wfn::maxrank_up;
@@ -399,7 +399,7 @@ public:
     DOCIWfn(const int_t, const int_t, const int_t, const Array<int_t>);
 };
 
-struct FullCIWfn : public TwoSpinWfn {
+struct FullCIWfn final : public TwoSpinWfn {
 public:
     using Wfn::maxrank_dn;
     using Wfn::maxrank_up;
@@ -438,7 +438,7 @@ public:
     FullCIWfn(const int_t, const int_t, const int_t, const Array<int_t>);
 };
 
-struct GenCIWfn : public OneSpinWfn {
+struct GenCIWfn final : public OneSpinWfn {
 public:
     using Wfn::maxrank_dn;
     using Wfn::maxrank_up;
@@ -481,7 +481,7 @@ public:
 
 /* Sparse matrix operator class. */
 
-struct SparseOp {
+struct SparseOp final {
 public:
     int_t nrow, ncol, size;
     double ecore;
@@ -528,8 +528,7 @@ public:
 
     Array<double> py_rhs_cepa0(const int_t) const;
 
-    pybind11::tuple py_get_shape(void) const;
-
+private:
     template<class WfnType>
     void init(const Ham &, const WfnType &, const int_t, const int_t);
 

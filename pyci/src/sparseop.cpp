@@ -163,10 +163,6 @@ Array<double> SparseOp::py_rhs_cepa0(const int_t refind) const {
     return y;
 }
 
-pybind11::tuple SparseOp::py_get_shape(void) const {
-    return pybind11::make_tuple(nrow, ncol);
-}
-
 template<class WfnType>
 void SparseOp::init(const Ham &ham, const WfnType &wfn, const int_t rows, const int_t cols) {
     indptr.push_back(0);
