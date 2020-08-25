@@ -152,13 +152,19 @@ def test_run_hci(filename, wfn_type, occs, energy):
         es, cs = pyci.solve(ham, wfn, n=1, tol=1.0e-6)
         niter += 1
     assert niter > 1
-    assert len(wfn) < np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
+    if isinstance(wfn, pyci.fullci_wfn):
+        assert len(wfn) < np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
+    else:
+        assert len(wfn) < comb(wfn.nbasis, occs[0], exact=True)
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-6)
     dets_added = 1
     while dets_added:
         dets_added = pyci.add_hci(ham, wfn, cs[0], eps=0.0)
         es, cs = pyci.solve(ham, wfn, n=1, tol=1.0e-6)
-    assert len(wfn) == np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
+    if isinstance(wfn, pyci.fullci_wfn):
+        assert len(wfn) == np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
+    else:
+        assert len(wfn) == comb(wfn.nbasis, occs[0], exact=True)
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 
