@@ -20,26 +20,17 @@ Run `python setup.py --help` for help.
 
 """
 
-from glob import glob
-
 from setuptools import Extension, setup
 
 import numpy
 
-
-# Uncomment this to use exact (colexicographical order) hashing.
-# This only supports determinant sets with |D| < 2 ** 63.
-# PYCI_EXACT_HASH = True
-
-
 # Uncomment this to use a specific non-negative integer seed for the SpookyHash algorithm.
 # PYCI_SPOOKYHASH_SEED = 0
-
 
 name = "pyci"
 
 
-version = "0.3.5"
+version = "0.5.0"
 
 
 license = "GPLv3"
@@ -74,7 +65,7 @@ install_requires = [
 
 
 extras_require = {
-    "test": ["nose"],
+    "test": ["pytest"],
     "doc": ["sphinx", "sphinx_rtd_theme"],
 }
 
@@ -91,7 +82,9 @@ package_data = {
 }
 
 
-sources = glob("pyci/src/*.cpp")
+sources = [
+    "pyci/src/pyci.cpp",
+]
 
 
 include_dirs = [
@@ -103,11 +96,11 @@ include_dirs = [
 
 
 extra_compile_args = [
+    "-Wall",
     "-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION",
-    "-DPYCI_VERSION=" + version,
+    f"-DPYCI_VERSION={version}",
     "-fvisibility=hidden",
     "-fopenmp",
-    "-Wall",
 ]
 
 
@@ -129,13 +122,7 @@ cext = {
 if __name__ == "__main__":
 
     try:
-        extra_compile_args.append("-DPYCI_EXACT_HASH" if PYCI_EXACT_HASH else "")
-    except NameError:
-        pass
-
-    try:
-        hex_seed = hex(abs(PYCI_SPOOKYHASH_SEED)) + "UL"
-        extra_compile_args.append("-DPYCI_SPOOKYHASH_SEED=" + hex_seed)
+        extra_compile_args.append(f"-DPYCI_SPOOKYHASH_SEED={hex(abs(PYCI_SPOOKYHASH_SEED))}U")
     except NameError:
         pass
 

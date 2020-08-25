@@ -23,12 +23,12 @@
 #include <vector>
 
 /* Define integer types, popcnt and ctz functions. */
-#define PYCI_INT_SIZE (std::int64_t)(sizeof(std::int64_t) * CHAR_BIT)
-#define PYCI_UINT_SIZE (std::int64_t)(sizeof(std::uint64_t) * CHAR_BIT)
-#define PYCI_INT_MAX (std::int64_t) INT64_MAX
-#define PYCI_UINT_MAX (std::uint64_t) UINT64_MAX
-#define PYCI_UINT_ZERO (std::uint64_t)0U
-#define PYCI_UINT_ONE (std::uint64_t)1U
+#define PYCI_INT_SIZE static_cast<std::int64_t>(sizeof(std::int64_t) * CHAR_BIT)
+#define PYCI_UINT_SIZE static_cast<std::int64_t>(sizeof(std::uint64_t) * CHAR_BIT)
+#define PYCI_INT_MAX static_cast<std::int64_t>(INT64_MAX)
+#define PYCI_UINT_MAX static_cast<std::uint64_t>(UINT64_MAX)
+#define PYCI_UINT_ZERO static_cast<std::uint64_t>(0U)
+#define PYCI_UINT_ONE static_cast<std::uint64_t>(1U)
 #if UINT64_MAX <= ULONG_MAX
 #define PYCI_POPCNT(X) __builtin_popcountl(X)
 #define PYCI_CTZ(X) __builtin_ctzl(X)
@@ -41,7 +41,7 @@
 
 /* Seed for SpookyHash. */
 #ifndef PYCI_SPOOKYHASH_SEED
-#define PYCI_SPOOKYHASH_SEED (uint_t)0xdeadbeefdeadbeefU
+#define PYCI_SPOOKYHASH_SEED static_cast<std::uint64_t>(0xdeadbeefdeadbeefUL)
 #endif
 
 namespace pyci {

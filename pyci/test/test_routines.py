@@ -38,7 +38,6 @@ def parity(p):
     "filename, wfn_type, occs, energy",
     [
         ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
-
         ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
         ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
         ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),

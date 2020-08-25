@@ -18,22 +18,10 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 
-# import numpy as np
 import numpy.testing as npt
 
 from pyci import hamiltonian
 from pyci.test import datafile
-
-
-
-def test_restricted_raises():
-  npt.assert_raises(
-        ValueError, hamiltonian, 1.0, np.zeros((10, 11)), np.zeros((10, 10, 10, 10))
-    )
-    npt.assert_raises(
-        ValueError, hamiltonian, 1.0, np.zeros((10, 10)), np.zeros((10, 10, 10, 11))
-    )
-
 
 
 @pytest.mark.parametrize("filename", ["he_ccpvqz", "be_ccpvdz", "h2o_ccpvdz", "li2_ccpvdz"])
