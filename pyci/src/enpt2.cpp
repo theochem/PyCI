@@ -14,13 +14,10 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <omp.h>
-#include <parallel_hashmap/phmap.h>
 #include <pyci.h>
 
 #include <cstdlib>
 #include <cstring>
-#include <utility>
-#include <vector>
 
 namespace pyci {
 
@@ -70,14 +67,14 @@ template<class WfnType>
 double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coeffs,
                           const double energy, const double eps) {
     p_hashmap terms;
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
 #pragma omp parallel
     {
+        int_t nthread = omp_get_max_threads();
+        int_t chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
+        p_hashmap t_terms;
         int_t ithread = omp_get_thread_num();
         int_t start = ithread * chunksize;
         int_t end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
-        p_hashmap t_terms;
         std::vector<uint_t> det(wfn.nword2);
         std::vector<int_t> occs(wfn.nocc);
         std::vector<int_t> virs(wfn.nvir);
@@ -99,16 +96,12 @@ double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coef
 
 void compute_enpt2_thread_condense(p_hashmap &terms, p_hashmap &t_terms, const int_t ithread) {
     std::pair<double, double> *pair;
-    if (ithread == 0) {
-        terms.swap(t_terms);
-    } else {
-        for (auto &keyval : t_terms) {
-            pair = &terms[keyval.first];
-            pair->first += keyval.second.first;
-            pair->second = keyval.second.second;
-        }
-        t_terms.clear();
+    for (auto &keyval : t_terms) {
+        pair = &terms[keyval.first];
+        pair->first += keyval.second.first;
+        pair->second = keyval.second.second;
     }
+    p_hashmap().swap(t_terms);
 }
 
 void compute_enpt2_thread_gather(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
@@ -350,10 +343,10 @@ void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, p_hashmap &
     int_t n3 = n1 * n2;
     double val;
     const uint_t *rdet = wfn.det_ptr(idet);
-    std::memcpy(&det[0], rdet, sizeof(uint_t) * wfn.nword);
-    fill_occs(wfn.nword, rdet, &occs[0]);
-    fill_virs(wfn.nword, wfn.nbasis, rdet, &virs[0]);
-    std::memcpy(&tmps[0], &occs[0], sizeof(int_t) * wfn.nocc);
+    std::memcpy(det, rdet, sizeof(uint_t) * wfn.nword);
+    fill_occs(wfn.nword, rdet, occs);
+    fill_virs(wfn.nword, wfn.nbasis, rdet, virs);
+    std::memcpy(tmps, occs, sizeof(int_t) * wfn.nocc);
     // loop over occupied indices
     for (i = 0; i < wfn.nocc; ++i) {
         ii = occs[i];
@@ -362,7 +355,7 @@ void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, p_hashmap &
         for (j = 0; j < wfn.nvir; ++j) {
             jj = virs[j];
             // single excitation elements
-            excite_det(ii, jj, &det[0]);
+            excite_det(ii, jj, det);
             val = ham.one_mo[n1 * ii + jj];
             for (k = 0; k < wfn.nocc; ++k) {
                 kk = occs[k];
@@ -372,10 +365,10 @@ void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, p_hashmap &
             val *= coeffs[idet];
             // add determinant if |H*c| > eps and not already in wfn
             if (std::abs(val) > eps) {
-                rank = wfn.rank_det(&det[0]);
+                rank = wfn.rank_det(det);
                 if (wfn.index_det_from_rank(rank) == -1) {
                     val *= phase_single_det(wfn.nword, ii, jj, rdet);
-                    fill_occs(wfn.nword, &det[0], &tmps[0]);
+                    fill_occs(wfn.nword, det, tmps);
                     compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank], val, n2,
                                                 n3, tmps);
                 }
@@ -388,24 +381,24 @@ void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, p_hashmap &
                 for (l = j + 1; l < wfn.nvir; ++l) {
                     ll = virs[l];
                     // double excitation elements
-                    excite_det(kk, ll, &det[0]);
+                    excite_det(kk, ll, det);
                     val =
                         (ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj]) *
                         coeffs[idet];
                     // add determinant if |H*c| > eps and not already in wfn
                     if (std::abs(val) > eps) {
-                        rank = wfn.rank_det(&det[0]);
+                        rank = wfn.rank_det(det);
                         if (wfn.index_det_from_rank(rank) == -1) {
                             val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet);
-                            fill_occs(wfn.nword, &det[0], &tmps[0]);
+                            fill_occs(wfn.nword, det, tmps);
                             compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank],
                                                         val, n2, n3, tmps);
                         }
                     }
-                    excite_det(ll, kk, &det[0]);
+                    excite_det(ll, kk, det);
                 }
             }
-            excite_det(jj, ii, &det[0]);
+            excite_det(jj, ii, det);
         }
     }
 }

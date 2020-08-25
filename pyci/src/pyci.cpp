@@ -14,8 +14,8 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 /*
-Note: This seems to be the only way to get setuptools to compile everything together.  This
-decreases the size of the binary by about 20%, and the compile time is still very short.
+Note: This seems to be the only way to get setuptools to compile everything together. This
+decreases the size of the binary by about 50%, and the compile time is still very short.
 */
 
 #include <pyci.h>
@@ -24,9 +24,12 @@ decreases the size of the binary by about 20%, and the compile time is still ver
 
 #include "common.cpp"
 
+#include "ham.cpp"
+
+#include "wfn.cpp"
+
 #include "onespinwfn.cpp"
 #include "twospinwfn.cpp"
-#include "wfn.cpp"
 
 #include "dociwfn.cpp"
 #include "fullciwfn.cpp"

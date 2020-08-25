@@ -16,7 +16,6 @@
 r"""PyCI additional routines module."""
 
 from itertools import combinations
-
 from typing import List, Sequence, Union
 
 import numpy as np

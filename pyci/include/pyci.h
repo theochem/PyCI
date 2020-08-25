@@ -15,12 +15,23 @@
 
 #pragma once
 
-#include <parallel_hashmap/phmap.h>
-
 #include <climits>
 #include <cstdint>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+
+#include <parallel_hashmap/phmap.h>
+
+#ifndef PYCI_VERSION
+#define PYCI_VERSION 0.0.0
+#endif
+#define LITERAL(S) #S
+#define STRINGIZE(S) LITERAL(S)
 
 /* Define integer types, popcnt and ctz functions. */
 #define PYCI_INT_SIZE static_cast<std::int64_t>(sizeof(std::int64_t) * CHAR_BIT)
@@ -55,6 +66,10 @@ typedef std::uint64_t uint_t;
 /* Hash map template type. */
 template<class KeyType, class ValueType>
 using hashmap = phmap::flat_hash_map<KeyType, ValueType>;
+
+/* Pybind11 NumPy array type. */
+template<typename Scalar>
+using Array = pybind11::array_t<Scalar, pybind11::array::c_style | pybind11::array::forcecast>;
 
 /* Forward-declare classes. */
 struct Ham;
@@ -95,22 +110,13 @@ int_t popcnt_det(const int_t, const uint_t *);
 
 int_t ctz_det(const int_t, const uint_t *);
 
-inline int_t nword_det(const int_t n) {
-    return n / PYCI_UINT_SIZE + ((n % PYCI_UINT_SIZE) ? 1 : 0);
-}
+int_t nword_det(const int_t);
 
-inline void excite_det(const int_t i, const int_t a, uint_t *det) {
-    det[i / PYCI_UINT_SIZE] &= ~(PYCI_UINT_ONE << (i % PYCI_UINT_SIZE));
-    det[a / PYCI_UINT_SIZE] |= PYCI_UINT_ONE << (a % PYCI_UINT_SIZE);
-}
+void excite_det(const int_t, const int_t, uint_t *);
 
-inline void setbit_det(const int_t i, uint_t *det) {
-    det[i / PYCI_UINT_SIZE] |= PYCI_UINT_ONE << (i % PYCI_UINT_SIZE);
-}
+void setbit_det(const int_t, uint_t *);
 
-inline void clearbit_det(const int_t i, uint_t *det) {
-    det[i / PYCI_UINT_SIZE] &= ~(PYCI_UINT_ONE << (i % PYCI_UINT_SIZE));
-}
+void clearbit_det(const int_t, uint_t *);
 
 int_t add_hci(const Ham &, DOCIWfn &, const double *, const double);
 
@@ -134,31 +140,28 @@ double compute_enpt2(const Ham &, const FullCIWfn &, const double *, const doubl
 
 double compute_enpt2(const Ham &, const GenCIWfn &, const double *, const double, const double);
 
-/*
-Section: Hamiltonian classes
-
-Notes: We will subclass
-*/
+/* Hamiltonian class. */
 
 struct Ham {
 public:
     int_t nbasis;
     double ecore, *one_mo, *two_mo, *h, *v, *w;
+    pybind11::object one_mo_array, two_mo_array, h_array, v_array, w_array;
 
-    inline Ham(void) {
-    }
+    Ham(void);
 
-    inline Ham(const Ham &ham)
-        : nbasis(ham.nbasis), ecore(ham.ecore), one_mo(ham.one_mo), two_mo(ham.two_mo), h(ham.h),
-          v(ham.v), w(ham.w) {
-    }
+    Ham(const Ham &);
 
-    inline Ham(Ham &&ham) noexcept
-        : nbasis(std::exchange(ham.nbasis, 0)), ecore(std::exchange(ham.ecore, 0.0)),
-          one_mo(std::exchange(ham.one_mo, nullptr)), two_mo(std::exchange(ham.two_mo, nullptr)),
-          h(std::exchange(ham.h, nullptr)), v(std::exchange(ham.v, nullptr)),
-          w(std::exchange(ham.w, nullptr)) {
-    }
+    Ham(Ham &&) noexcept;
+
+    Ham(const std::string &);
+
+    Ham(const double, const Array<double>, const Array<double>);
+
+    void to_file(const std::string &, const int_t, const int_t, const double) const;
+
+private:
+    void init_ham(const pybind11::tuple &);
 };
 
 /* Wave function classes. */
@@ -177,15 +180,14 @@ public:
 
     Wfn(Wfn &&) noexcept;
 
-    inline Wfn(const int_t nb, const int_t nu, const int_t nd) {
-        init(nb, nu, nd);
-    }
+    Wfn(const int_t, const int_t, const int_t);
+
+    int_t length(void) const;
 
     void squeeze(void);
 
 protected:
-    inline Wfn(void) {
-    }
+    Wfn(void);
 
     void init(const int_t, const int_t, const int_t);
 };
@@ -222,9 +224,11 @@ public:
 
     OneSpinWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
 
-    inline const uint_t *det_ptr(const int_t i) const {
-        return &dets[i * nword];
-    }
+    OneSpinWfn(const int_t, const int_t, const int_t, const Array<uint_t>);
+
+    OneSpinWfn(const int_t, const int_t, const int_t, const Array<int_t>);
+
+    const uint_t *det_ptr(const int_t) const;
 
     void to_file(const std::string &) const;
 
@@ -255,6 +259,22 @@ public:
     void add_dets_from_wfn(const OneSpinWfn &);
 
     void reserve(const int_t);
+
+    Array<uint_t> py_getitem(const int_t) const;
+
+    Array<uint_t> py_to_det_array(int_t, int_t) const;
+
+    Array<int_t> py_to_occ_array(int_t, int_t) const;
+
+    int_t py_index_det(const Array<uint_t>) const;
+
+    uint_t py_rank_det(const Array<uint_t>) const;
+
+    int_t py_add_det(const Array<uint_t>);
+
+    int_t py_add_occs(const Array<int_t>);
+
+    int_t py_add_excited_dets(const int_t, const pybind11::object);
 };
 
 struct TwoSpinWfn : public Wfn {
@@ -289,9 +309,11 @@ public:
 
     TwoSpinWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
 
-    inline const uint_t *det_ptr(const int_t i) const {
-        return &dets[i * nword2];
-    }
+    TwoSpinWfn(const int_t, const int_t, const int_t, const Array<uint_t>);
+
+    TwoSpinWfn(const int_t, const int_t, const int_t, const Array<int_t>);
+
+    const uint_t *det_ptr(const int_t) const;
 
     void to_file(const std::string &) const;
 
@@ -322,9 +344,25 @@ public:
     void add_dets_from_wfn(const TwoSpinWfn &);
 
     void reserve(const int_t);
+
+    Array<uint_t> py_getitem(const int_t) const;
+
+    Array<uint_t> py_to_det_array(int_t, int_t) const;
+
+    Array<int_t> py_to_occ_array(int_t, int_t) const;
+
+    int_t py_index_det(const Array<uint_t>) const;
+
+    uint_t py_rank_det(const Array<uint_t>) const;
+
+    int_t py_add_det(const Array<uint_t>);
+
+    int_t py_add_occs(const Array<int_t>);
+
+    int_t py_add_excited_dets(const int_t, const pybind11::object);
 };
 
-struct DOCIWfn final : public OneSpinWfn {
+struct DOCIWfn : public OneSpinWfn {
 public:
     using Wfn::maxrank_dn;
     using Wfn::maxrank_up;
@@ -355,9 +393,13 @@ public:
     DOCIWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *);
 
     DOCIWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
+
+    DOCIWfn(const int_t, const int_t, const int_t, const Array<uint_t>);
+
+    DOCIWfn(const int_t, const int_t, const int_t, const Array<int_t>);
 };
 
-struct FullCIWfn final : public TwoSpinWfn {
+struct FullCIWfn : public TwoSpinWfn {
 public:
     using Wfn::maxrank_dn;
     using Wfn::maxrank_up;
@@ -390,9 +432,13 @@ public:
     FullCIWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *);
 
     FullCIWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
+
+    FullCIWfn(const int_t, const int_t, const int_t, const Array<uint_t>);
+
+    FullCIWfn(const int_t, const int_t, const int_t, const Array<int_t>);
 };
 
-struct GenCIWfn final : public OneSpinWfn {
+struct GenCIWfn : public OneSpinWfn {
 public:
     using Wfn::maxrank_dn;
     using Wfn::maxrank_up;
@@ -427,16 +473,20 @@ public:
     GenCIWfn(const int_t, const int_t, const int_t, const int_t, const uint_t *);
 
     GenCIWfn(const int_t, const int_t, const int_t, const int_t, const int_t *);
+
+    GenCIWfn(const int_t, const int_t, const int_t, const Array<uint_t>);
+
+    GenCIWfn(const int_t, const int_t, const int_t, const Array<int_t>);
 };
 
 /* Sparse matrix operator class. */
 
-struct SparseOp final {
+struct SparseOp {
 public:
     int_t nrow, ncol, size;
     double ecore;
 
-protected:
+private:
     std::vector<double> data;
     std::vector<int_t> indices;
     std::vector<int_t> indptr;
@@ -454,17 +504,11 @@ public:
 
     SparseOp(const Ham &, const GenCIWfn &, const int_t, const int_t);
 
-    inline const double *data_ptr(const int_t index) const {
-        return &data[index];
-    }
+    const double *data_ptr(const int_t) const;
 
-    inline const int_t *indices_ptr(const int_t index) const {
-        return &indices[index];
-    }
+    const int_t *indices_ptr(const int_t) const;
 
-    inline const int_t *indptr_ptr(const int_t index) const {
-        return &indptr[index];
-    }
+    const int_t *indptr_ptr(const int_t) const;
 
     double get_element(const int_t, const int_t) const;
 
@@ -476,13 +520,18 @@ public:
 
     void rhs_cepa0(double *, const int_t) const;
 
-protected:
+    Array<double> py_matvec(const Array<double>) const;
+
+    Array<double> py_matvec_cepa0(const Array<double>, const int_t) const;
+
+    Array<double> py_rmatvec_cepa0(const Array<double>, const int_t) const;
+
+    Array<double> py_rhs_cepa0(const int_t) const;
+
+    pybind11::tuple py_get_shape(void) const;
+
     template<class WfnType>
     void init(const Ham &, const WfnType &, const int_t, const int_t);
-
-    void init_thread_sort_row(const int_t);
-
-    void init_thread_condense(SparseOp &, const int_t);
 
     void init_thread_add_row(const Ham &, const DOCIWfn &, const int_t, uint_t *, int_t *, int_t *);
 
@@ -491,6 +540,46 @@ protected:
 
     void init_thread_add_row(const Ham &, const GenCIWfn &, const int_t, uint_t *, int_t *,
                              int_t *);
+
+    void init_thread_sort_row(const int_t);
+
+    void init_thread_condense(SparseOp &, const int_t);
 };
+
+/* Free Python interface functions. */
+
+int_t py_popcnt(const Array<uint_t>);
+
+int_t py_ctz(const Array<uint_t>);
+
+int_t py_dociwfn_add_hci(const Ham &, DOCIWfn &, const Array<double>, const double);
+
+int_t py_fullciwfn_add_hci(const Ham &, FullCIWfn &, const Array<double>, const double);
+
+int_t py_genciwfn_add_hci(const Ham &, GenCIWfn &, const Array<double>, const double);
+
+double py_dociwfn_compute_overlap(const DOCIWfn &, const DOCIWfn &, const Array<double>,
+                                  const Array<double>);
+
+double py_fullciwfn_compute_overlap(const FullCIWfn &, const FullCIWfn &, const Array<double>,
+                                    const Array<double>);
+
+double py_genciwfn_compute_overlap(const GenCIWfn &, const GenCIWfn &, const Array<double>,
+                                   const Array<double>);
+
+pybind11::tuple py_dociwfn_compute_rdms(const DOCIWfn &, const Array<double>);
+
+pybind11::tuple py_fullciwfn_compute_rdms(const FullCIWfn &, const Array<double>);
+
+pybind11::tuple py_genciwfn_compute_rdms(const GenCIWfn &, const Array<double>);
+
+double py_dociwfn_compute_enpt2(const Ham &, const DOCIWfn &, const Array<double>, const double,
+                                const double);
+
+double py_fullciwfn_compute_enpt2(const Ham &, const FullCIWfn &, const Array<double>, const double,
+                                  const double);
+
+double py_genciwfn_compute_enpt2(const Ham &, const GenCIWfn &, const Array<double>, const double,
+                                 const double);
 
 } // namespace pyci

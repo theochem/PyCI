@@ -13,9 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdexcept>
-#include <string>
-
 #include <pyci.h>
 
 namespace pyci {
@@ -46,6 +43,16 @@ DOCIWfn::DOCIWfn(const int_t nb, const int_t nu, const int_t nd, const int_t n, 
     : OneSpinWfn(nb, nu, nd, n, ptr) {
     if (nocc_up != nocc_dn)
         throw std::runtime_error("nocc_up != nocc_dn");
+}
+
+DOCIWfn::DOCIWfn(const int_t nb, const int_t nu, const int_t nd, const Array<uint_t> array)
+    : DOCIWfn(nb, nu, nd, array.request().shape[0],
+              reinterpret_cast<const uint_t *>(array.request().ptr)) {
+}
+
+DOCIWfn::DOCIWfn(const int_t nb, const int_t nu, const int_t nd, const Array<int_t> array)
+    : DOCIWfn(nb, nu, nd, array.request().shape[0],
+              reinterpret_cast<const int_t *>(array.request().ptr)) {
 }
 
 } // namespace pyci

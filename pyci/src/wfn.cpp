@@ -15,9 +15,6 @@
 
 #include <pyci.h>
 
-#include <stdexcept>
-#include <vector>
-
 namespace pyci {
 
 Wfn::Wfn(const Wfn &wfn)
@@ -37,9 +34,19 @@ Wfn::Wfn(Wfn &&wfn) noexcept
       dets(std::move(wfn.dets)), dict(std::move(wfn.dict)) {
 }
 
+Wfn::Wfn(const int_t nb, const int_t nu, const int_t nd) {
+    init(nb, nu, nd);
+}
+
+int_t Wfn::length(void) const {
+    return ndet;
+}
+
 void Wfn::squeeze(void) {
     dets.shrink_to_fit();
 }
+
+Wfn::Wfn(void){};
 
 void Wfn::init(const int_t nb, const int_t nu, const int_t nd) {
     if (nd < 0)

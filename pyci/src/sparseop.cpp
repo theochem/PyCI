@@ -22,6 +22,16 @@
 
 namespace pyci {
 
+namespace {
+
+void perform_op_thread(const double *, const int_t *, const int_t *, const double *, double *,
+                       const int_t, const int_t);
+
+void perform_op_cepa0_thread(const double *, const int_t *, const int_t *, const double *, double *,
+                             const int_t, const int_t, const int_t, const double);
+
+} // namespace
+
 SparseOp::SparseOp(const SparseOp &op)
     : nrow(op.nrow), ncol(op.ncol), size(op.size), ecore(op.ecore), data(op.data),
       indices(op.indices), indptr(op.indptr) {
@@ -56,6 +66,18 @@ SparseOp::SparseOp(const Ham &ham, const GenCIWfn &wfn, const int_t rows, const 
     init<GenCIWfn>(ham, wfn, rows, cols);
 }
 
+const double *SparseOp::data_ptr(const int_t index) const {
+    return &data[index];
+}
+
+const int_t *SparseOp::indices_ptr(const int_t index) const {
+    return &indices[index];
+}
+
+const int_t *SparseOp::indptr_ptr(const int_t index) const {
+    return &indptr[index];
+}
+
 double SparseOp::get_element(const int_t i, const int_t j) const {
     const int_t *start = &indices[indptr[i]];
     const int_t *end = &indices[indptr[i + 1]];
@@ -68,19 +90,9 @@ void SparseOp::perform_op(const double *x, double *y) const {
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
 #pragma omp parallel
     {
-        int_t i, j;
-        int_t istart = omp_get_thread_num() * chunksize;
-        int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-        int_t jstart, jend = indptr[istart];
-        double val;
-        for (i = istart; i < iend; ++i) {
-            jstart = jend;
-            jend = indptr[i + 1];
-            val = 0.0;
-            for (j = jstart; j < jend; ++j)
-                val += data[j] * x[indices[j]];
-            y[i] = val;
-        }
+        int_t start = omp_get_thread_num() * chunksize;
+        int_t end = (start + chunksize < nrow) ? start + chunksize : nrow;
+        perform_op_thread(&data[0], &indptr[0], &indices[0], x, y, start, end);
     }
 }
 
@@ -89,34 +101,10 @@ void SparseOp::perform_op_cepa0(const double *x, double *y, const int_t refind) 
     int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
 #pragma omp parallel
     {
-        int_t i, j;
-        int_t istart = omp_get_thread_num() * chunksize;
-        int_t iend = (istart + chunksize < nrow) ? istart + chunksize : nrow;
-        int_t jstart;
-        int_t jend = indptr[istart];
-        double h_refind = get_element(refind, refind);
-        double val;
-        for (i = istart; i < iend; ++i) {
-            jstart = jend;
-            jend = indptr[i + 1];
-            val = 0.0;
-            if (i == refind) {
-                for (j = jstart; j < jend; ++j) {
-                    if (indices[j] == refind)
-                        val -= x[indices[j]];
-                    else
-                        val += data[j] * x[indices[j]];
-                }
-            } else {
-                for (j = jstart; j < jend; ++j) {
-                    if (indices[j] == i)
-                        val += (data[j] - h_refind) * x[indices[j]];
-                    else if (indices[j] != refind)
-                        val += data[j] * x[indices[j]];
-                }
-            }
-            y[i] = -val;
-        }
+        int_t start = omp_get_thread_num() * chunksize;
+        int_t end = (start + chunksize < nrow) ? start + chunksize : nrow;
+        perform_op_cepa0_thread(&data[0], &indptr[0], &indices[0], x, y, start, end, refind,
+                                get_element(refind, refind));
     }
 }
 
@@ -148,6 +136,37 @@ void SparseOp::rhs_cepa0(double *b, const int_t refind) const {
     }
 }
 
+Array<double> SparseOp::py_matvec(Array<double> x) const {
+    Array<double> y(nrow);
+    perform_op(reinterpret_cast<const double *>(x.request().ptr),
+               reinterpret_cast<double *>(y.request().ptr));
+    return y;
+}
+
+Array<double> SparseOp::py_matvec_cepa0(Array<double> x, const int_t refind) const {
+    Array<double> y(nrow);
+    perform_op_cepa0(reinterpret_cast<const double *>(x.request().ptr),
+                     reinterpret_cast<double *>(y.request().ptr), refind);
+    return y;
+}
+
+Array<double> SparseOp::py_rmatvec_cepa0(Array<double> x, const int_t refind) const {
+    Array<double> y(ncol);
+    perform_op_transpose_cepa0(reinterpret_cast<const double *>(x.request().ptr),
+                               reinterpret_cast<double *>(y.request().ptr), refind);
+    return y;
+}
+
+Array<double> SparseOp::py_rhs_cepa0(const int_t refind) const {
+    Array<double> y(nrow);
+    rhs_cepa0(reinterpret_cast<double *>(y.request().ptr), refind);
+    return y;
+}
+
+pybind11::tuple SparseOp::py_get_shape(void) const {
+    return pybind11::make_tuple(nrow, ncol);
+}
+
 template<class WfnType>
 void SparseOp::init(const Ham &ham, const WfnType &wfn, const int_t rows, const int_t cols) {
     indptr.push_back(0);
@@ -155,10 +174,11 @@ void SparseOp::init(const Ham &ham, const WfnType &wfn, const int_t rows, const 
     {
         int_t nthread = omp_get_max_threads();
         int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-        int_t start = omp_get_thread_num() * chunksize;
+        int_t ithread = omp_get_thread_num();
+        int_t start = ithread * chunksize;
         int_t end = (start + chunksize < nrow) ? start + chunksize : nrow;
-        int_t row = 0;
         SparseOp op(end - start, ncol);
+        int_t row = 0;
         std::vector<uint_t> det(wfn.nword2);
         std::vector<int_t> occs(wfn.nocc);
         std::vector<int_t> virs(wfn.nvir);
@@ -166,6 +186,7 @@ void SparseOp::init(const Ham &ham, const WfnType &wfn, const int_t rows, const 
             op.init_thread_add_row(ham, wfn, i, &det[0], &occs[0], &virs[0]);
             op.init_thread_sort_row(row++);
         }
+        op.size = op.indices.size();
 #pragma omp for ordered schedule(static, 1)
         for (int_t i = 0; i < nthread; ++i)
 #pragma omp ordered
@@ -186,28 +207,24 @@ void SparseOp::init_thread_sort_row(const int_t idet) {
 
 void SparseOp::init_thread_condense(SparseOp &op, const int_t ithread) {
     int_t i, start, end;
-    if (!ithread) {
-        op.data.swap(data);
-        op.indptr.swap(indptr);
-        op.indices.swap(indices);
-    } else if (nrow) {
-        // copy over data array
-        start = op.data.size();
-        op.data.resize(start + size);
-        std::memcpy(&op.data[start], &data[0], sizeof(double) * size);
-        std::vector<double>().swap(data);
-        // copy over indices array
-        start = op.indices.size();
-        op.indices.resize(start + size);
-        std::memcpy(&op.indices[start], &indices[0], sizeof(int_t) * size);
-        std::vector<int_t>().swap(indices);
-        // copy over indptr array
-        start = op.indptr.back();
-        end = indptr.size();
-        for (i = 1; i < end; ++i)
-            op.indptr.push_back(indptr[i] + start);
-        std::vector<int_t>().swap(indptr);
-    }
+    if (!nrow)
+        return;
+    // copy over data array
+    start = op.data.size();
+    op.data.resize(start + size);
+    std::memcpy(&op.data[start], &data[0], sizeof(double) * size);
+    std::vector<double>().swap(data);
+    // copy over indices array
+    start = op.indices.size();
+    op.indices.resize(start + size);
+    std::memcpy(&op.indices[start], &indices[0], sizeof(int_t) * size);
+    std::vector<int_t>().swap(indices);
+    // copy over indptr array
+    start = op.indptr.back();
+    end = indptr.size();
+    for (i = 1; i < end; ++i)
+        op.indptr.push_back(indptr[i] + start);
+    std::vector<int_t>().swap(indptr);
 }
 
 void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const int_t idet,
@@ -229,15 +246,15 @@ void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const int
         for (j = 0; j < wfn.nvir_up; ++j) {
             // compute single/"pair"-excited elements
             l = virs[j];
-            excite_det(k, l, &det[0]);
-            jdet = wfn.index_det(&det[0]);
+            excite_det(k, l, det);
+            jdet = wfn.index_det(det);
             // check if excited determinant is in wfn
             if ((jdet != -1) && (jdet < ncol)) {
                 // add single/"pair"-excited matrix element
                 data.push_back(ham.v[k * wfn.nbasis + l]);
                 indices.push_back(jdet);
             }
-            excite_det(l, k, &det[0]);
+            excite_det(l, k, det);
         }
     }
     // add diagonal element to matrix
@@ -262,10 +279,10 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const i
     int_t *occs_dn = occs_up + wfn.nocc_up;
     int_t *virs_dn = virs_up + wfn.nvir_up;
     std::memcpy(det_up, rdet_up, sizeof(uint_t) * wfn.nword2);
-    fill_occs(wfn.nword, rdet_up, &occs_up[0]);
-    fill_occs(wfn.nword, rdet_dn, &occs_dn[0]);
-    fill_virs(wfn.nword, wfn.nbasis, rdet_up, &virs_up[0]);
-    fill_virs(wfn.nword, wfn.nbasis, rdet_dn, &virs_dn[0]);
+    fill_occs(wfn.nword, rdet_up, occs_up);
+    fill_occs(wfn.nword, rdet_dn, occs_dn);
+    fill_virs(wfn.nword, wfn.nbasis, rdet_up, virs_up);
+    fill_virs(wfn.nword, wfn.nbasis, rdet_dn, virs_dn);
     // loop over spin-up occupied indices
     for (i = 0; i < wfn.nocc_up; ++i) {
         ii = occs_up[i];
@@ -466,8 +483,8 @@ void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const in
                 for (l = j + 1; l < wfn.nvir; ++l) {
                     ll = virs[l];
                     // double excitation elements
-                    excite_det(kk, ll, &det[0]);
-                    jdet = wfn.index_det(&det[0]);
+                    excite_det(kk, ll, det);
+                    jdet = wfn.index_det(det);
                     // check if double excited determinant is in wfn
                     if ((jdet != -1) && (jdet < ncol)) {
                         // add double matrix element
@@ -476,10 +493,10 @@ void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const in
                                         ham.two_mo[koffset + n1 * ll + jj]));
                         indices.push_back(jdet);
                     }
-                    excite_det(ll, kk, &det[0]);
+                    excite_det(ll, kk, det);
                 }
             }
-            excite_det(jj, ii, &det[0]);
+            excite_det(jj, ii, det);
         }
     }
     // add diagonal element to matrix
@@ -490,5 +507,51 @@ void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const in
     // add pointer to next row's indices
     indptr.push_back(indices.size());
 }
+
+namespace {
+
+void perform_op_thread(const double *data, const int_t *indptr, const int_t *indices,
+                       const double *x, double *y, const int_t start, const int_t end) {
+    int_t j, jstart, jend = indptr[start];
+    double val;
+    for (int_t i = start; i < end; ++i) {
+        jstart = jend;
+        jend = indptr[i + 1];
+        val = 0.0;
+        for (j = jstart; j < jend; ++j)
+            val += data[j] * x[indices[j]];
+        y[i] = val;
+    }
+}
+
+void perform_op_cepa0_thread(const double *data, const int_t *indptr, const int_t *indices,
+                             const double *x, double *y, const int_t start, const int_t end,
+                             const int_t refind, const double h_refind) {
+    int_t j, jstart, jend = indptr[start];
+    double val;
+    for (int_t i = start; i < end; ++i) {
+        jstart = jend;
+        jend = indptr[i + 1];
+        val = 0.0;
+        if (i == refind) {
+            for (j = jstart; j < jend; ++j) {
+                if (indices[j] == refind)
+                    val -= x[indices[j]];
+                else
+                    val += data[j] * x[indices[j]];
+            }
+        } else {
+            for (j = jstart; j < jend; ++j) {
+                if (indices[j] == i)
+                    val += (data[j] - h_refind) * x[indices[j]];
+                else if (indices[j] != refind)
+                    val += data[j] * x[indices[j]];
+            }
+        }
+        y[i] = -val;
+    }
+}
+
+} // namespace
 
 } // namespace pyci

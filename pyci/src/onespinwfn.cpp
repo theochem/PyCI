@@ -17,14 +17,8 @@
 #include <cstring>
 #include <fstream>
 #include <ios>
-#include <stdexcept>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include <omp.h>
-
-#include <parallel_hashmap/phmap.h>
 
 #include <SpookyV2.h>
 
@@ -44,12 +38,14 @@ OneSpinWfn::OneSpinWfn(const std::string &filename) {
     std::ifstream file;
     file.open(filename, std::ios::in | std::ios::binary);
     do {
-        if (!(file.read((char *)&n, sizeof(int_t)) && file.read((char *)&nb, sizeof(int_t)) &&
-              file.read((char *)&nu, sizeof(int_t)) && file.read((char *)&nd, sizeof(int_t))))
+        if (!(file.read(reinterpret_cast<char *>(&n), sizeof(int_t)) &&
+              file.read(reinterpret_cast<char *>(&nb), sizeof(int_t)) &&
+              file.read(reinterpret_cast<char *>(&nu), sizeof(int_t)) &&
+              file.read(reinterpret_cast<char *>(&nd), sizeof(int_t))))
             break;
         nword = nword_det(nb);
         dets.resize(nword * n);
-        if (file.read((char *)&dets[0], sizeof(uint_t) * nword * n))
+        if (file.read(reinterpret_cast<char *>(&dets[0]), sizeof(uint_t) * nword * n))
             failed = false;
     } while (false);
     file.close();
@@ -98,14 +94,29 @@ OneSpinWfn::OneSpinWfn(const int_t nb, const int_t nu, const int_t nd, const int
         dict[rank_det(&dets[i * nword])] = i;
 }
 
+OneSpinWfn::OneSpinWfn(const int_t nb, const int_t nu, const int_t nd, const Array<uint_t> array)
+    : OneSpinWfn(nb, nu, nd, array.request().shape[0],
+                 reinterpret_cast<const uint_t *>(array.request().ptr)) {
+}
+
+OneSpinWfn::OneSpinWfn(const int_t nb, const int_t nu, const int_t nd, const Array<int_t> array)
+    : OneSpinWfn(nb, nu, nd, array.request().shape[0],
+                 reinterpret_cast<const int_t *>(array.request().ptr)) {
+}
+
+const uint_t *OneSpinWfn::det_ptr(const int_t i) const {
+    return &dets[i * nword];
+}
+
 void OneSpinWfn::to_file(const std::string &filename) const {
     std::ofstream file;
     file.open(filename, std::ios::out | std::ios::binary);
-    bool success = file.write((char *)&ndet, sizeof(int_t)) &&
-                   file.write((char *)&nbasis, sizeof(int_t)) &&
-                   file.write((char *)&nocc_up, sizeof(int_t)) &&
-                   file.write((char *)&nocc_dn, sizeof(int_t)) &&
-                   file.write((char *)&dets[0], sizeof(uint_t) * ndet * nword);
+    bool success =
+        file.write(reinterpret_cast<const char *>(&ndet), sizeof(int_t)) &&
+        file.write(reinterpret_cast<const char *>(&nbasis), sizeof(int_t)) &&
+        file.write(reinterpret_cast<const char *>(&nocc_up), sizeof(int_t)) &&
+        file.write(reinterpret_cast<const char *>(&nocc_dn), sizeof(int_t)) &&
+        file.write(reinterpret_cast<const char *>(&dets[0]), sizeof(uint_t) * ndet * nword);
     file.close();
     if (!success)
         throw std::ios_base::failure("error writing file");
@@ -243,6 +254,70 @@ void OneSpinWfn::add_dets_from_wfn(const OneSpinWfn &wfn) {
 void OneSpinWfn::reserve(const int_t n) {
     dets.reserve(n * nword);
     dict.reserve(n);
+}
+
+Array<uint_t> OneSpinWfn::py_getitem(const int_t index) const {
+    Array<uint_t> array(nword);
+    copy_det(index, reinterpret_cast<uint_t *>(array.request().ptr));
+    return array;
+}
+
+Array<uint_t> OneSpinWfn::py_to_det_array(int_t start, int_t end) const {
+    if (start == -1) {
+        start = 0;
+        if (end == -1)
+            end = ndet;
+    } else if (end == -1) {
+        end = start;
+        start = 0;
+    }
+    Array<uint_t> array({end - start, nword});
+    to_det_array(start, end, reinterpret_cast<uint_t *>(array.request().ptr));
+    return array;
+}
+
+Array<int_t> OneSpinWfn::py_to_occ_array(int_t start, int_t end) const {
+    if (start == -1) {
+        start = 0;
+        if (end == -1)
+            end = ndet;
+    } else if (end == -1) {
+        end = start;
+        start = 0;
+    }
+    Array<int_t> array({end - start, nocc_up});
+    to_occ_array(start, end, reinterpret_cast<int_t *>(array.request().ptr));
+    return array;
+}
+
+int_t OneSpinWfn::py_index_det(const Array<uint_t> det) const {
+    return index_det(reinterpret_cast<const uint_t *>(det.request().ptr));
+}
+
+uint_t OneSpinWfn::py_rank_det(const Array<uint_t> det) const {
+    return rank_det(reinterpret_cast<const uint_t *>(det.request().ptr));
+}
+
+int_t OneSpinWfn::py_add_det(const Array<uint_t> det) {
+    return add_det(reinterpret_cast<const uint_t *>(det.request().ptr));
+}
+
+int_t OneSpinWfn::py_add_occs(const Array<int_t> occs) {
+    return add_det_from_occs(reinterpret_cast<const int_t *>(occs.request().ptr));
+}
+
+int_t OneSpinWfn::py_add_excited_dets(const int_t exc, const pybind11::object ref) {
+    std::vector<uint_t> v_ref;
+    uint_t *ptr;
+    if (ref.is(pybind11::none())) {
+        v_ref.resize(nword);
+        ptr = &v_ref[0];
+        fill_hartreefock_det(nocc_up, ptr);
+    } else
+        ptr = reinterpret_cast<uint_t *>(ref.cast<Array<uint_t>>().request().ptr);
+    int_t ndet_old = ndet;
+    add_excited_dets(ptr, exc);
+    return ndet - ndet_old;
 }
 
 } // namespace pyci

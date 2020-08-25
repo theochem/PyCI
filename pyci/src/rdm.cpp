@@ -16,7 +16,6 @@
 #include <pyci.h>
 
 #include <cstring>
-#include <vector>
 
 namespace pyci {
 

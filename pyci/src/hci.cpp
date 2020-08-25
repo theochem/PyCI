@@ -18,7 +18,6 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <vector>
 
 namespace pyci {
 
@@ -27,13 +26,13 @@ namespace {
 template<class WfnType>
 int_t add_hci_tmpl(const Ham &, WfnType &, const double *, const double);
 
-void hci_thread_add_dets(const Ham &, DOCIWfn &, DOCIWfn &, const double *, const double,
+void hci_thread_add_dets(const Ham &, const DOCIWfn &, DOCIWfn &, const double *, const double,
                          const int_t, uint_t *, int_t *, int_t *);
 
-void hci_thread_add_dets(const Ham &, FullCIWfn &, FullCIWfn &, const double *, const double,
+void hci_thread_add_dets(const Ham &, const FullCIWfn &, FullCIWfn &, const double *, const double,
                          const int_t, uint_t *, int_t *, int_t *);
 
-void hci_thread_add_dets(const Ham &, GenCIWfn &, GenCIWfn &, const double *, const double,
+void hci_thread_add_dets(const Ham &, const GenCIWfn &, GenCIWfn &, const double *, const double,
                          const int_t, uint_t *, int_t *, int_t *);
 
 } // namespace
@@ -55,10 +54,10 @@ namespace {
 template<class WfnType>
 int_t add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps) {
     int_t ndet_old = wfn.ndet;
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
 #pragma omp parallel
     {
+        int_t nthread = omp_get_max_threads();
+        int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
         int_t ithread = omp_get_thread_num();
         int_t start = ithread * chunksize;
         int_t end = (start + chunksize < ndet_old) ? start + chunksize : ndet_old;
@@ -66,9 +65,8 @@ int_t add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const dou
         std::vector<uint_t> det(wfn.nword2);
         std::vector<int_t> occs(wfn.nocc);
         std::vector<int_t> virs(wfn.nvir);
-        for (int_t i = start; i < end; ++i) {
+        for (int_t i = start; i < end; ++i)
             hci_thread_add_dets(ham, wfn, t_wfn, coeffs, eps, i, &det[0], &occs[0], &virs[0]);
-        }
 #pragma omp barrier
         (void)0;
 #pragma omp for ordered schedule(static, 1)
@@ -79,7 +77,7 @@ int_t add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const dou
     return wfn.ndet - ndet_old;
 }
 
-void hci_thread_add_dets(const Ham &ham, DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
+void hci_thread_add_dets(const Ham &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
                          const double eps, const int_t idet, uint_t *det, int_t *occs,
                          int_t *virs) {
     int_t i, j, k, l;
@@ -105,9 +103,9 @@ void hci_thread_add_dets(const Ham &ham, DOCIWfn &wfn, DOCIWfn &t_wfn, const dou
     }
 }
 
-void hci_thread_add_dets(const Ham &ham, FullCIWfn &wfn, FullCIWfn &t_wfn, const double *coeffs,
-                         const double eps, const int_t idet, uint_t *det_up, int_t *occs_up,
-                         int_t *virs_up) {
+void hci_thread_add_dets(const Ham &ham, const FullCIWfn &wfn, FullCIWfn &t_wfn,
+                         const double *coeffs, const double eps, const int_t idet, uint_t *det_up,
+                         int_t *occs_up, int_t *virs_up) {
     int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
     uint_t rank;
     int_t n1 = wfn.nbasis;
@@ -239,7 +237,7 @@ void hci_thread_add_dets(const Ham &ham, FullCIWfn &wfn, FullCIWfn &t_wfn, const
     }
 }
 
-void hci_thread_add_dets(const Ham &ham, GenCIWfn &wfn, GenCIWfn &t_wfn, const double *coeffs,
+void hci_thread_add_dets(const Ham &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, const double *coeffs,
                          const double eps, const int_t idet, uint_t *det, int_t *occs,
                          int_t *virs) {
     int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
