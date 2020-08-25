@@ -30,7 +30,7 @@ Dependencies
 
 The following programs/libraries are required to run PyCI:
 
--  Python_ (≥3.4)
+-  Python_ (≥3.6)
 -  NumPy_ (≥1.13)
 -  SciPy_ (≥1.0)
 -  Pytest_ (optional: to run tests)
@@ -38,8 +38,16 @@ The following programs/libraries are required to run PyCI:
 The following programs/libraries are required to build PyCI:
 
 -  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
--  Python_ (≥3.4, including C headers)
+-  Python_ (≥3.6, including C headers)
 -  NumPy_ (≥1.13, including C headers)
+
+Some header-only C++ libraries are included with this git repository:
+
+-  Pybind11_ (git submodule)
+-  `Parallel Hashmap`__ (git submodule)
+-  SpookyHash_ (files included directly)
+
+__ Parallel-Hashmap_
 
 The following programs/libraries are required to build the PyCI documentation:
 
@@ -47,15 +55,6 @@ The following programs/libraries are required to build the PyCI documentation:
 -  `Read the Docs Sphinx Theme`__
 
 __ Sphinx-RTD-Theme_
-
-The following header-only libraries are included as git submodules:
-
--  `Parallel Hashmap`__
--  Pybind11_
-
-__ Parallel-Hashmap_
-
-The SpookyHash_ library source files (Public Domain) are included directly.
 
 Installation
 ------------
