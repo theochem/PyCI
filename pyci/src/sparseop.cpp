@@ -33,36 +33,44 @@ void perform_op_cepa0_thread(const double *, const int_t *, const int_t *, const
 } // namespace
 
 SparseOp::SparseOp(const SparseOp &op)
-    : nrow(op.nrow), ncol(op.ncol), size(op.size), ecore(op.ecore), data(op.data),
+    : nrow(op.nrow), ncol(op.ncol), size(op.size), ecore(op.ecore), shape(op.shape), data(op.data),
       indices(op.indices), indptr(op.indptr) {
 }
 
 SparseOp::SparseOp(SparseOp &&op) noexcept
     : nrow(std::exchange(op.nrow, 0)), ncol(std::exchange(op.ncol, 0)),
       size(std::exchange(op.size, 0)), ecore(std::exchange(op.ecore, 0.0)),
-      data(std::move(op.data)), indices(std::move(op.indices)), indptr(std::move(op.indptr)) {
+      shape(std::move(op.shape)), data(std::move(op.data)), indices(std::move(op.indices)),
+      indptr(std::move(op.indptr)) {
 }
 
 SparseOp::SparseOp(const int_t rows, const int_t cols)
     : nrow(rows), ncol(cols), size(0), ecore(0.0) {
+    shape = pybind11::make_tuple(nrow, ncol).cast<pybind11::object>();
     indptr.push_back(0);
 }
 
 SparseOp::SparseOp(const Ham &ham, const DOCIWfn &wfn, const int_t rows, const int_t cols)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore) {
+    shape = pybind11::make_tuple(nrow, ncol).cast<pybind11::object>();
+    indptr.push_back(0);
     init<DOCIWfn>(ham, wfn, rows, cols);
 }
 
 SparseOp::SparseOp(const Ham &ham, const FullCIWfn &wfn, const int_t rows, const int_t cols)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore) {
+    shape = pybind11::make_tuple(nrow, ncol).cast<pybind11::object>();
+    indptr.push_back(0);
     init<FullCIWfn>(ham, wfn, rows, cols);
 }
 
 SparseOp::SparseOp(const Ham &ham, const GenCIWfn &wfn, const int_t rows, const int_t cols)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore) {
+    shape = pybind11::make_tuple(nrow, ncol).cast<pybind11::object>();
+    indptr.push_back(0);
     init<GenCIWfn>(ham, wfn, rows, cols);
 }
 
@@ -136,14 +144,20 @@ void SparseOp::rhs_cepa0(double *b, const int_t refind) const {
     }
 }
 
-Array<double> SparseOp::py_matvec(Array<double> x) const {
+Array<double> SparseOp::py_matvec(const Array<double> x) const {
     Array<double> y(nrow);
     perform_op(reinterpret_cast<const double *>(x.request().ptr),
                reinterpret_cast<double *>(y.request().ptr));
     return y;
 }
 
-Array<double> SparseOp::py_matvec_cepa0(Array<double> x, const int_t refind) const {
+Array<double> SparseOp::py_matvec_out(const Array<double> x, Array<double> y) const {
+    perform_op(reinterpret_cast<const double *>(x.request().ptr),
+               reinterpret_cast<double *>(y.request().ptr));
+    return y;
+}
+
+Array<double> SparseOp::py_matvec_cepa0(const Array<double> x, const int_t refind) const {
     Array<double> y(nrow);
     perform_op_cepa0(reinterpret_cast<const double *>(x.request().ptr),
                      reinterpret_cast<double *>(y.request().ptr), refind);
@@ -165,7 +179,6 @@ Array<double> SparseOp::py_rhs_cepa0(const int_t refind) const {
 
 template<class WfnType>
 void SparseOp::init(const Ham &ham, const WfnType &wfn, const int_t rows, const int_t cols) {
-    indptr.push_back(0);
 #pragma omp parallel
     {
         int_t nthread = omp_get_max_threads();

@@ -234,8 +234,7 @@ PYBIND11_MODULE(pyci, m) {
     sparse_op.def_readonly("ecore", &SparseOp::ecore);
     sparse_op.def_readonly("size", &SparseOp::size);
 
-    sparse_op.def_property_readonly(
-        "shape", [](const SparseOp &op) { return py::make_tuple(op.nrow, op.ncol); });
+    sparse_op.def_readonly("shape", &SparseOp::shape);
 
     sparse_op.def(py::init<const Ham &, const DOCIWfn &, const int_t, const int_t>(),
                   py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
@@ -247,6 +246,8 @@ PYBIND11_MODULE(pyci, m) {
                   py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
 
     sparse_op.def("__call__", &SparseOp::py_matvec, py::arg("x"));
+
+    sparse_op.def("__call__", &SparseOp::py_matvec_out, py::arg("x"), py::arg("out"));
 
     sparse_op.def("get_element", &SparseOp::get_element, py::arg("i"), py::arg("j"));
 

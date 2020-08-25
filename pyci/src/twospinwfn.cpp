@@ -190,21 +190,8 @@ int_t TwoSpinWfn::add_det_from_occs(const int_t *occs) {
 
 void TwoSpinWfn::add_hartreefock_det(void) {
     std::vector<uint_t> det(nword2);
-    int_t n = nocc_up, i = 0;
-    while (n >= PYCI_UINT_SIZE) {
-        det[i++] = PYCI_UINT_MAX;
-        n -= PYCI_UINT_SIZE;
-    }
-    if (n)
-        det[i] = (PYCI_UINT_ONE << n) - 1;
-    n = nocc_dn;
-    i = nword;
-    while (n >= PYCI_UINT_SIZE) {
-        det[i++] = PYCI_UINT_MAX;
-        n -= PYCI_UINT_SIZE;
-    }
-    if (n)
-        det[i] = (PYCI_UINT_ONE << n) - 1;
+    fill_hartreefock_det(nocc_up, &det[0]);
+    fill_hartreefock_det(nocc_dn, &det[nword]);
     add_det(&det[0]);
 }
 

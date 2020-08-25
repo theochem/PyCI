@@ -485,6 +485,7 @@ struct SparseOp final {
 public:
     int_t nrow, ncol, size;
     double ecore;
+    pybind11::object shape;
 
 private:
     std::vector<double> data;
@@ -521,6 +522,8 @@ public:
     void rhs_cepa0(double *, const int_t) const;
 
     Array<double> py_matvec(const Array<double>) const;
+
+    Array<double> py_matvec_out(const Array<double>, Array<double>) const;
 
     Array<double> py_matvec_cepa0(const Array<double>, const int_t) const;
 
