@@ -21,14 +21,14 @@
 
 namespace pyci {
 
-typedef hashmap<uint_t, std::pair<double, double>> p_hashmap;
+typedef HashMap<uint_t, std::pair<double, double>> PairHashMap;
 
 namespace {
 
 template<class WfnType>
 double compute_enpt2_tmpl(const Ham &, const WfnType &, const double *, const double, const double);
 
-void compute_enpt2_thread_condense(p_hashmap &, p_hashmap &, const int_t);
+void compute_enpt2_thread_condense(PairHashMap &, PairHashMap &, const int_t);
 
 void compute_enpt2_thread_gather(const FullCIWfn &, const double *, const double *,
                                  std::pair<double, double> &, const double, const int_t,
@@ -38,10 +38,10 @@ void compute_enpt2_thread_gather(const GenCIWfn &, const double *, const double 
                                  std::pair<double, double> &, const double, const int_t,
                                  const int_t, const int_t *);
 
-void compute_enpt2_thread_terms(const Ham &, const FullCIWfn &, p_hashmap &, const double *,
+void compute_enpt2_thread_terms(const Ham &, const FullCIWfn &, PairHashMap &, const double *,
                                 const double, const int_t, uint_t *, int_t *, int_t *, int_t *);
 
-void compute_enpt2_thread_terms(const Ham &, const GenCIWfn &, p_hashmap &, const double *,
+void compute_enpt2_thread_terms(const Ham &, const GenCIWfn &, PairHashMap &, const double *,
                                 const double, const int_t, uint_t *, int_t *, int_t *, int_t *);
 
 } // namespace
@@ -66,12 +66,12 @@ namespace {
 template<class WfnType>
 double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coeffs,
                           const double energy, const double eps) {
-    p_hashmap terms;
+    PairHashMap terms;
 #pragma omp parallel
     {
         int_t nthread = omp_get_max_threads();
         int_t chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
-        p_hashmap t_terms;
+        PairHashMap t_terms;
         int_t ithread = omp_get_thread_num();
         int_t start = ithread * chunksize;
         int_t end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
@@ -94,14 +94,14 @@ double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coef
     return result;
 }
 
-void compute_enpt2_thread_condense(p_hashmap &terms, p_hashmap &t_terms, const int_t ithread) {
+void compute_enpt2_thread_condense(PairHashMap &terms, PairHashMap &t_terms, const int_t ithread) {
     std::pair<double, double> *pair;
     for (auto &keyval : t_terms) {
         pair = &terms[keyval.first];
         pair->first += keyval.second.first;
         pair->second = keyval.second.second;
     }
-    p_hashmap().swap(t_terms);
+    PairHashMap().swap(t_terms);
 }
 
 void compute_enpt2_thread_gather(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
@@ -143,7 +143,7 @@ void compute_enpt2_thread_gather(const FullCIWfn &wfn, const double *one_mo, con
     term.second = diag;
 }
 
-void compute_enpt2_thread_terms(const Ham &ham, const FullCIWfn &wfn, p_hashmap &terms,
+void compute_enpt2_thread_terms(const Ham &ham, const FullCIWfn &wfn, PairHashMap &terms,
                                 const double *coeffs, const double eps, const int_t idet,
                                 uint_t *det_up, int_t *occs_up, int_t *virs_up, int_t *t_up) {
     int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset, sign_up;
@@ -333,7 +333,7 @@ void compute_enpt2_thread_gather(const GenCIWfn &wfn, const double *one_mo, cons
     term.second = diag;
 }
 
-void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, p_hashmap &terms,
+void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, PairHashMap &terms,
                                 const double *coeffs, const double eps, const int_t idet,
                                 uint_t *det, int_t *occs, int_t *virs, int_t *tmps) {
     int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset;

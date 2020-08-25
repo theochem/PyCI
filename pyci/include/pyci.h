@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include <climits>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -34,21 +34,14 @@
 #define STRINGIZE(S) LITERAL(S)
 
 /* Define integer types, popcnt and ctz functions. */
-#define PYCI_INT_SIZE static_cast<std::int64_t>(sizeof(std::int64_t) * CHAR_BIT)
-#define PYCI_UINT_SIZE static_cast<std::int64_t>(sizeof(std::uint64_t) * CHAR_BIT)
-#define PYCI_INT_MAX static_cast<std::int64_t>(INT64_MAX)
-#define PYCI_UINT_MAX static_cast<std::uint64_t>(UINT64_MAX)
+#define PYCI_INT_SIZE static_cast<std::int64_t>(std::numeric_limits<std::int64_t>::digits)
+#define PYCI_UINT_SIZE static_cast<std::int64_t>(std::numeric_limits<std::uint64_t>::digits)
+#define PYCI_INT_MAX std::numeric_limits<std::int64_t>::max()
+#define PYCI_UINT_MAX std::numeric_limits<std::uint64_t>::max()
 #define PYCI_UINT_ZERO static_cast<std::uint64_t>(0U)
 #define PYCI_UINT_ONE static_cast<std::uint64_t>(1U)
-#if UINT64_MAX <= ULONG_MAX
 #define PYCI_POPCNT(X) __builtin_popcountl(X)
 #define PYCI_CTZ(X) __builtin_ctzl(X)
-#elif UINT64_MAX <= ULLONG_MAX
-#define PYCI_POPCNT(X) __builtin_popcountll(X)
-#define PYCI_CTZ(X) __builtin_ctzll(X)
-#else
-#error Integer type definitions in pyci.h are incompatible with your compiler.
-#endif
 
 /* Seed for SpookyHash. */
 #ifndef PYCI_SPOOKYHASH_SEED
@@ -65,7 +58,7 @@ typedef std::uint64_t uint_t;
 
 /* Hash map template type. */
 template<class KeyType, class ValueType>
-using hashmap = phmap::flat_hash_map<KeyType, ValueType>;
+using HashMap = phmap::flat_hash_map<KeyType, ValueType>;
 
 /* Pybind11 NumPy array type. */
 template<typename Scalar>
@@ -173,7 +166,7 @@ public:
 
 protected:
     std::vector<uint_t> dets;
-    hashmap<uint_t, int_t> dict;
+    HashMap<uint_t, int_t> dict;
 
 public:
     Wfn(const Wfn &);
