@@ -26,7 +26,7 @@ import pyci
 
 
 def test_doci_raises():
-    npt.assert_raises(ValueError, pyci.doci_wfn, 10, 11)
+    npt.assert_raises(ValueError, pyci.doci_wfn, 10, 11, 11)
 
 
 def test_fullci_raises():
@@ -40,7 +40,7 @@ def test_fullci_raises():
 def test_doci_to_from_file(nbasis, nocc):
     file1 = NamedTemporaryFile()
     file2 = NamedTemporaryFile()
-    wfn1 = pyci.doci_wfn(nbasis, nocc)
+    wfn1 = pyci.doci_wfn(nbasis, nocc, nocc)
     wfn1.add_all_dets()
     wfn1.to_file(file1.name)
     wfn2 = pyci.doci_wfn(file1.name)
@@ -50,27 +50,27 @@ def test_doci_to_from_file(nbasis, nocc):
 
 @pytest.mark.parametrize("nbasis, nocc", [(16, 8), (64, 1), (64, 4), (65, 1), (65, 4), (129, 3)])
 def test_doci_to_from_det_array(nbasis, nocc):
-    wfn1 = pyci.doci_wfn(nbasis, nocc)
+    wfn1 = pyci.doci_wfn(nbasis, nocc, nocc)
     wfn1.add_all_dets()
     det1 = wfn1.to_det_array()
-    wfn2 = pyci.doci_wfn(nbasis, nocc, det1)
+    wfn2 = pyci.doci_wfn(nbasis, nocc, nocc, det1)
     det2 = wfn2.to_det_array()
     npt.assert_allclose(det1, det2)
 
 
 @pytest.mark.parametrize("nbasis, nocc", [(16, 8), (64, 1), (64, 4), (65, 1), (65, 4), (129, 3)])
 def test_doci_to_from_occs_array(nbasis, nocc):
-    wfn1 = pyci.doci_wfn(nbasis, nocc)
+    wfn1 = pyci.doci_wfn(nbasis, nocc, nocc)
     wfn1.add_all_dets()
     occs1 = wfn1.to_occ_array()
-    wfn2 = pyci.doci_wfn(nbasis, nocc, occs1)
+    wfn2 = pyci.doci_wfn(nbasis, nocc, nocc, occs1)
     occs2 = wfn2.to_occ_array()
     npt.assert_allclose(occs1, occs2)
 
 
 @pytest.mark.parametrize("nbasis, nocc", [(16, 8), (64, 1), (64, 4), (65, 1), (65, 4), (129, 3)])
 def test_doci_copy(nbasis, nocc):
-    wfn1 = pyci.doci_wfn(nbasis, nocc)
+    wfn1 = pyci.doci_wfn(nbasis, nocc, nocc)
     wfn1.add_all_dets()
     wfn2 = wfn1.__class__(wfn1)
     det1 = wfn1.to_det_array()
@@ -80,7 +80,7 @@ def test_doci_copy(nbasis, nocc):
 
 @pytest.mark.parametrize("nbasis, nocc", [(16, 8), (64, 1), (64, 4), (65, 1), (65, 4), (129, 3)])
 def test_doci_add_all_dets(nbasis, nocc):
-    wfn = pyci.doci_wfn(nbasis, nocc)
+    wfn = pyci.doci_wfn(nbasis, nocc, nocc)
     wfn.add_all_dets()
     for det in wfn.to_det_array():
         assert pyci.popcnt(det) == wfn.nocc_up == wfn.nocc_dn == wfn.nocc // 2
@@ -89,7 +89,7 @@ def test_doci_add_all_dets(nbasis, nocc):
 
 @pytest.mark.parametrize("nbasis, nocc", [(16, 8), (64, 1), (64, 4), (65, 1), (65, 4), (129, 3)])
 def test_doci_add_excited_dets(nbasis, nocc):
-    wfn = pyci.doci_wfn(nbasis, nocc)
+    wfn = pyci.doci_wfn(nbasis, nocc, nocc)
     wfn.reserve(comb(wfn.nbasis, wfn.nocc_up, exact=True))
     length = 0
     for i in range(wfn.nocc_up + 1):
@@ -171,8 +171,6 @@ def test_fullci_add_excited_dets(nbasis, nocc_up, nocc_dn):
     ndet = comb(nbasis, nocc_up, exact=True) * comb(nbasis, nocc_dn, exact=True)
     wfn = pyci.fullci_wfn(nbasis, nocc_up, nocc_dn)
     wfn.reserve(ndet)
-    npt.assert_raises(IndexError, wfn.add_excited_dets, -1)
-    npt.assert_raises(IndexError, wfn.add_excited_dets, 100)
     for i in range(wfn.nocc_up + wfn.nocc_dn + 1):
         wfn.add_excited_dets(i)
     assert len(wfn) == ndet

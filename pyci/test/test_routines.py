@@ -38,15 +38,16 @@ def parity(p):
     "filename, wfn_type, occs, energy",
     [
         ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
-        ("li2_ccpvdz", pyci.doci_wfn, (3,), -14.878455349),
-        ("be_ccpvdz", pyci.doci_wfn, (2,), -14.600556994),
-        ("he_ccpvqz", pyci.doci_wfn, (1,), -2.886809116),
+
+        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
         ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
-        ("h2o_ccpvdz", pyci.doci_wfn, (5,), -75.634588422),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
     ],
 )
 def test_solve_sparse(filename, wfn_type, occs, energy):
-    ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
     es, cs = pyci.solve(ham, wfn, n=1, ncv=30, tol=1.0e-6)
@@ -57,15 +58,15 @@ def test_solve_sparse(filename, wfn_type, occs, energy):
     "filename, wfn_type, occs, energy",
     [
         ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
-        ("li2_ccpvdz", pyci.doci_wfn, (3,), -14.878455349),
-        ("be_ccpvdz", pyci.doci_wfn, (2,), -14.600556994),
-        ("he_ccpvqz", pyci.doci_wfn, (1,), -2.886809116),
+        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
         ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
-        ("h2o_ccpvdz", pyci.doci_wfn, (5,), -75.634588422),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
     ],
 )
 def test_sparse_rectangular(filename, wfn_type, occs, energy):
-    ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
     nrow = len(wfn) - 10
@@ -80,15 +81,15 @@ def test_sparse_rectangular(filename, wfn_type, occs, energy):
     "filename, wfn_type, occs, energy",
     [
         ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
-        ("li2_ccpvdz", pyci.doci_wfn, (3,), -14.878455349),
-        ("be_ccpvdz", pyci.doci_wfn, (2,), -14.600556994),
-        ("he_ccpvqz", pyci.doci_wfn, (1,), -2.886809116),
+        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
         ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
-        ("h2o_ccpvdz", pyci.doci_wfn, (5,), -75.634588422),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
     ],
 )
 def test_compute_rdms(filename, wfn_type, occs, energy):
-    ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
     es, cs = pyci.solve(ham, wfn, n=1, ncv=30, tol=1.0e-6)
@@ -132,15 +133,15 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
     "filename, wfn_type, occs, energy",
     [
         ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
-        ("li2_ccpvdz", pyci.doci_wfn, (3,), -14.878455349),
-        ("be_ccpvdz", pyci.doci_wfn, (2,), -14.600556994),
-        ("he_ccpvqz", pyci.doci_wfn, (1,), -2.886809116),
+        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
         ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
-        ("h2o_ccpvdz", pyci.doci_wfn, (5,), -75.634588422),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
     ],
 )
 def test_run_hci(filename, wfn_type, occs, energy):
-    ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_hartreefock_det()
     es, cs = pyci.solve(ham, wfn, n=1, tol=1.0e-6)
@@ -165,15 +166,15 @@ def test_run_hci(filename, wfn_type, occs, energy):
     "filename, wfn_type, occs, energy",
     [
         ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
-        ("li2_ccpvdz", pyci.doci_wfn, (3,), -14.878455349),
-        ("be_ccpvdz", pyci.doci_wfn, (2,), -14.600556994),
-        ("he_ccpvqz", pyci.doci_wfn, (1,), -2.886809116),
+        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
         ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
-        ("h2o_ccpvdz", pyci.doci_wfn, (5,), -75.634588422),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
     ],
 )
 def test_cepa0(filename, wfn_type, occs, energy):
-    ham = pyci.restricted_ham(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     pyci.add_excitations(wfn, *range(0, max(wfn.nocc - 1, 1)))
     op = pyci.sparse_op(ham, wfn)

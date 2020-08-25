@@ -15,8 +15,10 @@
 
 r"""PyCI module."""
 
-from .pyci import __version__
 from .pyci import *
+from .pyci import __version__
 
-from .utils import *
-from .routines import *
+from .fcidump import *
+from .integrals import *
+from .selected_ci import *
+from .solve import *

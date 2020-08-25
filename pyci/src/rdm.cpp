@@ -20,410 +20,418 @@
 
 namespace pyci {
 
-void OneSpinWfn::compute_rdms_doci(const double *coeffs, double *d0, double *d2) const {
-  // prepare working vectors
-  std::vector<uint_t> det(nword);
-  std::vector<int_t> occs(nocc);
-  std::vector<int_t> virs(nvir);
-  // fill rdms with zeros
-  int_t i = nbasis * nbasis, j = 0;
-  while (j < i) {
-    d0[j] = 0;
-    d2[j++] = 0;
-  }
-  // iterate over determinants
-  int_t idet, jdet, k, l;
-  double val1, val2;
-  for (idet = 0; idet < ndet; ++idet) {
-    // fill working vectors
-    copy_det(idet, &det[0]);
-    fill_occs(nword, &det[0], &occs[0]);
-    fill_virs(nword, nbasis, &det[0], &virs[0]);
-    // diagonal elements
-    val1 = coeffs[idet] * coeffs[idet];
-    for (i = 0; i < nocc; ++i) {
-      k = occs[i];
-      d0[k * (nbasis + 1)] += val1;
-      for (j = i + 1; j < nocc; ++j) {
-        l = occs[j];
-        d2[nbasis * k + l] += val1;
-        d2[nbasis * l + k] += val1;
-      }
-      // pair excitation elements
-      for (j = 0; j < nvir; ++j) {
-        l = virs[j];
-        excite_det(k, l, &det[0]);
-        jdet = index_det(&det[0]);
-        excite_det(l, k, &det[0]);
-        // check if excited determinant is in wfn
-        if (jdet > idet) {
-          val2 = coeffs[idet] * coeffs[jdet];
-          d0[nbasis * k + l] += val2;
-          d0[nbasis * l + k] += val2;
-        }
-      }
+void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2) {
+    // prepare working vectors
+    std::vector<uint_t> v_det(wfn.nword);
+    std::vector<int_t> v_occs(wfn.nocc_up);
+    std::vector<int_t> v_virs(wfn.nvir_up);
+    uint_t *det = &v_det[0];
+    int_t *occs = &v_occs[0], *virs = &v_virs[0];
+    // fill rdms with zeros
+    int_t i = wfn.nbasis * wfn.nbasis, j = 0;
+    while (j < i) {
+        d0[j] = 0;
+        d2[j++] = 0;
     }
-  }
+    // iterate over determinants
+    int_t idet, jdet, k, l;
+    double val1, val2;
+    for (idet = 0; idet < wfn.ndet; ++idet) {
+        // fill working vectors
+        wfn.copy_det(idet, det);
+        fill_occs(wfn.nword, det, occs);
+        fill_virs(wfn.nword, wfn.nbasis, det, virs);
+        // diagonal elements
+        val1 = coeffs[idet] * coeffs[idet];
+        for (i = 0; i < wfn.nocc_up; ++i) {
+            k = occs[i];
+            d0[k * (wfn.nbasis + 1)] += val1;
+            for (j = i + 1; j < wfn.nocc_up; ++j) {
+                l = occs[j];
+                d2[wfn.nbasis * k + l] += val1;
+                d2[wfn.nbasis * l + k] += val1;
+            }
+            // pair excitation elements
+            for (j = 0; j < wfn.nvir_up; ++j) {
+                l = virs[j];
+                excite_det(k, l, det);
+                jdet = wfn.index_det(det);
+                excite_det(l, k, det);
+                // check if excited determinant is in wfn
+                if (jdet > idet) {
+                    val2 = coeffs[idet] * coeffs[jdet];
+                    d0[wfn.nbasis * k + l] += val2;
+                    d0[wfn.nbasis * l + k] += val2;
+                }
+            }
+        }
+    }
 }
 
-void TwoSpinWfn::compute_rdms_fullci(const double *coeffs, double *aa, double *bb, double *aaaa,
-                                     double *bbbb, double *abab) const {
-  // prepare working vectors
-  std::vector<uint_t> det(nword2);
-  std::vector<int_t> occs_up(nocc_up);
-  std::vector<int_t> occs_dn(nocc_dn);
-  std::vector<int_t> virs_up(nvir_up);
-  std::vector<int_t> virs_dn(nvir_dn);
-  const uint_t *rdet_up, *rdet_dn;
-  uint_t *det_up = &det[0], *det_dn = &det[nword];
-  // fill rdms with zeros
-  int_t i = nbasis * nbasis, j = 0;
-  while (j < i) {
-    aa[j] = 0;
-    bb[j] = 0;
-    aaaa[j] = 0;
-    bbbb[j] = 0;
-    abab[j++] = 0;
-  }
-  i *= nbasis * nbasis;
-  while (j < i) {
-    aaaa[j] = 0;
-    bbbb[j] = 0;
-    abab[j++] = 0;
-  }
-  // iterate over determinants
-  int_t k, l, ii, jj, kk, ll, jdet, sign_up;
-  int_t n1 = nbasis;
-  int_t n2 = n1 * n1;
-  int_t n3 = n1 * n2;
-  double val1, val2;
-  for (int_t idet = 0; idet < ndet; ++idet) {
-    // fill working vectors
-    rdet_up = &dets[idet * nword2];
-    rdet_dn = rdet_up + nword;
-    std::memcpy(det_up, rdet_up, sizeof(uint_t) * nword2);
-    fill_occs(nword, rdet_up, &occs_up[0]);
-    fill_occs(nword, rdet_dn, &occs_dn[0]);
-    fill_virs(nword, nbasis, rdet_up, &virs_up[0]);
-    fill_virs(nword, nbasis, rdet_dn, &virs_dn[0]);
-    val1 = coeffs[idet] * coeffs[idet];
-    // loop over spin-up occupied indices
-    for (i = 0; i < nocc_up; ++i) {
-      ii = occs_up[i];
-      // compute 0-0 terms
-      // aa(ii, ii) += val1;
-      aa[(n1 + 1) * ii] += val1;
-      for (k = i + 1; k < nocc_up; ++k) {
-        kk = occs_up[k];
-        // aaaa(ii, kk, ii, kk) += val1;
-        aaaa[ii * n3 + kk * n2 + ii * n1 + kk] += val1;
-        // aaaa(ii, kk, kk, ii) -= val1;
-        aaaa[ii * n3 + kk * n2 + kk * n1 + ii] -= val1;
-        // aaaa(kk, ii, ii, kk) -= val1;
-        aaaa[kk * n3 + ii * n2 + ii * n1 + kk] -= val1;
-        // rdm2(kk, ii, kk, ii) -= val1;
-        aaaa[kk * n3 + ii * n2 + kk * n1 + ii] += val1;
-      }
-      for (k = 0; k < nocc_dn; ++k) {
-        kk = occs_dn[k];
-        // abab(ii, kk, ii, kk) += val1;
-        abab[ii * n3 + kk * n2 + ii * n1 + kk] += val1;
-      }
-      // loop over spin-up virtual indices
-      for (j = 0; j < nvir_up; ++j) {
-        jj = virs_up[j];
-        // 1-0 excitation elements
-        excite_det(ii, jj, det_up);
-        sign_up = phase_single_det(nword, ii, jj, rdet_up);
-        jdet = index_det(det_up);
-        // check if 1-0 excited determinant is in wfn
-        if (jdet > idet) {
-          // compute 1-0 terms
-          val2 = coeffs[idet] * coeffs[jdet] * sign_up;
-          // aa(ii, jj) += val2;
-          aa[ii * n1 + jj] += val2;
-          aa[jj * n1 + ii] += val2;
-          for (k = 0; k < nocc_up; ++k) {
-            if (i != k) {
-              kk = occs_up[k];
-              // aaaa(ii, kk, jj, kk) += val2;
-              aaaa[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
-              // aaaa(ii, kk, kk, jj) -= val2;
-              aaaa[ii * n3 + kk * n2 + kk * n1 + jj] -= val2;
-              // aaaa(kk, ii, kk, jj) += val2;
-              aaaa[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
-              // aaaa(kk, ii, jj, kk) -= val2;
-              aaaa[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
-              // aaaa(jj, kk, ii, kk) += val2;
-              aaaa[n3 * jj + n2 * kk + n1 * ii + kk] += val2;
-              // aaaa(jj, kk, kk, ii) -= val2;
-              aaaa[n3 * jj + n2 * kk + n1 * kk + ii] -= val2;
-              // aaaa(kk, jj, ii, kk) -= val2;
-              aaaa[n3 * kk + n2 * jj + n1 * ii + kk] -= val2;
-              // aaaa(kk, jj, kk, ii) += val2;
-              aaaa[n3 * kk + n2 * jj + n1 * kk + ii] += val2;
-            }
-          }
-          for (k = 0; k < nocc_dn; ++k) {
-            kk = occs_dn[k];
-            // abab(ii, kk, jj, kk) += val2;
-            abab[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
-            // abab(jj, kk, ii, kk) += val2;
-            abab[n3 * jj + kk * n2 + ii * n1 + kk] += val2;
-          }
-        }
-        // loop over spin-down occupied indices
-        for (k = 0; k < nocc_dn; ++k) {
-          kk = occs_dn[k];
-          // loop over spin-down virtual indices
-          for (l = 0; l < nvir_dn; ++l) {
-            ll = virs_dn[l];
-            // 1-1 excitation elements
-            excite_det(kk, ll, det_dn);
-            jdet = index_det(det_up);
-            // check if 1-1 excited determinant is in wfn
-            if (jdet > idet) {
-              // compute 1-1 terms
-              val2 =
-                  coeffs[idet] * coeffs[jdet] * sign_up * phase_single_det(nword, kk, ll, rdet_dn);
-              // abab(ii, kk, jj, ll) += val2;
-              abab[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
-              // abab(jj, ll, ii, kk) += val2;
-              abab[n3 * jj + n2 * ll + n1 * ii + kk] += val2;
-            }
-            excite_det(ll, kk, det_dn);
-          }
-        }
+void compute_rdms(const FullCIWfn &wfn, const double *coeffs, double *rdm1, double *rdm2) {
+    int_t n1 = wfn.nbasis;
+    int_t n2 = wfn.nbasis * wfn.nbasis;
+    int_t n3 = n1 * n2;
+    int_t n4 = n2 * n2;
+    double *aa = rdm1;
+    double *bb = aa + n2;
+    double *aaaa = rdm2;
+    double *bbbb = aaaa + n4;
+    double *abab = bbbb + n4;
+    // prepare working vectors
+    std::vector<uint_t> v_det(wfn.nword2);
+    std::vector<int_t> v_occs(wfn.nocc);
+    std::vector<int_t> v_virs(wfn.nvir);
+    const uint_t *rdet_up, *rdet_dn;
+    uint_t *det_up = &v_det[0], *det_dn = &v_det[wfn.nword];
+    int_t *occs_up = &v_occs[0], *occs_dn = &v_occs[wfn.nocc_up];
+    int_t *virs_up = &v_virs[0], *virs_dn = &v_virs[wfn.nvir_up];
+    // fill rdms with zeros
+    int_t i = 2 * n2;
+    int_t j = 0;
+    while (j < i)
+        rdm1[j++] = 0;
+    i = 3 * n4;
+    j = 0;
+    while (j < i)
+        rdm2[j++] = 0;
+    // iterate over determinants
+    int_t k, l, ii, jj, kk, ll, jdet, sign_up;
+    double val1, val2;
+    for (int_t idet = 0; idet < wfn.ndet; ++idet) {
+        // fill working vectors
+        rdet_up = wfn.det_ptr(idet);
+        rdet_dn = rdet_up + wfn.nword;
+        std::memcpy(det_up, rdet_up, sizeof(uint_t) * wfn.nword2);
+        fill_occs(wfn.nword, rdet_up, occs_up);
+        fill_occs(wfn.nword, rdet_dn, occs_dn);
+        fill_virs(wfn.nword, n1, rdet_up, virs_up);
+        fill_virs(wfn.nword, n1, rdet_dn, virs_dn);
+        val1 = coeffs[idet] * coeffs[idet];
         // loop over spin-up occupied indices
-        for (k = i + 1; k < nocc_up; ++k) {
-          kk = occs_up[k];
-          // loop over spin-up virtual indices
-          for (l = j + 1; l < nvir_up; ++l) {
-            ll = virs_up[l];
-            // 2-0 excitation elements
-            excite_det(kk, ll, det_up);
-            jdet = index_det(det_up);
-            // check if 2-0 excited determinant is in wfn
-            if (jdet > idet) {
-              // compute 2-0 terms
-              val2 = coeffs[idet] * coeffs[jdet] * phase_double_det(nword, ii, kk, jj, ll, rdet_up);
-              // aaaa(ii, kk, jj, ll) += val2;
-              aaaa[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
-              // aaaa(ii, kk, ll, jj) -= val2;
-              aaaa[ii * n3 + kk * n2 + ll * n1 + jj] -= val2;
-              // aaaa(kk, ii, jj, ll) -= val2;
-              aaaa[n3 * kk + n2 * ii + n1 * jj + ll] -= val2;
-              // aaaa(kk, ii, ll, jj) += val2;
-              aaaa[n3 * kk + n2 * ii + n1 * ll + jj] += val2;
-              // aaaa(jj, ll, ii, kk) += val2;
-              aaaa[jj * n3 + ll * n2 + ii * n1 + kk] += val2;
-              // aaaa(jj, ll, kk, ii) -= val2;
-              aaaa[jj * n3 + ll * n2 + kk * n1 + ii] -= val2;
-              // aaaa(ll, jj, ii, kk) -= val2;
-              aaaa[n3 * ll + n2 * jj + n1 * ii + kk] -= val2;
-              // aaaa(ll, jj, kk, ii) += val2;
-              aaaa[n3 * ll + n2 * jj + n1 * kk + ii] += val2;
+        for (i = 0; i < wfn.nocc_up; ++i) {
+            ii = occs_up[i];
+            // compute 0-0 terms
+            // aa(ii, ii) += val1;
+            aa[(n1 + 1) * ii] += val1;
+            for (k = i + 1; k < wfn.nocc_up; ++k) {
+                kk = occs_up[k];
+                // aaaa(ii, kk, ii, kk) += val1;
+                aaaa[ii * n3 + kk * n2 + ii * n1 + kk] += val1;
+                // aaaa(ii, kk, kk, ii) -= val1;
+                aaaa[ii * n3 + kk * n2 + kk * n1 + ii] -= val1;
+                // aaaa(kk, ii, ii, kk) -= val1;
+                aaaa[kk * n3 + ii * n2 + ii * n1 + kk] -= val1;
+                // rdm2(kk, ii, kk, ii) -= val1;
+                aaaa[kk * n3 + ii * n2 + kk * n1 + ii] += val1;
             }
-            excite_det(ll, kk, det_up);
-          }
-        }
-        excite_det(jj, ii, det_up);
-      }
-    }
-    // loop over spin-down occupied indices
-    for (i = 0; i < nocc_dn; ++i) {
-      ii = occs_dn[i];
-      // compute 0-0 terms
-      // bb(ii, ii) += val1;
-      bb[(n1 + 1) * ii] += val1;
-      for (k = i + 1; k < nocc_dn; ++k) {
-        kk = occs_dn[k];
-        // bbbb(ii, kk, ii, kk) += val1;
-        bbbb[ii * n3 + kk * n2 + ii * n1 + kk] += val1;
-        // bbbb(ii, kk, kk, ii) -= val1;
-        bbbb[ii * n3 + kk * n2 + kk * n1 + ii] -= val1;
-        bbbb[kk * n3 + ii * n2 + ii * n1 + kk] -= val1;
-        // rdm2(ii, kk, kk, ii) -= val1;
-        bbbb[kk * n3 + ii * n2 + kk * n1 + ii] += val1;
-      }
-      // loop over spin-down virtual indices
-      for (j = 0; j < nvir_dn; ++j) {
-        jj = virs_dn[j];
-        // 0-1 excitation elements
-        excite_det(ii, jj, det_dn);
-        jdet = index_det(det_up);
-        // check if 0-1 excited determinant is in wfn
-        if (jdet > idet) {
-          // compute 0-1 terms
-          val2 = coeffs[idet] * coeffs[jdet] * phase_single_det(nword, ii, jj, rdet_dn);
-          // bb(ii, jj) += val2;
-          bb[ii * n1 + jj] += val2;
-          bb[jj * n1 + ii] += val2;
-          for (k = 0; k < nocc_up; ++k) {
-            kk = occs_up[k];
-            // abab(ii, kk, jj, kk) += val2;
-            abab[n3 * kk + n2 * ii + kk * n1 + jj] += val2;
-            // abab(kk, jj, kk, ii) += val2;
-            abab[n3 * kk + jj * n2 + kk * n1 + ii] += val2;
-          }
-          for (k = 0; k < nocc_dn; ++k) {
-            if (i != k) {
-              kk = occs_dn[k];
-              // bbbb(ii, kk, jj, kk) += val2;
-              bbbb[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
-              // bbbb(ii, kk, kk, jj) -= val2;
-              bbbb[ii * n3 + kk * n2 + kk * n1 + jj] -= val2;
-              // bbbb(kk, ii, kk, jj) += val2;
-              bbbb[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
-              // bbbb(kk, ii, jj, kk) -= val2;
-              bbbb[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
-              // bbbb(jj, kk, ii, kk) += val2;
-              bbbb[n3 * jj + n2 * kk + n1 * ii + kk] += val2;
-              // bbbb(jj, kk, kk, ii) -= val2;
-              bbbb[n3 * jj + n2 * kk + n1 * kk + ii] -= val2;
-              // bbbb(kk, jj, ii, kk) -= val2;
-              bbbb[n3 * kk + n2 * jj + n1 * ii + kk] -= val2;
-              // bbbb(kk, jj, kk, ii) += val2;
-              bbbb[n3 * kk + n2 * jj + n1 * kk + ii] += val2;
+            for (k = 0; k < wfn.nocc_dn; ++k) {
+                kk = occs_dn[k];
+                // abab(ii, kk, ii, kk) += val1;
+                abab[ii * n3 + kk * n2 + ii * n1 + kk] += val1;
             }
-          }
+            // loop over spin-up virtual indices
+            for (j = 0; j < wfn.nvir_up; ++j) {
+                jj = virs_up[j];
+                // 1-0 excitation elements
+                excite_det(ii, jj, det_up);
+                sign_up = phase_single_det(wfn.nword, ii, jj, rdet_up);
+                jdet = wfn.index_det(det_up);
+                // check if 1-0 excited determinant is in wfn
+                if (jdet > idet) {
+                    // compute 1-0 terms
+                    val2 = coeffs[idet] * coeffs[jdet] * sign_up;
+                    // aa(ii, jj) += val2;
+                    aa[ii * n1 + jj] += val2;
+                    aa[jj * n1 + ii] += val2;
+                    for (k = 0; k < wfn.nocc_up; ++k) {
+                        if (i != k) {
+                            kk = occs_up[k];
+                            // aaaa(ii, kk, jj, kk) += val2;
+                            aaaa[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
+                            // aaaa(ii, kk, kk, jj) -= val2;
+                            aaaa[ii * n3 + kk * n2 + kk * n1 + jj] -= val2;
+                            // aaaa(kk, ii, kk, jj) += val2;
+                            aaaa[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
+                            // aaaa(kk, ii, jj, kk) -= val2;
+                            aaaa[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
+                            // aaaa(jj, kk, ii, kk) += val2;
+                            aaaa[n3 * jj + n2 * kk + n1 * ii + kk] += val2;
+                            // aaaa(jj, kk, kk, ii) -= val2;
+                            aaaa[n3 * jj + n2 * kk + n1 * kk + ii] -= val2;
+                            // aaaa(kk, jj, ii, kk) -= val2;
+                            aaaa[n3 * kk + n2 * jj + n1 * ii + kk] -= val2;
+                            // aaaa(kk, jj, kk, ii) += val2;
+                            aaaa[n3 * kk + n2 * jj + n1 * kk + ii] += val2;
+                        }
+                    }
+                    for (k = 0; k < wfn.nocc_dn; ++k) {
+                        kk = occs_dn[k];
+                        // abab(ii, kk, jj, kk) += val2;
+                        abab[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
+                        // abab(jj, kk, ii, kk) += val2;
+                        abab[n3 * jj + kk * n2 + ii * n1 + kk] += val2;
+                    }
+                }
+                // loop over spin-down occupied indices
+                for (k = 0; k < wfn.nocc_dn; ++k) {
+                    kk = occs_dn[k];
+                    // loop over spin-down virtual indices
+                    for (l = 0; l < wfn.nvir_dn; ++l) {
+                        ll = virs_dn[l];
+                        // 1-1 excitation elements
+                        excite_det(kk, ll, det_dn);
+                        jdet = wfn.index_det(det_up);
+                        // check if 1-1 excited determinant is in wfn
+                        if (jdet > idet) {
+                            // compute 1-1 terms
+                            val2 = coeffs[idet] * coeffs[jdet] * sign_up *
+                                   phase_single_det(wfn.nword, kk, ll, rdet_dn);
+                            // abab(ii, kk, jj, ll) += val2;
+                            abab[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
+                            // abab(jj, ll, ii, kk) += val2;
+                            abab[n3 * jj + n2 * ll + n1 * ii + kk] += val2;
+                        }
+                        excite_det(ll, kk, det_dn);
+                    }
+                }
+                // loop over spin-up occupied indices
+                for (k = i + 1; k < wfn.nocc_up; ++k) {
+                    kk = occs_up[k];
+                    // loop over spin-up virtual indices
+                    for (l = j + 1; l < wfn.nvir_up; ++l) {
+                        ll = virs_up[l];
+                        // 2-0 excitation elements
+                        excite_det(kk, ll, det_up);
+                        jdet = wfn.index_det(det_up);
+                        // check if 2-0 excited determinant is in wfn
+                        if (jdet > idet) {
+                            // compute 2-0 terms
+                            val2 = coeffs[idet] * coeffs[jdet] *
+                                   phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up);
+                            // aaaa(ii, kk, jj, ll) += val2;
+                            aaaa[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
+                            // aaaa(ii, kk, ll, jj) -= val2;
+                            aaaa[ii * n3 + kk * n2 + ll * n1 + jj] -= val2;
+                            // aaaa(kk, ii, jj, ll) -= val2;
+                            aaaa[n3 * kk + n2 * ii + n1 * jj + ll] -= val2;
+                            // aaaa(kk, ii, ll, jj) += val2;
+                            aaaa[n3 * kk + n2 * ii + n1 * ll + jj] += val2;
+                            // aaaa(jj, ll, ii, kk) += val2;
+                            aaaa[jj * n3 + ll * n2 + ii * n1 + kk] += val2;
+                            // aaaa(jj, ll, kk, ii) -= val2;
+                            aaaa[jj * n3 + ll * n2 + kk * n1 + ii] -= val2;
+                            // aaaa(ll, jj, ii, kk) -= val2;
+                            aaaa[n3 * ll + n2 * jj + n1 * ii + kk] -= val2;
+                            // aaaa(ll, jj, kk, ii) += val2;
+                            aaaa[n3 * ll + n2 * jj + n1 * kk + ii] += val2;
+                        }
+                        excite_det(ll, kk, det_up);
+                    }
+                }
+                excite_det(jj, ii, det_up);
+            }
         }
         // loop over spin-down occupied indices
-        for (k = i + 1; k < nocc_dn; ++k) {
-          kk = occs_dn[k];
-          // loop over spin-down virtual indices
-          for (l = j + 1; l < nvir_dn; ++l) {
-            ll = virs_dn[l];
-            // 0-2 excitation elements
-            excite_det(kk, ll, det_dn);
-            jdet = index_det(det_up); // ALI I changed this to det_dn.
-            // check if excited determinant is in wfn
-            if (jdet > idet) {
-              // compute 2-0 terms
-              val2 = coeffs[idet] * coeffs[jdet] * phase_double_det(nword, ii, kk, jj, ll, rdet_dn);
-              // bbbb(ii, kk, jj, ll) += val2;
-              bbbb[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
-              // bbbb(ii, kk, ll, jj) -= val2;
-              bbbb[ii * n3 + kk * n2 + ll * n1 + jj] -= val2;
-              // bbbb(kk, ii, jj, ll) -= val2;
-              bbbb[n3 * kk + n2 * ii + n1 * jj + ll] -= val2;
-              // bbbb(kk, ii, ll, jj) += val2;
-              bbbb[n3 * kk + n2 * ii + n1 * ll + jj] += val2;
-              // bbbb(jj, ll, ii, kk) += val2;
-              bbbb[jj * n3 + ll * n2 + ii * n1 + kk] += val2;
-              // bbbb(ll, jj, ii, kk) -= val2;
-              bbbb[n3 * ll + n2 * jj + n1 * ii + kk] -= val2;
-              // bbbb(jj, ll, kk, ii) -= val2;
-              bbbb[jj * n3 + ll * n2 + kk * n1 + ii] -= val2;
-              // bbbb(ll, jj, kk, ii) += val2;
-              bbbb[n3 * ll + n2 * jj + n1 * kk + ii] += val2;
+        for (i = 0; i < wfn.nocc_dn; ++i) {
+            ii = occs_dn[i];
+            // compute 0-0 terms
+            // bb(ii, ii) += val1;
+            bb[(n1 + 1) * ii] += val1;
+            for (k = i + 1; k < wfn.nocc_dn; ++k) {
+                kk = occs_dn[k];
+                // bbbb(ii, kk, ii, kk) += val1;
+                bbbb[ii * n3 + kk * n2 + ii * n1 + kk] += val1;
+                // bbbb(ii, kk, kk, ii) -= val1;
+                bbbb[ii * n3 + kk * n2 + kk * n1 + ii] -= val1;
+                bbbb[kk * n3 + ii * n2 + ii * n1 + kk] -= val1;
+                // rdm2(ii, kk, kk, ii) -= val1;
+                bbbb[kk * n3 + ii * n2 + kk * n1 + ii] += val1;
             }
-            excite_det(ll, kk, det_dn);
-          }
+            // loop over spin-down virtual indices
+            for (j = 0; j < wfn.nvir_dn; ++j) {
+                jj = virs_dn[j];
+                // 0-1 excitation elements
+                excite_det(ii, jj, det_dn);
+                jdet = wfn.index_det(det_up);
+                // check if 0-1 excited determinant is in wfn
+                if (jdet > idet) {
+                    // compute 0-1 terms
+                    val2 =
+                        coeffs[idet] * coeffs[jdet] * phase_single_det(wfn.nword, ii, jj, rdet_dn);
+                    // bb(ii, jj) += val2;
+                    bb[ii * n1 + jj] += val2;
+                    bb[jj * n1 + ii] += val2;
+                    for (k = 0; k < wfn.nocc_up; ++k) {
+                        kk = occs_up[k];
+                        // abab(ii, kk, jj, kk) += val2;
+                        abab[n3 * kk + n2 * ii + kk * n1 + jj] += val2;
+                        // abab(kk, jj, kk, ii) += val2;
+                        abab[n3 * kk + jj * n2 + kk * n1 + ii] += val2;
+                    }
+                    for (k = 0; k < wfn.nocc_dn; ++k) {
+                        if (i != k) {
+                            kk = occs_dn[k];
+                            // bbbb(ii, kk, jj, kk) += val2;
+                            bbbb[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
+                            // bbbb(ii, kk, kk, jj) -= val2;
+                            bbbb[ii * n3 + kk * n2 + kk * n1 + jj] -= val2;
+                            // bbbb(kk, ii, kk, jj) += val2;
+                            bbbb[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
+                            // bbbb(kk, ii, jj, kk) -= val2;
+                            bbbb[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
+                            // bbbb(jj, kk, ii, kk) += val2;
+                            bbbb[n3 * jj + n2 * kk + n1 * ii + kk] += val2;
+                            // bbbb(jj, kk, kk, ii) -= val2;
+                            bbbb[n3 * jj + n2 * kk + n1 * kk + ii] -= val2;
+                            // bbbb(kk, jj, ii, kk) -= val2;
+                            bbbb[n3 * kk + n2 * jj + n1 * ii + kk] -= val2;
+                            // bbbb(kk, jj, kk, ii) += val2;
+                            bbbb[n3 * kk + n2 * jj + n1 * kk + ii] += val2;
+                        }
+                    }
+                }
+                // loop over spin-down occupied indices
+                for (k = i + 1; k < wfn.nocc_dn; ++k) {
+                    kk = occs_dn[k];
+                    // loop over spin-down virtual indices
+                    for (l = j + 1; l < wfn.nvir_dn; ++l) {
+                        ll = virs_dn[l];
+                        // 0-2 excitation elements
+                        excite_det(kk, ll, det_dn);
+                        jdet = wfn.index_det(det_up); // ALI I changed this to det_dn.
+                        // check if excited determinant is in wfn
+                        if (jdet > idet) {
+                            // compute 2-0 terms
+                            val2 = coeffs[idet] * coeffs[jdet] *
+                                   phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn);
+                            // bbbb(ii, kk, jj, ll) += val2;
+                            bbbb[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
+                            // bbbb(ii, kk, ll, jj) -= val2;
+                            bbbb[ii * n3 + kk * n2 + ll * n1 + jj] -= val2;
+                            // bbbb(kk, ii, jj, ll) -= val2;
+                            bbbb[n3 * kk + n2 * ii + n1 * jj + ll] -= val2;
+                            // bbbb(kk, ii, ll, jj) += val2;
+                            bbbb[n3 * kk + n2 * ii + n1 * ll + jj] += val2;
+                            // bbbb(jj, ll, ii, kk) += val2;
+                            bbbb[jj * n3 + ll * n2 + ii * n1 + kk] += val2;
+                            // bbbb(ll, jj, ii, kk) -= val2;
+                            bbbb[n3 * ll + n2 * jj + n1 * ii + kk] -= val2;
+                            // bbbb(jj, ll, kk, ii) -= val2;
+                            bbbb[jj * n3 + ll * n2 + kk * n1 + ii] -= val2;
+                            // bbbb(ll, jj, kk, ii) += val2;
+                            bbbb[n3 * ll + n2 * jj + n1 * kk + ii] += val2;
+                        }
+                        excite_det(ll, kk, det_dn);
+                    }
+                }
+                excite_det(jj, ii, det_dn);
+            }
         }
-        excite_det(jj, ii, det_dn);
-      }
     }
-  }
 }
 
-void OneSpinWfn::compute_rdms_genci(const double *coeffs, double *rdm1, double *rdm2) const {
-  // prepare working vectors
-  std::vector<uint_t> det(nword);
-  std::vector<int_t> occs(nocc);
-  std::vector<int_t> virs(nvir);
-  const uint_t *rdet;
-  // fill rdms with zeros
-  int_t i = nbasis * nbasis, j = 0;
-  while (j < i) {
-    rdm1[j] = 0;
-    rdm2[j++] = 0;
-  }
-  i *= nbasis * nbasis;
-  while (j < i)
-    rdm2[j++] = 0;
-  // loop over determinants
-  int_t k, l, ii, jj, kk, ll, jdet;
-  int_t n1 = nbasis;
-  int_t n2 = n1 * n1;
-  int_t n3 = n1 * n2;
-  double val1, val2;
-  for (int_t idet = 0; idet < ndet; ++idet) {
-    // fill working vectors
-    rdet = &dets[idet * nword];
-    std::memcpy(&det[0], rdet, sizeof(uint_t) * nword);
-    fill_occs(nword, rdet, &occs[0]);
-    fill_virs(nword, nbasis, rdet, &virs[0]);
-    val1 = coeffs[idet] * coeffs[idet];
-    // loop over occupied indices
-    for (i = 0; i < nocc; ++i) {
-      ii = occs[i];
-      // compute diagonal terms
-      // rdm1(ii, ii) += val1;
-      rdm1[(n1 + 1) * ii] += val1;
-      // k = i + 1; because symmetric matrix and that when k == i, it is zero
-      for (k = i + 1; k < nocc; ++k) {
-        kk = occs[k];
-        // rdm2(ii, kk, ii, kk) += val1;
-        rdm2[ii * n3 + kk * n2 + ii * n1 + kk] += val1;
-        // rdm2(ii, kk, kk, ii) -= val1;
-        rdm2[ii * n3 + kk * n2 + kk * n1 + ii] -= val1;
-        // rdm2(kk, ii, ii, kk) += val1;
-        rdm2[kk * n3 + ii * n2 + ii * n1 + kk] -= val1;
-        // rdm2(kk, ii, kk, ii) -= val1;
-        rdm2[kk * n3 + ii * n2 + kk * n1 + kk] += val1;
-      }
-      // loop over virtual indices
-      for (j = 0; j < nvir; ++j) {
-        jj = virs[j];
-        // single excitation elements
-        excite_det(ii, jj, &det[0]);
-        jdet = index_det(&det[0]);
-        // check if singly-excited determinant is in wfn
-        if (jdet != -1) {
-          // compute single excitation terms
-          val2 = coeffs[idet] * coeffs[jdet] * phase_single_det(nword, ii, jj, rdet);
-          // rdm1(ii, jj) += val2;
-          rdm1[ii * n1 + jj] += val2;
-          for (k = 0; k < nocc; ++k) {
-            if (i != k) {
-              kk = occs[k];
-              // rdm2(ii, kk, jj, kk) += val2;
-              rdm2[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
-              // rdm2(ii, kk, kk, jj) -= val2;
-              rdm2[ii * n3 + kk * n2 + kk * n2 + jj] -= val2;
-              // rdm2(kk, ii, jj, kk) -= val2;
-              rdm2[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
-              // rdm2(kk, ii, kk, jj) -= val2;
-              rdm2[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
-            }
-          }
-        }
+void compute_rdms(const GenCIWfn &wfn, const double *coeffs, double *rdm1, double *rdm2) {
+    int_t n1 = wfn.nbasis;
+    int_t n2 = wfn.nbasis * wfn.nbasis;
+    int_t n3 = n1 * n2;
+    int_t n4 = n2 * n2;
+    // prepare working vectors
+    std::vector<uint_t> v_det(wfn.nword);
+    std::vector<int_t> v_occs(wfn.nocc);
+    std::vector<int_t> v_virs(wfn.nvir);
+    const uint_t *rdet;
+    uint_t *det = &v_det[0];
+    int_t *occs = &v_occs[0], *virs = &v_virs[0];
+    // fill rdms with zeros
+    int_t i = 2 * n2;
+    int_t j = 0;
+    while (j < i)
+        rdm1[j++] = 0;
+    i = 3 * n4;
+    j = 0;
+    while (j < i)
+        rdm2[j++] = 0;
+    // loop over determinants
+    int_t k, l, ii, jj, kk, ll, jdet;
+    double val1, val2;
+    for (int_t idet = 0; idet < wfn.ndet; ++idet) {
+        // fill working vectors
+        rdet = wfn.det_ptr(idet);
+        std::memcpy(det, rdet, sizeof(uint_t) * wfn.nword);
+        fill_occs(wfn.nword, rdet, occs);
+        fill_virs(wfn.nword, n1, rdet, virs);
+        val1 = coeffs[idet] * coeffs[idet];
         // loop over occupied indices
-        for (k = i + 1; k < nocc; ++k) {
-          kk = occs[k];
-          // loop over virtual indices
-          for (l = j + 1; l < nvir; ++l) {
-            ll = virs[l];
-            // double excitation elements
-            excite_det(kk, ll, &det[0]);
-            jdet = index_det(&det[0]);
-            // check if double excited determinant is in wfn
-            if (jdet != -1) {
-              // compute double excitation terms
-              val2 = coeffs[idet] * coeffs[jdet] * phase_double_det(nword, ii, kk, jj, ll, rdet);
-              // rdm2(ii, kk, jj, ll) += val2;
-              rdm2[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
-              // rdm2(ii, kk, ll, jj) -= val2;
-              rdm2[ii * n3 + kk * n2 + ll * n1 + jj] -= val2;
+        for (i = 0; i < wfn.nocc; ++i) {
+            ii = occs[i];
+            // compute diagonal terms
+            // rdm1(ii, ii) += val1;
+            rdm1[(n1 + 1) * ii] += val1;
+            // k = i + 1; because symmetric matrix and that when k == i, it is zero
+            for (k = i + 1; k < wfn.nocc; ++k) {
+                kk = occs[k];
+                // rdm2(ii, kk, ii, kk) += val1;
+                rdm2[ii * n3 + kk * n2 + ii * n1 + kk] += val1;
+                // rdm2(ii, kk, kk, ii) -= val1;
+                rdm2[ii * n3 + kk * n2 + kk * n1 + ii] -= val1;
+                // rdm2(kk, ii, ii, kk) += val1;
+                rdm2[kk * n3 + ii * n2 + ii * n1 + kk] -= val1;
+                // rdm2(kk, ii, kk, ii) -= val1;
+                rdm2[kk * n3 + ii * n2 + kk * n1 + kk] += val1;
             }
-            excite_det(ll, kk, &det[0]);
-          }
+            // loop over virtual indices
+            for (j = 0; j < wfn.nvir; ++j) {
+                jj = virs[j];
+                // single excitation elements
+                excite_det(ii, jj, det);
+                jdet = wfn.index_det(det);
+                // check if singly-excited determinant is in wfn
+                if (jdet != -1) {
+                    // compute single excitation terms
+                    val2 = coeffs[idet] * coeffs[jdet] * phase_single_det(wfn.nword, ii, jj, rdet);
+                    // rdm1(ii, jj) += val2;
+                    rdm1[ii * n1 + jj] += val2;
+                    for (k = 0; k < wfn.nocc; ++k) {
+                        if (i != k) {
+                            kk = occs[k];
+                            // rdm2(ii, kk, jj, kk) += val2;
+                            rdm2[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
+                            // rdm2(ii, kk, kk, jj) -= val2;
+                            rdm2[ii * n3 + kk * n2 + kk * n2 + jj] -= val2;
+                            // rdm2(kk, ii, jj, kk) -= val2;
+                            rdm2[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
+                            // rdm2(kk, ii, kk, jj) -= val2;
+                            rdm2[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
+                        }
+                    }
+                }
+                // loop over occupied indices
+                for (k = i + 1; k < wfn.nocc; ++k) {
+                    kk = occs[k];
+                    // loop over virtual indices
+                    for (l = j + 1; l < wfn.nvir; ++l) {
+                        ll = virs[l];
+                        // double excitation elements
+                        excite_det(kk, ll, det);
+                        jdet = wfn.index_det(det);
+                        // check if double excited determinant is in wfn
+                        if (jdet != -1) {
+                            // compute double excitation terms
+                            val2 = coeffs[idet] * coeffs[jdet] *
+                                   phase_double_det(wfn.nword, ii, kk, jj, ll, rdet);
+                            // rdm2(ii, kk, jj, ll) += val2;
+                            rdm2[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
+                            // rdm2(ii, kk, ll, jj) -= val2;
+                            rdm2[ii * n3 + kk * n2 + ll * n1 + jj] -= val2;
+                        }
+                        excite_det(ll, kk, det);
+                    }
+                }
+                excite_det(jj, ii, det);
+            }
         }
-        excite_det(jj, ii, &det[0]);
-      }
     }
-  }
 }
 
 } // namespace pyci
