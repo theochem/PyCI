@@ -39,8 +39,8 @@ PYBIND11_MODULE(pyci, m) {
     m.attr("c_uint") = py::dtype::of<uint_t>();
     m.attr("c_double") = py::dtype::of<double>();
 
-    if (std::getenv("OMP_NUM_THREADS") == nullptr)
-        omp_set_num_threads(1);
+    omp_set_dynamic(0);
+    omp_set_num_threads(1);
 
     /*
     Section: Hamiltonian class

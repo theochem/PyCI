@@ -20,6 +20,9 @@ Run `python setup.py --help` for help.
 
 """
 
+from os import environ
+from shutil import which
+
 from setuptools import Extension, setup
 
 import numpy
@@ -120,6 +123,9 @@ cext = {
 
 
 if __name__ == "__main__":
+
+    if "CXX" not in environ and which("clang++") is not None:
+        environ.update(CC="clang", CXX="clang++")
 
     try:
         extra_compile_args.append(f"-DPYCI_SPOOKYHASH_SEED={hex(abs(PYCI_SPOOKYHASH_SEED))}U")
