@@ -62,4 +62,4 @@ pyci/pyci.so:
 
 .PHONY: clean
 clean:
-	rm -f ./pyci/pyci*.so
+	rm -f ./pyci/pyci.so ./build ./dist ./pyci.egg-info

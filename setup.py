@@ -20,12 +20,8 @@ Run `python setup.py --help` for help.
 
 """
 
-from setuptools import Extension, setup
-
-import numpy
-
-
 PYCI_SPOOKYHASH_SEED = 0xDEADBEEFDEAFBEEF
+
 
 PYCI_NUM_THREADS_DEFAULT = 4
 
@@ -64,6 +60,7 @@ classifiers = [
 
 install_requires = [
     "numpy>=1.13",
+    "scipy>=1.0",
 ]
 
 
@@ -80,58 +77,14 @@ packages = [
 
 
 package_data = {
-    "pyci": ["pyci*.so", "include/*.h", "src/*.cpp"],
+    "pyci": ["pyci.so", "include/*.h", "src/*.cpp"],
     "pyci.test": ["data/*.fcidump", "data/*.npy", "data/*.npz"],
-}
-
-
-sources = [
-    "pyci/src/pyci.cpp",
-]
-
-
-include_dirs = [
-    numpy.get_include(),
-    "lib/parallel-hashmap",
-    "lib/pybind11/include",
-    "pyci/include",
-]
-
-
-libraries = [
-]
-
-
-extra_compile_args = [
-    "-Wall",
-    "-fvisibility=hidden",
-    f"-DPYCI_VERSION={version}",
-    f"-DPYCI_SPOOKYHASH_SEED={hex(PYCI_SPOOKYHASH_SEED)}UL",
-    f"-DPYCI_NUM_THREADS_DEFAULT={PYCI_NUM_THREADS_DEFAULT}",
-]
-
-
-extra_link_args = []
-
-
-cext = {
-    "name": "pyci.pyci",
-    "language": "c++",
-    "sources": sources,
-    "include_dirs": include_dirs,
-    "libraries": libraries,
-    "extra_compile_args": extra_compile_args,
-    "extra_link_args": extra_link_args,
 }
 
 
 if __name__ == "__main__":
 
-    pyci_extension = Extension(**cext)
-
-    ext_modules = [
-        pyci_extension,
-    ]
+    from setuptools import setup
 
     setup(
         name=name,
@@ -148,5 +101,4 @@ if __name__ == "__main__":
         packages=packages,
         package_data=package_data,
         include_package_data=True,
-        ext_modules=ext_modules,
     )

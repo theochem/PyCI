@@ -37,7 +37,8 @@ The following programs/libraries are required to run PyCI:
 
 The following programs/libraries are required to build PyCI:
 
--  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
+-  Make_
+-  GCC_ (≥4.8) or `Clang/LLVM_` (≥3.3) C++ compiler
 -  Python_ (≥3.6, including C headers)
 -  NumPy_ (≥1.13, including C headers)
 
@@ -68,22 +69,12 @@ Run the following in your shell to download PyCI and its submodules via git:
 
     git clone --recursive https://github.com/msricher/pyci.git && cd pyci
 
-Then, run the following to build and install PyCI with the ``Makefile``:
+Then, run the following to build and install PyCI:
 
 .. code:: shell
 
     make
     python setup.py install --user
-
-
-You can also build PyCI with ``setuptools`` C-extension module:
-
-.. code:: shell
-
-    python setup.py build_ext
-    python setup.py install --user
-
-The ``Makefile`` method is faster and produces better code, and so is recommended.
 
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -100,18 +91,19 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 
     cd doc && make html
 
-.. _PyCI:               http://github.com/msricher/PyCI/
-.. _Python:             http://python.org/
-.. _NumPy:              http://numpy.org/
-.. _SciPy:              http://docs.scipy.org/doc/scipy/reference/
 .. _GCC:                http://gcc.gnu.org/
-.. _`Clang/LLVM`:       http://clang.llvm.org/
-.. _Sphinx:             http://sphinx-doc.org/
-.. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
+.. _Make:               http://gnu.org/software/make/
+.. _NumPy:              http://numpy.org/
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
+.. _PyCI:               http://github.com/msricher/PyCI/
 .. _Pybind11:           http://pybind11.readthedocs.io/en/stable/
 .. _Pytest:             http://docs.pytest.org/en/latest/
+.. _Python:             http://python.org/
+.. _SciPy:              http://docs.scipy.org/doc/scipy/reference/
+.. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
+.. _Sphinx:             http://sphinx-doc.org/
 .. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
+.. _Clang/LLVM:         http://clang.llvm.org/
 
 .. |Python 3.8| image:: http://img.shields.io/badge/python-3.8-blue.svg
    :target: https://docs.python.org/3.8/
