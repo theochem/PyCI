@@ -13,56 +13,44 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-ifndef (PYTHON)
-	PYTHON =python
-endif
+PYTHON ?= python
+CXX ?= g++
 
-ifndef (CXX)
-	CXX =g++
-endif
+SPOOKYHASH_SEED ?= 0xdeadbeefdeadbeefUL
+NUM_THREADS_DEFAULT ?= 4
 
-ifndef (SPOOKYHASH_SEED)
-	SPOOKYHASH_SEED =0xdeadbeefdeadbeefUL
-endif
+_CFLAGS += --std=c++14
+_CFLAGS += -Wall
+_CFLAGS += -pipe
+_CFLAGS += -O3
 
-ifndef (NUM_THREADS_DEFAULT)
-	NUM_THREADS_DEFAULT =4
-endif
+_CFLAGS += -march=x86-64
+_CFLAGS += -mtune=generic
 
-ifndef (CFLAGS)
-	CFLAGS =
-endif
+_CFLAGS += -fPIC
+_CFLAGS += -fno-plt
+_CFLAGS += -fwrapv
+_CFLAGS += -fvisibility=hidden
 
-CFLAGS += --std=c++14
-CFLAGS += -Wall
-CFLAGS += -pipe
-CFLAGS += -O3
+_CFLAGS += -pthread
 
-CFLAGS += -march=x86-64
-CFLAGS += -mtune=generic
+_CFLAGS += -I$(shell $(PYTHON) -c "import sysconfig; print(sysconfig.get_paths()['include'])")
+_CFLAGS += -I$(shell $(PYTHON) -c "import numpy; print(numpy.get_include())")
+_CFLAGS += -Ilib/pybind11/include
+_CFLAGS += -Ilib/parallel-hashmap
+_CFLAGS += -Ipyci/include
 
-CFLAGS += -fPIC
-CFLAGS += -fno-plt
-CFLAGS += -fwrapv
-CFLAGS += -fvisibility=hidden
+_CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
+_CFLAGS += -DPYCI_SPOOKYHASH_SEED=$(SPOOKYHASH_SEED)
+_CFLAGS += -DPYCI_NUM_THREADS_DEFAULT=$(NUM_THREADS_DEFAULT)
 
-CFLAGS += -pthread
-
-CFLAGS += -I$(shell $(PYTHON) -c "import sysconfig; print(sysconfig.get_paths()['include'])")
-CFLAGS += -I$(shell $(PYTHON) -c "import numpy; print(numpy.get_include())")
-CFLAGS += -Ilib/pybind11/include
-CFLAGS += -Ilib/parallel-hashmap
-CFLAGS += -Ipyci/include
-
-CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
-CFLAGS += -DPYCI_SPOOKYHASH_SEED=$(SPOOKYHASH_SEED)
-CFLAGS += -DPYCI_NUM_THREADS_DEFAULT=$(NUM_THREADS_DEFAULT)
+_CFLAGS += $(CFLAGS)
 
 .PHONY: all
 all: pyci/pyci.so
 
 pyci/pyci.so:
-	$(CXX) $(CFLAGS) -shared pyci/src/pyci.cpp -o pyci/pyci.so
+	$(CXX) $(_CFLAGS) -shared pyci/src/pyci.cpp -o pyci/pyci.so
 
 .PHONY: clean
 clean:
