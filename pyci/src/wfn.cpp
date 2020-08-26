@@ -34,11 +34,11 @@ Wfn::Wfn(Wfn &&wfn) noexcept
       dets(std::move(wfn.dets)), dict(std::move(wfn.dict)) {
 }
 
-Wfn::Wfn(const int_t nb, const int_t nu, const int_t nd) {
+Wfn::Wfn(const long nb, const long nu, const long nd) {
     init(nb, nu, nd);
 }
 
-int_t Wfn::length(void) const {
+long Wfn::length(void) const {
     return ndet;
 }
 
@@ -48,7 +48,7 @@ void Wfn::squeeze(void) {
 
 Wfn::Wfn(void){};
 
-void Wfn::init(const int_t nb, const int_t nu, const int_t nd) {
+void Wfn::init(const long nb, const long nu, const long nd) {
     if (nd < 0)
         throw std::domain_error("nocc_dn is < 0");
     else if (nu < nd)

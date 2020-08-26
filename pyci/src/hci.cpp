@@ -15,38 +15,33 @@
 
 #include <pyci.h>
 
-#include <cstdlib>
-#include <cstring>
-#include <thread>
-
 namespace pyci {
 
 namespace {
 
 template<class WfnType>
-int_t add_hci_tmpl(const Ham &, WfnType &, const double *, const double);
-
+long add_hci_tmpl(const Ham &, WfnType &, const double *, const double);
 }
 
-int_t add_hci(const Ham &ham, DOCIWfn &wfn, const double *coeffs, const double eps) {
+long add_hci(const Ham &ham, DOCIWfn &wfn, const double *coeffs, const double eps) {
     return add_hci_tmpl<DOCIWfn>(ham, wfn, coeffs, eps);
 }
 
-int_t add_hci(const Ham &ham, FullCIWfn &wfn, const double *coeffs, const double eps) {
+long add_hci(const Ham &ham, FullCIWfn &wfn, const double *coeffs, const double eps) {
     return add_hci_tmpl<FullCIWfn>(ham, wfn, coeffs, eps);
 }
 
-int_t add_hci(const Ham &ham, GenCIWfn &wfn, const double *coeffs, const double eps) {
+long add_hci(const Ham &ham, GenCIWfn &wfn, const double *coeffs, const double eps) {
     return add_hci_tmpl<GenCIWfn>(ham, wfn, coeffs, eps);
 }
 
 namespace {
 
 void hci_thread_add_dets(const Ham &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
-                         const double eps, const int_t idet, uint_t *det, int_t *occs,
-                         int_t *virs) {
-    int_t i, j, k, l;
-    uint_t rank;
+                         const double eps, const long idet, unsigned long *det, long *occs,
+                         long *virs) {
+    long i, j, k, l;
+    unsigned long rank;
     // fill working vectors
     wfn.copy_det(idet, det);
     fill_occs(wfn.nword, det, occs);
@@ -69,20 +64,20 @@ void hci_thread_add_dets(const Ham &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, con
 }
 
 void hci_thread_add_dets(const Ham &ham, const FullCIWfn &wfn, FullCIWfn &t_wfn,
-                         const double *coeffs, const double eps, const int_t idet, uint_t *det_up,
-                         int_t *occs_up, int_t *virs_up) {
-    int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
-    uint_t rank;
-    int_t n1 = wfn.nbasis;
-    int_t n2 = n1 * n1;
-    int_t n3 = n1 * n2;
+                         const double *coeffs, const double eps, const long idet,
+                         unsigned long *det_up, long *occs_up, long *virs_up) {
+    long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
+    unsigned long rank;
+    long n1 = wfn.nbasis;
+    long n2 = n1 * n1;
+    long n3 = n1 * n2;
     double val;
-    const uint_t *rdet_up = wfn.det_ptr(idet);
-    const uint_t *rdet_dn = rdet_up + wfn.nword;
-    uint_t *det_dn = det_up + wfn.nword;
-    int_t *occs_dn = occs_up + wfn.nocc_up;
-    int_t *virs_dn = virs_up + wfn.nvir_up;
-    std::memcpy(det_up, rdet_up, sizeof(uint_t) * wfn.nword2);
+    const unsigned long *rdet_up = wfn.det_ptr(idet);
+    const unsigned long *rdet_dn = rdet_up + wfn.nword;
+    unsigned long *det_dn = det_up + wfn.nword;
+    long *occs_dn = occs_up + wfn.nocc_up;
+    long *virs_dn = virs_up + wfn.nvir_up;
+    std::memcpy(det_up, rdet_up, sizeof(unsigned long) * wfn.nword2);
     fill_occs(wfn.nword, rdet_up, occs_up);
     fill_occs(wfn.nword, rdet_dn, occs_dn);
     fill_virs(wfn.nword, wfn.nbasis, rdet_up, virs_up);
@@ -203,13 +198,13 @@ void hci_thread_add_dets(const Ham &ham, const FullCIWfn &wfn, FullCIWfn &t_wfn,
 }
 
 void hci_thread_add_dets(const Ham &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, const double *coeffs,
-                         const double eps, const int_t idet, uint_t *det, int_t *occs,
-                         int_t *virs) {
-    int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
-    uint_t rank;
-    int_t n1 = wfn.nbasis;
-    int_t n2 = n1 * n1;
-    int_t n3 = n1 * n2;
+                         const double eps, const long idet, unsigned long *det, long *occs,
+                         long *virs) {
+    long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
+    unsigned long rank;
+    long n1 = wfn.nbasis;
+    long n2 = n1 * n1;
+    long n3 = n1 * n2;
     double val;
     wfn.copy_det(idet, det);
     fill_occs(wfn.nword, det, occs);
@@ -261,40 +256,40 @@ void hci_thread_add_dets(const Ham &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, c
 
 template<class WfnType>
 void hci_thread(const Ham &ham, const WfnType &wfn, WfnType &t_wfn, const double *coeffs,
-                const double eps, const int_t start, const int_t end) {
-    std::vector<uint_t> det(wfn.nword2);
-    std::vector<int_t> occs(wfn.nocc);
-    std::vector<int_t> virs(wfn.nvir);
-    for (int_t i = start; i < end; ++i)
+                const double eps, const long start, const long end) {
+    std::vector<unsigned long> det(wfn.nword2);
+    std::vector<long> occs(wfn.nocc);
+    std::vector<long> virs(wfn.nvir);
+    for (long i = start; i < end; ++i)
         hci_thread_add_dets(ham, wfn, t_wfn, coeffs, eps, i, &det[0], &occs[0], &virs[0]);
 };
 
 template void hci_thread(const Ham &, const DOCIWfn &, DOCIWfn &, const double *, const double,
-                         const int_t, const int_t);
+                         const long, const long);
 
 template void hci_thread(const Ham &, const FullCIWfn &, FullCIWfn &, const double *, const double,
-                         const int_t, const int_t);
+                         const long, const long);
 
 template void hci_thread(const Ham &, const GenCIWfn &, GenCIWfn &, const double *, const double,
-                         const int_t, const int_t);
+                         const long, const long);
 
 template<class WfnType>
-int_t add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps) {
-    int_t ndet_old = wfn.ndet;
-    int_t nthread = get_num_threads(), start, end;
-    int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
+long add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps) {
+    long ndet_old = wfn.ndet;
+    long nthread = get_num_threads(), start, end;
+    long chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
     std::vector<std::thread> v_threads;
     std::vector<WfnType> v_wfns;
     v_threads.reserve(nthread);
     v_wfns.reserve(nthread);
-    for (int_t i = 0; i < nthread; ++i) {
+    for (long i = 0; i < nthread; ++i) {
         start = i * chunksize;
         end = (start + chunksize < ndet_old) ? start + chunksize : ndet_old;
         v_wfns.emplace_back(wfn.nbasis, wfn.nocc_up, wfn.nocc_dn);
         v_threads.emplace_back(&hci_thread<WfnType>, std::ref(ham), std::ref(wfn),
                                std::ref(v_wfns.back()), coeffs, eps, start, end);
     }
-    int_t n = 0;
+    long n = 0;
     for (auto &thread : v_threads) {
         thread.join();
         wfn.add_dets_from_wfn(v_wfns[n++]);

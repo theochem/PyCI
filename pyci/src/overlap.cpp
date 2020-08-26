@@ -23,8 +23,8 @@ double compute_overlap_tmpl(const WfnType &wfn1, const WfnType &wfn2, const doub
     if (wfn1.ndet > wfn2.ndet)
         return compute_overlap_tmpl<WfnType>(wfn2, wfn1, coeffs2, coeffs1);
     double olp = 0.0;
-    int_t j;
-    for (int_t i = 0; i < wfn1.ndet; ++i) {
+    long j;
+    for (long i = 0; i < wfn1.ndet; ++i) {
         j = wfn2.index_det(wfn1.det_ptr(i));
         if (j != -1)
             olp += coeffs1[i] * coeffs2[j];

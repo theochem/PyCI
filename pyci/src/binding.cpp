@@ -15,8 +15,6 @@
 
 #include <pyci.h>
 
-#include <cstdlib>
-
 namespace py = pybind11;
 
 using namespace pyci;
@@ -34,8 +32,8 @@ PYBIND11_MODULE(pyci, m) {
     m.doc() = "PyCI C extension module.";
 
     m.attr("__version__") = STRINGIZE(PYCI_VERSION);
-    m.attr("c_int") = py::dtype::of<int_t>();
-    m.attr("c_uint") = py::dtype::of<uint_t>();
+    m.attr("c_long") = py::dtype::of<long>();
+    m.attr("c_ulong") = py::dtype::of<unsigned long>();
     m.attr("c_double") = py::dtype::of<double>();
 
     if (std::getenv("PYCI_NUM_THREADS") != nullptr)
@@ -171,13 +169,13 @@ PYBIND11_MODULE(pyci, m) {
 
     doci_wfn.def(py::init<const std::string &>(), py::arg("filename"));
 
-    doci_wfn.def(py::init<const int_t, const int_t, const int_t>(), py::arg("nbasis"),
+    doci_wfn.def(py::init<const long, const long, const long>(), py::arg("nbasis"),
                  py::arg("nocc_up"), py::arg("nocc_dn"));
 
-    doci_wfn.def(py::init<const int_t, const int_t, const int_t, const Array<uint_t>>(),
+    doci_wfn.def(py::init<const long, const long, const long, const Array<unsigned long>>(),
                  py::arg("nbasis"), py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
-    doci_wfn.def(py::init<const int_t, const int_t, const int_t, const Array<int_t>>(),
+    doci_wfn.def(py::init<const long, const long, const long, const Array<long>>(),
                  py::arg("nbasis"), py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
     /*
@@ -192,13 +190,13 @@ PYBIND11_MODULE(pyci, m) {
 
     fullci_wfn.def(py::init<const std::string &>(), py::arg("filename"));
 
-    fullci_wfn.def(py::init<const int_t, const int_t, const int_t>(), py::arg("nbasis"),
+    fullci_wfn.def(py::init<const long, const long, const long>(), py::arg("nbasis"),
                    py::arg("nocc_up"), py::arg("nocc_dn"));
 
-    fullci_wfn.def(py::init<const int_t, const int_t, const int_t, const Array<uint_t>>(),
+    fullci_wfn.def(py::init<const long, const long, const long, const Array<unsigned long>>(),
                    py::arg("nbasis"), py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
-    fullci_wfn.def(py::init<const int_t, const int_t, const int_t, const Array<int_t>>(),
+    fullci_wfn.def(py::init<const long, const long, const long, const Array<long>>(),
                    py::arg("nbasis"), py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
     /*
@@ -214,13 +212,13 @@ PYBIND11_MODULE(pyci, m) {
 
     genci_wfn.def(py::init<const std::string &>(), py::arg("filename"));
 
-    genci_wfn.def(py::init<const int_t, const int_t, const int_t>(), py::arg("nbasis"),
+    genci_wfn.def(py::init<const long, const long, const long>(), py::arg("nbasis"),
                   py::arg("nocc_up"), py::arg("nocc_dn"));
 
-    genci_wfn.def(py::init<const int_t, const int_t, const int_t, const Array<uint_t>>(),
+    genci_wfn.def(py::init<const long, const long, const long, const Array<unsigned long>>(),
                   py::arg("nbasis"), py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
-    genci_wfn.def(py::init<const int_t, const int_t, const int_t, const Array<int_t>>(),
+    genci_wfn.def(py::init<const long, const long, const long, const Array<long>>(),
                   py::arg("nbasis"), py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
     /*
@@ -235,14 +233,14 @@ PYBIND11_MODULE(pyci, m) {
 
     sparse_op.def_readonly("shape", &SparseOp::shape);
 
-    sparse_op.def(py::init<const Ham &, const DOCIWfn &, const int_t, const int_t>(),
+    sparse_op.def(py::init<const Ham &, const DOCIWfn &, const long, const long>(), py::arg("ham"),
+                  py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
+
+    sparse_op.def(py::init<const Ham &, const FullCIWfn &, const long, const long>(),
                   py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
 
-    sparse_op.def(py::init<const Ham &, const FullCIWfn &, const int_t, const int_t>(),
-                  py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
-
-    sparse_op.def(py::init<const Ham &, const GenCIWfn &, const int_t, const int_t>(),
-                  py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
+    sparse_op.def(py::init<const Ham &, const GenCIWfn &, const long, const long>(), py::arg("ham"),
+                  py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
 
     sparse_op.def("__call__", &SparseOp::py_matvec, py::arg("x"));
 

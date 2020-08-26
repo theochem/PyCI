@@ -80,8 +80,8 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
     del sz_wfn
 
     # Make working arrays
-    brange = np.arange(wfn.nbasis, dtype=pyci.c_int)
-    occs = np.empty((2, wfn.nocc_up), dtype=pyci.c_int)
+    brange = np.arange(wfn.nbasis, dtype=pyci.c_long)
+    occs = np.empty((2, wfn.nocc_up), dtype=pyci.c_long)
 
     # Add determinants of specified seniorities
     for s in seniorities:
@@ -179,7 +179,7 @@ def add_gkci(
 
 def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: float) -> None:
     r"""Run the odometer algorithm for a one-spin wave function."""
-    aufbau_occs = np.arange(wfn.nocc_up, dtype=pyci.c_int)
+    aufbau_occs = np.arange(wfn.nocc_up, dtype=pyci.c_long)
     new_occs = np.copy(aufbau_occs)
     old_occs = np.copy(aufbau_occs)
     # Index of last electron
@@ -220,7 +220,7 @@ def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: fl
 
 def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: float) -> None:
     r"""Run the odometer algorithm for a two-spin wave function."""
-    aufbau_occs = np.arange(wfn.nocc, dtype=pyci.c_int)
+    aufbau_occs = np.arange(wfn.nocc, dtype=pyci.c_long)
     aufbau_occs[wfn.nocc_up :] -= wfn.nocc_up
     new_occs = np.copy(aufbau_occs)
     old_occs = np.copy(aufbau_occs)

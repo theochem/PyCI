@@ -27,9 +27,10 @@ FullCIWfn::FullCIWfn(const DOCIWfn &wfn) : TwoSpinWfn(wfn.nbasis, wfn.nocc_up, w
     ndet = wfn.ndet;
     dets.resize(wfn.ndet * nword2);
     dict.clear();
-    for (int_t i = 0; i < wfn.ndet; ++i) {
-        std::memcpy(&dets[i * wfn.nword2], wfn.det_ptr(i), sizeof(uint_t) * wfn.nword);
-        std::memcpy(&dets[i * wfn.nword2 + wfn.nword], wfn.det_ptr(i), sizeof(uint_t) * wfn.nword);
+    for (long i = 0; i < wfn.ndet; ++i) {
+        std::memcpy(&dets[i * wfn.nword2], wfn.det_ptr(i), sizeof(unsigned long) * wfn.nword);
+        std::memcpy(&dets[i * wfn.nword2 + wfn.nword], wfn.det_ptr(i),
+                    sizeof(unsigned long) * wfn.nword);
         dict[rank_det(&dets[i * wfn.nword2])] = i;
     }
 }
@@ -37,27 +38,26 @@ FullCIWfn::FullCIWfn(const DOCIWfn &wfn) : TwoSpinWfn(wfn.nbasis, wfn.nocc_up, w
 FullCIWfn::FullCIWfn(const std::string &filename) : TwoSpinWfn(filename) {
 }
 
-FullCIWfn::FullCIWfn(const int_t nb, const int_t nu, const int_t nd) : TwoSpinWfn(nb, nu, nd) {
+FullCIWfn::FullCIWfn(const long nb, const long nu, const long nd) : TwoSpinWfn(nb, nu, nd) {
 }
 
-FullCIWfn::FullCIWfn(const int_t nb, const int_t nu, const int_t nd, const int_t n,
-                     const uint_t *ptr)
+FullCIWfn::FullCIWfn(const long nb, const long nu, const long nd, const long n,
+                     const unsigned long *ptr)
     : TwoSpinWfn(nb, nu, nd, n, ptr) {
 }
 
-FullCIWfn::FullCIWfn(const int_t nb, const int_t nu, const int_t nd, const int_t n,
-                     const int_t *ptr)
+FullCIWfn::FullCIWfn(const long nb, const long nu, const long nd, const long n, const long *ptr)
     : TwoSpinWfn(nb, nu, nd, n, ptr) {
 }
 
-FullCIWfn::FullCIWfn(const int_t nb, const int_t nu, const int_t nd, const Array<uint_t> array)
+FullCIWfn::FullCIWfn(const long nb, const long nu, const long nd, const Array<unsigned long> array)
     : FullCIWfn(nb, nu, nd, array.request().shape[0],
-                reinterpret_cast<const uint_t *>(array.request().ptr)) {
+                reinterpret_cast<const unsigned long *>(array.request().ptr)) {
 }
 
-FullCIWfn::FullCIWfn(const int_t nb, const int_t nu, const int_t nd, const Array<int_t> array)
+FullCIWfn::FullCIWfn(const long nb, const long nu, const long nd, const Array<long> array)
     : FullCIWfn(nb, nu, nd, array.request().shape[0],
-                reinterpret_cast<const int_t *>(array.request().ptr)) {
+                reinterpret_cast<const long *>(array.request().ptr)) {
 }
 
 } // namespace pyci

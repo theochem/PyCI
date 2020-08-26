@@ -15,13 +15,9 @@
 
 #include <pyci.h>
 
-#include <cstdlib>
-#include <cstring>
-#include <thread>
-
 namespace pyci {
 
-typedef HashMap<uint_t, std::pair<double, double>> PairHashMap;
+typedef HashMap<unsigned long, std::pair<double, double>> PairHashMap;
 
 namespace {
 
@@ -47,7 +43,7 @@ double compute_enpt2(const Ham &ham, const GenCIWfn &wfn, const double *coeffs, 
 
 namespace {
 
-void compute_enpt2_thread_condense(PairHashMap &terms, PairHashMap &t_terms, const int_t ithread) {
+void compute_enpt2_thread_condense(PairHashMap &terms, PairHashMap &t_terms, const long ithread) {
     std::pair<double, double> *pair;
     for (auto &keyval : t_terms) {
         pair = &terms[keyval.first];
@@ -58,16 +54,16 @@ void compute_enpt2_thread_condense(PairHashMap &terms, PairHashMap &t_terms, con
 }
 
 void compute_enpt2_thread_gather(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
-                                 std::pair<double, double> &term, const double val, const int_t n2,
-                                 const int_t n3, const int_t *occs_up) {
-    const int_t *occs_dn = occs_up + wfn.nocc_up;
+                                 std::pair<double, double> &term, const double val, const long n2,
+                                 const long n3, const long *occs_up) {
+    const long *occs_dn = occs_up + wfn.nocc_up;
     // add enpt2 term to terms
     term.first += val;
     // check if diagonal element is already computed (i.e. not zero from initialization)
     if (term.second != (double)0.0)
         return;
     // compute diagonal element
-    int_t i, j, k, l, ioffset, koffset;
+    long i, j, k, l, ioffset, koffset;
     double diag = 0.0;
     for (i = 0; i < wfn.nocc_up; ++i) {
         j = occs_up[i];
@@ -97,27 +93,27 @@ void compute_enpt2_thread_gather(const FullCIWfn &wfn, const double *one_mo, con
 }
 
 void compute_enpt2_thread_terms(const Ham &ham, const FullCIWfn &wfn, PairHashMap &terms,
-                                const double *coeffs, const double eps, const int_t idet,
-                                uint_t *det_up, int_t *occs_up, int_t *virs_up, int_t *t_up) {
-    int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset, sign_up;
-    uint_t rank;
-    int_t n1 = wfn.nbasis;
-    int_t n2 = n1 * n1;
-    int_t n3 = n1 * n2;
+                                const double *coeffs, const double eps, const long idet,
+                                unsigned long *det_up, long *occs_up, long *virs_up, long *t_up) {
+    long i, j, k, l, ii, jj, kk, ll, ioffset, koffset, sign_up;
+    unsigned long rank;
+    long n1 = wfn.nbasis;
+    long n2 = n1 * n1;
+    long n3 = n1 * n2;
     double val;
-    const uint_t *rdet_up = wfn.det_ptr(idet);
-    const uint_t *rdet_dn = rdet_up + wfn.nword;
-    uint_t *det_dn = det_up + wfn.nword;
-    int_t *occs_dn = occs_up + wfn.nocc_up;
-    int_t *virs_dn = virs_up + wfn.nvir_up;
-    int_t *t_dn = t_up + wfn.nocc_up;
-    std::memcpy(det_up, rdet_up, sizeof(uint_t) * wfn.nword2);
+    const unsigned long *rdet_up = wfn.det_ptr(idet);
+    const unsigned long *rdet_dn = rdet_up + wfn.nword;
+    unsigned long *det_dn = det_up + wfn.nword;
+    long *occs_dn = occs_up + wfn.nocc_up;
+    long *virs_dn = virs_up + wfn.nvir_up;
+    long *t_dn = t_up + wfn.nocc_up;
+    std::memcpy(det_up, rdet_up, sizeof(unsigned long) * wfn.nword2);
     fill_occs(wfn.nword, rdet_up, occs_up);
     fill_occs(wfn.nword, rdet_dn, occs_dn);
     fill_virs(wfn.nword, wfn.nbasis, rdet_up, virs_up);
     fill_virs(wfn.nword, wfn.nbasis, rdet_dn, virs_dn);
-    std::memcpy(t_up, occs_up, sizeof(int_t) * wfn.nocc_up);
-    std::memcpy(t_dn, occs_dn, sizeof(int_t) * wfn.nocc_dn);
+    std::memcpy(t_up, occs_up, sizeof(long) * wfn.nocc_up);
+    std::memcpy(t_dn, occs_dn, sizeof(long) * wfn.nocc_dn);
     // loop over spin-up occupied indices
     for (i = 0; i < wfn.nocc_up; ++i) {
         ii = occs_up[i];
@@ -172,7 +168,7 @@ void compute_enpt2_thread_terms(const Ham &ham, const FullCIWfn &wfn, PairHashMa
                     excite_det(ll, kk, det_dn);
                 }
             }
-            std::memcpy(t_dn, occs_dn, sizeof(int_t) * wfn.nocc_dn);
+            std::memcpy(t_dn, occs_dn, sizeof(long) * wfn.nocc_dn);
             // loop over spin-up occupied indices
             for (k = i + 1; k < wfn.nocc_up; ++k) {
                 kk = occs_up[k];
@@ -201,7 +197,7 @@ void compute_enpt2_thread_terms(const Ham &ham, const FullCIWfn &wfn, PairHashMa
             excite_det(jj, ii, det_up);
         }
     }
-    std::memcpy(t_up, occs_up, sizeof(int_t) * wfn.nocc_up);
+    std::memcpy(t_up, occs_up, sizeof(long) * wfn.nocc_up);
     // loop over spin-down occupied indices
     for (i = 0; i < wfn.nocc_dn; ++i) {
         ii = occs_dn[i];
@@ -263,15 +259,15 @@ void compute_enpt2_thread_terms(const Ham &ham, const FullCIWfn &wfn, PairHashMa
 }
 
 void compute_enpt2_thread_gather(const GenCIWfn &wfn, const double *one_mo, const double *two_mo,
-                                 std::pair<double, double> &term, const double val, const int_t n2,
-                                 const int_t n3, const int_t *occs) {
+                                 std::pair<double, double> &term, const double val, const long n2,
+                                 const long n3, const long *occs) {
     // add enpt2 term to terms
     term.first += val;
     // check if diagonal element is already computed (i.e. not zero from initialization)
     if (term.second != (double)0.0)
         return;
     // compute diagonal element
-    int_t i, j, k, l, ioffset, koffset;
+    long i, j, k, l, ioffset, koffset;
     double diag = 0.0;
     for (i = 0; i < wfn.nocc; ++i) {
         j = occs[i];
@@ -287,19 +283,19 @@ void compute_enpt2_thread_gather(const GenCIWfn &wfn, const double *one_mo, cons
 }
 
 void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, PairHashMap &terms,
-                                const double *coeffs, const double eps, const int_t idet,
-                                uint_t *det, int_t *occs, int_t *virs, int_t *tmps) {
-    int_t i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
-    uint_t rank;
-    int_t n1 = wfn.nbasis;
-    int_t n2 = n1 * n1;
-    int_t n3 = n1 * n2;
+                                const double *coeffs, const double eps, const long idet,
+                                unsigned long *det, long *occs, long *virs, long *tmps) {
+    long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
+    unsigned long rank;
+    long n1 = wfn.nbasis;
+    long n2 = n1 * n1;
+    long n3 = n1 * n2;
     double val;
-    const uint_t *rdet = wfn.det_ptr(idet);
-    std::memcpy(det, rdet, sizeof(uint_t) * wfn.nword);
+    const unsigned long *rdet = wfn.det_ptr(idet);
+    std::memcpy(det, rdet, sizeof(unsigned long) * wfn.nword);
     fill_occs(wfn.nword, rdet, occs);
     fill_virs(wfn.nword, wfn.nbasis, rdet, virs);
-    std::memcpy(tmps, occs, sizeof(int_t) * wfn.nocc);
+    std::memcpy(tmps, occs, sizeof(long) * wfn.nocc);
     // loop over occupied indices
     for (i = 0; i < wfn.nocc; ++i) {
         ii = occs[i];
@@ -358,37 +354,37 @@ void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, PairHashMap
 
 template<class WfnType>
 void compute_enpt2_thread(const Ham &ham, const WfnType &wfn, PairHashMap &terms,
-                          const double *coeffs, const double eps, const int_t start,
-                          const int_t end) {
-    std::vector<uint_t> det(wfn.nword2);
-    std::vector<int_t> occs(wfn.nocc);
-    std::vector<int_t> virs(wfn.nvir);
-    std::vector<int_t> tmps(wfn.nocc);
-    for (int_t i = start; i < end; ++i)
+                          const double *coeffs, const double eps, const long start,
+                          const long end) {
+    std::vector<unsigned long> det(wfn.nword2);
+    std::vector<long> occs(wfn.nocc);
+    std::vector<long> virs(wfn.nvir);
+    std::vector<long> tmps(wfn.nocc);
+    for (long i = start; i < end; ++i)
         compute_enpt2_thread_terms(ham, wfn, terms, coeffs, eps, i, &det[0], &occs[0], &virs[0],
                                    &tmps[0]);
 }
 
 template void compute_enpt2_thread(const Ham &, const FullCIWfn &, PairHashMap &, const double *,
-                                   const double, const int_t, const int_t);
+                                   const double, const long, const long);
 template void compute_enpt2_thread(const Ham &, const GenCIWfn &, PairHashMap &, const double *,
-                                   const double, const int_t, const int_t);
+                                   const double, const long, const long);
 
 template<class WfnType>
 double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coeffs,
                           const double energy, const double eps) {
-    int_t nthread = get_num_threads(), start, end;
-    int_t chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
+    long nthread = get_num_threads(), start, end;
+    long chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
     PairHashMap terms;
     std::vector<PairHashMap> v_terms(nthread);
     std::vector<std::thread> v_threads(nthread);
-    for (int_t i = 0; i < nthread; ++i) {
+    for (long i = 0; i < nthread; ++i) {
         start = i * chunksize;
         end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
         v_threads.emplace_back(&compute_enpt2_thread<WfnType>, std::ref(ham), std::ref(wfn),
                                std::ref(v_terms[i]), coeffs, eps, start, end);
     }
-    int_t n = 0;
+    long n = 0;
     for (auto &thread : v_threads) {
         thread.join();
         compute_enpt2_thread_condense(terms, v_terms[n], n);

@@ -15,25 +15,23 @@
 
 #include <pyci.h>
 
-#include <cstring>
-
 namespace pyci {
 
 void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2) {
     // prepare working vectors
-    std::vector<uint_t> v_det(wfn.nword);
-    std::vector<int_t> v_occs(wfn.nocc_up);
-    std::vector<int_t> v_virs(wfn.nvir_up);
-    uint_t *det = &v_det[0];
-    int_t *occs = &v_occs[0], *virs = &v_virs[0];
+    std::vector<unsigned long> v_det(wfn.nword);
+    std::vector<long> v_occs(wfn.nocc_up);
+    std::vector<long> v_virs(wfn.nvir_up);
+    unsigned long *det = &v_det[0];
+    long *occs = &v_occs[0], *virs = &v_virs[0];
     // fill rdms with zeros
-    int_t i = wfn.nbasis * wfn.nbasis, j = 0;
+    long i = wfn.nbasis * wfn.nbasis, j = 0;
     while (j < i) {
         d0[j] = 0;
         d2[j++] = 0;
     }
     // iterate over determinants
-    int_t idet, jdet, k, l;
+    long idet, jdet, k, l;
     double val1, val2;
     for (idet = 0; idet < wfn.ndet; ++idet) {
         // fill working vectors
@@ -68,26 +66,26 @@ void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *
 }
 
 void compute_rdms(const FullCIWfn &wfn, const double *coeffs, double *rdm1, double *rdm2) {
-    int_t n1 = wfn.nbasis;
-    int_t n2 = wfn.nbasis * wfn.nbasis;
-    int_t n3 = n1 * n2;
-    int_t n4 = n2 * n2;
+    long n1 = wfn.nbasis;
+    long n2 = wfn.nbasis * wfn.nbasis;
+    long n3 = n1 * n2;
+    long n4 = n2 * n2;
     double *aa = rdm1;
     double *bb = aa + n2;
     double *aaaa = rdm2;
     double *bbbb = aaaa + n4;
     double *abab = bbbb + n4;
     // prepare working vectors
-    std::vector<uint_t> v_det(wfn.nword2);
-    std::vector<int_t> v_occs(wfn.nocc);
-    std::vector<int_t> v_virs(wfn.nvir);
-    const uint_t *rdet_up, *rdet_dn;
-    uint_t *det_up = &v_det[0], *det_dn = &v_det[wfn.nword];
-    int_t *occs_up = &v_occs[0], *occs_dn = &v_occs[wfn.nocc_up];
-    int_t *virs_up = &v_virs[0], *virs_dn = &v_virs[wfn.nvir_up];
+    std::vector<unsigned long> v_det(wfn.nword2);
+    std::vector<long> v_occs(wfn.nocc);
+    std::vector<long> v_virs(wfn.nvir);
+    const unsigned long *rdet_up, *rdet_dn;
+    unsigned long *det_up = &v_det[0], *det_dn = &v_det[wfn.nword];
+    long *occs_up = &v_occs[0], *occs_dn = &v_occs[wfn.nocc_up];
+    long *virs_up = &v_virs[0], *virs_dn = &v_virs[wfn.nvir_up];
     // fill rdms with zeros
-    int_t i = 2 * n2;
-    int_t j = 0;
+    long i = 2 * n2;
+    long j = 0;
     while (j < i)
         rdm1[j++] = 0;
     i = 3 * n4;
@@ -95,13 +93,13 @@ void compute_rdms(const FullCIWfn &wfn, const double *coeffs, double *rdm1, doub
     while (j < i)
         rdm2[j++] = 0;
     // iterate over determinants
-    int_t k, l, ii, jj, kk, ll, jdet, sign_up;
+    long k, l, ii, jj, kk, ll, jdet, sign_up;
     double val1, val2;
-    for (int_t idet = 0; idet < wfn.ndet; ++idet) {
+    for (long idet = 0; idet < wfn.ndet; ++idet) {
         // fill working vectors
         rdet_up = wfn.det_ptr(idet);
         rdet_dn = rdet_up + wfn.nword;
-        std::memcpy(det_up, rdet_up, sizeof(uint_t) * wfn.nword2);
+        std::memcpy(det_up, rdet_up, sizeof(unsigned long) * wfn.nword2);
         fill_occs(wfn.nword, rdet_up, occs_up);
         fill_occs(wfn.nword, rdet_dn, occs_dn);
         fill_virs(wfn.nword, n1, rdet_up, virs_up);
@@ -331,20 +329,20 @@ void compute_rdms(const FullCIWfn &wfn, const double *coeffs, double *rdm1, doub
 }
 
 void compute_rdms(const GenCIWfn &wfn, const double *coeffs, double *rdm1, double *rdm2) {
-    int_t n1 = wfn.nbasis;
-    int_t n2 = wfn.nbasis * wfn.nbasis;
-    int_t n3 = n1 * n2;
-    int_t n4 = n2 * n2;
+    long n1 = wfn.nbasis;
+    long n2 = wfn.nbasis * wfn.nbasis;
+    long n3 = n1 * n2;
+    long n4 = n2 * n2;
     // prepare working vectors
-    std::vector<uint_t> v_det(wfn.nword);
-    std::vector<int_t> v_occs(wfn.nocc);
-    std::vector<int_t> v_virs(wfn.nvir);
-    const uint_t *rdet;
-    uint_t *det = &v_det[0];
-    int_t *occs = &v_occs[0], *virs = &v_virs[0];
+    std::vector<unsigned long> v_det(wfn.nword);
+    std::vector<long> v_occs(wfn.nocc);
+    std::vector<long> v_virs(wfn.nvir);
+    const unsigned long *rdet;
+    unsigned long *det = &v_det[0];
+    long *occs = &v_occs[0], *virs = &v_virs[0];
     // fill rdms with zeros
-    int_t i = 2 * n2;
-    int_t j = 0;
+    long i = 2 * n2;
+    long j = 0;
     while (j < i)
         rdm1[j++] = 0;
     i = 3 * n4;
@@ -352,12 +350,12 @@ void compute_rdms(const GenCIWfn &wfn, const double *coeffs, double *rdm1, doubl
     while (j < i)
         rdm2[j++] = 0;
     // loop over determinants
-    int_t k, l, ii, jj, kk, ll, jdet;
+    long k, l, ii, jj, kk, ll, jdet;
     double val1, val2;
-    for (int_t idet = 0; idet < wfn.ndet; ++idet) {
+    for (long idet = 0; idet < wfn.ndet; ++idet) {
         // fill working vectors
         rdet = wfn.det_ptr(idet);
-        std::memcpy(det, rdet, sizeof(uint_t) * wfn.nword);
+        std::memcpy(det, rdet, sizeof(unsigned long) * wfn.nword);
         fill_occs(wfn.nword, rdet, occs);
         fill_virs(wfn.nword, n1, rdet, virs);
         val1 = coeffs[idet] * coeffs[idet];

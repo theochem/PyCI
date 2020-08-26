@@ -28,31 +28,32 @@ DOCIWfn::DOCIWfn(const std::string &filename) : OneSpinWfn(filename) {
         throw std::runtime_error("nocc_up != nocc_dn");
 }
 
-DOCIWfn::DOCIWfn(const int_t nb, const int_t nu, const int_t nd) : OneSpinWfn(nb, nu, nd) {
+DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd) : OneSpinWfn(nb, nu, nd) {
     if (nocc_up != nocc_dn)
         throw std::runtime_error("nocc_up != nocc_dn");
 }
 
-DOCIWfn::DOCIWfn(const int_t nb, const int_t nu, const int_t nd, const int_t n, const uint_t *ptr)
+DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const long n,
+                 const unsigned long *ptr)
     : OneSpinWfn(nb, nu, nd, n, ptr) {
     if (nocc_up != nocc_dn)
         throw std::runtime_error("nocc_up != nocc_dn");
 }
 
-DOCIWfn::DOCIWfn(const int_t nb, const int_t nu, const int_t nd, const int_t n, const int_t *ptr)
+DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const long n, const long *ptr)
     : OneSpinWfn(nb, nu, nd, n, ptr) {
     if (nocc_up != nocc_dn)
         throw std::runtime_error("nocc_up != nocc_dn");
 }
 
-DOCIWfn::DOCIWfn(const int_t nb, const int_t nu, const int_t nd, const Array<uint_t> array)
+DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const Array<unsigned long> array)
     : DOCIWfn(nb, nu, nd, array.request().shape[0],
-              reinterpret_cast<const uint_t *>(array.request().ptr)) {
+              reinterpret_cast<const unsigned long *>(array.request().ptr)) {
 }
 
-DOCIWfn::DOCIWfn(const int_t nb, const int_t nu, const int_t nd, const Array<int_t> array)
+DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const Array<long> array)
     : DOCIWfn(nb, nu, nd, array.request().shape[0],
-              reinterpret_cast<const int_t *>(array.request().ptr)) {
+              reinterpret_cast<const long *>(array.request().ptr)) {
 }
 
 } // namespace pyci

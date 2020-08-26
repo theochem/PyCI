@@ -45,12 +45,12 @@ Ham::Ham(const double e, const Array<double> mo1, const Array<double> mo2) {
     init_ham(args);
 }
 
-void Ham::to_file(const std::string &filename, const int_t nelec, const int_t ms2,
+void Ham::to_file(const std::string &filename, const long nelec, const long ms2,
                   const double tol) const {
-    int_t n0 = sizeof(double);
-    int_t n1 = n0 * nbasis;
-    int_t n2 = n1 * nbasis;
-    int_t n3 = n2 * nbasis;
+    long n0 = sizeof(double);
+    long n1 = n0 * nbasis;
+    long n2 = n1 * nbasis;
+    long n3 = n2 * nbasis;
     Array<double> one_mo_array({nbasis, nbasis}, {n1, n0}, one_mo);
     Array<double> two_mo_array({nbasis, nbasis, nbasis, nbasis}, {n3, n2, n1, n0}, two_mo);
     pybind11::module::import("pyci.fcidump")
