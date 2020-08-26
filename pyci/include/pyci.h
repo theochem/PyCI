@@ -74,7 +74,14 @@ struct FullCIWfn;
 struct GenCIWfn;
 struct SparseOp;
 
+/* Number of threads global variable. */
+int_t g_number_threads{4};
+
 /* PyCI routines. */
+
+int_t get_num_threads(void);
+
+void set_num_threads(const int_t);
 
 int_t binomial(int_t, int_t);
 
@@ -479,13 +486,10 @@ public:
     int_t nrow, ncol, size;
     double ecore;
     pybind11::object shape;
-
-private:
     std::vector<double> data;
     std::vector<int_t> indices;
     std::vector<int_t> indptr;
 
-public:
     SparseOp(const SparseOp &);
 
     SparseOp(SparseOp &&) noexcept;
@@ -524,7 +528,6 @@ public:
 
     Array<double> py_rhs_cepa0(const int_t) const;
 
-private:
     template<class WfnType>
     void init(const Ham &, const WfnType &, const int_t, const int_t);
 

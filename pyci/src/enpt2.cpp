@@ -13,11 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <omp.h>
 #include <pyci.h>
 
 #include <cstdlib>
 #include <cstring>
+#include <thread>
 
 namespace pyci {
 
@@ -28,23 +28,7 @@ namespace {
 template<class WfnType>
 double compute_enpt2_tmpl(const Ham &, const WfnType &, const double *, const double, const double);
 
-void compute_enpt2_thread_condense(PairHashMap &, PairHashMap &, const int_t);
-
-void compute_enpt2_thread_gather(const FullCIWfn &, const double *, const double *,
-                                 std::pair<double, double> &, const double, const int_t,
-                                 const int_t, const int_t *);
-
-void compute_enpt2_thread_gather(const GenCIWfn &, const double *, const double *,
-                                 std::pair<double, double> &, const double, const int_t,
-                                 const int_t, const int_t *);
-
-void compute_enpt2_thread_terms(const Ham &, const FullCIWfn &, PairHashMap &, const double *,
-                                const double, const int_t, uint_t *, int_t *, int_t *, int_t *);
-
-void compute_enpt2_thread_terms(const Ham &, const GenCIWfn &, PairHashMap &, const double *,
-                                const double, const int_t, uint_t *, int_t *, int_t *, int_t *);
-
-} // namespace
+}
 
 double compute_enpt2(const Ham &ham, const DOCIWfn &wfn, const double *coeffs, const double energy,
                      const double eps) {
@@ -62,37 +46,6 @@ double compute_enpt2(const Ham &ham, const GenCIWfn &wfn, const double *coeffs, 
 }
 
 namespace {
-
-template<class WfnType>
-double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coeffs,
-                          const double energy, const double eps) {
-    PairHashMap terms;
-#pragma omp parallel
-    {
-        int_t nthread = omp_get_max_threads();
-        int_t chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
-        PairHashMap t_terms;
-        int_t ithread = omp_get_thread_num();
-        int_t start = ithread * chunksize;
-        int_t end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
-        std::vector<uint_t> det(wfn.nword2);
-        std::vector<int_t> occs(wfn.nocc);
-        std::vector<int_t> virs(wfn.nvir);
-        std::vector<int_t> tmps(wfn.nocc);
-        for (int_t i = start; i < end; ++i)
-            compute_enpt2_thread_terms(ham, wfn, t_terms, coeffs, eps, i, &det[0], &occs[0],
-                                       &virs[0], &tmps[0]);
-#pragma omp for ordered schedule(static, 1)
-        for (int_t i = 0; i < nthread; ++i)
-#pragma omp ordered
-            compute_enpt2_thread_condense(terms, t_terms, i);
-    }
-    // compute enpt2 correction
-    double result = 0.0;
-    for (const auto &keyval : terms)
-        result += keyval.second.first * keyval.second.first / (energy - keyval.second.second);
-    return result;
-}
 
 void compute_enpt2_thread_condense(PairHashMap &terms, PairHashMap &t_terms, const int_t ithread) {
     std::pair<double, double> *pair;
@@ -401,6 +354,51 @@ void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, PairHashMap
             excite_det(jj, ii, det);
         }
     }
+}
+
+template<class WfnType>
+void compute_enpt2_thread(const Ham &ham, const WfnType &wfn, PairHashMap &terms,
+                          const double *coeffs, const double eps, const int_t start,
+                          const int_t end) {
+    std::vector<uint_t> det(wfn.nword2);
+    std::vector<int_t> occs(wfn.nocc);
+    std::vector<int_t> virs(wfn.nvir);
+    std::vector<int_t> tmps(wfn.nocc);
+    for (int_t i = start; i < end; ++i)
+        compute_enpt2_thread_terms(ham, wfn, terms, coeffs, eps, i, &det[0], &occs[0], &virs[0],
+                                   &tmps[0]);
+}
+
+template void compute_enpt2_thread(const Ham &, const FullCIWfn &, PairHashMap &, const double *,
+                                   const double, const int_t, const int_t);
+template void compute_enpt2_thread(const Ham &, const GenCIWfn &, PairHashMap &, const double *,
+                                   const double, const int_t, const int_t);
+
+template<class WfnType>
+double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coeffs,
+                          const double energy, const double eps) {
+    int_t nthread = get_num_threads(), start, end;
+    int_t chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
+    PairHashMap terms;
+    std::vector<PairHashMap> v_terms(nthread);
+    std::vector<std::thread> v_threads(nthread);
+    for (int_t i = 0; i < nthread; ++i) {
+        start = i * chunksize;
+        end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
+        v_threads.emplace_back(&compute_enpt2_thread<WfnType>, std::ref(ham), std::ref(wfn),
+                               std::ref(v_terms[i]), coeffs, eps, start, end);
+    }
+    int_t n = 0;
+    for (auto &thread : v_threads) {
+        thread.join();
+        compute_enpt2_thread_condense(terms, v_terms[n], n);
+        ++n;
+    }
+    // compute enpt2 correction
+    double result = 0.0;
+    for (const auto &keyval : terms)
+        result += keyval.second.first * keyval.second.first / (energy - keyval.second.second);
+    return result;
 }
 
 } // namespace

@@ -18,8 +18,6 @@
 #include <fstream>
 #include <ios>
 
-#include <omp.h>
-
 #include <SpookyV2.h>
 
 #include <pyci.h>
@@ -76,22 +74,14 @@ TwoSpinWfn::TwoSpinWfn(const int_t nb, const int_t nu, const int_t nd, const int
     : TwoSpinWfn(nb, nu, nd) {
     ndet = n;
     dets.resize(n * nword2);
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = n / nthread + ((n % nthread) ? 1 : 0);
-#pragma omp parallel
-    {
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < n) ? start + chunksize : n;
-        int_t j = start * nu * 2;
-        int_t k = start * nword2;
-        for (int_t i = start; i < end; ++i) {
-            fill_det(nu, ptr + j, &dets[k]);
-            j += nu;
-            k += nword;
-            fill_det(nd, ptr + j, &dets[k]);
-            j += nu;
-            k += nword;
-        }
+    int_t j = 0, k = 0;
+    for (int_t i = 0; i < n; ++i) {
+        fill_det(nu, ptr + j, &dets[k]);
+        j += nu;
+        k += nword;
+        fill_det(nd, ptr + j, &dets[k]);
+        j += nu;
+        k += nword;
     }
     for (int_t i = 0; i < n; ++i)
         dict[rank_det(&dets[i * nword2])] = i;
@@ -204,46 +194,31 @@ void TwoSpinWfn::add_all_dets(void) {
     dict.clear();
     dict.reserve(ndet);
     // add spin-up determinants to array
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = maxrank_up / nthread + ((maxrank_up % nthread) ? 1 : 0);
-#pragma omp parallel
-    {
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < maxrank_up) ? start + chunksize : maxrank_up;
-        std::vector<int_t> occs(nocc_up + 1);
-        std::vector<uint_t> det(nword);
-        unrank_colex(nbasis, nocc_up, start, &occs[0]);
-        occs[nocc_up] = nbasis + 1;
-        int_t j = start * maxrank_dn, k;
-        for (int_t i = start; i < end; ++i) {
-            fill_det(nocc_up, &occs[0], &det[0]);
-            for (k = 0; k < maxrank_dn; ++k)
-                std::memcpy(&dets[j++ * nword2], &det[0], sizeof(uint_t) * nword);
-            std::fill(det.begin(), det.end(), PYCI_UINT_ZERO);
-            next_colex(&occs[0]);
-        }
+    std::vector<int_t> occs(nocc_up + 1);
+    std::vector<uint_t> det(nword);
+    unrank_colex(nbasis, nocc_up, 0, &occs[0]);
+    occs[nocc_up] = nbasis + 1;
+    int_t j = 0, k;
+    for (int_t i = 0; i < maxrank_up; ++i) {
+        fill_det(nocc_up, &occs[0], &det[0]);
+        for (k = 0; k < maxrank_dn; ++k)
+            std::memcpy(&dets[j++ * nword2], &det[0], sizeof(uint_t) * nword);
+        std::fill(det.begin(), det.end(), PYCI_UINT_ZERO);
+        next_colex(&occs[0]);
     }
     // add spin-down determinants to array
-    chunksize = maxrank_dn / nthread + ((maxrank_dn % nthread) ? 1 : 0);
-#pragma omp parallel
-    {
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < maxrank_dn) ? start + chunksize : maxrank_dn;
-        std::vector<int_t> occs(nocc_dn + 1);
-        std::vector<uint_t> det(nword);
-        unrank_colex(nbasis, nocc_dn, start, &occs[0]);
-        occs[nocc_dn] = nbasis + 1;
-        int_t j, k;
-        for (int_t i = start; i < end; ++i) {
-            fill_det(nocc_dn, &occs[0], &det[0]);
-            j = i;
-            for (k = 0; k < maxrank_up; ++k) {
-                std::memcpy(&dets[j * nword2 + nword], &det[0], sizeof(uint_t) * nword);
-                j += maxrank_dn;
-            }
-            std::fill(det.begin(), det.end(), PYCI_UINT_ZERO);
-            next_colex(&occs[0]);
+    unrank_colex(nbasis, nocc_dn, 0, &occs[0]);
+    occs[nocc_dn] = nbasis + 1;
+    j = 0;
+    for (int_t i = 0; i < maxrank_dn; ++i) {
+        fill_det(nocc_dn, &occs[0], &det[0]);
+        j = i;
+        for (k = 0; k < maxrank_up; ++k) {
+            std::memcpy(&dets[j * nword2 + nword], &det[0], sizeof(uint_t) * nword);
+            j += maxrank_dn;
         }
+        std::fill(det.begin(), det.end(), PYCI_UINT_ZERO);
+        next_colex(&occs[0]);
     }
     for (int_t i = 0; i < ndet; ++i)
         dict[rank_det(&dets[i * nword2])] = i;
@@ -255,14 +230,9 @@ void TwoSpinWfn::add_excited_dets(const uint_t *rdet, const int_t e_up, const in
         return;
     }
     OneSpinWfn wfn_up(nbasis, nocc_up, nocc_up);
+    wfn_up.add_excited_dets(&rdet[0], e_up);
     OneSpinWfn wfn_dn(nbasis, nocc_dn, nocc_dn);
-#pragma omp parallel sections
-    {
-#pragma omp section
-        wfn_up.add_excited_dets(&rdet[0], e_up);
-#pragma omp section
-        wfn_dn.add_excited_dets(&rdet[nword], e_dn);
-    }
+    wfn_dn.add_excited_dets(&rdet[nword], e_dn);
     std::vector<uint_t> det(nword2);
     int_t j;
     for (int_t i = 0; i < wfn_up.ndet; ++i) {

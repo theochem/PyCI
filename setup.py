@@ -98,17 +98,21 @@ include_dirs = [
 ]
 
 
+libraries = [
+    "pthread",
+    "m",
+]
+
+
 extra_compile_args = [
     "-Wall",
     "-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION",
     f"-DPYCI_VERSION={version}",
     "-fvisibility=hidden",
-    "-fopenmp",
 ]
 
 
 extra_link_args = [
-    "-fopenmp",
 ]
 
 
@@ -117,6 +121,7 @@ cext = {
     "language": "c++",
     "sources": sources,
     "include_dirs": include_dirs,
+    "libraries": libraries,
     "extra_compile_args": extra_compile_args,
     "extra_link_args": extra_link_args,
 }

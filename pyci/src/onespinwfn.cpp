@@ -18,8 +18,6 @@
 #include <fstream>
 #include <ios>
 
-#include <omp.h>
-
 #include <SpookyV2.h>
 
 #include <pyci.h>
@@ -67,30 +65,22 @@ OneSpinWfn::OneSpinWfn(const int_t nb, const int_t nu, const int_t nd, const int
     ndet = n;
     dets.resize(n * nword);
     std::memcpy(&dets[0], ptr, sizeof(uint_t) * n * nword);
-    for (int_t i = n; i != n; ++i)
+    for (int_t i = 0; i < n; ++i)
         dict[rank_det(ptr + i * nword)] = i;
 }
 
 OneSpinWfn::OneSpinWfn(const int_t nb, const int_t nu, const int_t nd, const int_t n,
                        const int_t *ptr)
     : OneSpinWfn(nb, nu, nd) {
+    int_t j = 0, k = 0;
     ndet = n;
     dets.resize(n * nword);
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = n / nthread + ((n % nthread) ? 1 : 0);
-#pragma omp parallel
-    {
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < n) ? start + chunksize : n;
-        int_t j = start * nu;
-        int_t k = start * nword;
-        for (int_t i = start; i < end; ++i) {
-            fill_det(nu, ptr + j, &dets[k]);
-            j += nu;
-            k += nword;
-        }
+    for (int_t i = 0; i < n; ++i) {
+        fill_det(nu, ptr + j, &dets[k]);
+        j += nu;
+        k += nword;
     }
-    for (int_t i = n; i != n; ++i)
+    for (int_t i = 0; i < n; ++i)
         dict[rank_det(&dets[i * nword])] = i;
 }
 
@@ -195,19 +185,12 @@ void OneSpinWfn::add_all_dets(void) {
     dets.resize(ndet * nword);
     dict.clear();
     dict.reserve(ndet);
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = ndet / nthread + ((ndet % nthread) ? 1 : 0);
-#pragma omp parallel
-    {
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < ndet) ? start + chunksize : ndet;
-        std::vector<int_t> occs(nocc_up + 1);
-        unrank_colex(nbasis, nocc_up, start, &occs[0]);
-        occs[nocc_up] = nbasis + 1;
-        for (int_t i = start; i < end; ++i) {
-            fill_det(nocc_up, &occs[0], &dets[i * nword]);
-            next_colex(&occs[0]);
-        }
+    std::vector<int_t> occs(nocc_up + 1);
+    unrank_colex(nbasis, nocc_up, 0, &occs[0]);
+    occs[nocc_up] = nbasis + 1;
+    for (int_t i = 0; i < ndet; ++i) {
+        fill_det(nocc_up, &occs[0], &dets[i * nword]);
+        next_colex(&occs[0]);
     }
     for (int_t i = 0; i < ndet; ++i)
         dict[rank_det(&dets[i * nword])] = i;

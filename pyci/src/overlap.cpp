@@ -13,8 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <omp.h>
-
 #include <pyci.h>
 
 namespace pyci {
@@ -24,19 +22,12 @@ double compute_overlap_tmpl(const WfnType &wfn1, const WfnType &wfn2, const doub
                             const double *coeffs2) {
     if (wfn1.ndet > wfn2.ndet)
         return compute_overlap_tmpl<WfnType>(wfn2, wfn1, coeffs2, coeffs1);
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = wfn1.ndet / nthread + ((wfn1.ndet % nthread) ? 1 : 0);
     double olp = 0.0;
-#pragma omp parallel reduction(+ : olp)
-    {
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < wfn1.ndet) ? start + chunksize : wfn1.ndet;
-        int_t j;
-        for (int_t i = start; i < end; ++i) {
-            j = wfn2.index_det(wfn1.det_ptr(i));
-            if (j != -1)
-                olp += coeffs1[i] * coeffs2[j];
-        }
+    int_t j;
+    for (int_t i = 0; i < wfn1.ndet; ++i) {
+        j = wfn2.index_det(wfn1.det_ptr(i));
+        if (j != -1)
+            olp += coeffs1[i] * coeffs2[j];
     }
     return olp;
 }

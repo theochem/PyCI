@@ -14,23 +14,12 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <algorithm>
-
-#include <omp.h>
+#include <thread>
 
 #include <pyci.h>
 #include <sort_helper.h>
 
 namespace pyci {
-
-namespace {
-
-void perform_op_thread(const double *, const int_t *, const int_t *, const double *, double *,
-                       const int_t, const int_t);
-
-void perform_op_cepa0_thread(const double *, const int_t *, const int_t *, const double *, double *,
-                             const int_t, const int_t, const int_t, const double);
-
-} // namespace
 
 SparseOp::SparseOp(const SparseOp &op)
     : nrow(op.nrow), ncol(op.ncol), size(op.size), ecore(op.ecore), shape(op.shape), data(op.data),
@@ -93,27 +82,77 @@ double SparseOp::get_element(const int_t i, const int_t j) const {
     return (e == end) ? 0.0 : data[indptr[i] + e - start];
 }
 
-void SparseOp::perform_op(const double *x, double *y) const {
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-#pragma omp parallel
-    {
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < nrow) ? start + chunksize : nrow;
-        perform_op_thread(&data[0], &indptr[0], &indices[0], x, y, start, end);
+void perform_op_thread(const double *data, const int_t *indptr, const int_t *indices,
+                       const double *x, double *y, const int_t start, const int_t end) {
+    int_t j, jstart, jend = indptr[start];
+    double val;
+    for (int_t i = start; i < end; ++i) {
+        jstart = jend;
+        jend = indptr[i + 1];
+        val = 0.0;
+        for (j = jstart; j < jend; ++j)
+            val += data[j] * x[indices[j]];
+        y[i] = val;
     }
 }
 
-void SparseOp::perform_op_cepa0(const double *x, double *y, const int_t refind) const {
-    int_t nthread = omp_get_max_threads();
-    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-#pragma omp parallel
-    {
-        int_t start = omp_get_thread_num() * chunksize;
-        int_t end = (start + chunksize < nrow) ? start + chunksize : nrow;
-        perform_op_cepa0_thread(&data[0], &indptr[0], &indices[0], x, y, start, end, refind,
-                                get_element(refind, refind));
+void perform_op_cepa0_thread(const double *data, const int_t *indptr, const int_t *indices,
+                             const double *x, double *y, const int_t start, const int_t end,
+                             const int_t refind, const double h_refind) {
+    int_t j, jstart, jend = indptr[start];
+    double val;
+    for (int_t i = start; i < end; ++i) {
+        jstart = jend;
+        jend = indptr[i + 1];
+        val = 0.0;
+        if (i == refind) {
+            for (j = jstart; j < jend; ++j) {
+                if (indices[j] == refind)
+                    val -= x[indices[j]];
+                else
+                    val += data[j] * x[indices[j]];
+            }
+        } else {
+            for (j = jstart; j < jend; ++j) {
+                if (indices[j] == i)
+                    val += (data[j] - h_refind) * x[indices[j]];
+                else if (indices[j] != refind)
+                    val += data[j] * x[indices[j]];
+            }
+        }
+        y[i] = -val;
     }
+}
+
+void SparseOp::perform_op(const double *x, double *y) const {
+    int_t nthread = get_num_threads(), start, end;
+    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
+    std::vector<std::thread> v_threads;
+    v_threads.reserve(nthread);
+    for (int_t i = 0; i < nthread; ++i) {
+        start = i * chunksize;
+        end = (start + chunksize < nrow) ? start + chunksize : nrow;
+        v_threads.emplace_back(&perform_op_thread, &data[0], &indptr[0], &indices[0], x, y, start,
+                               end);
+    }
+    for (auto &thread : v_threads)
+        thread.join();
+}
+
+void SparseOp::perform_op_cepa0(const double *x, double *y, const int_t refind) const {
+    int_t nthread = get_num_threads(), start, end;
+    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
+    double h_refind = get_element(refind, refind);
+    std::vector<std::thread> v_threads;
+    v_threads.reserve(nthread);
+    for (int_t i = 0; i < nthread; ++i) {
+        start = i * chunksize;
+        end = (start + chunksize < nrow) ? start + chunksize : nrow;
+        v_threads.emplace_back(&perform_op_cepa0_thread, &data[0], &indptr[0], &indices[0], x, y,
+                               start, end, refind, h_refind);
+    }
+    for (auto &thread : v_threads)
+        thread.join();
 }
 
 void SparseOp::perform_op_transpose_cepa0(const double *x, double *y, const int_t refind) const {
@@ -177,29 +216,50 @@ Array<double> SparseOp::py_rhs_cepa0(const int_t refind) const {
     return y;
 }
 
+namespace {
+
+template<class WfnType>
+void init_thread(SparseOp &op, const Ham &ham, const WfnType &wfn, const int_t start,
+                 const int_t end) {
+    int_t row = 0;
+    std::vector<uint_t> det(wfn.nword2);
+    std::vector<int_t> occs(wfn.nocc);
+    std::vector<int_t> virs(wfn.nvir);
+    for (int_t i = start; i < end; ++i) {
+        op.init_thread_add_row(ham, wfn, i, &det[0], &occs[0], &virs[0]);
+        op.init_thread_sort_row(row++);
+    }
+    op.size = op.indices.size();
+}
+
+template void init_thread(SparseOp &, const Ham &, const DOCIWfn &wfn, const int_t, const int_t);
+
+template void init_thread(SparseOp &, const Ham &, const FullCIWfn &wfn, const int_t, const int_t);
+
+template void init_thread(SparseOp &, const Ham &, const GenCIWfn &wfn, const int_t, const int_t);
+
+} // namespace
+
 template<class WfnType>
 void SparseOp::init(const Ham &ham, const WfnType &wfn, const int_t rows, const int_t cols) {
-#pragma omp parallel
-    {
-        int_t nthread = omp_get_max_threads();
-        int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-        int_t ithread = omp_get_thread_num();
-        int_t start = ithread * chunksize;
-        int_t end = (start + chunksize < nrow) ? start + chunksize : nrow;
-        SparseOp op(end - start, ncol);
-        int_t row = 0;
-        std::vector<uint_t> det(wfn.nword2);
-        std::vector<int_t> occs(wfn.nocc);
-        std::vector<int_t> virs(wfn.nvir);
-        for (int_t i = start; i < end; ++i) {
-            op.init_thread_add_row(ham, wfn, i, &det[0], &occs[0], &virs[0]);
-            op.init_thread_sort_row(row++);
-        }
-        op.size = op.indices.size();
-#pragma omp for ordered schedule(static, 1)
-        for (int_t i = 0; i < nthread; ++i)
-#pragma omp ordered
-            op.init_thread_condense(*this, i);
+    int_t nthread = get_num_threads(), start, end;
+    int_t chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
+    std::vector<SparseOp> v_ops;
+    std::vector<std::thread> v_threads;
+    v_ops.reserve(nthread);
+    v_threads.reserve(nthread);
+    for (int_t i = 0; i < nthread; ++i) {
+        start = i * chunksize;
+        end = (start + chunksize < nrow) ? start + chunksize : nrow;
+        v_ops.emplace_back(end - start, ncol);
+        v_threads.emplace_back(&init_thread<WfnType>, std::ref(v_ops.back()), std::ref(ham),
+                               std::ref(wfn), start, end);
+    }
+    int_t ithread = 0;
+    for (auto &thread : v_threads) {
+        thread.join();
+        v_ops[ithread].init_thread_condense(*this, ithread);
+        ++ithread;
     }
     data.shrink_to_fit();
     indices.shrink_to_fit();
@@ -516,51 +576,5 @@ void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const in
     // add pointer to next row's indices
     indptr.push_back(indices.size());
 }
-
-namespace {
-
-void perform_op_thread(const double *data, const int_t *indptr, const int_t *indices,
-                       const double *x, double *y, const int_t start, const int_t end) {
-    int_t j, jstart, jend = indptr[start];
-    double val;
-    for (int_t i = start; i < end; ++i) {
-        jstart = jend;
-        jend = indptr[i + 1];
-        val = 0.0;
-        for (j = jstart; j < jend; ++j)
-            val += data[j] * x[indices[j]];
-        y[i] = val;
-    }
-}
-
-void perform_op_cepa0_thread(const double *data, const int_t *indptr, const int_t *indices,
-                             const double *x, double *y, const int_t start, const int_t end,
-                             const int_t refind, const double h_refind) {
-    int_t j, jstart, jend = indptr[start];
-    double val;
-    for (int_t i = start; i < end; ++i) {
-        jstart = jend;
-        jend = indptr[i + 1];
-        val = 0.0;
-        if (i == refind) {
-            for (j = jstart; j < jend; ++j) {
-                if (indices[j] == refind)
-                    val -= x[indices[j]];
-                else
-                    val += data[j] * x[indices[j]];
-            }
-        } else {
-            for (j = jstart; j < jend; ++j) {
-                if (indices[j] == i)
-                    val += (data[j] - h_refind) * x[indices[j]];
-                else if (indices[j] != refind)
-                    val += data[j] * x[indices[j]];
-            }
-        }
-        y[i] = -val;
-    }
-}
-
-} // namespace
 
 } // namespace pyci

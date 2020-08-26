@@ -13,11 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <omp.h>
 #include <pyci.h>
 
 #include <cstdlib>
 #include <cstring>
+#include <thread>
 
 namespace pyci {
 
@@ -26,16 +26,7 @@ namespace {
 template<class WfnType>
 int_t add_hci_tmpl(const Ham &, WfnType &, const double *, const double);
 
-void hci_thread_add_dets(const Ham &, const DOCIWfn &, DOCIWfn &, const double *, const double,
-                         const int_t, uint_t *, int_t *, int_t *);
-
-void hci_thread_add_dets(const Ham &, const FullCIWfn &, FullCIWfn &, const double *, const double,
-                         const int_t, uint_t *, int_t *, int_t *);
-
-void hci_thread_add_dets(const Ham &, const GenCIWfn &, GenCIWfn &, const double *, const double,
-                         const int_t, uint_t *, int_t *, int_t *);
-
-} // namespace
+}
 
 int_t add_hci(const Ham &ham, DOCIWfn &wfn, const double *coeffs, const double eps) {
     return add_hci_tmpl<DOCIWfn>(ham, wfn, coeffs, eps);
@@ -50,32 +41,6 @@ int_t add_hci(const Ham &ham, GenCIWfn &wfn, const double *coeffs, const double 
 }
 
 namespace {
-
-template<class WfnType>
-int_t add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps) {
-    int_t ndet_old = wfn.ndet;
-#pragma omp parallel
-    {
-        int_t nthread = omp_get_max_threads();
-        int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
-        int_t ithread = omp_get_thread_num();
-        int_t start = ithread * chunksize;
-        int_t end = (start + chunksize < ndet_old) ? start + chunksize : ndet_old;
-        WfnType t_wfn(wfn.nbasis, wfn.nocc_up, wfn.nocc_dn);
-        std::vector<uint_t> det(wfn.nword2);
-        std::vector<int_t> occs(wfn.nocc);
-        std::vector<int_t> virs(wfn.nvir);
-        for (int_t i = start; i < end; ++i)
-            hci_thread_add_dets(ham, wfn, t_wfn, coeffs, eps, i, &det[0], &occs[0], &virs[0]);
-#pragma omp barrier
-        (void)0;
-#pragma omp for ordered schedule(static, 1)
-        for (int_t i = 0; i < nthread; ++i)
-#pragma omp ordered
-            wfn.add_dets_from_wfn(t_wfn);
-    }
-    return wfn.ndet - ndet_old;
-}
 
 void hci_thread_add_dets(const Ham &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
                          const double eps, const int_t idet, uint_t *det, int_t *occs,
@@ -292,6 +257,49 @@ void hci_thread_add_dets(const Ham &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, c
             excite_det(jj, ii, det);
         }
     }
+}
+
+template<class WfnType>
+void hci_thread(const Ham &ham, const WfnType &wfn, WfnType &t_wfn, const double *coeffs,
+                const double eps, const int_t start, const int_t end) {
+    std::vector<uint_t> det(wfn.nword2);
+    std::vector<int_t> occs(wfn.nocc);
+    std::vector<int_t> virs(wfn.nvir);
+    for (int_t i = start; i < end; ++i)
+        hci_thread_add_dets(ham, wfn, t_wfn, coeffs, eps, i, &det[0], &occs[0], &virs[0]);
+};
+
+template void hci_thread(const Ham &, const DOCIWfn &, DOCIWfn &, const double *, const double,
+                         const int_t, const int_t);
+
+template void hci_thread(const Ham &, const FullCIWfn &, FullCIWfn &, const double *, const double,
+                         const int_t, const int_t);
+
+template void hci_thread(const Ham &, const GenCIWfn &, GenCIWfn &, const double *, const double,
+                         const int_t, const int_t);
+
+template<class WfnType>
+int_t add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps) {
+    int_t ndet_old = wfn.ndet;
+    int_t nthread = get_num_threads(), start, end;
+    int_t chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
+    std::vector<std::thread> v_threads;
+    std::vector<WfnType> v_wfns;
+    v_threads.reserve(nthread);
+    v_wfns.reserve(nthread);
+    for (int_t i = 0; i < nthread; ++i) {
+        start = i * chunksize;
+        end = (start + chunksize < ndet_old) ? start + chunksize : ndet_old;
+        v_wfns.emplace_back(wfn.nbasis, wfn.nocc_up, wfn.nocc_dn);
+        v_threads.emplace_back(&hci_thread<WfnType>, std::ref(ham), std::ref(wfn),
+                               std::ref(v_wfns.back()), coeffs, eps, start, end);
+    }
+    int_t n = 0;
+    for (auto &thread : v_threads) {
+        thread.join();
+        wfn.add_dets_from_wfn(v_wfns[n++]);
+    }
+    return wfn.ndet - ndet_old;
 }
 
 } // namespace

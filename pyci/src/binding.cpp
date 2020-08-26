@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <omp.h>
 #include <pyci.h>
 
 #include <cstdlib>
@@ -39,8 +38,8 @@ PYBIND11_MODULE(pyci, m) {
     m.attr("c_uint") = py::dtype::of<uint_t>();
     m.attr("c_double") = py::dtype::of<double>();
 
-    omp_set_dynamic(0);
-    omp_set_num_threads(1);
+    if (std::getenv("PYCI_NUM_THREADS") != nullptr)
+        set_num_threads(std::atol(std::getenv("PYCI_NUM_THREADS")));
 
     /*
     Section: Hamiltonian class
@@ -247,7 +246,7 @@ PYBIND11_MODULE(pyci, m) {
 
     sparse_op.def("__call__", &SparseOp::py_matvec, py::arg("x"));
 
-    sparse_op.def("__call__", &SparseOp::py_matvec_out, py::arg("x"), py::arg("out"));
+    // sparse_op.def("__call__", &SparseOp::py_matvec_out, py::arg("x"), py::arg("out"));
 
     sparse_op.def("get_element", &SparseOp::get_element, py::arg("i"), py::arg("j"));
 
@@ -262,11 +261,12 @@ PYBIND11_MODULE(pyci, m) {
     Section: Free functions
     */
 
-    m.def("set_num_threads", &omp_set_num_threads, py::arg("nthread"));
+    m.def("get_num_threads", &get_num_threads);
 
-    m.def("get_num_threads", &omp_get_max_threads);
+    m.def("set_num_threads", &set_num_threads, py::arg("n"));
 
     m.def("popcnt", &py_popcnt, py::arg("det"));
+
     m.def("ctz", &py_ctz, py::arg("det"));
 
     m.def("add_hci", &py_dociwfn_add_hci, py::arg("ham"), py::arg("wfn"), py::arg("coeffs"),

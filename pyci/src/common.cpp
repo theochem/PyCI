@@ -19,6 +19,14 @@
 
 namespace pyci {
 
+int_t get_num_threads(void) {
+    return g_number_threads;
+}
+
+void set_num_threads(const int_t n) {
+    g_number_threads = n > 0 ? n : 1;
+}
+
 int_t binomial(int_t n, int_t k) {
     if (k == 0)
         return 1;

@@ -72,17 +72,7 @@ Then, run the following to build and install PyCI:
 
 .. code:: shell
 
-    python setup.py install --user
-
-Compiling on OSX
-~~~~~~~~~~~~~~~~
-
-Since the default Xcode Clang compiler for OSX does not support OpenMP, the C and C++ compilers must
-be specified by using the ``CC`` and ``CXX`` environment variables:
-
-.. code:: shell
-
-    CC=/path/to/your/gcc/or/clang CXX=/path/to/your/g++/or/clang++ python setup.py install --user
+    cd pyci && python setup.py install --user
 
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
