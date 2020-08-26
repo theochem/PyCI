@@ -66,16 +66,24 @@ Run the following in your shell to download PyCI and its submodules via git:
 
 .. code:: shell
 
-    git clone --recursive https://github.com/msricher/pyci.git
+    git clone --recursive https://github.com/msricher/pyci.git && cd pyci
 
-Then, run the following to build and install PyCI:
+Then, run the following to build and install PyCI with the ``Makefile``:
 
 .. code:: shell
 
-    cd pyci && python setup.py install --user
+    make
+    python setup.py install --user
 
-You can also build PyCI with the ``Makefile`` if you want (or need) to change the default
-compilation settings.
+
+You can also build PyCI with ``setuptools`` C-extension module:
+
+.. code:: shell
+
+    python setup.py build_ext
+    python setup.py install --user
+
+The ``Makefile`` method is faster and produces better code, and so is recommended.
 
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
