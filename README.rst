@@ -38,7 +38,7 @@ The following programs/libraries are required to run PyCI:
 The following programs/libraries are required to build PyCI:
 
 -  Make_
--  GCC_ (≥4.8) or `Clang/LLVM_` (≥3.3) C++ compiler
+-  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
 -  Python_ (≥3.6, including C headers)
 -  NumPy_ (≥1.13, including C headers)
 
@@ -91,6 +91,7 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 
     cd doc && make html
 
+.. _`Clang/LLVM`:       http://clang.llvm.org/
 .. _GCC:                http://gcc.gnu.org/
 .. _Make:               http://gnu.org/software/make/
 .. _NumPy:              http://numpy.org/
@@ -103,7 +104,6 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Sphinx:             http://sphinx-doc.org/
 .. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
-.. _Clang/LLVM:         http://clang.llvm.org/
 
 .. |Python 3.8| image:: http://img.shields.io/badge/python-3.8-blue.svg
    :target: https://docs.python.org/3.8/
