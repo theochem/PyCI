@@ -65,8 +65,8 @@ void Wfn::init(const long nb, const long nu, const long nd) {
     ndet = 0;
     nword = nword_det(nb);
     nword2 = nword * 2;
-    maxrank_up = binomial_cutoff(nb, nu);
-    maxrank_dn = binomial_cutoff(nb, nd);
+    maxrank_up = binomial(nb, nu);
+    maxrank_dn = binomial(nb, nd);
 }
 
 } // namespace pyci

@@ -33,8 +33,7 @@ DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd) : OneSpinWfn(nb, n
         throw std::runtime_error("nocc_up != nocc_dn");
 }
 
-DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const long n,
-                 const unsigned long *ptr)
+DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const long n, const ulong *ptr)
     : OneSpinWfn(nb, nu, nd, n, ptr) {
     if (nocc_up != nocc_dn)
         throw std::runtime_error("nocc_up != nocc_dn");
@@ -46,9 +45,9 @@ DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const long n, cons
         throw std::runtime_error("nocc_up != nocc_dn");
 }
 
-DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const Array<unsigned long> array)
+DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const Array<ulong> array)
     : DOCIWfn(nb, nu, nd, array.request().shape[0],
-              reinterpret_cast<const unsigned long *>(array.request().ptr)) {
+              reinterpret_cast<const ulong *>(array.request().ptr)) {
 }
 
 DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const Array<long> array)

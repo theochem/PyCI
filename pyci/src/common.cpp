@@ -17,6 +17,12 @@
 
 namespace pyci {
 
+namespace {
+
+long gcd(long, long);
+
+}
+
 long g_number_threads{PYCI_NUM_THREADS_DEFAULT};
 
 long get_num_threads(void) {
@@ -36,75 +42,70 @@ long binomial(long n, long k) {
         return (k == n);
     else if (k > n / 2)
         k = n - k;
-    long binom = 1;
-    for (long d = 1; d <= k; ++d)
-        binom = binom * n-- / d;
-    return binom;
-}
-
-long binomial_cutoff(long n, long k) {
-    if (k == 0)
-        return 1;
-    else if (k == 1)
-        return n;
-    else if (k >= n)
-        return (k == n);
-    else if (k > n / 2)
-        k = n - k;
-    long binom = 1;
+    long binom = 1, g, nr, dr;
     for (long d = 1; d <= k; ++d) {
-        if (binom >= PYCI_INT_MAX / n)
-            return PYCI_INT_MAX;
-        binom = binom * n-- / d;
+        if (binom >= Max<long>() / n) {
+            g = gcd(n, d);
+            nr = n / g;
+            dr = d / g;
+            g = gcd(binom, dr);
+            binom = binom / g;
+            dr = dr / g;
+            if (binom >= Max<long>() / nr)
+                return Max<long>();
+            binom = binom * nr / dr;
+        }
+        else
+            binom = binom * n-- / d;
     }
     return binom;
 }
 
-void fill_hartreefock_det(long nocc, unsigned long *det) {
+void fill_hartreefock_det(long nocc, ulong *det) {
     long i = 0;
-    while (nocc >= PYCI_UINT_SIZE) {
-        det[i++] = PYCI_UINT_MAX;
-        nocc -= PYCI_UINT_SIZE;
+    while (nocc >= Size<ulong>()) {
+        det[i++] = Max<ulong>();
+        nocc -= Size<ulong>();
     }
     if (nocc)
-        det[i] = (PYCI_UINT_ONE << nocc) - 1;
+        det[i] = (1UL << nocc) - 1;
 }
 
-void fill_det(const long nocc, const long *occs, unsigned long *det) {
+void fill_det(const long nocc, const long *occs, ulong *det) {
     long j;
     for (long i = 0; i < nocc; ++i) {
         j = occs[i];
-        det[j / PYCI_UINT_SIZE] |= PYCI_UINT_ONE << (j % PYCI_UINT_SIZE);
+        det[j / Size<ulong>()] |= 1UL << (j % Size<ulong>());
     }
 }
 
-void fill_occs(const long nword, const unsigned long *det, long *occs) {
+void fill_occs(const long nword, const ulong *det, long *occs) {
     long p, j = 0, offset = 0;
-    unsigned long word;
+    ulong word;
     for (long i = 0; i < nword; ++i) {
         word = det[i];
         while (word) {
-            p = PYCI_CTZ(word);
+            p = Ctz(word);
             occs[j++] = p + offset;
-            word &= ~(PYCI_UINT_ONE << p);
+            word &= ~(1UL << p);
         }
-        offset += PYCI_UINT_SIZE;
+        offset += Size<ulong>();
     }
 }
 
-void fill_virs(const long nword, long nbasis, const unsigned long *det, long *virs) {
+void fill_virs(const long nword, long nbasis, const ulong *det, long *virs) {
     long p, j = 0, offset = 0;
-    unsigned long word, mask;
+    ulong word, mask;
     for (long i = 0; i < nword; ++i) {
-        mask = (nbasis < PYCI_UINT_SIZE) ? ((PYCI_UINT_ONE << nbasis) - 1) : PYCI_UINT_MAX;
+        mask = (nbasis < Size<ulong>()) ? ((1UL << nbasis) - 1) : Max<ulong>();
         word = det[i] ^ mask;
         while (word) {
-            p = PYCI_CTZ(word);
+            p = Ctz(word);
             virs[j++] = p + offset;
-            word &= ~(PYCI_UINT_ONE << p);
+            word &= ~(1UL << p);
         }
-        offset += PYCI_UINT_SIZE;
-        nbasis -= PYCI_UINT_SIZE;
+        offset += Size<ulong>();
+        nbasis -= Size<ulong>();
     }
 }
 
@@ -117,12 +118,12 @@ void next_colex(long *indices) {
     ++(indices[i]);
 }
 
-long rank_colex(const long nbasis, const long nocc, const unsigned long *det) {
+long rank_colex(const long nbasis, const long nocc, const ulong *det) {
     long k = 0, binom = 1, rank = 0;
     for (long i = 0; i < nbasis; ++i) {
         if (k == nocc)
             break;
-        else if (det[i / PYCI_UINT_SIZE] & (PYCI_UINT_ONE << (i % PYCI_UINT_SIZE))) {
+        else if (det[i / Size<ulong>()] & (1UL << (i % Size<ulong>()))) {
             ++k;
             binom = (k == i) ? 1 : binom * i / k;
             rank += binom;
@@ -149,9 +150,9 @@ void unrank_colex(long nbasis, const long nocc, long rank, long *occs) {
     }
 }
 
-long phase_single_det(const long nword, const long i, const long a, const unsigned long *det) {
+long phase_single_det(const long nword, const long i, const long a, const ulong *det) {
     long j, k, l, m, n, high, low, nperm = 0;
-    unsigned long *mask = new (std::nothrow) unsigned long[nword];
+    ulong *mask = new (std::nothrow) ulong[nword];
     if (i > a) {
         high = i;
         low = a;
@@ -159,24 +160,24 @@ long phase_single_det(const long nword, const long i, const long a, const unsign
         high = a;
         low = i;
     }
-    k = high / PYCI_UINT_SIZE;
-    m = high % PYCI_UINT_SIZE;
-    j = low / PYCI_UINT_SIZE;
-    n = low % PYCI_UINT_SIZE;
+    k = high / Size<ulong>();
+    m = high % Size<ulong>();
+    j = low / Size<ulong>();
+    n = low % Size<ulong>();
     for (l = j; l < k; ++l)
-        mask[l] = PYCI_UINT_MAX;
-    mask[k] = (PYCI_UINT_ONE << m) - 1;
-    mask[j] &= ~(PYCI_UINT_ONE << (n + 1)) + 1;
+        mask[l] = Max<ulong>();
+    mask[k] = (1UL << m) - 1;
+    mask[j] &= ~(1UL << (n + 1)) + 1;
     for (l = j; l <= k; ++l)
-        nperm += PYCI_POPCNT(det[l] & mask[l]);
+        nperm += Pop(det[l] & mask[l]);
     delete[] mask;
     return (nperm % 2) ? -1 : 1;
 }
 
 long phase_double_det(const long nword, const long i1, const long i2, const long a1, const long a2,
-                      const unsigned long *det) {
+                      const ulong *det) {
     long j, k, l, m, n, high, low, nperm = 0;
-    unsigned long *mask = new (std::nothrow) unsigned long[nword];
+    ulong *mask = new (std::nothrow) ulong[nword];
     // first excitation
     if (i1 > a1) {
         high = i1;
@@ -185,16 +186,16 @@ long phase_double_det(const long nword, const long i1, const long i2, const long
         high = a1;
         low = i1;
     }
-    k = high / PYCI_UINT_SIZE;
-    m = high % PYCI_UINT_SIZE;
-    j = low / PYCI_UINT_SIZE;
-    n = low % PYCI_UINT_SIZE;
+    k = high / Size<ulong>();
+    m = high % Size<ulong>();
+    j = low / Size<ulong>();
+    n = low % Size<ulong>();
     for (l = j; l < k; ++l)
-        mask[l] = PYCI_UINT_MAX;
-    mask[k] = (PYCI_UINT_ONE << m) - 1;
-    mask[j] &= ~(PYCI_UINT_ONE << (n + 1)) + 1;
+        mask[l] = Max<ulong>();
+    mask[k] = (1UL << m) - 1;
+    mask[j] &= ~(1UL << (n + 1)) + 1;
     for (l = j; l <= k; ++l)
-        nperm += PYCI_POPCNT(det[l] & mask[l]);
+        nperm += Pop(det[l] & mask[l]);
     // second excitation
     if (i2 > a2) {
         high = i2;
@@ -203,16 +204,16 @@ long phase_double_det(const long nword, const long i1, const long i2, const long
         high = a2;
         low = i2;
     }
-    k = high / PYCI_UINT_SIZE;
-    m = high % PYCI_UINT_SIZE;
-    j = low / PYCI_UINT_SIZE;
-    n = low % PYCI_UINT_SIZE;
+    k = high / Size<ulong>();
+    m = high % Size<ulong>();
+    j = low / Size<ulong>();
+    n = low % Size<ulong>();
     for (l = j; l < k; ++l)
-        mask[l] = PYCI_UINT_MAX;
-    mask[k] = (PYCI_UINT_ONE << m) - 1;
-    mask[j] &= ~(PYCI_UINT_ONE << (n + 1)) + 1;
+        mask[l] = Max<ulong>();
+    mask[k] = (1UL << m) - 1;
+    mask[j] &= ~(1UL << (n + 1)) + 1;
     for (l = j; l <= k; ++l)
-        nperm += PYCI_POPCNT(det[l] & mask[l]);
+        nperm += Pop(det[l] & mask[l]);
     // order excitations properly
     if ((i2 < a1) || (i1 > a2))
         ++nperm;
@@ -220,48 +221,48 @@ long phase_double_det(const long nword, const long i1, const long i2, const long
     return (nperm % 2) ? -1 : 1;
 }
 
-long popcnt_det(const long nword, const unsigned long *det) {
+long popcnt_det(const long nword, const ulong *det) {
     long popcnt = 0;
     for (long i = 0; i < nword; ++i)
-        popcnt += PYCI_POPCNT(det[i]);
+        popcnt += Pop(det[i]);
     return popcnt;
 }
 
-long ctz_det(const long nword, const unsigned long *det) {
-    unsigned long word;
+long ctz_det(const long nword, const ulong *det) {
+    ulong word;
     for (long i = 0; i < nword; ++i) {
         word = det[i];
         if (word)
-            return PYCI_CTZ(word) + i * PYCI_UINT_SIZE;
+            return Ctz(word) + i * Size<ulong>();
     }
     return 0;
 }
 
 long nword_det(const long n) {
-    return n / PYCI_UINT_SIZE + ((n % PYCI_UINT_SIZE) ? 1 : 0);
+    return n / Size<ulong>() + ((n % Size<ulong>()) ? 1 : 0);
 }
 
-void excite_det(const long i, const long a, unsigned long *det) {
-    det[i / PYCI_UINT_SIZE] &= ~(PYCI_UINT_ONE << (i % PYCI_UINT_SIZE));
-    det[a / PYCI_UINT_SIZE] |= PYCI_UINT_ONE << (a % PYCI_UINT_SIZE);
+void excite_det(const long i, const long a, ulong *det) {
+    det[i / Size<ulong>()] &= ~(1UL << (i % Size<ulong>()));
+    det[a / Size<ulong>()] |= 1UL << (a % Size<ulong>());
 }
 
-void setbit_det(const long i, unsigned long *det) {
-    det[i / PYCI_UINT_SIZE] |= PYCI_UINT_ONE << (i % PYCI_UINT_SIZE);
+void setbit_det(const long i, ulong *det) {
+    det[i / Size<ulong>()] |= 1UL << (i % Size<ulong>());
 }
 
-void clearbit_det(const long i, unsigned long *det) {
-    det[i / PYCI_UINT_SIZE] &= ~(PYCI_UINT_ONE << (i % PYCI_UINT_SIZE));
+void clearbit_det(const long i, ulong *det) {
+    det[i / Size<ulong>()] &= ~(1UL << (i % Size<ulong>()));
 }
 
-long py_popcnt(const Array<unsigned long> det) {
+long py_popcnt(const Array<ulong> det) {
     pybind11::buffer_info buf = det.request();
-    return popcnt_det(buf.shape[0], reinterpret_cast<const unsigned long *>(buf.ptr));
+    return popcnt_det(buf.shape[0], reinterpret_cast<const ulong *>(buf.ptr));
 }
 
-long py_ctz(const Array<unsigned long> det) {
+long py_ctz(const Array<ulong> det) {
     pybind11::buffer_info buf = det.request();
-    return ctz_det(buf.shape[0], reinterpret_cast<const unsigned long *>(buf.ptr));
+    return ctz_det(buf.shape[0], reinterpret_cast<const ulong *>(buf.ptr));
 }
 
 long py_dociwfn_add_hci(const Ham &ham, DOCIWfn &wfn, const Array<double> coeffs,
@@ -341,5 +342,24 @@ double py_genciwfn_compute_enpt2(const Ham &ham, const GenCIWfn &wfn, const Arra
     return compute_enpt2(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr), energy,
                          eps);
 }
+
+namespace {
+
+long gcd(long x, long y) {
+    long t;
+    if (y < x) {
+        t = x;
+        x = y;
+        y = t;
+    }
+    while (y > 0) {
+        t = y;
+        y = x % y;
+        x = t;
+    }
+    return x;
+}
+
+} // namespace
 
 } // namespace pyci

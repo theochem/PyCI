@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <doc.h>
 #include <pyci.h>
 
 namespace py = pybind11;
@@ -29,11 +30,11 @@ PYBIND11_MODULE(pyci, m) {
     Section: Initialization
     */
 
-    m.doc() = "PyCI C extension module.";
+    m.doc() = module_doc;
 
     m.attr("__version__") = STRINGIZE(PYCI_VERSION);
     m.attr("c_long") = py::dtype::of<long>();
-    m.attr("c_ulong") = py::dtype::of<unsigned long>();
+    m.attr("c_ulong") = py::dtype::of<ulong>();
     m.attr("c_double") = py::dtype::of<double>();
 
     if (std::getenv("PYCI_NUM_THREADS") != nullptr)
@@ -44,7 +45,7 @@ PYBIND11_MODULE(pyci, m) {
     */
 
     py::class_<Ham> hamiltonian(m, "hamiltonian");
-    hamiltonian.doc() = "Hamiltonian class.";
+    hamiltonian.doc() = hamiltonian_doc;
 
     hamiltonian.def_readonly("nbasis", &Ham::nbasis);
     hamiltonian.def_readonly("ecore", &Ham::ecore);
@@ -68,7 +69,7 @@ PYBIND11_MODULE(pyci, m) {
     */
 
     py::class_<Wfn> wavefunction(m, "wavefunction");
-    wavefunction.doc() = "Wave function class.";
+    wavefunction.doc() = wavefunction_doc;
 
     wavefunction.def_readonly("nbasis", &Wfn::nbasis);
     wavefunction.def_readonly("nocc", &Wfn::nocc);
@@ -87,7 +88,7 @@ PYBIND11_MODULE(pyci, m) {
     */
 
     py::class_<OneSpinWfn, Wfn> one_spin_wfn(m, "one_spin_wfn");
-    one_spin_wfn.doc() = "Single-spin wave function class.";
+    one_spin_wfn.doc() = onespinwfn_doc;
 
     one_spin_wfn.def("__getitem__", &OneSpinWfn::py_getitem, py::arg("index"));
 
@@ -125,7 +126,7 @@ PYBIND11_MODULE(pyci, m) {
     */
 
     py::class_<TwoSpinWfn, Wfn> two_spin_wfn(m, "two_spin_wfn");
-    two_spin_wfn.doc() = "Two-spin wave function class.";
+    two_spin_wfn.doc() = twospinwfn_doc;
 
     two_spin_wfn.def("__getitem__", &TwoSpinWfn::py_getitem, py::arg("index"));
 
@@ -163,7 +164,7 @@ PYBIND11_MODULE(pyci, m) {
     */
 
     py::class_<DOCIWfn, OneSpinWfn> doci_wfn(m, "doci_wfn");
-    doci_wfn.doc() = "DOCI wave function class.";
+    doci_wfn.doc() = dociwfn_doc;
 
     doci_wfn.def(py::init<const DOCIWfn &>(), py::arg("wfn"));
 
@@ -172,7 +173,7 @@ PYBIND11_MODULE(pyci, m) {
     doci_wfn.def(py::init<const long, const long, const long>(), py::arg("nbasis"),
                  py::arg("nocc_up"), py::arg("nocc_dn"));
 
-    doci_wfn.def(py::init<const long, const long, const long, const Array<unsigned long>>(),
+    doci_wfn.def(py::init<const long, const long, const long, const Array<ulong>>(),
                  py::arg("nbasis"), py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
     doci_wfn.def(py::init<const long, const long, const long, const Array<long>>(),
@@ -183,7 +184,7 @@ PYBIND11_MODULE(pyci, m) {
     */
 
     py::class_<FullCIWfn, TwoSpinWfn> fullci_wfn(m, "fullci_wfn");
-    fullci_wfn.doc() = "FullCI wave function class.";
+    fullci_wfn.doc() = fullciwfn_doc;
 
     fullci_wfn.def(py::init<const DOCIWfn &>(), py::arg("wfn"));
     fullci_wfn.def(py::init<const FullCIWfn &>(), py::arg("wfn"));
@@ -193,7 +194,7 @@ PYBIND11_MODULE(pyci, m) {
     fullci_wfn.def(py::init<const long, const long, const long>(), py::arg("nbasis"),
                    py::arg("nocc_up"), py::arg("nocc_dn"));
 
-    fullci_wfn.def(py::init<const long, const long, const long, const Array<unsigned long>>(),
+    fullci_wfn.def(py::init<const long, const long, const long, const Array<ulong>>(),
                    py::arg("nbasis"), py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
     fullci_wfn.def(py::init<const long, const long, const long, const Array<long>>(),
@@ -204,7 +205,7 @@ PYBIND11_MODULE(pyci, m) {
     */
 
     py::class_<GenCIWfn, OneSpinWfn> genci_wfn(m, "genci_wfn");
-    genci_wfn.doc() = "Generalized CI wave function class.";
+    genci_wfn.doc() = genciwfn_doc;
 
     genci_wfn.def(py::init<const DOCIWfn &>(), py::arg("wfn"));
     genci_wfn.def(py::init<const FullCIWfn &>(), py::arg("wfn"));
@@ -215,7 +216,7 @@ PYBIND11_MODULE(pyci, m) {
     genci_wfn.def(py::init<const long, const long, const long>(), py::arg("nbasis"),
                   py::arg("nocc_up"), py::arg("nocc_dn"));
 
-    genci_wfn.def(py::init<const long, const long, const long, const Array<unsigned long>>(),
+    genci_wfn.def(py::init<const long, const long, const long, const Array<ulong>>(),
                   py::arg("nbasis"), py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
     genci_wfn.def(py::init<const long, const long, const long, const Array<long>>(),
@@ -226,7 +227,7 @@ PYBIND11_MODULE(pyci, m) {
     */
 
     py::class_<SparseOp> sparse_op(m, "sparse_op");
-    sparse_op.doc() = "Sparse CI matrix operator class.";
+    sparse_op.doc() = sparseop_doc;
 
     sparse_op.def_readonly("ecore", &SparseOp::ecore);
     sparse_op.def_readonly("size", &SparseOp::size);
@@ -244,7 +245,7 @@ PYBIND11_MODULE(pyci, m) {
 
     sparse_op.def("__call__", &SparseOp::py_matvec, py::arg("x"));
 
-    // sparse_op.def("__call__", &SparseOp::py_matvec_out, py::arg("x"), py::arg("out"));
+    sparse_op.def("__call__", &SparseOp::py_matvec_out, py::arg("x"), py::arg("out"));
 
     sparse_op.def("get_element", &SparseOp::get_element, py::arg("i"), py::arg("j"));
 

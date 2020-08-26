@@ -38,10 +38,9 @@ long add_hci(const Ham &ham, GenCIWfn &wfn, const double *coeffs, const double e
 namespace {
 
 void hci_thread_add_dets(const Ham &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
-                         const double eps, const long idet, unsigned long *det, long *occs,
-                         long *virs) {
+                         const double eps, const long idet, ulong *det, long *occs, long *virs) {
     long i, j, k, l;
-    unsigned long rank;
+    ulong rank;
     // fill working vectors
     wfn.copy_det(idet, det);
     fill_occs(wfn.nword, det, occs);
@@ -64,20 +63,20 @@ void hci_thread_add_dets(const Ham &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, con
 }
 
 void hci_thread_add_dets(const Ham &ham, const FullCIWfn &wfn, FullCIWfn &t_wfn,
-                         const double *coeffs, const double eps, const long idet,
-                         unsigned long *det_up, long *occs_up, long *virs_up) {
+                         const double *coeffs, const double eps, const long idet, ulong *det_up,
+                         long *occs_up, long *virs_up) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
-    unsigned long rank;
+    ulong rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val;
-    const unsigned long *rdet_up = wfn.det_ptr(idet);
-    const unsigned long *rdet_dn = rdet_up + wfn.nword;
-    unsigned long *det_dn = det_up + wfn.nword;
+    const ulong *rdet_up = wfn.det_ptr(idet);
+    const ulong *rdet_dn = rdet_up + wfn.nword;
+    ulong *det_dn = det_up + wfn.nword;
     long *occs_dn = occs_up + wfn.nocc_up;
     long *virs_dn = virs_up + wfn.nvir_up;
-    std::memcpy(det_up, rdet_up, sizeof(unsigned long) * wfn.nword2);
+    std::memcpy(det_up, rdet_up, sizeof(ulong) * wfn.nword2);
     fill_occs(wfn.nword, rdet_up, occs_up);
     fill_occs(wfn.nword, rdet_dn, occs_dn);
     fill_virs(wfn.nword, wfn.nbasis, rdet_up, virs_up);
@@ -198,10 +197,9 @@ void hci_thread_add_dets(const Ham &ham, const FullCIWfn &wfn, FullCIWfn &t_wfn,
 }
 
 void hci_thread_add_dets(const Ham &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, const double *coeffs,
-                         const double eps, const long idet, unsigned long *det, long *occs,
-                         long *virs) {
+                         const double eps, const long idet, ulong *det, long *occs, long *virs) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
-    unsigned long rank;
+    ulong rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
@@ -257,21 +255,12 @@ void hci_thread_add_dets(const Ham &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, c
 template<class WfnType>
 void hci_thread(const Ham &ham, const WfnType &wfn, WfnType &t_wfn, const double *coeffs,
                 const double eps, const long start, const long end) {
-    std::vector<unsigned long> det(wfn.nword2);
+    std::vector<ulong> det(wfn.nword2);
     std::vector<long> occs(wfn.nocc);
     std::vector<long> virs(wfn.nvir);
     for (long i = start; i < end; ++i)
         hci_thread_add_dets(ham, wfn, t_wfn, coeffs, eps, i, &det[0], &occs[0], &virs[0]);
 };
-
-template void hci_thread(const Ham &, const DOCIWfn &, DOCIWfn &, const double *, const double,
-                         const long, const long);
-
-template void hci_thread(const Ham &, const FullCIWfn &, FullCIWfn &, const double *, const double,
-                         const long, const long);
-
-template void hci_thread(const Ham &, const GenCIWfn &, GenCIWfn &, const double *, const double,
-                         const long, const long);
 
 template<class WfnType>
 long add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps) {

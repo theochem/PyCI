@@ -53,8 +53,7 @@ GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd) : OneSpinWfn(nb,
         throw std::runtime_error("nocc_dn != 0");
 }
 
-GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd, const long n,
-                   const unsigned long *ptr)
+GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd, const long n, const ulong *ptr)
     : OneSpinWfn(nb, nu, nd, n, ptr) {
     if (nocc_dn)
         throw std::runtime_error("nocc_dn != 0");
@@ -66,9 +65,9 @@ GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd, const long n, co
         throw std::runtime_error("nocc_dn != 0");
 }
 
-GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd, const Array<unsigned long> array)
+GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd, const Array<ulong> array)
     : GenCIWfn(nb, nu, nd, array.request().shape[0],
-               reinterpret_cast<const unsigned long *>(array.request().ptr)) {
+               reinterpret_cast<const ulong *>(array.request().ptr)) {
 }
 
 GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd, const Array<long> array)

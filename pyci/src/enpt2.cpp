@@ -17,7 +17,7 @@
 
 namespace pyci {
 
-typedef HashMap<unsigned long, std::pair<double, double>> PairHashMap;
+typedef HashMap<ulong, std::pair<double, double>> PairHashMap;
 
 namespace {
 
@@ -94,20 +94,20 @@ void compute_enpt2_thread_gather(const FullCIWfn &wfn, const double *one_mo, con
 
 void compute_enpt2_thread_terms(const Ham &ham, const FullCIWfn &wfn, PairHashMap &terms,
                                 const double *coeffs, const double eps, const long idet,
-                                unsigned long *det_up, long *occs_up, long *virs_up, long *t_up) {
+                                ulong *det_up, long *occs_up, long *virs_up, long *t_up) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset, sign_up;
-    unsigned long rank;
+    ulong rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val;
-    const unsigned long *rdet_up = wfn.det_ptr(idet);
-    const unsigned long *rdet_dn = rdet_up + wfn.nword;
-    unsigned long *det_dn = det_up + wfn.nword;
+    const ulong *rdet_up = wfn.det_ptr(idet);
+    const ulong *rdet_dn = rdet_up + wfn.nword;
+    ulong *det_dn = det_up + wfn.nword;
     long *occs_dn = occs_up + wfn.nocc_up;
     long *virs_dn = virs_up + wfn.nvir_up;
     long *t_dn = t_up + wfn.nocc_up;
-    std::memcpy(det_up, rdet_up, sizeof(unsigned long) * wfn.nword2);
+    std::memcpy(det_up, rdet_up, sizeof(ulong) * wfn.nword2);
     fill_occs(wfn.nword, rdet_up, occs_up);
     fill_occs(wfn.nword, rdet_dn, occs_dn);
     fill_virs(wfn.nword, wfn.nbasis, rdet_up, virs_up);
@@ -283,16 +283,16 @@ void compute_enpt2_thread_gather(const GenCIWfn &wfn, const double *one_mo, cons
 }
 
 void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, PairHashMap &terms,
-                                const double *coeffs, const double eps, const long idet,
-                                unsigned long *det, long *occs, long *virs, long *tmps) {
+                                const double *coeffs, const double eps, const long idet, ulong *det,
+                                long *occs, long *virs, long *tmps) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
-    unsigned long rank;
+    ulong rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val;
-    const unsigned long *rdet = wfn.det_ptr(idet);
-    std::memcpy(det, rdet, sizeof(unsigned long) * wfn.nword);
+    const ulong *rdet = wfn.det_ptr(idet);
+    std::memcpy(det, rdet, sizeof(ulong) * wfn.nword);
     fill_occs(wfn.nword, rdet, occs);
     fill_virs(wfn.nword, wfn.nbasis, rdet, virs);
     std::memcpy(tmps, occs, sizeof(long) * wfn.nocc);
@@ -356,7 +356,7 @@ template<class WfnType>
 void compute_enpt2_thread(const Ham &ham, const WfnType &wfn, PairHashMap &terms,
                           const double *coeffs, const double eps, const long start,
                           const long end) {
-    std::vector<unsigned long> det(wfn.nword2);
+    std::vector<ulong> det(wfn.nword2);
     std::vector<long> occs(wfn.nocc);
     std::vector<long> virs(wfn.nvir);
     std::vector<long> tmps(wfn.nocc);
@@ -364,11 +364,6 @@ void compute_enpt2_thread(const Ham &ham, const WfnType &wfn, PairHashMap &terms
         compute_enpt2_thread_terms(ham, wfn, terms, coeffs, eps, i, &det[0], &occs[0], &virs[0],
                                    &tmps[0]);
 }
-
-template void compute_enpt2_thread(const Ham &, const FullCIWfn &, PairHashMap &, const double *,
-                                   const double, const long, const long);
-template void compute_enpt2_thread(const Ham &, const GenCIWfn &, PairHashMap &, const double *,
-                                   const double, const long, const long);
 
 template<class WfnType>
 double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coeffs,

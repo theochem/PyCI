@@ -85,7 +85,7 @@ def solve(
         c0 = np.concatenate((c0, np.zeros(op.shape[1] - c0.shape[0], dtype=pyci.c_double)))
     # Solve eigenproblem
     es, cs = sp.eigsh(
-        sp.LinearOperator(matvec=op, shape=op.shape),
+        sp.LinearOperator(matvec=op, rmatvec=op, shape=op.shape),
         k=n,
         v0=c0,
         ncv=ncv,
@@ -136,11 +136,9 @@ def solve_cepa0(*args, e0=None, c0=None, refind=0, maxiter=5000, tol=1.0e-12, ls
     c0 = np.zeros(op.shape[1], dtype=pyci.c_double) if c0 is None else c0 / c0[refind]
     c0[refind] = op.get_element(refind, refind) if e0 is None else e0
     # Prepare left-hand side matrix
-    lhs = sp.LinearOperator(
-        matvec=partial(op.matvec_cepa0, refind=refind),
-        rmatvec=partial(op.rmatvec_cepa0, refind=refind),
-        shape=op.shape,
-    )
+    matvec = partial(op.matvec_cepa0, refind=refind)
+    rmatvec = partial(op.rmatvec_cepa0, refind=refind)
+    lhs = sp.LinearOperator(matvec=matvec, rmatvec=rmatvec, shape=op.shape)
     # Prepare right-hand side vector
     rhs = op.rhs_cepa0(refind=refind)
     rhs -= op.matvec_cepa0(c0, refind=refind)

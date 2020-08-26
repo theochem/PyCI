@@ -36,7 +36,7 @@ TwoSpinWfn::TwoSpinWfn(const std::string &filename) {
             break;
         nword2 = nword_det(nb) * 2;
         dets.resize(nword2 * n);
-        if (file.read(reinterpret_cast<char *>(&dets[0]), sizeof(unsigned long) * nword2 * n))
+        if (file.read(reinterpret_cast<char *>(&dets[0]), sizeof(ulong) * nword2 * n))
             failed = false;
     } while (false);
     file.close();
@@ -52,12 +52,11 @@ TwoSpinWfn::TwoSpinWfn(const std::string &filename) {
 TwoSpinWfn::TwoSpinWfn(const long nb, const long nu, const long nd) : Wfn(nb, nu, nd) {
 }
 
-TwoSpinWfn::TwoSpinWfn(const long nb, const long nu, const long nd, const long n,
-                       const unsigned long *ptr)
+TwoSpinWfn::TwoSpinWfn(const long nb, const long nu, const long nd, const long n, const ulong *ptr)
     : TwoSpinWfn(nb, nu, nd) {
     ndet = n;
     dets.resize(n * nword2);
-    std::memcpy(&dets[0], ptr, sizeof(unsigned long) * n * nword2);
+    std::memcpy(&dets[0], ptr, sizeof(ulong) * n * nword2);
     for (long i = 0; i < n; ++i)
         dict[rank_det(ptr + i * nword2)] = i;
 }
@@ -79,10 +78,9 @@ TwoSpinWfn::TwoSpinWfn(const long nb, const long nu, const long nd, const long n
         dict[rank_det(&dets[i * nword2])] = i;
 }
 
-TwoSpinWfn::TwoSpinWfn(const long nb, const long nu, const long nd,
-                       const Array<unsigned long> array)
+TwoSpinWfn::TwoSpinWfn(const long nb, const long nu, const long nd, const Array<ulong> array)
     : TwoSpinWfn(nb, nu, nd, array.request().shape[0],
-                 reinterpret_cast<const unsigned long *>(array.request().ptr)) {
+                 reinterpret_cast<const ulong *>(array.request().ptr)) {
 }
 
 TwoSpinWfn::TwoSpinWfn(const long nb, const long nu, const long nd, const Array<long> array)
@@ -90,7 +88,7 @@ TwoSpinWfn::TwoSpinWfn(const long nb, const long nu, const long nd, const Array<
                  reinterpret_cast<const long *>(array.request().ptr)) {
 }
 
-const unsigned long *TwoSpinWfn::det_ptr(const long i) const {
+const ulong *TwoSpinWfn::det_ptr(const long i) const {
     return &dets[i * nword2];
 }
 
@@ -102,16 +100,16 @@ void TwoSpinWfn::to_file(const std::string &filename) const {
         file.write(reinterpret_cast<const char *>(&nbasis), sizeof(long)) &&
         file.write(reinterpret_cast<const char *>(&nocc_up), sizeof(long)) &&
         file.write(reinterpret_cast<const char *>(&nocc_dn), sizeof(long)) &&
-        file.write(reinterpret_cast<const char *>(&dets[0]), sizeof(unsigned long) * nword2 * ndet);
+        file.write(reinterpret_cast<const char *>(&dets[0]), sizeof(ulong) * nword2 * ndet);
     file.close();
     if (!success)
         throw std::ios_base::failure("error writing file");
 }
 
-void TwoSpinWfn::to_det_array(const long low, const long high, unsigned long *ptr) const {
+void TwoSpinWfn::to_det_array(const long low, const long high, ulong *ptr) const {
     if (low >= high)
         return;
-    std::memcpy(ptr, &dets[low * nword], (high - low) * nword2 * sizeof(unsigned long));
+    std::memcpy(ptr, &dets[low * nword], (high - low) * nword2 * sizeof(ulong));
 }
 
 void TwoSpinWfn::to_occ_array(const long low, const long high, long *ptr) const {
@@ -128,75 +126,75 @@ void TwoSpinWfn::to_occ_array(const long low, const long high, long *ptr) const 
     }
 }
 
-long TwoSpinWfn::index_det(const unsigned long *det) const {
+long TwoSpinWfn::index_det(const ulong *det) const {
     const auto &search = dict.find(rank_det(det));
     return (search == dict.end()) ? -1 : search->second;
 }
 
-long TwoSpinWfn::index_det_from_rank(const unsigned long rank) const {
+long TwoSpinWfn::index_det_from_rank(const ulong rank) const {
     const auto &search = dict.find(rank);
     return (search == dict.end()) ? -1 : search->second;
 }
 
-void TwoSpinWfn::copy_det(const long i, unsigned long *det) const {
-    std::memcpy(det, &dets[i * nword2], sizeof(unsigned long) * nword2);
+void TwoSpinWfn::copy_det(const long i, ulong *det) const {
+    std::memcpy(det, &dets[i * nword2], sizeof(ulong) * nword2);
 }
 
-unsigned long TwoSpinWfn::rank_det(const unsigned long *det) const {
-    return SpookyHash::Hash64((void *)det, sizeof(unsigned long) * nword2, PYCI_SPOOKYHASH_SEED);
+ulong TwoSpinWfn::rank_det(const ulong *det) const {
+    return SpookyHash::Hash64((void *)det, sizeof(ulong) * nword2, PYCI_SPOOKYHASH_SEED);
 }
 
-long TwoSpinWfn::add_det(const unsigned long *det) {
+long TwoSpinWfn::add_det(const ulong *det) {
     if (dict.insert(std::make_pair(rank_det(det), ndet)).second) {
         dets.resize(dets.size() + nword2);
-        std::memcpy(&dets[nword2 * ndet], det, sizeof(unsigned long) * nword2);
+        std::memcpy(&dets[nword2 * ndet], det, sizeof(ulong) * nword2);
         return ndet++;
     }
     return -1;
 }
 
-long TwoSpinWfn::add_det_with_rank(const unsigned long *det, const unsigned long rank) {
+long TwoSpinWfn::add_det_with_rank(const ulong *det, const ulong rank) {
     if (dict.insert(std::make_pair(rank, ndet)).second) {
         dets.resize(dets.size() + nword2);
-        std::memcpy(&dets[nword2 * ndet], det, sizeof(unsigned long) * nword2);
+        std::memcpy(&dets[nword2 * ndet], det, sizeof(ulong) * nword2);
         return ndet++;
     }
     return -1;
 }
 
 long TwoSpinWfn::add_det_from_occs(const long *occs) {
-    std::vector<unsigned long> det(nword2);
+    std::vector<ulong> det(nword2);
     fill_det(nocc_up, &occs[0], &det[0]);
     fill_det(nocc_dn, &occs[nocc_up], &det[nword]);
     return add_det(&det[0]);
 }
 
 void TwoSpinWfn::add_hartreefock_det(void) {
-    std::vector<unsigned long> det(nword2);
+    std::vector<ulong> det(nword2);
     fill_hartreefock_det(nocc_up, &det[0]);
     fill_hartreefock_det(nocc_dn, &det[nword]);
     add_det(&det[0]);
 }
 
 void TwoSpinWfn::add_all_dets(void) {
-    if ((maxrank_up == PYCI_INT_MAX) || (maxrank_dn == PYCI_INT_MAX))
+    if ((maxrank_up == Max<long>()) || (maxrank_dn == Max<long>()))
         throw std::domain_error("cannot generate > 2 ** 63 determinants");
     ndet = maxrank_up * maxrank_dn;
-    std::fill(dets.begin(), dets.end(), PYCI_UINT_ZERO);
+    std::fill(dets.begin(), dets.end(), 0UL);
     dets.resize(ndet * nword2);
     dict.clear();
     dict.reserve(ndet);
     // add spin-up determinants to array
     std::vector<long> occs(nocc_up + 1);
-    std::vector<unsigned long> det(nword);
+    std::vector<ulong> det(nword);
     unrank_colex(nbasis, nocc_up, 0, &occs[0]);
     occs[nocc_up] = nbasis + 1;
     long j = 0, k;
     for (long i = 0; i < maxrank_up; ++i) {
         fill_det(nocc_up, &occs[0], &det[0]);
         for (k = 0; k < maxrank_dn; ++k)
-            std::memcpy(&dets[j++ * nword2], &det[0], sizeof(unsigned long) * nword);
-        std::fill(det.begin(), det.end(), PYCI_UINT_ZERO);
+            std::memcpy(&dets[j++ * nword2], &det[0], sizeof(ulong) * nword);
+        std::fill(det.begin(), det.end(), 0UL);
         next_colex(&occs[0]);
     }
     // add spin-down determinants to array
@@ -207,17 +205,17 @@ void TwoSpinWfn::add_all_dets(void) {
         fill_det(nocc_dn, &occs[0], &det[0]);
         j = i;
         for (k = 0; k < maxrank_up; ++k) {
-            std::memcpy(&dets[j * nword2 + nword], &det[0], sizeof(unsigned long) * nword);
+            std::memcpy(&dets[j * nword2 + nword], &det[0], sizeof(ulong) * nword);
             j += maxrank_dn;
         }
-        std::fill(det.begin(), det.end(), PYCI_UINT_ZERO);
+        std::fill(det.begin(), det.end(), 0UL);
         next_colex(&occs[0]);
     }
     for (long i = 0; i < ndet; ++i)
         dict[rank_det(&dets[i * nword2])] = i;
 }
 
-void TwoSpinWfn::add_excited_dets(const unsigned long *rdet, const long e_up, const long e_dn) {
+void TwoSpinWfn::add_excited_dets(const ulong *rdet, const long e_up, const long e_dn) {
     if ((e_up == 0) && (e_dn == 0)) {
         add_det(rdet);
         return;
@@ -226,12 +224,12 @@ void TwoSpinWfn::add_excited_dets(const unsigned long *rdet, const long e_up, co
     wfn_up.add_excited_dets(&rdet[0], e_up);
     OneSpinWfn wfn_dn(nbasis, nocc_dn, nocc_dn);
     wfn_dn.add_excited_dets(&rdet[nword], e_dn);
-    std::vector<unsigned long> det(nword2);
+    std::vector<ulong> det(nword2);
     long j;
     for (long i = 0; i < wfn_up.ndet; ++i) {
-        std::memcpy(&det[0], wfn_up.det_ptr(i), sizeof(unsigned long) * nword);
+        std::memcpy(&det[0], wfn_up.det_ptr(i), sizeof(ulong) * nword);
         for (j = 0; j < wfn_dn.ndet; ++j) {
-            std::memcpy(&det[nword], wfn_dn.det_ptr(j), sizeof(unsigned long) * nword);
+            std::memcpy(&det[nword], wfn_dn.det_ptr(j), sizeof(ulong) * nword);
             add_det(&det[0]);
         }
     }
@@ -247,13 +245,13 @@ void TwoSpinWfn::reserve(const long n) {
     dict.reserve(n);
 }
 
-Array<unsigned long> TwoSpinWfn::py_getitem(const long index) const {
-    Array<unsigned long> array(nword);
-    copy_det(index, reinterpret_cast<unsigned long *>(array.request().ptr));
+Array<ulong> TwoSpinWfn::py_getitem(const long index) const {
+    Array<ulong> array(nword);
+    copy_det(index, reinterpret_cast<ulong *>(array.request().ptr));
     return array;
 }
 
-Array<unsigned long> TwoSpinWfn::py_to_det_array(long start, long end) const {
+Array<ulong> TwoSpinWfn::py_to_det_array(long start, long end) const {
     if (start == -1) {
         start = 0;
         if (end == -1)
@@ -262,8 +260,8 @@ Array<unsigned long> TwoSpinWfn::py_to_det_array(long start, long end) const {
         end = start;
         start = 0;
     }
-    Array<unsigned long> array({end - start, static_cast<long>(2), nword});
-    to_det_array(start, end, reinterpret_cast<unsigned long *>(array.request().ptr));
+    Array<ulong> array({end - start, static_cast<long>(2), nword});
+    to_det_array(start, end, reinterpret_cast<ulong *>(array.request().ptr));
     return array;
 }
 
@@ -281,16 +279,16 @@ Array<long> TwoSpinWfn::py_to_occ_array(long start, long end) const {
     return array;
 }
 
-long TwoSpinWfn::py_index_det(const Array<unsigned long> det) const {
-    return index_det(reinterpret_cast<const unsigned long *>(det.request().ptr));
+long TwoSpinWfn::py_index_det(const Array<ulong> det) const {
+    return index_det(reinterpret_cast<const ulong *>(det.request().ptr));
 }
 
-unsigned long TwoSpinWfn::py_rank_det(const Array<unsigned long> det) const {
-    return rank_det(reinterpret_cast<const unsigned long *>(det.request().ptr));
+ulong TwoSpinWfn::py_rank_det(const Array<ulong> det) const {
+    return rank_det(reinterpret_cast<const ulong *>(det.request().ptr));
 }
 
-long TwoSpinWfn::py_add_det(const Array<unsigned long> det) {
-    return add_det(reinterpret_cast<const unsigned long *>(det.request().ptr));
+long TwoSpinWfn::py_add_det(const Array<ulong> det) {
+    return add_det(reinterpret_cast<const ulong *>(det.request().ptr));
 }
 
 long TwoSpinWfn::py_add_occs(const Array<long> occs) {
@@ -298,15 +296,15 @@ long TwoSpinWfn::py_add_occs(const Array<long> occs) {
 }
 
 long TwoSpinWfn::py_add_excited_dets(const long exc, const pybind11::object ref) {
-    std::vector<unsigned long> v_ref;
-    unsigned long *ptr;
+    std::vector<ulong> v_ref;
+    ulong *ptr;
     if (ref.is(pybind11::none())) {
         v_ref.resize(nword2);
         ptr = &v_ref[0];
         fill_hartreefock_det(nocc_up, ptr);
         fill_hartreefock_det(nocc_dn, ptr + nword);
     } else
-        ptr = reinterpret_cast<unsigned long *>(ref.cast<Array<unsigned long>>().request().ptr);
+        ptr = reinterpret_cast<ulong *>(ref.cast<Array<ulong>>().request().ptr);
     long ndet_old = ndet;
     long maxup = (nocc_up < nvir_up) ? nocc_up : nvir_up;
     long maxdn = (nocc_dn < nvir_dn) ? nocc_dn : nvir_dn;

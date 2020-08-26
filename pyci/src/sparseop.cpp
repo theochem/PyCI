@@ -211,13 +211,11 @@ Array<double> SparseOp::py_rhs_cepa0(const long refind) const {
     return y;
 }
 
-namespace {
-
 template<class WfnType>
-void init_thread(SparseOp &op, const Ham &ham, const WfnType &wfn, const long start,
-                 const long end) {
+void SparseOp::init_thread(SparseOp &op, const Ham &ham, const WfnType &wfn, const long start,
+                           const long end) {
     long row = 0;
-    std::vector<unsigned long> det(wfn.nword2);
+    std::vector<ulong> det(wfn.nword2);
     std::vector<long> occs(wfn.nocc);
     std::vector<long> virs(wfn.nvir);
     for (long i = start; i < end; ++i) {
@@ -226,14 +224,6 @@ void init_thread(SparseOp &op, const Ham &ham, const WfnType &wfn, const long st
     }
     op.size = op.indices.size();
 }
-
-template void init_thread(SparseOp &, const Ham &, const DOCIWfn &wfn, const long, const long);
-
-template void init_thread(SparseOp &, const Ham &, const FullCIWfn &wfn, const long, const long);
-
-template void init_thread(SparseOp &, const Ham &, const GenCIWfn &wfn, const long, const long);
-
-} // namespace
 
 template<class WfnType>
 void SparseOp::init(const Ham &ham, const WfnType &wfn, const long rows, const long cols) {
@@ -291,8 +281,8 @@ void SparseOp::init_thread_condense(SparseOp &op, const long ithread) {
     std::vector<long>().swap(indptr);
 }
 
-void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const long idet,
-                                   unsigned long *det, long *occs, long *virs) {
+void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulong *det,
+                                   long *occs, long *virs) {
     long i, j, k, l, jdet;
     double val1 = 0.0, val2 = 0.0;
     wfn.copy_det(idet, det);
@@ -331,18 +321,18 @@ void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const lon
 }
 
 void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const long idet,
-                                   unsigned long *det_up, long *occs_up, long *virs_up) {
+                                   ulong *det_up, long *occs_up, long *virs_up) {
     long i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset, sign_up;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val1, val2 = 0.0;
-    const unsigned long *rdet_up = wfn.det_ptr(idet);
-    const unsigned long *rdet_dn = rdet_up + wfn.nword;
-    unsigned long *det_dn = det_up + wfn.nword;
+    const ulong *rdet_up = wfn.det_ptr(idet);
+    const ulong *rdet_dn = rdet_up + wfn.nword;
+    ulong *det_dn = det_up + wfn.nword;
     long *occs_dn = occs_up + wfn.nocc_up;
     long *virs_dn = virs_up + wfn.nvir_up;
-    std::memcpy(det_up, rdet_up, sizeof(unsigned long) * wfn.nword2);
+    std::memcpy(det_up, rdet_up, sizeof(ulong) * wfn.nword2);
     fill_occs(wfn.nword, rdet_up, occs_up);
     fill_occs(wfn.nword, rdet_dn, occs_dn);
     fill_virs(wfn.nword, wfn.nbasis, rdet_up, virs_up);
@@ -497,16 +487,16 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
     indptr.push_back(indices.size());
 }
 
-void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const long idet,
-                                   unsigned long *det, long *occs, long *virs) {
+void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const long idet, ulong *det,
+                                   long *occs, long *virs) {
     long i, j, k, l, ii, jj, kk, ll, jdet, ioffset, koffset;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val1, val2 = 0.0;
-    const unsigned long *rdet = wfn.det_ptr(idet);
+    const ulong *rdet = wfn.det_ptr(idet);
     // fill working vectors
-    std::memcpy(det, rdet, sizeof(unsigned long) * wfn.nword);
+    std::memcpy(det, rdet, sizeof(ulong) * wfn.nword);
     fill_occs(wfn.nword, rdet, occs);
     fill_virs(wfn.nword, wfn.nbasis, rdet, virs);
     // loop over occupied indices
