@@ -35,7 +35,7 @@ CFLAGS += -pipe
 CFLAGS += -O3
 
 CFLAGS += -march=x86-64
-CFLAGS += -mtune=native
+CFLAGS += -mtune=generic
 
 CFLAGS += -fPIC
 CFLAGS += -fno-plt
