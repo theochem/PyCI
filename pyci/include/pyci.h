@@ -45,7 +45,12 @@
 
 /* Seed for SpookyHash. */
 #ifndef PYCI_SPOOKYHASH_SEED
-#define PYCI_SPOOKYHASH_SEED static_cast<std::uint64_t>(0xdeadbeefdeadbeefUL)
+#define PYCI_SPOOKYHASH_SEED 0xdeadbeefdeadbeefUL
+#endif
+
+/* Default number of threads. */
+#ifndef PYCI_NUM_THREADS_DEFAULT
+#define PYCI_NUM_THREADS_DEFAULT 4
 #endif
 
 namespace pyci {
@@ -75,7 +80,7 @@ struct GenCIWfn;
 struct SparseOp;
 
 /* Number of threads global variable. */
-int_t g_number_threads{4};
+int_t g_number_threads{PYCI_NUM_THREADS_DEFAULT};
 
 /* PyCI routines. */
 

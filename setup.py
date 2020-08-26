@@ -80,7 +80,7 @@ packages = [
 
 
 package_data = {
-    "pyci": ["include/*.h", "src/*.cpp"],
+    "pyci": ["pyci*.so", "include/*.h", "src/*.cpp"],
     "pyci.test": ["data/*.fcidump", "data/*.npy", "data/*.npz"],
 }
 
