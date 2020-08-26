@@ -20,12 +20,6 @@ Run `python setup.py --help` for help.
 
 """
 
-PYCI_SPOOKYHASH_SEED = 0xDEADBEEFDEAFBEEF
-
-
-PYCI_NUM_THREADS_DEFAULT = 4
-
-
 name = "pyci"
 
 
