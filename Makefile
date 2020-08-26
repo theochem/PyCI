@@ -13,6 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
+ifndef (PYTHON)
+	PYTHON =python
+endif
+
 ifndef (CXX)
 	CXX =g++
 endif
@@ -27,29 +31,34 @@ endif
 
 CFLAGS  =--std=c++14
 CFLAGS += -Wall
+CFLAGS += -pipe
 CFLAGS += -O3
+
 CFLAGS += -march=x86-64
+CFLAGS += -mtune=native
+
 CFLAGS += -fPIC
 CFLAGS += -fno-plt
-CFLAGS += -fvisibility=hidden
 CFLAGS += -fwrapv
-CFLAGS += -mtune=native
+CFLAGS += -fvisibility=hidden
+
 CFLAGS += -pthread
-CFLAGS += -DPYCI_VERSION=$(shell python -c "from setup import version; print(version)")
+
+CFLAGS += -I$(shell $(PYTHON) -c "import sysconfig; print(sysconfig.get_paths()['include'])")
+CFLAGS += -I$(shell $(PYTHON) -c "import numpy; print(numpy.get_include())")
+CFLAGS += -Ilib/pybind11/include
+CFLAGS += -Ilib/parallel-hashmap
+CFLAGS += -Ipyci/include
+
+CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
 CFLAGS += -DPYCI_SPOOKYHASH_SEED=$(SPOOKYHASH_SEED)
 CFLAGS += -DPYCI_NUM_THREADS_DEFAULT=$(NUM_THREADS_DEFAULT)
-
-INCLUDES  =-I$(shell python -c "import sysconfig; print(sysconfig.get_paths()['include'])")
-INCLUDES += -I$(shell python -c "import numpy; print(numpy.get_include())")
-INCLUDES += -Ilib/pybind11/include
-INCLUDES += -Ilib/parallel-hashmap
-INCLUDES += -Ipyci/include
 
 .PHONY: all
 all: pyci/pyci.so
 
 pyci/pyci.so:
-	$(CXX) $(CFLAGS) $(INCLUDES) -shared pyci/src/pyci.cpp -o pyci/pyci.so
+	$(CXX) $(CFLAGS) -shared pyci/src/pyci.cpp -o pyci/pyci.so
 
 .PHONY: clean
 clean:

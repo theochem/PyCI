@@ -80,7 +80,8 @@ struct GenCIWfn;
 struct SparseOp;
 
 /* Number of threads global variable. */
-int_t g_number_threads{PYCI_NUM_THREADS_DEFAULT};
+extern int_t g_number_threads;
+
 
 /* PyCI routines. */
 

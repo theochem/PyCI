@@ -19,6 +19,8 @@
 
 namespace pyci {
 
+int_t g_number_threads {PYCI_NUM_THREADS_DEFAULT};
+
 int_t get_num_threads(void) {
     return g_number_threads;
 }
