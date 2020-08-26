@@ -75,7 +75,7 @@ Then, run the following to build and install PyCI:
     cd pyci && python setup.py install --user
 
 You can also build PyCI with the ``Makefile`` if you want (or need) to change the default
-compilation settings. You need the ``python-config`` tool for the Makefile by default.
+compilation settings.
 
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
