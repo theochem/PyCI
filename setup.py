@@ -20,15 +20,15 @@ Run `python setup.py --help` for help.
 
 """
 
-from os import environ
-from shutil import which
-
 from setuptools import Extension, setup
 
 import numpy
 
-# Uncomment this to use a specific non-negative integer seed for the SpookyHash algorithm.
-# PYCI_SPOOKYHASH_SEED = 0
+
+PYCI_SPOOKYHASH_SEED = 0xDEADBEEFDEAFBEEF
+
+PYCI_NUM_THREADS_DEFAULT = 4
+
 
 name = "pyci"
 
@@ -99,21 +99,19 @@ include_dirs = [
 
 
 libraries = [
-    "pthread",
-    "m",
 ]
 
 
 extra_compile_args = [
     "-Wall",
-    "-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION",
-    f"-DPYCI_VERSION={version}",
     "-fvisibility=hidden",
+    f"-DPYCI_VERSION={version}",
+    f"-DPYCI_SPOOKYHASH_SEED={hex(PYCI_SPOOKYHASH_SEED)}UL",
+    f"-DPYCI_NUM_THREADS_DEFAULT={PYCI_NUM_THREADS_DEFAULT}",
 ]
 
 
-extra_link_args = [
-]
+extra_link_args = []
 
 
 cext = {
@@ -128,14 +126,6 @@ cext = {
 
 
 if __name__ == "__main__":
-
-    if "CXX" not in environ and which("clang++") is not None:
-        environ.update(CC="clang", CXX="clang++")
-
-    try:
-        extra_compile_args.append(f"-DPYCI_SPOOKYHASH_SEED={hex(abs(PYCI_SPOOKYHASH_SEED))}U")
-    except NameError:
-        pass
 
     pyci_extension = Extension(**cext)
 

@@ -28,30 +28,29 @@ endif
 CFLAGS  =--std=c++14
 CFLAGS += -Wall
 CFLAGS += -O3
-CFLAGS += -mtune=native
+CFLAGS += -march=x86-64
 CFLAGS += -fPIC
+CFLAGS += -fno-plt
 CFLAGS += -fvisibility=hidden
+CFLAGS += -fwrapv
+CFLAGS += -mtune=native
 CFLAGS += -pthread
 CFLAGS += -DPYCI_VERSION=$(shell python -c "from setup import version; print(version)")
 CFLAGS += -DPYCI_SPOOKYHASH_SEED=$(SPOOKYHASH_SEED)
 CFLAGS += -DPYCI_NUM_THREADS_DEFAULT=$(NUM_THREADS_DEFAULT)
 
-LIBS =-lm
-
-INCLUDES  =$(shell python-config --includes)
+INCLUDES  =-I$(shell python -c "import sysconfig; print(sysconfig.get_paths()['include'])")
 INCLUDES += -I$(shell python -c "import numpy; print(numpy.get_include())")
 INCLUDES += -Ilib/pybind11/include
 INCLUDES += -Ilib/parallel-hashmap
 INCLUDES += -Ipyci/include
 
-PYTHON_SUFFIX =$(shell python-config --extension-suffix | sed 's/.so//g')
-
 .PHONY: all
-all: pyci/pyci$(PYTHON_SUFFIX).so
+all: pyci/pyci.so
 
-pyci/pyci$(PYTHON_SUFFIX).so:
-	$(CXX) $(CFLAGS) $(LIBS) $(INCLUDES) -shared pyci/src/pyci.cpp -o pyci/pyci$(PYTHON_SUFFIX).so
+pyci/pyci.so:
+	$(CXX) $(CFLAGS) $(INCLUDES) -shared pyci/src/pyci.cpp -o pyci/pyci.so
 
 .PHONY: clean
 clean:
-	rm -f ./pyci/pyci$(PYTHON_SUFFIX).so
+	rm -f ./pyci/pyci*.so
