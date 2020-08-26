@@ -29,7 +29,11 @@ ifndef (NUM_THREADS_DEFAULT)
 	NUM_THREADS_DEFAULT =4
 endif
 
-CFLAGS  =--std=c++14
+ifndef (CFLAGS)
+	CFLAGS =
+endif
+
+CFLAGS += --std=c++14
 CFLAGS += -Wall
 CFLAGS += -pipe
 CFLAGS += -O3
@@ -62,4 +66,4 @@ pyci/pyci.so:
 
 .PHONY: clean
 clean:
-	rm -f ./pyci/pyci.so ./build ./dist ./pyci.egg-info
+	rm -rf ./pyci/pyci.so ./build ./dist ./pyci.egg-info
