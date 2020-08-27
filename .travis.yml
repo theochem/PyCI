@@ -1,22 +1,24 @@
 language: python
 
-sudo: false
-
 python:
   - "3.6"
 
 install:
-  - pip install numpy scipy pytest
+  - python -m pip install numpy scipy pytest
   - make
 
 os:
   - linux
+  - osx
 
 dist:
   - bionic
+
+osx_image:
+  - xcode10
 
 branches:
   only:
     - master
 
-script: python -m pytest pyci
+script: PYCI_NUM_THREADS=2 python -m pytest pyci
