@@ -1,6 +1,6 @@
-[submodule "lib/align"]
-	path = lib/align
-	url = https://github.com/boostorg/align.git
+[submodule "lib/eigen"]
+	path = lib/eigen
+	url = https://gitlab.com/libeigen/eigen.git
 [submodule "lib/parallel-hashmap"]
 	path = lib/parallel-hashmap
 	url = https://github.com/greg7mdp/parallel-hashmap.git

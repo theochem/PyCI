@@ -44,7 +44,7 @@ The following programs/libraries are required to build PyCI:
 
 Some header-only C++ libraries are included with this git repository:
 
--  Boost.Align_ (git submodule)
+-  Eigen_ (git submodule)
 -  `Parallel Hashmap`__ (git submodule)
 -  Pybind11_ (git submodule)
 -  SpookyHash_ (files included directly)
@@ -93,7 +93,7 @@ Then, after installing PyCI, run the following to build the HTML documentation:
     cd doc && make html
 
 .. _`Clang/LLVM`:       http://clang.llvm.org/
-.. _Boost.Align:        http://boost.org/libs/align/
+.. _Eigen:              http://eigen.tuxfamily.org/
 .. _GCC:                http://gcc.gnu.org/
 .. _Make:               http://gnu.org/software/make/
 .. _NumPy:              http://numpy.org/

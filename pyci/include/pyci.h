@@ -29,9 +29,11 @@
 #include <utility>
 #include <vector>
 
-#include <SpookyV2.h>
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE long
+#include <Eigen/Core>
+#include <Eigen/SparseCore>
 
-#include <boost/align.hpp>
+#include <SpookyV2.h>
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -107,18 +109,13 @@ inline int Ctz(const unsigned long t) {
     return __builtin_ctzl(t);
 }
 
-/* Aligned allocator. */
-
-template<typename T, std::size_t Alignment>
-using AlignedAllocator = boost::alignment::aligned_allocator<T, Alignment>;
-
 /* Vector template types. */
 
 template<typename T>
 using Vector = std::vector<T>;
 
 template<typename T>
-using AlignedVector = std::vector<T, AlignedAllocator<T, 16U>>;
+using AlignedVector = std::vector<T, Eigen::aligned_allocator<T>>;
 
 /* Hash map template type. */
 
@@ -550,6 +547,7 @@ struct SparseOp final {
 public:
     long nrow, ncol, size;
     double ecore;
+    bool symmetric;
     pybind11::object shape;
 
 private:
@@ -561,13 +559,13 @@ public:
 
     SparseOp(SparseOp &&) noexcept;
 
-    SparseOp(const long, const long);
+    SparseOp(const long, const long, const bool);
 
-    SparseOp(const Ham &, const DOCIWfn &, const long, const long);
+    SparseOp(const Ham &, const DOCIWfn &, const long, const long, const bool);
 
-    SparseOp(const Ham &, const FullCIWfn &, const long, const long);
+    SparseOp(const Ham &, const FullCIWfn &, const long, const long, const bool);
 
-    SparseOp(const Ham &, const GenCIWfn &, const long, const long);
+    SparseOp(const Ham &, const GenCIWfn &, const long, const long, const bool);
 
     const double *data_ptr(const long) const;
 
@@ -578,6 +576,8 @@ public:
     double get_element(const long, const long) const;
 
     void perform_op(const double *, double *) const;
+
+    void perform_op_symm(const double *, double *) const;
 
     void perform_op_cepa0(const double *, double *, const long) const;
 

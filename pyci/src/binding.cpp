@@ -230,18 +230,22 @@ PYBIND11_MODULE(pyci, m) {
     sparse_op.doc() = sparseop_doc;
 
     sparse_op.def_readonly("ecore", &SparseOp::ecore);
+    sparse_op.def_readonly("symmetric", &SparseOp::symmetric);
     sparse_op.def_readonly("size", &SparseOp::size);
 
     sparse_op.def_readonly("shape", &SparseOp::shape);
 
-    sparse_op.def(py::init<const Ham &, const DOCIWfn &, const long, const long>(), py::arg("ham"),
-                  py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
+    sparse_op.def(py::init<const Ham &, const DOCIWfn &, const long, const long, const bool>(),
+                  py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
+                  py::arg("symmetric") = false);
 
-    sparse_op.def(py::init<const Ham &, const FullCIWfn &, const long, const long>(),
-                  py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
+    sparse_op.def(py::init<const Ham &, const FullCIWfn &, const long, const long, const bool>(),
+                  py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
+                  py::arg("symmetric") = false);
 
-    sparse_op.def(py::init<const Ham &, const GenCIWfn &, const long, const long>(), py::arg("ham"),
-                  py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1);
+    sparse_op.def(py::init<const Ham &, const GenCIWfn &, const long, const long, const bool>(),
+                  py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
+                  py::arg("symmetric") = false);
 
     sparse_op.def("__call__", &SparseOp::py_matvec, py::arg("x"));
 

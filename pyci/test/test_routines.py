@@ -49,7 +49,10 @@ def test_solve_sparse(filename, wfn_type, occs, energy):
     ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
-    op = pyci.sparse_op(ham, wfn)
+    op = pyci.sparse_op(ham, wfn, symmetric=False)
+    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6)
+    npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
+    op = pyci.sparse_op(ham, wfn, symmetric=True)
     es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6)
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 

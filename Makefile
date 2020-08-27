@@ -34,8 +34,9 @@ CFLAGS += -pthread
 
 CFLAGS += -I$(shell $(PYTHON) -c "import sysconfig; print(sysconfig.get_paths()['include'])")
 CFLAGS += -I$(shell $(PYTHON) -c "import numpy; print(numpy.get_include())")
-CFLAGS += -Ilib/pybind11/include
+CFLAGS += -Ilib/eigen
 CFLAGS += -Ilib/parallel-hashmap
+CFLAGS += -Ilib/pybind11/include
 CFLAGS += -Ipyci/include
 
 CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
