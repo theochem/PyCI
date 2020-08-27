@@ -107,14 +107,17 @@ inline int Ctz(const unsigned long t) {
 }
 
 /* Hash map template type. */
+
 template<class KeyType, class ValueType>
 using HashMap = phmap::flat_hash_map<KeyType, ValueType>;
 
 /* Pybind11 NumPy array type. */
+
 template<typename Scalar>
 using Array = pybind11::array_t<Scalar, pybind11::array::c_style | pybind11::array::forcecast>;
 
 /* Forward-declare classes. */
+
 struct Ham;
 struct Wfn;
 struct OneSpinWfn;
@@ -125,6 +128,7 @@ struct GenCIWfn;
 struct SparseOp;
 
 /* Number of threads global variable. */
+
 extern long g_number_threads;
 
 /* PyCI routines. */
