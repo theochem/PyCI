@@ -152,7 +152,7 @@ void unrank_colex(long nbasis, const long nocc, long rank, long *occs) {
 
 long phase_single_det(const long nword, const long i, const long a, const ulong *det) {
     long j, k, l, m, n, high, low, nperm = 0;
-    ulong *mask = new (std::nothrow) ulong[nword];
+    ulong mask;
     if (i > a) {
         high = i;
         low = a;
@@ -164,20 +164,31 @@ long phase_single_det(const long nword, const long i, const long a, const ulong 
     m = high % Size<ulong>();
     j = low / Size<ulong>();
     n = low % Size<ulong>();
-    for (l = j; l < k; ++l)
-        mask[l] = Max<ulong>();
-    mask[k] = (1UL << m) - 1;
-    mask[j] &= ~(1UL << (n + 1)) + 1;
-    for (l = j; l <= k; ++l)
-        nperm += Pop(det[l] & mask[l]);
-    delete[] mask;
+    mask = det[j];
+    mask &= Max<ulong>();
+    if (j == k) {
+        mask &= (1UL << m) - 1;
+        mask &= ~(1UL << (n + 1)) + 1;
+        nperm += Pop(mask);
+    } else {
+        mask &= ~(1UL << (n + 1)) + 1;
+        nperm += Pop(mask);
+        mask = det[k];
+        mask &= (1UL << m) - 1;
+        nperm += Pop(mask);
+        for (l = j + 1; l < k; ++l) {
+            mask = det[l];
+            mask &= Max<ulong>();
+            nperm += Pop(mask);
+        }
+    }
     return (nperm % 2) ? -1 : 1;
 }
 
 long phase_double_det(const long nword, const long i1, const long i2, const long a1, const long a2,
                       const ulong *det) {
     long j, k, l, m, n, high, low, nperm = 0;
-    ulong *mask = new (std::nothrow) ulong[nword];
+    ulong mask;
     // first excitation
     if (i1 > a1) {
         high = i1;
@@ -190,12 +201,24 @@ long phase_double_det(const long nword, const long i1, const long i2, const long
     m = high % Size<ulong>();
     j = low / Size<ulong>();
     n = low % Size<ulong>();
-    for (l = j; l < k; ++l)
-        mask[l] = Max<ulong>();
-    mask[k] = (1UL << m) - 1;
-    mask[j] &= ~(1UL << (n + 1)) + 1;
-    for (l = j; l <= k; ++l)
-        nperm += Pop(det[l] & mask[l]);
+    mask = det[j];
+    mask &= Max<ulong>();
+    if (j == k) {
+        mask &= (1UL << m) - 1;
+        mask &= ~(1UL << (n + 1)) + 1;
+        nperm += Pop(mask);
+    } else {
+        mask &= ~(1UL << (n + 1)) + 1;
+        nperm += Pop(mask);
+        mask = det[k];
+        mask &= (1UL << m) - 1;
+        nperm += Pop(mask);
+        for (l = j + 1; l < k; ++l) {
+            mask = det[l];
+            mask &= Max<ulong>();
+            nperm += Pop(mask);
+        }
+    }
     // second excitation
     if (i2 > a2) {
         high = i2;
@@ -208,16 +231,27 @@ long phase_double_det(const long nword, const long i1, const long i2, const long
     m = high % Size<ulong>();
     j = low / Size<ulong>();
     n = low % Size<ulong>();
-    for (l = j; l < k; ++l)
-        mask[l] = Max<ulong>();
-    mask[k] = (1UL << m) - 1;
-    mask[j] &= ~(1UL << (n + 1)) + 1;
-    for (l = j; l <= k; ++l)
-        nperm += Pop(det[l] & mask[l]);
+    mask = det[j];
+    mask &= Max<ulong>();
+    if (j == k) {
+        mask &= (1UL << m) - 1;
+        mask &= ~(1UL << (n + 1)) + 1;
+        nperm += Pop(mask);
+    } else {
+        mask &= ~(1UL << (n + 1)) + 1;
+        nperm += Pop(mask);
+        mask = det[k];
+        mask &= (1UL << m) - 1;
+        nperm += Pop(mask);
+        for (l = j + 1; l < k; ++l) {
+            mask = det[l];
+            mask &= Max<ulong>();
+            nperm += Pop(mask);
+        }
+    }
     // order excitations properly
     if ((i2 < a1) || (i1 > a2))
         ++nperm;
-    delete[] mask;
     return (nperm % 2) ? -1 : 1;
 }
 

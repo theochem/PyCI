@@ -356,10 +356,10 @@ template<class WfnType>
 void compute_enpt2_thread(const Ham &ham, const WfnType &wfn, PairHashMap &terms,
                           const double *coeffs, const double eps, const long start,
                           const long end) {
-    std::vector<ulong> det(wfn.nword2);
-    std::vector<long> occs(wfn.nocc);
-    std::vector<long> virs(wfn.nvir);
-    std::vector<long> tmps(wfn.nocc);
+    AlignedVector<ulong> det(wfn.nword2);
+    AlignedVector<long> occs(wfn.nocc);
+    AlignedVector<long> virs(wfn.nvir);
+    AlignedVector<long> tmps(wfn.nocc);
     for (long i = start; i < end; ++i)
         compute_enpt2_thread_terms(ham, wfn, terms, coeffs, eps, i, &det[0], &occs[0], &virs[0],
                                    &tmps[0]);
@@ -371,8 +371,9 @@ double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coef
     long nthread = get_num_threads(), start, end;
     long chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
     PairHashMap terms;
-    std::vector<PairHashMap> v_terms(nthread);
-    std::vector<std::thread> v_threads(nthread);
+    Vector<PairHashMap> v_terms(nthread);
+    Vector<std::thread> v_threads;
+    v_threads.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {
         start = i * chunksize;
         end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;

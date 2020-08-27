@@ -23,7 +23,6 @@
 #include <future>
 #include <ios>
 #include <limits>
-#include <new>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -32,12 +31,14 @@
 
 #include <SpookyV2.h>
 
+#include <boost/align.hpp>
+
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
 #include <parallel_hashmap/phmap.h>
 
-#include <sort_helper.h>
+#include <sort_with_arg.h>
 
 /* Macros to produce strings from literal macro parameters. */
 
@@ -105,6 +106,19 @@ template<>
 inline int Ctz(const unsigned long t) {
     return __builtin_ctzl(t);
 }
+
+/* Aligned allocator. */
+
+template<typename T, std::size_t Alignment>
+using AlignedAllocator = boost::alignment::aligned_allocator<T, Alignment>;
+
+/* Vector template types. */
+
+template<typename T>
+using Vector = std::vector<T>;
+
+template<typename T>
+using AlignedVector = std::vector<T, AlignedAllocator<T, 16U>>;
 
 /* Hash map template type. */
 
@@ -223,7 +237,7 @@ public:
     long ndet, nword, nword2, maxrank_up, maxrank_dn;
 
 protected:
-    std::vector<ulong> dets;
+    AlignedVector<ulong> dets;
     HashMap<ulong, long> dict;
 
 public:
@@ -539,9 +553,8 @@ public:
     pybind11::object shape;
 
 private:
-    std::vector<double> data;
-    std::vector<long> indices;
-    std::vector<long> indptr;
+    AlignedVector<double> data;
+    AlignedVector<long> indices, indptr;
 
 public:
     SparseOp(const SparseOp &);

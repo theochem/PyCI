@@ -56,7 +56,7 @@ double compute_overlap_tmpl(const WfnType &wfn1, const WfnType &wfn2, const doub
         return compute_overlap_tmpl<WfnType>(wfn2, wfn1, coeffs2, coeffs1);
     long nthread = get_num_threads(), start, end;
     long chunksize = wfn1.ndet / nthread + ((wfn1.ndet % nthread) ? 1 : 0);
-    std::vector<std::future<double>> v_threads;
+    Vector<std::future<double>> v_threads;
     v_threads.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {
         start = i * chunksize;

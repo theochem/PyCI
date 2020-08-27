@@ -255,9 +255,9 @@ void hci_thread_add_dets(const Ham &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, c
 template<class WfnType>
 void hci_thread(const Ham &ham, const WfnType &wfn, WfnType &t_wfn, const double *coeffs,
                 const double eps, const long start, const long end) {
-    std::vector<ulong> det(wfn.nword2);
-    std::vector<long> occs(wfn.nocc);
-    std::vector<long> virs(wfn.nvir);
+    AlignedVector<ulong> det(wfn.nword2);
+    AlignedVector<long> occs(wfn.nocc);
+    AlignedVector<long> virs(wfn.nvir);
     for (long i = start; i < end; ++i)
         hci_thread_add_dets(ham, wfn, t_wfn, coeffs, eps, i, &det[0], &occs[0], &virs[0]);
 };
@@ -267,8 +267,8 @@ long add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const doub
     long ndet_old = wfn.ndet;
     long nthread = get_num_threads(), start, end;
     long chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
-    std::vector<std::thread> v_threads;
-    std::vector<WfnType> v_wfns;
+    Vector<std::thread> v_threads;
+    Vector<WfnType> v_wfns;
     v_threads.reserve(nthread);
     v_wfns.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {

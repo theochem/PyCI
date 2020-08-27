@@ -122,7 +122,7 @@ void perform_op_cepa0_thread(const double *data, const long *indptr, const long 
 void SparseOp::perform_op(const double *x, double *y) const {
     long nthread = get_num_threads(), start, end;
     long chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-    std::vector<std::thread> v_threads;
+    Vector<std::thread> v_threads;
     v_threads.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {
         start = i * chunksize;
@@ -138,7 +138,7 @@ void SparseOp::perform_op_cepa0(const double *x, double *y, const long refind) c
     long nthread = get_num_threads(), start, end;
     long chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
     double h_refind = get_element(refind, refind);
-    std::vector<std::thread> v_threads;
+    Vector<std::thread> v_threads;
     v_threads.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {
         start = i * chunksize;
@@ -215,9 +215,9 @@ template<class WfnType>
 void SparseOp::init_thread(SparseOp &op, const Ham &ham, const WfnType &wfn, const long start,
                            const long end) {
     long row = 0;
-    std::vector<ulong> det(wfn.nword2);
-    std::vector<long> occs(wfn.nocc);
-    std::vector<long> virs(wfn.nvir);
+    AlignedVector<ulong> det(wfn.nword2);
+    AlignedVector<long> occs(wfn.nocc);
+    AlignedVector<long> virs(wfn.nvir);
     for (long i = start; i < end; ++i) {
         op.init_thread_add_row(ham, wfn, i, &det[0], &occs[0], &virs[0]);
         op.init_thread_sort_row(row++);
@@ -229,8 +229,8 @@ template<class WfnType>
 void SparseOp::init(const Ham &ham, const WfnType &wfn, const long rows, const long cols) {
     long nthread = get_num_threads(), start, end;
     long chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-    std::vector<SparseOp> v_ops;
-    std::vector<std::thread> v_threads;
+    Vector<SparseOp> v_ops;
+    Vector<std::thread> v_threads;
     v_ops.reserve(nthread);
     v_threads.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {
@@ -254,7 +254,7 @@ void SparseOp::init(const Ham &ham, const WfnType &wfn, const long rows, const l
 }
 
 void SparseOp::init_thread_sort_row(const long idet) {
-    typedef std::sort_helper::value_iterator_t<double, long> iter;
+    typedef std::sort_with_arg::value_iterator_t<double, long> iter;
     long start = indptr[idet], end = indptr[idet + 1];
     std::sort(iter(&data[start], &indices[start]), iter(&data[end], &indices[end]));
 }
@@ -267,18 +267,18 @@ void SparseOp::init_thread_condense(SparseOp &op, const long ithread) {
     start = op.data.size();
     op.data.resize(start + size);
     std::memcpy(&op.data[start], &data[0], sizeof(double) * size);
-    std::vector<double>().swap(data);
+    AlignedVector<double>().swap(data);
     // copy over indices array
     start = op.indices.size();
     op.indices.resize(start + size);
     std::memcpy(&op.indices[start], &indices[0], sizeof(long) * size);
-    std::vector<long>().swap(indices);
+    AlignedVector<long>().swap(indices);
     // copy over indptr array
     start = op.indptr.back();
     end = indptr.size();
     for (i = 1; i < end; ++i)
         op.indptr.push_back(indptr[i] + start);
-    std::vector<long>().swap(indptr);
+    AlignedVector<long>().swap(indptr);
 }
 
 void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulong *det,

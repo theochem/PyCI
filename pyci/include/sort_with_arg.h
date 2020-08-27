@@ -21,7 +21,7 @@
 
 namespace std {
 
-namespace sort_helper {
+namespace sort_with_arg {
 
 template<typename _Data, typename _Order>
 struct value_reference_t;
@@ -144,6 +144,6 @@ void swap(value_reference_t<_Data, _Order> lhs, value_reference_t<_Data, _Order>
     std::swap(*lhs.pval, *rhs.pval);
 }
 
-} // namespace sort_helper
+} // namespace sort_with_arg
 
 } // namespace std

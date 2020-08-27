@@ -163,14 +163,14 @@ long TwoSpinWfn::add_det_with_rank(const ulong *det, const ulong rank) {
 }
 
 long TwoSpinWfn::add_det_from_occs(const long *occs) {
-    std::vector<ulong> det(nword2);
+    AlignedVector<ulong> det(nword2);
     fill_det(nocc_up, &occs[0], &det[0]);
     fill_det(nocc_dn, &occs[nocc_up], &det[nword]);
     return add_det(&det[0]);
 }
 
 void TwoSpinWfn::add_hartreefock_det(void) {
-    std::vector<ulong> det(nword2);
+    AlignedVector<ulong> det(nword2);
     fill_hartreefock_det(nocc_up, &det[0]);
     fill_hartreefock_det(nocc_dn, &det[nword]);
     add_det(&det[0]);
@@ -185,8 +185,8 @@ void TwoSpinWfn::add_all_dets(void) {
     dict.clear();
     dict.reserve(ndet);
     // add spin-up determinants to array
-    std::vector<long> occs(nocc_up + 1);
-    std::vector<ulong> det(nword);
+    AlignedVector<long> occs(nocc_up + 1);
+    AlignedVector<ulong> det(nword);
     unrank_colex(nbasis, nocc_up, 0, &occs[0]);
     occs[nocc_up] = nbasis + 1;
     long j = 0, k;
@@ -224,7 +224,7 @@ void TwoSpinWfn::add_excited_dets(const ulong *rdet, const long e_up, const long
     wfn_up.add_excited_dets(&rdet[0], e_up);
     OneSpinWfn wfn_dn(nbasis, nocc_dn, nocc_dn);
     wfn_dn.add_excited_dets(&rdet[nword], e_dn);
-    std::vector<ulong> det(nword2);
+    AlignedVector<ulong> det(nword2);
     long j;
     for (long i = 0; i < wfn_up.ndet; ++i) {
         std::memcpy(&det[0], wfn_up.det_ptr(i), sizeof(ulong) * nword);
@@ -296,7 +296,7 @@ long TwoSpinWfn::py_add_occs(const Array<long> occs) {
 }
 
 long TwoSpinWfn::py_add_excited_dets(const long exc, const pybind11::object ref) {
-    std::vector<ulong> v_ref;
+    AlignedVector<ulong> v_ref;
     ulong *ptr;
     if (ref.is(pybind11::none())) {
         v_ref.resize(nword2);

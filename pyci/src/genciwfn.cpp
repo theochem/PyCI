@@ -29,7 +29,7 @@ GenCIWfn::GenCIWfn(const DOCIWfn &wfn) : GenCIWfn(FullCIWfn(wfn)) {
 GenCIWfn::GenCIWfn(const FullCIWfn &wfn) : OneSpinWfn(wfn.nbasis * 2, wfn.nocc, 0) {
     ndet = wfn.ndet;
     dets.resize(wfn.ndet * wfn.nword2);
-    std::vector<long> occs(wfn.nocc);
+    AlignedVector<long> occs(wfn.nocc);
     long *occs_up = &occs[0], *occs_dn = &occs[wfn.nocc_up];
     long j, k = 0;
     for (long i = 0; i < wfn.ndet; ++i) {

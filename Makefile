@@ -23,7 +23,6 @@ CFLAGS += --std=c++14
 CFLAGS += -Wall
 CFLAGS += -pipe
 CFLAGS += -O3
-CFLAGS += -march=x86-64
 
 CFLAGS += -fPIC
 CFLAGS += -flto

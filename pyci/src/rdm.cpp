@@ -19,9 +19,9 @@ namespace pyci {
 
 void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2) {
     // prepare working vectors
-    std::vector<ulong> v_det(wfn.nword);
-    std::vector<long> v_occs(wfn.nocc_up);
-    std::vector<long> v_virs(wfn.nvir_up);
+    AlignedVector<ulong> v_det(wfn.nword);
+    AlignedVector<long> v_occs(wfn.nocc_up);
+    AlignedVector<long> v_virs(wfn.nvir_up);
     ulong *det = &v_det[0];
     long *occs = &v_occs[0], *virs = &v_virs[0];
     // fill rdms with zeros
@@ -76,9 +76,9 @@ void compute_rdms(const FullCIWfn &wfn, const double *coeffs, double *rdm1, doub
     double *bbbb = aaaa + n4;
     double *abab = bbbb + n4;
     // prepare working vectors
-    std::vector<ulong> v_det(wfn.nword2);
-    std::vector<long> v_occs(wfn.nocc);
-    std::vector<long> v_virs(wfn.nvir);
+    AlignedVector<ulong> v_det(wfn.nword2);
+    AlignedVector<long> v_occs(wfn.nocc);
+    AlignedVector<long> v_virs(wfn.nvir);
     const ulong *rdet_up, *rdet_dn;
     ulong *det_up = &v_det[0], *det_dn = &v_det[wfn.nword];
     long *occs_up = &v_occs[0], *occs_dn = &v_occs[wfn.nocc_up];
@@ -334,9 +334,9 @@ void compute_rdms(const GenCIWfn &wfn, const double *coeffs, double *rdm1, doubl
     long n3 = n1 * n2;
     long n4 = n2 * n2;
     // prepare working vectors
-    std::vector<ulong> v_det(wfn.nword);
-    std::vector<long> v_occs(wfn.nocc);
-    std::vector<long> v_virs(wfn.nvir);
+    AlignedVector<ulong> v_det(wfn.nword);
+    AlignedVector<long> v_occs(wfn.nocc);
+    AlignedVector<long> v_virs(wfn.nvir);
     const ulong *rdet;
     ulong *det = &v_det[0];
     long *occs = &v_occs[0], *virs = &v_virs[0];

@@ -157,13 +157,13 @@ long OneSpinWfn::add_det_with_rank(const ulong *det, const ulong rank) {
 }
 
 long OneSpinWfn::add_det_from_occs(const long *occs) {
-    std::vector<ulong> det(nword);
+    AlignedVector<ulong> det(nword);
     fill_det(nocc_up, occs, &det[0]);
     return add_det(&det[0]);
 }
 
 void OneSpinWfn::add_hartreefock_det(void) {
-    std::vector<ulong> det(nword);
+    AlignedVector<ulong> det(nword);
     fill_hartreefock_det(nocc_up, &det[0]);
     add_det(&det[0]);
 }
@@ -176,7 +176,7 @@ void OneSpinWfn::add_all_dets(void) {
     dets.resize(ndet * nword);
     dict.clear();
     dict.reserve(ndet);
-    std::vector<long> occs(nocc_up + 1);
+    AlignedVector<long> occs(nocc_up + 1);
     unrank_colex(nbasis, nocc_up, 0, &occs[0]);
     occs[nocc_up] = nbasis + 1;
     for (long i = 0; i < ndet; ++i) {
@@ -189,11 +189,11 @@ void OneSpinWfn::add_all_dets(void) {
 
 void OneSpinWfn::add_excited_dets(const ulong *rdet, const long e) {
     long i, j, k, no = binomial(nocc_up, e), nv = binomial(nvir_up, e);
-    std::vector<ulong> det(nword);
-    std::vector<long> occs(nocc_up);
-    std::vector<long> virs(nvir_up);
-    std::vector<long> occinds(e + 1);
-    std::vector<long> virinds(e + 1);
+    AlignedVector<ulong> det(nword);
+    AlignedVector<long> occs(nocc_up);
+    AlignedVector<long> virs(nvir_up);
+    AlignedVector<long> occinds(e + 1);
+    AlignedVector<long> virinds(e + 1);
     fill_occs(nword, rdet, &occs[0]);
     fill_virs(nword, nbasis, rdet, &virs[0]);
     for (k = 0; k < e; ++k)
@@ -275,7 +275,7 @@ long OneSpinWfn::py_add_occs(const Array<long> occs) {
 }
 
 long OneSpinWfn::py_add_excited_dets(const long exc, const pybind11::object ref) {
-    std::vector<ulong> v_ref;
+    AlignedVector<ulong> v_ref;
     ulong *ptr;
     if (ref.is(pybind11::none())) {
         v_ref.resize(nword);
