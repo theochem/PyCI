@@ -1,0 +1,26 @@
+language: python
+
+sudo: false
+
+python:
+  - "3.8"
+
+install:
+  - pip install numpy scipy pytest
+  - make
+
+os:
+  - linux
+  - osx
+
+dist:
+  - trusty
+
+osx_image:
+  - xcode8.3
+
+branches:
+  only:
+    - master
+
+script: python -m pytest pyci
