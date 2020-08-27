@@ -14,7 +14,7 @@
     : You should have received a copy of the GNU General Public License
     : along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-|Python 3.8|
+|Python 3.8| |Travis|
 
 PyCI
 ====
@@ -109,3 +109,5 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 
 .. |Python 3.8| image:: http://img.shields.io/badge/python-3.8-blue.svg
    :target: https://docs.python.org/3.8/
+.. |Travis| image:: http://travis-ci.com/msricher/PyCI.svg?token=cXv5xZ8ji4xAnkUvpsev&branch=master
+   :target: http://travis-ci.com/msricher/PyCI/

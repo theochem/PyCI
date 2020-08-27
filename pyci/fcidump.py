@@ -31,7 +31,7 @@ __all__ = [
 def _load_ham(
     *args: Union[Tuple[float, np.ndarray, np.ndarray], Tuple[str]]
 ) -> Tuple[float, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    r"""Helper function for loading a PyCI Hamiltonian instance."""
+    r"""Load the arguments to a PyCI Hamiltonian constructor (C++)."""
     ecore, one_mo, two_mo = read_fcidump(*args) if len(args) == 1 else args
     h, v, w = make_senzero_integrals(one_mo, two_mo)
     return ecore, one_mo, two_mo, h, v, w

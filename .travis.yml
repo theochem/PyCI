@@ -3,21 +3,22 @@ language: python
 python:
   - "3.6"
 
-install:
-  - python -m pip install numpy scipy pytest
-  - make
-
 os:
   - linux
-  - osx
 
 dist:
   - bionic
-
-osx_image: xcode10
 
 branches:
   only:
     - master
 
-script: PYCI_NUM_THREADS=2 python -m pytest pyci
+install:
+  - python -m pip install numpy scipy pytest pycodestyle pydocstyle
+  - make
+  - python -m pip install .
+
+script:
+  - python -m pycodestyle pyci
+  - python -m pydocstyle pyci
+  - PYCI_NUM_THREADS=2 python -m pytest pyci
