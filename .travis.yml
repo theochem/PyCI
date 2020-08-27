@@ -3,7 +3,7 @@ language: python
 sudo: false
 
 python:
-  - "3.8"
+  - "3.6"
 
 install:
   - pip install numpy scipy pytest
@@ -11,13 +11,9 @@ install:
 
 os:
   - linux
-  - osx
 
 dist:
-  - trusty
-
-osx_image:
-  - xcode8.3
+  - bionic
 
 branches:
   only:
