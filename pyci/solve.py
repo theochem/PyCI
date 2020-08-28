@@ -75,39 +75,29 @@ def solve(
     else:
         raise ValueError("must pass `ham, wfn` or `op`")
     # Handle default parameters
-    if ncv is None:
-        ncv = min(op.shape[0], max(2 * n + 1, 20))
-    if maxiter is None:
-        maxiter = n * op.shape[0] * 10
+    ncv = min(op.shape[0], max(2 * n + 1, 20)) if ncv is None else ncv
+    maxiter = n * op.shape[0] * 10 if maxiter is None else maxiter
     if c0 is None:
         c0 = np.zeros(op.shape[0], dtype=pyci.c_double)
         c0[0] = 1
-    elif c0.size < op.shape[0]:
-        c0 = np.concatenate((c0, np.zeros(op.shape[0] - c0.shape[0], dtype=pyci.c_double)))
     else:
         c0 = np.asarray(c0, dtype=pyci.c_double)
-    # Check which method to use
+    if c0.size < op.shape[0]:
+        c0 = np.concatenate((c0, np.zeros(op.shape[0] - c0.shape[0], dtype=pyci.c_double)))
+    # Check whether to use C++ "Spectra" method
     if method == "spectra":
-        return op._solve(c0, n=n, ncv=ncv, maxiter=maxiter, tol=tol)
+        es, cs = op._solve(c0, n=n, ncv=ncv, maxiter=maxiter, tol=tol)
+    # Solve with SciPy's ARPACK interface "eigsh"
     elif method != "arpack":
         raise ValueError('`method` must be one of "spectra" or "arpack"')
-    # Solve using SciPy's ARPACK interface
-    if op.shape[0] == 1:
-        return (
-            np.full(1, op.get_element(0, 0) + op.ecore, dtype=pyci.c_double),
-            np.ones((1, 1), dtype=pyci.c_double),
-        )
-    es, cs = sp.eigsh(
-        sp.LinearOperator(matvec=op.matvec, shape=op.shape, dtype=pyci.c_double),
-        v0=c0,
-        k=n,
-        ncv=ncv,
-        maxiter=maxiter,
-        tol=tol,
-        which="SA",
-    )
-    es += op.ecore
-    return es, cs.transpose()
+    elif op.shape[0] == 1:
+        es = np.full(1, op.get_element(0, 0) + op.ecore, dtype=pyci.c_double)
+        cs = np.ones((1, 1), dtype=pyci.c_double)
+    else:
+        es, cs = sp.eigsh(op, v0=c0, k=n, ncv=ncv, maxiter=maxiter, tol=tol, which="SA")
+        es += op.ecore
+        cs = cs.transpose()
+    return es, cs
 
 
 def solve_cepa0(*args, e0=None, c0=None, refind=0, maxiter=5000, tol=1.0e-12, lstsq=False):

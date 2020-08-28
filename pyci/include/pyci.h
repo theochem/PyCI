@@ -580,6 +580,8 @@ public:
 
     long cols(void) const;
 
+    pybind11::object dtype(void) const;
+
     const double *data_ptr(const long) const;
 
     const long *indices_ptr(const long) const;

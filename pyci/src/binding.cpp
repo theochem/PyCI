@@ -938,6 +938,16 @@ ncol : int
 
 )""");
 
+sparse_op.def_property_readonly("dtype", &SparseOp::dtype, R"""(
+Data type of matrix.
+
+Returns
+-------
+dtype : numpy.dtype
+    Data type of matrix.
+
+)""");
+
 sparse_op.def(py::init<const Ham &, const DOCIWfn &, const long, const long, const bool>(), R"""(
 Initialize a sparse matrix operator.
 

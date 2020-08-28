@@ -72,6 +72,10 @@ long SparseOp::cols(void) const {
     return ncol;
 }
 
+pybind11::object SparseOp::dtype(void) const {
+    return pybind11::dtype::of<double>();
+}
+
 const double *SparseOp::data_ptr(const long index) const {
     return &data[index];
 }
