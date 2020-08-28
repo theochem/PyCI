@@ -15,10 +15,38 @@
 
 r"""PyCI module."""
 
+from .pyci import __version__, c_long, c_ulong, c_double
 from .pyci import *
-from .pyci import __version__
 
 from .fcidump import *
 from .integrals import *
 from .selected_ci import *
 from .solve import *
+
+
+__version__ = __version__
+r"""
+PyCI version string.
+
+"""
+
+
+c_long = c_long
+r"""
+Signed integer C++ dtype.
+
+"""
+
+
+c_ulong = c_ulong
+r"""
+Unsigned integer C++ dtype.
+
+"""
+
+
+c_double = c_double
+r"""
+Floating point C++ dtype.
+
+"""

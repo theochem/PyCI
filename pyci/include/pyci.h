@@ -33,6 +33,8 @@
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 
+#include <Spectra/SymEigsSolver.h>
+
 #include <SpookyV2.h>
 
 #include <pybind11/numpy.h>
@@ -117,6 +119,10 @@ using Vector = std::vector<T>;
 template<typename T>
 using AlignedVector = std::vector<T, Eigen::aligned_allocator<T>>;
 
+/* Eigen sparse matrix template type. */
+template<typename T>
+using SparseMatrix = Eigen::Map<const Eigen::SparseMatrix<T, Eigen::RowMajor, long>>;
+
 /* Hash map template type. */
 
 template<class KeyType, class ValueType>
@@ -180,11 +186,11 @@ void setbit_det(const long, ulong *);
 
 void clearbit_det(const long, ulong *);
 
-long add_hci(const Ham &, DOCIWfn &, const double *, const double);
+long add_hci(const Ham &, DOCIWfn &, const double *, const double, const long = -1);
 
-long add_hci(const Ham &, FullCIWfn &, const double *, const double);
+long add_hci(const Ham &, FullCIWfn &, const double *, const double, const long = -1);
 
-long add_hci(const Ham &, GenCIWfn &, const double *, const double);
+long add_hci(const Ham &, GenCIWfn &, const double *, const double, const long = -1);
 
 double compute_overlap(const OneSpinWfn &, const OneSpinWfn &, const double *, const double *);
 
@@ -196,11 +202,14 @@ void compute_rdms(const FullCIWfn &, const double *, double *, double *);
 
 void compute_rdms(const GenCIWfn &, const double *, double *, double *);
 
-double compute_enpt2(const Ham &, const DOCIWfn &, const double *, const double, const double);
+double compute_enpt2(const Ham &, const DOCIWfn &, const double *, const double, const double,
+                     const long = -1);
 
-double compute_enpt2(const Ham &, const FullCIWfn &, const double *, const double, const double);
+double compute_enpt2(const Ham &, const FullCIWfn &, const double *, const double, const double,
+                     const long = -1);
 
-double compute_enpt2(const Ham &, const GenCIWfn &, const double *, const double, const double);
+double compute_enpt2(const Ham &, const GenCIWfn &, const double *, const double, const double,
+                     const long = -1);
 
 /* Hamiltonian class. */
 
@@ -314,7 +323,7 @@ public:
 
     void add_hartreefock_det(void);
 
-    void add_all_dets(void);
+    void add_all_dets(long = -1);
 
     void add_excited_dets(const ulong *, const long);
 
@@ -322,7 +331,7 @@ public:
 
     void reserve(const long);
 
-    Array<ulong> py_getitem(const long) const;
+    pybind11::object py_getitem(pybind11::object) const;
 
     Array<ulong> py_to_det_array(long, long) const;
 
@@ -399,7 +408,7 @@ public:
 
     void add_hartreefock_det(void);
 
-    void add_all_dets(void);
+    void add_all_dets(long = -1);
 
     void add_excited_dets(const ulong *, const long, const long);
 
@@ -407,7 +416,7 @@ public:
 
     void reserve(const long);
 
-    Array<ulong> py_getitem(const long) const;
+    pybind11::object py_getitem(pybind11::object) const;
 
     Array<ulong> py_to_det_array(long, long) const;
 
@@ -567,6 +576,10 @@ public:
 
     SparseOp(const Ham &, const GenCIWfn &, const long, const long, const bool);
 
+    long rows(void) const;
+
+    long cols(void) const;
+
     const double *data_ptr(const long) const;
 
     const long *indices_ptr(const long) const;
@@ -579,21 +592,21 @@ public:
 
     void perform_op_symm(const double *, double *) const;
 
-    void perform_op_cepa0(const double *, double *, const long) const;
+    void perform_op_transpose(const double *, double *) const;
 
-    void perform_op_transpose_cepa0(const double *, double *, const long) const;
-
-    void rhs_cepa0(double *, const long) const;
+    void solve_ci(const double *, const long, const long, const long, const double, double *,
+                  double *) const;
 
     Array<double> py_matvec(const Array<double>) const;
 
     Array<double> py_matvec_out(const Array<double>, Array<double>) const;
 
-    Array<double> py_matvec_cepa0(const Array<double>, const long) const;
+    Array<double> py_rmatvec(const Array<double>) const;
 
-    Array<double> py_rmatvec_cepa0(const Array<double>, const long) const;
+    Array<double> py_rmatvec_out(const Array<double>, Array<double>) const;
 
-    Array<double> py_rhs_cepa0(const long) const;
+    pybind11::tuple py_solve_ci(const Array<double>, const long, const long, const long,
+                                const double) const;
 
 private:
     template<class WfnType>
@@ -611,6 +624,19 @@ private:
     void init_thread_sort_row(const long);
 
     void init_thread_condense(SparseOp &, const long);
+
+public:
+    void perform_op_cepa0(const double *, double *, const long) const;
+
+    void perform_op_transpose_cepa0(const double *, double *, const long) const;
+
+    void rhs_cepa0(double *, const long) const;
+
+    Array<double> py_matvec_cepa0(const Array<double>, const long) const;
+
+    Array<double> py_rmatvec_cepa0(const Array<double>, const long) const;
+
+    Array<double> py_rhs_cepa0(const long) const;
 };
 
 /* Free Python interface functions. */
@@ -619,11 +645,13 @@ long py_popcnt(const Array<ulong>);
 
 long py_ctz(const Array<ulong>);
 
-long py_dociwfn_add_hci(const Ham &, DOCIWfn &, const Array<double>, const double);
+long py_dociwfn_add_hci(const Ham &, DOCIWfn &, const Array<double>, const double, const long = -1);
 
-long py_fullciwfn_add_hci(const Ham &, FullCIWfn &, const Array<double>, const double);
+long py_fullciwfn_add_hci(const Ham &, FullCIWfn &, const Array<double>, const double,
+                          const long = -1);
 
-long py_genciwfn_add_hci(const Ham &, GenCIWfn &, const Array<double>, const double);
+long py_genciwfn_add_hci(const Ham &, GenCIWfn &, const Array<double>, const double,
+                         const long = -1);
 
 double py_dociwfn_compute_overlap(const DOCIWfn &, const DOCIWfn &, const Array<double>,
                                   const Array<double>);
@@ -641,12 +669,12 @@ pybind11::tuple py_fullciwfn_compute_rdms(const FullCIWfn &, const Array<double>
 pybind11::tuple py_genciwfn_compute_rdms(const GenCIWfn &, const Array<double>);
 
 double py_dociwfn_compute_enpt2(const Ham &, const DOCIWfn &, const Array<double>, const double,
-                                const double);
+                                const double, const long = -1);
 
 double py_fullciwfn_compute_enpt2(const Ham &, const FullCIWfn &, const Array<double>, const double,
-                                  const double);
+                                  const double, const long = -1);
 
 double py_genciwfn_compute_enpt2(const Ham &, const GenCIWfn &, const Array<double>, const double,
-                                 const double);
+                                 const double, const long = -1);
 
 } // namespace pyci

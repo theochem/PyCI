@@ -14,19 +14,11 @@
     : You should have received a copy of the GNU General Public License
     : along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-|Python 3.8| |Travis|
-
-PyCI
-====
-
-PyCI_ is a flexible *ab-initio* quantum chemistry library for Configuration Interaction.
-
-PyCI is distributed under the GNU General Public License version 3 (GPLv3).
-
-See http://www.gnu.org/licenses/ for more information.
+Installation
+############
 
 Dependencies
-------------
+============
 
 The following programs/libraries are required to run PyCI:
 
@@ -42,15 +34,67 @@ The following programs/libraries are required to build PyCI:
 -  Python_ (≥3.6, including C headers)
 -  NumPy_ (≥1.13, including C headers)
 
-Some header-only C++ libraries are included with this git repository:
+Some header-only C++ libraries are included with this git repository as git submodules:
 
--  Eigen_ (git submodule)
--  `Parallel Hashmap`__ (git submodule)
--  Pybind11_ (git submodule)
--  Spectra_ (git submodule)
--  SpookyHash_ (files included directly)
+-  Eigen_
+-  `Parallel Hashmap`__
+-  Pybind11_
+-  Spectra_
 
 __ Parallel-Hashmap_
+
+The programs required to get started can be installed with your operating system's package manager.
+
+E.g., for Debian- or Ubuntu- based Linux systems:
+
+.. code:: shell
+
+    sudo apt-get install make gcc python3-pip python3-sphinx
+
+The required Python packages can be installed with Pip:
+
+.. code:: shell
+
+    python3 -m pip install numpy scipy pytest
+
+Download
+========
+
+Run the following in your shell to download PyCI and its submodules via git:
+
+.. code:: shell
+
+    git clone --recursive https://github.com/msricher/pyci.git && cd pyci
+
+Build
+=====
+
+Run the following to build PyCI:
+
+.. code:: shell
+
+    PYTHON=python3 make
+
+Install
+=======
+
+Run the following to intall PyCI:
+
+.. code:: shell
+
+    python3 -m pip install .
+
+Test
+====
+
+Run the following to test PyCI:
+
+.. code:: shell
+
+    python3 -m pytest pyci
+
+Build Documentation
+===================
 
 The following programs/libraries are required to build the PyCI documentation:
 
@@ -59,35 +103,13 @@ The following programs/libraries are required to build the PyCI documentation:
 
 __ Sphinx-RTD-Theme_
 
-Installation
-------------
-
-Basic Compilation and Install
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Run the following in your shell to download PyCI and its submodules via git:
-
-.. code:: shell
-
-    git clone --recursive https://github.com/msricher/pyci.git && cd pyci
-
-Then, run the following to build and install PyCI:
-
-.. code:: shell
-
-    make
-    python setup.py install --user
-
-Building Documentation
-~~~~~~~~~~~~~~~~~~~~~~
-
 Run the following in your shell to install the Read the Docs Sphinx theme via pip:
 
 .. code:: shell
 
-    pip install sphinx-rtd-theme --user
+    python3 -m pip install sphinx-rtd-theme
 
-Then, after installing PyCI, run the following to build the HTML documentation:
+Then, after building PyCI, run the following to build the HTML documentation:
 
 .. code:: shell
 
@@ -99,7 +121,6 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 .. _Make:               http://gnu.org/software/make/
 .. _NumPy:              http://numpy.org/
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
-.. _PyCI:               http://github.com/msricher/PyCI/
 .. _Pybind11:           http://pybind11.readthedocs.io/en/stable/
 .. _Pytest:             http://docs.pytest.org/en/latest/
 .. _Python:             http://python.org/
@@ -107,9 +128,3 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 .. _Spectra:            http://spectralib.org/
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Sphinx:             http://sphinx-doc.org/
-.. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
-
-.. |Python 3.8| image:: http://img.shields.io/badge/python-3.8-blue.svg
-   :target: https://docs.python.org/3.8/
-.. |Travis| image:: http://travis-ci.com/msricher/PyCI.svg?token=cXv5xZ8ji4xAnkUvpsev&branch=master
-   :target: http://travis-ci.com/msricher/PyCI/

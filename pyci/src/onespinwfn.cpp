@@ -168,21 +168,45 @@ void OneSpinWfn::add_hartreefock_det(void) {
     add_det(&det[0]);
 }
 
-void OneSpinWfn::add_all_dets(void) {
+namespace {
+
+void onespinwfn_add_all_dets_thread(const long nword, const long nbasis, const long nocc_up,
+                                    ulong *dets, const long start, const long end) {
+    AlignedVector<long> v_occs(nocc_up + 1);
+    long *occs = &v_occs[0];
+    unrank_colex(nbasis, nocc_up, start, occs);
+    occs[nocc_up] = nbasis + 1;
+    long j = start * nword;
+    for (long i = start; i < end; ++i) {
+        fill_det(nocc_up, occs, dets + j);
+        next_colex(occs);
+        j += nword;
+    }
+}
+
+} // namespace
+
+void OneSpinWfn::add_all_dets(long nthread) {
     if (maxrank_up == Max<long>())
         throw std::domain_error("cannot generate > 2 ** 63 determinants");
+    if (nthread == -1)
+        nthread = get_num_threads();
+    long start, end, chunksize = maxrank_up / nthread + ((maxrank_up % nthread) ? 1 : 0);
     ndet = maxrank_up;
     std::fill(dets.begin(), dets.end(), 0UL);
     dets.resize(ndet * nword);
     dict.clear();
     dict.reserve(ndet);
-    AlignedVector<long> occs(nocc_up + 1);
-    unrank_colex(nbasis, nocc_up, 0, &occs[0]);
-    occs[nocc_up] = nbasis + 1;
-    for (long i = 0; i < ndet; ++i) {
-        fill_det(nocc_up, &occs[0], &dets[i * nword]);
-        next_colex(&occs[0]);
+    Vector<std::thread> v_threads;
+    v_threads.reserve(nthread);
+    for (long i = 0; i < nthread; ++i) {
+        start = i * chunksize;
+        end = (start + chunksize < maxrank_up) ? start + chunksize : maxrank_up;
+        v_threads.emplace_back(onespinwfn_add_all_dets_thread, nword, nbasis, nocc_up, &dets[0],
+                               start, end);
     }
+    for (auto &thread : v_threads)
+        thread.join();
     for (long i = 0; i < ndet; ++i)
         dict[rank_det(&dets[i * nword])] = i;
 }
@@ -224,10 +248,12 @@ void OneSpinWfn::reserve(const long n) {
     dict.reserve(n);
 }
 
-Array<ulong> OneSpinWfn::py_getitem(const long index) const {
-    Array<ulong> array(nword);
-    copy_det(index, reinterpret_cast<ulong *>(array.request().ptr));
-    return array;
+pybind11::object OneSpinWfn::py_getitem(pybind11::object index) const {
+    return pybind11::cast<pybind11::object>(
+               Array<const ulong>({ndet, nword}, {nword * sizeof(ulong), sizeof(ulong)},
+                                  det_ptr(0)))
+        .attr("__getitem__")(index)
+        .attr("copy")();
 }
 
 Array<ulong> OneSpinWfn::py_to_det_array(long start, long end) const {

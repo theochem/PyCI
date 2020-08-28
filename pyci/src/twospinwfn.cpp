@@ -176,41 +176,67 @@ void TwoSpinWfn::add_hartreefock_det(void) {
     add_det(&det[0]);
 }
 
-void TwoSpinWfn::add_all_dets(void) {
-    if ((maxrank_up == Max<long>()) || (maxrank_dn == Max<long>()))
-        throw std::domain_error("cannot generate > 2 ** 63 determinants");
+namespace {
+
+void twospinwfn_add_all_dets_thread(const long nword, const long nbasis, const long nocc_up,
+                                    const long nocc_dn, const long maxrank_up,
+                                    const long maxrank_dn, ulong *dets, const long ithread,
+                                    const long nthread) {
+    AlignedVector<long> v_occs(nocc_up + 1);
+    AlignedVector<ulong> v_det(nword);
+    long *occs = &v_occs[0];
+    ulong *det = &v_det[0];
+    long nword2 = nword * 2;
+    long chunksize = maxrank_up / nthread + ((maxrank_up % nthread) ? 1 : 0);
+    long start = ithread * chunksize;
+    long end = (start + chunksize < maxrank_up) ? start + chunksize : maxrank_up;
+    long j, k;
+    unrank_colex(nbasis, nocc_up, start, occs);
+    occs[nocc_up] = nbasis + 1;
+    k = start * maxrank_dn * nword2;
+    for (long i = start; i < end; ++i) {
+        fill_det(nocc_up, occs, det);
+        for (j = 0; j < maxrank_dn; ++j) {
+            std::memcpy(dets + k, det, sizeof(ulong) * nword);
+            k += nword2;
+        }
+        std::fill(v_det.begin(), v_det.end(), 0UL);
+        next_colex(occs);
+    }
+    chunksize = maxrank_dn / nthread + ((maxrank_dn % nthread) ? 1 : 0);
+    start = ithread * chunksize;
+    end = (start + chunksize < maxrank_dn) ? start + chunksize : maxrank_dn;
+    unrank_colex(nbasis, nocc_dn, start, occs);
+    occs[nocc_dn] = nbasis + 1;
+    for (long i = start; i < end; ++i) {
+        fill_det(nocc_dn, occs, det);
+        k = i * nword2 + nword;
+        for (j = 0; j < maxrank_up; ++j) {
+            std::memcpy(dets + k, det, sizeof(ulong) * nword);
+            k += maxrank_dn * nword2;
+        }
+        std::fill(v_det.begin(), v_det.end(), 0UL);
+        next_colex(occs);
+    }
+}
+
+} // namespace
+
+void TwoSpinWfn::add_all_dets(long nthread) {
+    if (nthread == -1)
+        nthread = get_num_threads();
     ndet = maxrank_up * maxrank_dn;
     std::fill(dets.begin(), dets.end(), 0UL);
     dets.resize(ndet * nword2);
     dict.clear();
     dict.reserve(ndet);
-    // add spin-up determinants to array
-    AlignedVector<long> occs(nocc_up + 1);
-    AlignedVector<ulong> det(nword);
-    unrank_colex(nbasis, nocc_up, 0, &occs[0]);
-    occs[nocc_up] = nbasis + 1;
-    long j = 0, k;
-    for (long i = 0; i < maxrank_up; ++i) {
-        fill_det(nocc_up, &occs[0], &det[0]);
-        for (k = 0; k < maxrank_dn; ++k)
-            std::memcpy(&dets[j++ * nword2], &det[0], sizeof(ulong) * nword);
-        std::fill(det.begin(), det.end(), 0UL);
-        next_colex(&occs[0]);
-    }
-    // add spin-down determinants to array
-    unrank_colex(nbasis, nocc_dn, 0, &occs[0]);
-    occs[nocc_dn] = nbasis + 1;
-    j = 0;
-    for (long i = 0; i < maxrank_dn; ++i) {
-        fill_det(nocc_dn, &occs[0], &det[0]);
-        j = i;
-        for (k = 0; k < maxrank_up; ++k) {
-            std::memcpy(&dets[j * nword2 + nword], &det[0], sizeof(ulong) * nword);
-            j += maxrank_dn;
-        }
-        std::fill(det.begin(), det.end(), 0UL);
-        next_colex(&occs[0]);
-    }
+    Vector<std::thread> v_threads;
+    v_threads.reserve(nthread);
+    for (long i = 0; i < nthread; ++i)
+        v_threads.emplace_back(twospinwfn_add_all_dets_thread, nword, nbasis, nocc_up, nocc_dn,
+                               maxrank_up, maxrank_dn, &dets[0], i, nthread);
+    for (auto &thread : v_threads)
+        thread.join();
     for (long i = 0; i < ndet; ++i)
         dict[rank_det(&dets[i * nword2])] = i;
 }
@@ -245,10 +271,13 @@ void TwoSpinWfn::reserve(const long n) {
     dict.reserve(n);
 }
 
-Array<ulong> TwoSpinWfn::py_getitem(const long index) const {
-    Array<ulong> array(nword);
-    copy_det(index, reinterpret_cast<ulong *>(array.request().ptr));
-    return array;
+pybind11::object TwoSpinWfn::py_getitem(pybind11::object index) const {
+    return pybind11::cast<pybind11::object>(
+               Array<const ulong>({ndet, 2L, nword},
+                                  {nword * 2 * sizeof(ulong), nword * sizeof(ulong), sizeof(ulong)},
+                                  det_ptr(0)))
+        .attr("__getitem__")(index)
+        .attr("copy")();
 }
 
 Array<ulong> TwoSpinWfn::py_to_det_array(long start, long end) const {

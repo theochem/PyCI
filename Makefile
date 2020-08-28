@@ -37,11 +37,16 @@ CFLAGS += -I$(shell $(PYTHON) -c "import numpy; print(numpy.get_include())")
 CFLAGS += -Ilib/eigen
 CFLAGS += -Ilib/parallel-hashmap
 CFLAGS += -Ilib/pybind11/include
+CFLAGS += -Ilib/spectra/include
 CFLAGS += -Ipyci/include
 
 CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
 CFLAGS += -DPYCI_SPOOKYHASH_SEED=$(SPOOKYHASH_SEED)
 CFLAGS += -DPYCI_NUM_THREADS_DEFAULT=$(NUM_THREADS_DEFAULT)
+
+ifeq ($(shell uname -s),Linux)
+CFLAGS += -fopenmp
+endif
 
 ifeq ($(shell uname -s),Darwin)
 CFLAGS += -undefined dynamic_lookup

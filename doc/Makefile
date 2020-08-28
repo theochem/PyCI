@@ -13,17 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-SPHINXOPTS    ?=
-SPHINXBUILD   ?= PYTHONPATH=.. sphinx-build
-SOURCEDIR     = source
-BUILDDIR      = build
+BUILDDIR = build
+SOURCEDIR = source
+SPHINXBUILD ?= PYTHONPATH=.. sphinx-build
+SPHINXOPTS ?=
 
-
+.PHONY: help
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help Makefile
-
-
+.PHONY:Makefile
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

@@ -7,6 +7,7 @@ cat > compile_flags.txt <<EOF
 -Ilib/eigen
 -Ilib/parallel-hashmap
 -Ilib/pybind11/include
+-Ilib/spectra/include
 -Ipyci/include
 EOF
 

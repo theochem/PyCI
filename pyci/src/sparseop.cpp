@@ -15,6 +15,8 @@
 
 #include <pyci.h>
 
+#include <Spectra/SymEigsSolver.h>
+
 namespace pyci {
 
 SparseOp::SparseOp(const SparseOp &op)
@@ -62,6 +64,14 @@ SparseOp::SparseOp(const Ham &ham, const GenCIWfn &wfn, const long rows, const l
     init<GenCIWfn>(ham, wfn, rows, cols);
 }
 
+long SparseOp::rows(void) const {
+    return nrow;
+}
+
+long SparseOp::cols(void) const {
+    return ncol;
+}
+
 const double *SparseOp::data_ptr(const long index) const {
     return &data[index];
 }
@@ -81,139 +91,88 @@ double SparseOp::get_element(const long i, const long j) const {
     return (e == end) ? 0.0 : data[indptr[i] + e - start];
 }
 
-void perform_op_cepa0_thread(const double *data, const long *indptr, const long *indices,
-                             const double *x, double *y, const long start, const long end,
-                             const long refind, const double h_refind) {
-    long j, jstart, jend = indptr[start];
-    double val;
-    for (long i = start; i < end; ++i) {
-        jstart = jend;
-        jend = indptr[i + 1];
-        val = 0.0;
-        if (i == refind) {
-            for (j = jstart; j < jend; ++j) {
-                if (indices[j] == refind)
-                    val -= x[indices[j]];
-                else
-                    val += data[j] * x[indices[j]];
-            }
-        } else {
-            for (j = jstart; j < jend; ++j) {
-                if (indices[j] == i)
-                    val += (data[j] - h_refind) * x[indices[j]];
-                else if (indices[j] != refind)
-                    val += data[j] * x[indices[j]];
-            }
-        }
-        y[i] = -val;
-    }
-}
-
 void SparseOp::perform_op(const double *x, double *y) const {
-    typedef Eigen::Map<const Eigen::SparseMatrix<double, Eigen::RowMajor, long>> SparseMatrix;
-    SparseMatrix mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    if (symmetric)
+        return perform_op_symm(x, y);
+    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
     Eigen::Map<const Eigen::VectorXd> xvec(x, ncol);
     Eigen::Map<Eigen::VectorXd> yvec(y, nrow);
     yvec = mat * xvec;
 }
 
+void SparseOp::perform_op_transpose(const double *x, double *y) const {
+    if (symmetric)
+        return perform_op_symm(x, y);
+    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    Eigen::Map<const Eigen::VectorXd> xvec(x, nrow);
+    Eigen::Map<Eigen::VectorXd> yvec(y, ncol);
+    yvec = mat.transpose() * xvec;
+}
+
 void SparseOp::perform_op_symm(const double *x, double *y) const {
-    typedef Eigen::Map<const Eigen::SparseMatrix<double, Eigen::RowMajor, long>> SparseMatrix;
-    SparseMatrix mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
     Eigen::Map<const Eigen::VectorXd> xvec(x, ncol);
     Eigen::Map<Eigen::VectorXd> yvec(y, nrow);
     yvec = mat.selfadjointView<Eigen::Upper>() * xvec;
 }
 
-void SparseOp::perform_op_cepa0(const double *x, double *y, const long refind) const {
-    long nthread = get_num_threads(), start, end;
-    long chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
-    double h_refind = get_element(refind, refind);
-    Vector<std::thread> v_threads;
-    v_threads.reserve(nthread);
-    for (long i = 0; i < nthread; ++i) {
-        start = i * chunksize;
-        end = (start + chunksize < nrow) ? start + chunksize : nrow;
-        v_threads.emplace_back(&perform_op_cepa0_thread, &data[0], &indptr[0], &indices[0], x, y,
-                               start, end, refind, h_refind);
+void SparseOp::solve_ci(const double *coeffs, const long n, const long ncv, const long maxiter,
+                        const double tol, double *evals, double *evecs) const {
+    if (n > nrow)
+        throw std::runtime_error("cannot find >n eigenpairs for sparse operator with n rows");
+    else if (nrow == 1) {
+        *evals = get_element(0, 0) + ecore;
+        *evecs = 1.0;
+        return;
     }
-    for (auto &thread : v_threads)
-        thread.join();
-}
-
-void SparseOp::perform_op_transpose_cepa0(const double *x, double *y, const long refind) const {
-    long i;
-    for (i = 0; i < ncol; ++i)
-        y[i] = 0;
-    long j, jstart, jend = indptr[0];
-    double h_refind = get_element(refind, refind);
-    for (i = 0; i < nrow; ++i) {
-        jstart = jend;
-        jend = indptr[i + 1];
-        for (j = jstart; j < jend; ++j) {
-            if (indices[j] == i)
-                y[indices[j]] += (h_refind - data[j]) * x[i];
-            else
-                y[indices[j]] -= data[j] * x[i];
-        }
-    }
-    y[refind] = x[refind];
-}
-
-void SparseOp::rhs_cepa0(double *b, const long refind) const {
-    long iend = indptr[refind + 1];
-    for (long i = indptr[refind]; i != iend; ++i) {
-        if (indices[i] >= nrow)
-            break;
-        b[indices[i]] = data[i];
-    }
+    Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE, const SparseOp> eigs(
+        this, n, (ncv != -1) ? ncv : std::min(nrow, std::max(n * 2 + 1, 20L)));
+    eigs.init(coeffs);
+    eigs.compute((maxiter != -1) ? maxiter : n * nrow * 10, tol, Spectra::SMALLEST_ALGE);
+    if (eigs.info() != Spectra::SUCCESSFUL)
+        throw std::runtime_error("did not converge");
+    Eigen::Map<Eigen::VectorXd> eigenvalues(evals, n);
+    Eigen::Map<Eigen::MatrixXd> eigenvectors(evecs, nrow, n);
+    eigenvalues = eigs.eigenvalues();
+    for (long i = 0; i < n; ++i)
+        evals[i] += ecore;
+    eigenvectors = eigs.eigenvectors();
 }
 
 Array<double> SparseOp::py_matvec(const Array<double> x) const {
     Array<double> y(nrow);
-    if (symmetric)
-        perform_op_symm(reinterpret_cast<const double *>(x.request().ptr),
-                        reinterpret_cast<double *>(y.request().ptr));
-    else
-        perform_op(reinterpret_cast<const double *>(x.request().ptr),
-                   reinterpret_cast<double *>(y.request().ptr));
+    perform_op(reinterpret_cast<const double *>(x.request().ptr),
+               reinterpret_cast<double *>(y.request().ptr));
     return y;
 }
 
 Array<double> SparseOp::py_matvec_out(const Array<double> x, Array<double> y) const {
-    if (symmetric)
-        perform_op_symm(reinterpret_cast<const double *>(x.request().ptr),
-                        reinterpret_cast<double *>(y.request().ptr));
-    else
-        perform_op(reinterpret_cast<const double *>(x.request().ptr),
-                   reinterpret_cast<double *>(y.request().ptr));
+    perform_op(reinterpret_cast<const double *>(x.request().ptr),
+               reinterpret_cast<double *>(y.request().ptr));
     return y;
 }
 
-Array<double> SparseOp::py_matvec_cepa0(const Array<double> x, const long refind) const {
-    if (symmetric)
-        throw std::runtime_error("cannot run CEPA0 with sparse_op(symmetric=True)");
+Array<double> SparseOp::py_rmatvec(const Array<double> x) const {
     Array<double> y(nrow);
-    perform_op_cepa0(reinterpret_cast<const double *>(x.request().ptr),
-                     reinterpret_cast<double *>(y.request().ptr), refind);
+    perform_op_transpose(reinterpret_cast<const double *>(x.request().ptr),
+                         reinterpret_cast<double *>(y.request().ptr));
     return y;
 }
 
-Array<double> SparseOp::py_rmatvec_cepa0(Array<double> x, const long refind) const {
-    if (symmetric)
-        throw std::runtime_error("cannot run CEPA0 with sparse_op(symmetric=True)");
-    Array<double> y(ncol);
-    perform_op_transpose_cepa0(reinterpret_cast<const double *>(x.request().ptr),
-                               reinterpret_cast<double *>(y.request().ptr), refind);
+Array<double> SparseOp::py_rmatvec_out(const Array<double> x, Array<double> y) const {
+    perform_op_transpose(reinterpret_cast<const double *>(x.request().ptr),
+                         reinterpret_cast<double *>(y.request().ptr));
     return y;
 }
 
-Array<double> SparseOp::py_rhs_cepa0(const long refind) const {
-    if (symmetric)
-        throw std::runtime_error("cannot run CEPA0 with sparse_op(symmetric=True)");
-    Array<double> y(nrow);
-    rhs_cepa0(reinterpret_cast<double *>(y.request().ptr), refind);
-    return y;
+pybind11::tuple SparseOp::py_solve_ci(const Array<double> coeffs, const long n, const long ncv,
+                                      const long maxiter, const double tol) const {
+    Array<double> eigvals(n);
+    Array<double> eigvecs({n, nrow});
+    solve_ci(reinterpret_cast<const double *>(coeffs.request().ptr), n, ncv, maxiter, tol,
+             reinterpret_cast<double *>(eigvals.request().ptr),
+             reinterpret_cast<double *>(eigvecs.request().ptr));
+    return pybind11::make_tuple(eigvals, eigvecs);
 }
 
 template<class WfnType>
@@ -264,25 +223,32 @@ void SparseOp::init_thread_sort_row(const long idet) {
 }
 
 void SparseOp::init_thread_condense(SparseOp &op, const long ithread) {
-    long i, start, end;
-    if (!nrow)
-        return;
-    // copy over data array
-    start = op.data.size();
-    op.data.resize(start + size);
-    std::memcpy(&op.data[start], &data[0], sizeof(double) * size);
-    AlignedVector<double>().swap(data);
-    // copy over indices array
-    start = op.indices.size();
-    op.indices.resize(start + size);
-    std::memcpy(&op.indices[start], &indices[0], sizeof(long) * size);
-    AlignedVector<long>().swap(indices);
-    // copy over indptr array
-    start = op.indptr.back();
-    end = indptr.size();
-    for (i = 1; i < end; ++i)
-        op.indptr.push_back(indptr[i] + start);
-    AlignedVector<long>().swap(indptr);
+    long i, j, start, end, offset;
+    if (!ithread) {
+        op.data.swap(data);
+        op.indptr.swap(indptr);
+        op.indices.swap(indices);
+    } else if (nrow) {
+        // copy over data array
+        start = op.data.size();
+        op.data.resize(start + size);
+        std::memcpy(&op.data[start], &data[0], sizeof(double) * size);
+        AlignedVector<double>().swap(data);
+        // copy over indices array
+        start = op.indices.size();
+        op.indices.resize(start + size);
+        std::memcpy(&op.indices[start], &indices[0], sizeof(long) * size);
+        AlignedVector<long>().swap(indices);
+        // copy over indptr array
+        start = op.indptr.size();
+        end = start + indptr.size() - 1;
+        offset = op.indptr.back();
+        op.indptr.resize(end);
+        j = 0;
+        for (i = start; i < end; ++i)
+            op.indptr[i] = indptr[++j] + offset;
+        AlignedVector<long>().swap(indptr);
+    }
 }
 
 void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulong *det,

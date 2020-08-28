@@ -38,20 +38,16 @@ extensions = [
 ]
 
 
-templates_path = [
-    "_templates",
-]
-
-
 exclude_patterns = []
 
 
 html_theme = "sphinx_rtd_theme"
 
 
-html_static_path = [
-    "_static",
-]
+html_static_path = []
+
+
+templates_path = []
 
 
 mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js"

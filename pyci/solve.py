@@ -35,8 +35,9 @@ def solve(
     n: int = 1,
     c0: np.ndarray = None,
     ncv: int = None,
-    maxiter: int = 5000,
+    maxiter: int = None,
     tol: float = 1.0e-12,
+    method: str = "spectra",
 ):
     r"""
     Solve a CI eigenproblem.
@@ -45,16 +46,18 @@ def solve(
     ----------
     args : (pyci.sparse_op,) or (pyci.hamiltonian, pyci.wavefunction)
         System to solve.
-    n : int, optional
+    n : int, default=1
         Number of lowest eigenpairs to find.
     c0 : np.ndarray, optional
         Initial guess for lowest eigenvector.
-    ncv : int, optional
+    ncv : int, default=min(nrow, max(2 * n + 1, 20))
         Number of Lanczos vectors to use.
-    maxiter : int, optional
+    maxiter : int, default=nrow * n * 10
         Maximum number of iterations to perform.
-    tol : float, optional
+    tol : float, default=1.0e-12
         Convergence tolerance.
+    method : ("spectra" | "arpack"), default="spectra"
+        Whether to use the C++ solver (Spectra) or the SciPy ARPACK solver.
 
     Returns
     -------
@@ -68,32 +71,41 @@ def solve(
     if len(args) == 1:
         op = args[0]
     elif len(args) == 2:
-        op = pyci.sparse_op(*args)
+        op = pyci.sparse_op(*args, symmetric=True)
     else:
         raise ValueError("must pass `ham, wfn` or `op`")
-    # Handle length-1 eigenproblem
-    if op.shape[1] == 1:
+    # Handle default parameters
+    if ncv is None:
+        ncv = min(op.shape[0], max(2 * n + 1, 20))
+    if maxiter is None:
+        maxiter = n * op.shape[0] * 10
+    if c0 is None:
+        c0 = np.zeros(op.shape[0], dtype=pyci.c_double)
+        c0[0] = 1
+    elif c0.size < op.shape[0]:
+        c0 = np.concatenate((c0, np.zeros(op.shape[0] - c0.shape[0], dtype=pyci.c_double)))
+    else:
+        c0 = np.asarray(c0, dtype=pyci.c_double)
+    # Check which method to use
+    if method == "spectra":
+        return op._solve(c0, n=n, ncv=ncv, maxiter=maxiter, tol=tol)
+    elif method != "arpack":
+        raise ValueError('`method` must be one of "spectra" or "arpack"')
+    # Solve using SciPy's ARPACK interface
+    if op.shape[0] == 1:
         return (
             np.full(1, op.get_element(0, 0) + op.ecore, dtype=pyci.c_double),
             np.ones((1, 1), dtype=pyci.c_double),
         )
-    # Prepare initial guess
-    if c0 is None:
-        c0 = np.zeros(op.shape[1], dtype=pyci.c_double)
-        c0[0] = 1
-    else:
-        c0 = np.concatenate((c0, np.zeros(op.shape[1] - c0.shape[0], dtype=pyci.c_double)))
-    # Solve eigenproblem
     es, cs = sp.eigsh(
-        sp.LinearOperator(matvec=op, rmatvec=op, shape=op.shape),
-        k=n,
+        sp.LinearOperator(matvec=op.matvec, shape=op.shape, dtype=pyci.c_double),
         v0=c0,
+        k=n,
         ncv=ncv,
         maxiter=maxiter,
         tol=tol,
         which="SA",
     )
-    # Return result
     es += op.ecore
     return es, cs.transpose()
 
@@ -136,12 +148,12 @@ def solve_cepa0(*args, e0=None, c0=None, refind=0, maxiter=5000, tol=1.0e-12, ls
     c0 = np.zeros(op.shape[1], dtype=pyci.c_double) if c0 is None else c0 / c0[refind]
     c0[refind] = op.get_element(refind, refind) if e0 is None else e0
     # Prepare left-hand side matrix
-    matvec = partial(op.matvec_cepa0, refind=refind)
-    rmatvec = partial(op.rmatvec_cepa0, refind=refind)
-    lhs = sp.LinearOperator(matvec=matvec, rmatvec=rmatvec, shape=op.shape)
+    matvec = partial(op._matvec_cepa0, refind=refind)
+    rmatvec = partial(op._rmatvec_cepa0, refind=refind)
+    lhs = sp.LinearOperator(matvec=matvec, rmatvec=rmatvec, shape=op.shape, dtype=pyci.c_double)
     # Prepare right-hand side vector
-    rhs = op.rhs_cepa0(refind=refind)
-    rhs -= op.matvec_cepa0(c0, refind=refind)
+    rhs = op._rhs_cepa0(refind=refind)
+    rhs -= op._matvec_cepa0(c0, refind=refind)
     # Solve equations
     if lstsq:
         result = sp.lsqr(lhs, rhs, iter_lime=maxiter, btol=tol, atol=tol)

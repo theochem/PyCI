@@ -22,35 +22,39 @@ typedef HashMap<ulong, std::pair<double, double>> PairHashMap;
 namespace {
 
 template<class WfnType>
-double compute_enpt2_tmpl(const Ham &, const WfnType &, const double *, const double, const double);
-
+double compute_enpt2_tmpl(const Ham &, const WfnType &, const double *, const double, const double,
+                          long);
 }
 
 double compute_enpt2(const Ham &ham, const DOCIWfn &wfn, const double *coeffs, const double energy,
-                     const double eps) {
-    return compute_enpt2_tmpl<FullCIWfn>(ham, FullCIWfn(wfn), coeffs, energy, eps);
+                     const double eps, const long nthread) {
+    return compute_enpt2_tmpl<FullCIWfn>(ham, FullCIWfn(wfn), coeffs, energy, eps, nthread);
 }
 
 double compute_enpt2(const Ham &ham, const FullCIWfn &wfn, const double *coeffs,
-                     const double energy, const double eps) {
-    return compute_enpt2_tmpl<FullCIWfn>(ham, wfn, coeffs, energy, eps);
+                     const double energy, const double eps, const long nthread) {
+    return compute_enpt2_tmpl<FullCIWfn>(ham, wfn, coeffs, energy, eps, nthread);
 }
 
 double compute_enpt2(const Ham &ham, const GenCIWfn &wfn, const double *coeffs, const double energy,
-                     const double eps) {
-    return compute_enpt2_tmpl<GenCIWfn>(ham, wfn, coeffs, energy, eps);
+                     const double eps, const long nthread) {
+    return compute_enpt2_tmpl<GenCIWfn>(ham, wfn, coeffs, energy, eps, nthread);
 }
 
 namespace {
 
 void compute_enpt2_thread_condense(PairHashMap &terms, PairHashMap &t_terms, const long ithread) {
     std::pair<double, double> *pair;
-    for (auto &keyval : t_terms) {
-        pair = &terms[keyval.first];
-        pair->first += keyval.second.first;
-        pair->second = keyval.second.second;
+    if (!ithread)
+        terms.swap(t_terms);
+    else {
+        for (auto &keyval : t_terms) {
+            pair = &terms[keyval.first];
+            pair->first += keyval.second.first;
+            pair->second = keyval.second.second;
+        }
+        PairHashMap().swap(t_terms);
     }
-    PairHashMap().swap(t_terms);
 }
 
 void compute_enpt2_thread_gather(const FullCIWfn &wfn, const double *one_mo, const double *two_mo,
@@ -367,9 +371,10 @@ void compute_enpt2_thread(const Ham &ham, const WfnType &wfn, PairHashMap &terms
 
 template<class WfnType>
 double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coeffs,
-                          const double energy, const double eps) {
-    long nthread = get_num_threads(), start, end;
-    long chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
+                          const double energy, const double eps, long nthread) {
+    if (nthread == -1)
+        nthread = get_num_threads();
+    long start, end, chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
     PairHashMap terms;
     Vector<PairHashMap> v_terms(nthread);
     Vector<std::thread> v_threads;

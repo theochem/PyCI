@@ -20,19 +20,22 @@ namespace pyci {
 namespace {
 
 template<class WfnType>
-long add_hci_tmpl(const Ham &, WfnType &, const double *, const double);
+long add_hci_tmpl(const Ham &, WfnType &, const double *, const double, long);
 }
 
-long add_hci(const Ham &ham, DOCIWfn &wfn, const double *coeffs, const double eps) {
-    return add_hci_tmpl<DOCIWfn>(ham, wfn, coeffs, eps);
+long add_hci(const Ham &ham, DOCIWfn &wfn, const double *coeffs, const double eps,
+             const long nthread) {
+    return add_hci_tmpl<DOCIWfn>(ham, wfn, coeffs, eps, nthread);
 }
 
-long add_hci(const Ham &ham, FullCIWfn &wfn, const double *coeffs, const double eps) {
-    return add_hci_tmpl<FullCIWfn>(ham, wfn, coeffs, eps);
+long add_hci(const Ham &ham, FullCIWfn &wfn, const double *coeffs, const double eps,
+             const long nthread) {
+    return add_hci_tmpl<FullCIWfn>(ham, wfn, coeffs, eps, nthread);
 }
 
-long add_hci(const Ham &ham, GenCIWfn &wfn, const double *coeffs, const double eps) {
-    return add_hci_tmpl<GenCIWfn>(ham, wfn, coeffs, eps);
+long add_hci(const Ham &ham, GenCIWfn &wfn, const double *coeffs, const double eps,
+             const long nthread) {
+    return add_hci_tmpl<GenCIWfn>(ham, wfn, coeffs, eps, nthread);
 }
 
 namespace {
@@ -263,10 +266,12 @@ void hci_thread(const Ham &ham, const WfnType &wfn, WfnType &t_wfn, const double
 };
 
 template<class WfnType>
-long add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps) {
+long add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps,
+                  long nthread) {
     long ndet_old = wfn.ndet;
-    long nthread = get_num_threads(), start, end;
-    long chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
+    if (nthread == -1)
+        nthread = get_num_threads();
+    long start, end, chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
     Vector<std::thread> v_threads;
     Vector<WfnType> v_wfns;
     v_threads.reserve(nthread);
