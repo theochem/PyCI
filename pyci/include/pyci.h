@@ -217,7 +217,7 @@ struct Ham final {
 public:
     long nbasis;
     double ecore, *one_mo, *two_mo, *h, *v, *w;
-    pybind11::object one_mo_array, two_mo_array, h_array, v_array, w_array;
+    Array<double> one_mo_array, two_mo_array, h_array, v_array, w_array;
 
     Ham(void);
 
@@ -232,7 +232,7 @@ public:
     void to_file(const std::string &, const long, const long, const double) const;
 
 private:
-    void init_ham(const pybind11::tuple &);
+    Ham(const pybind11::tuple &);
 };
 
 /* Wave function classes. */
@@ -557,7 +557,7 @@ public:
     long nrow, ncol, size;
     double ecore;
     bool symmetric;
-    pybind11::object shape;
+    pybind11::tuple shape;
 
 private:
     AlignedVector<double> data;

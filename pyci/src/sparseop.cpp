@@ -33,7 +33,7 @@ SparseOp::SparseOp(SparseOp &&op) noexcept
 
 SparseOp::SparseOp(const long rows, const long cols, const bool symm)
     : nrow(rows), ncol(cols), size(0), ecore(0.0), symmetric(symm) {
-    shape = pybind11::make_tuple(nrow, ncol).cast<pybind11::object>();
+    shape = pybind11::make_tuple(nrow, ncol);
     indptr.push_back(0);
 }
 
@@ -41,7 +41,7 @@ SparseOp::SparseOp(const Ham &ham, const DOCIWfn &wfn, const long rows, const lo
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
-    shape = pybind11::make_tuple(nrow, ncol).cast<pybind11::object>();
+    shape = pybind11::make_tuple(nrow, ncol);
     indptr.push_back(0);
     init<DOCIWfn>(ham, wfn, rows, cols);
 }
@@ -50,7 +50,7 @@ SparseOp::SparseOp(const Ham &ham, const FullCIWfn &wfn, const long rows, const 
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
-    shape = pybind11::make_tuple(nrow, ncol).cast<pybind11::object>();
+    shape = pybind11::make_tuple(nrow, ncol);
     indptr.push_back(0);
     init<FullCIWfn>(ham, wfn, rows, cols);
 }
@@ -59,7 +59,7 @@ SparseOp::SparseOp(const Ham &ham, const GenCIWfn &wfn, const long rows, const l
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
-    shape = pybind11::make_tuple(nrow, ncol).cast<pybind11::object>();
+    shape = pybind11::make_tuple(nrow, ncol);
     indptr.push_back(0);
     init<GenCIWfn>(ham, wfn, rows, cols);
 }

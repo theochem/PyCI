@@ -35,14 +35,31 @@ Ham::Ham(Ham &&ham) noexcept
       v_array(std::move(ham.v_array)), w_array(std::move(ham.w_array)) {
 }
 
-Ham::Ham(const std::string &filename) {
-    pybind11::tuple args = pybind11::module::import("pyci.fcidump").attr("_load_ham")(filename);
-    init_ham(args);
+Ham::Ham(const std::string &filename)
+    : Ham(pybind11::module::import("pyci.fcidump")
+              .attr("_load_ham")(filename)
+              .cast<pybind11::tuple>()) {
 }
 
-Ham::Ham(const double e, const Array<double> mo1, const Array<double> mo2) {
-    pybind11::tuple args = pybind11::module::import("pyci.fcidump").attr("_load_ham")(e, mo1, mo2);
-    init_ham(args);
+Ham::Ham(const double e, const Array<double> mo1, const Array<double> mo2)
+    : Ham(pybind11::module::import("pyci.fcidump")
+              .attr("_load_ham")(e, mo1, mo2)
+              .cast<pybind11::tuple>()) {
+}
+
+Ham::Ham(const pybind11::tuple &args) {
+    one_mo_array = args[1].cast<Array<double>>();
+    two_mo_array = args[2].cast<Array<double>>();
+    h_array = args[3].cast<Array<double>>();
+    v_array = args[4].cast<Array<double>>();
+    w_array = args[5].cast<Array<double>>();
+    nbasis = one_mo_array.request().shape[0];
+    ecore = args[0].cast<double>();
+    one_mo = reinterpret_cast<double *>(one_mo_array.request().ptr);
+    two_mo = reinterpret_cast<double *>(two_mo_array.request().ptr);
+    h = reinterpret_cast<double *>(h_array.request().ptr);
+    v = reinterpret_cast<double *>(v_array.request().ptr);
+    w = reinterpret_cast<double *>(w_array.request().ptr);
 }
 
 void Ham::to_file(const std::string &filename, const long nelec, const long ms2,
@@ -55,21 +72,6 @@ void Ham::to_file(const std::string &filename, const long nelec, const long ms2,
     Array<double> two_mo_array({nbasis, nbasis, nbasis, nbasis}, {n3, n2, n1, n0}, two_mo);
     pybind11::module::import("pyci.fcidump")
         .attr("write_fcidump")(filename, ecore, one_mo_array, two_mo_array, nelec, ms2, tol);
-}
-
-void Ham::init_ham(const pybind11::tuple &args) {
-    one_mo_array = args[1];
-    two_mo_array = args[2];
-    h_array = args[3];
-    v_array = args[4];
-    w_array = args[5];
-    nbasis = one_mo_array.cast<Array<double>>().request().shape[0];
-    ecore = args[0].cast<double>();
-    one_mo = reinterpret_cast<double *>(one_mo_array.cast<Array<double>>().request().ptr);
-    two_mo = reinterpret_cast<double *>(two_mo_array.cast<Array<double>>().request().ptr);
-    h = reinterpret_cast<double *>(h_array.cast<Array<double>>().request().ptr);
-    v = reinterpret_cast<double *>(v_array.cast<Array<double>>().request().ptr);
-    w = reinterpret_cast<double *>(w_array.cast<Array<double>>().request().ptr);
 }
 
 } // namespace pyci
