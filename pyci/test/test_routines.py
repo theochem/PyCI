@@ -174,6 +174,26 @@ def test_run_hci(filename, wfn_type, occs, energy):
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 
+@pytest.mark.xfail
+@pytest.mark.parametrize(
+    "filename, wfn_type, occs, energy",
+    [
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
+    ],
+)
+def test_cepa0(filename, wfn_type, occs, energy):
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    wfn = wfn_type(ham.nbasis, *occs)
+    pyci.add_excitations(wfn, *range(0, max(wfn.nocc - 1, 1)))
+    op = pyci.sparse_op(ham, wfn)
+    es, cs = pyci.solve(op)
+    es, cs = pyci.CEPA0(op).solve(c0=cs[0], e0=es[0], tol=1.0e-6)
+    npt.assert_allclose(es[0], energy)
+
+
 def test_compute_rdm_two_particles_one_up_one_dn():
     wfn = pyci.fullci_wfn(2, 1, 1)
     wfn.add_all_dets()

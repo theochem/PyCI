@@ -22,6 +22,7 @@ from .fcidump import *
 from .integrals import *
 from .selected_ci import *
 from .solve import *
+from .cepa0 import *
 
 
 __version__ = __version__
