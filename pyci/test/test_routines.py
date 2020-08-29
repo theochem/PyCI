@@ -58,6 +58,26 @@ def test_solve_sparse(filename, wfn_type, occs, energy):
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 
+def test_sparse_matmat():
+    ham = pyci.hamiltonian(datafile("be_ccpvdz.fcidump"))
+    wfn = pyci.doci_wfn(ham.nbasis, 2, 2)
+    wfn.add_all_dets()
+    op = pyci.sparse_op(ham, wfn, nrow=50, ncol=30, symmetric=False)
+    mat = np.ones((op.shape[1], 10), dtype=op.dtype)
+    ymat = op.matmat(mat)
+    assert ymat.shape == (op.shape[0], 10)
+    mat = np.ones((op.shape[0], 10), dtype=op.dtype)
+    yrmat = op.rmatmat(mat)
+    assert yrmat.shape == (op.shape[1], 10)
+    op = pyci.sparse_op(ham, wfn, nrow=30, ncol=50, symmetric=False)
+    mat = np.ones((op.shape[1], 10), dtype=op.dtype)
+    ymat = op.matmat(mat)
+    assert ymat.shape == (op.shape[0], 10)
+    mat = np.ones((op.shape[0], 10), dtype=op.dtype)
+    yrmat = op.rmatmat(mat)
+    assert yrmat.shape == (op.shape[1], 10)
+
+
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [

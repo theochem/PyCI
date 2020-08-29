@@ -1038,6 +1038,54 @@ y : numpy.ndarray
 
 sparse_op.def("rmatvec", &SparseOp::py_rmatvec_out, py::arg("x"), py::arg("out"));
 
+sparse_op.def("matmat", &SparseOp::py_matmat, R"""(
+Compute the matrix matrix product of the sparse matrix operator with matrix ``X``.
+
+.. math::
+
+    A X = Y
+
+Parameters
+----------
+x : numpy.ndarray
+    Matrix to which the operator will be applied.
+out : numpy.ndarray, default=None
+    Array in which to store the result. One will be created if this is not specified.
+
+Returns
+-------
+y : numpy.ndarray
+    Result matrix.
+
+)""",
+              py::arg("x"));
+
+sparse_op.def("matmat", &SparseOp::py_matmat_out, py::arg("x"), py::arg("out"));
+
+sparse_op.def("rmatmat", &SparseOp::py_rmatmat, R"""(
+Compute the matrix matrix product of the transpose of the sparse matrix operator with matrix ``X``.
+
+.. math::
+
+    A^T X = Y
+
+Parameters
+----------
+x : numpy.ndarray
+    Matrix to which the operator will be applied.
+out : numpy.ndarray, default=None
+    Array in which to store the result. One will be created if this is not specified.
+
+Returns
+-------
+y : numpy.ndarray
+    Result matrix.
+
+)""",
+              py::arg("x"));
+
+sparse_op.def("rmatmat", &SparseOp::py_rmatmat_out, py::arg("x"), py::arg("out"));
+
 sparse_op.def("get_element", &SparseOp::get_element, R"""(
 Return the :math:`\left(i, j\right)`-th element of the sparse matrix operator.
 )""",

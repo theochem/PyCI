@@ -175,6 +175,50 @@ Array<double> SparseOp::py_rmatvec_out(const Array<double> x, Array<double> y) c
     return y;
 }
 
+Array<double> SparseOp::py_matmat(const Array<double> x) const {
+    Array<double> y({nrow, x.request().size / ncol});
+    return py_matmat_out(x, y);
+}
+
+Array<double> SparseOp::py_matmat_out(const Array<double> x, Array<double> y) const {
+    pybind11::buffer_info xbuf = x.request();
+    pybind11::buffer_info ybuf = y.request();
+    const double *xptr = reinterpret_cast<const double *>(xbuf.ptr);
+    double *yptr = reinterpret_cast<double *>(ybuf.ptr);
+    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> xmat(
+        xptr, ncol, xbuf.size / ncol);
+    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> ymat(
+        yptr, nrow, ybuf.size / nrow);
+    if (symmetric)
+        ymat = mat.selfadjointView<Eigen::Upper>() * xmat;
+    else
+        ymat = mat * xmat;
+    return y;
+}
+
+Array<double> SparseOp::py_rmatmat(const Array<double> x) const {
+    Array<double> y({ncol, x.request().size / nrow});
+    return py_rmatmat_out(x, y);
+}
+
+Array<double> SparseOp::py_rmatmat_out(const Array<double> x, Array<double> y) const {
+    pybind11::buffer_info xbuf = x.request();
+    pybind11::buffer_info ybuf = y.request();
+    const double *xptr = reinterpret_cast<const double *>(xbuf.ptr);
+    double *yptr = reinterpret_cast<double *>(ybuf.ptr);
+    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> xmat(
+        xptr, nrow, xbuf.size / nrow);
+    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> ymat(
+        yptr, ncol, ybuf.size / ncol);
+    if (symmetric)
+        ymat = mat.selfadjointView<Eigen::Upper>() * xmat;
+    else
+        ymat = mat.transpose() * xmat;
+    return y;
+}
+
 pybind11::tuple SparseOp::py_solve_ci(const long n, pybind11::object coeffs, const long ncv,
                                       const long maxiter, const double tol) const {
     Array<double> eigvals(n);

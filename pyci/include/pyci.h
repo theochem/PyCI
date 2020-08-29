@@ -607,6 +607,14 @@ public:
 
     Array<double> py_rmatvec_out(const Array<double>, Array<double>) const;
 
+    Array<double> py_matmat(const Array<double>) const;
+
+    Array<double> py_matmat_out(const Array<double>, Array<double>) const;
+
+    Array<double> py_rmatmat(const Array<double>) const;
+
+    Array<double> py_rmatmat_out(const Array<double>, Array<double>) const;
+
     pybind11::tuple py_solve_ci(const long, pybind11::object, const long, const long,
                                 const double) const;
 
