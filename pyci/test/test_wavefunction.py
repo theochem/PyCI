@@ -27,6 +27,9 @@ import pyci
 
 def test_doci_raises():
     npt.assert_raises(ValueError, pyci.doci_wfn, 10, 11, 11)
+    wfn = pyci.doci_wfn(5, 3, 3)
+    wfn.add_hartreefock_det()
+    assert wfn[0].flags["OWNDATA"]
 
 
 def test_fullci_raises():
@@ -34,6 +37,9 @@ def test_fullci_raises():
     npt.assert_raises(ValueError, pyci.fullci_wfn, 10, 11, 11)
     npt.assert_raises(ValueError, pyci.fullci_wfn, 10, 0, 1)
     npt.assert_raises(ValueError, pyci.fullci_wfn, 10, 2, 3)
+    wfn = pyci.fullci_wfn(5, 3, 3)
+    wfn.add_hartreefock_det()
+    assert wfn[0].flags["OWNDATA"]
 
 
 @pytest.mark.parametrize("nbasis, nocc", [(16, 8), (64, 1), (64, 4), (65, 1), (65, 4), (129, 3)])

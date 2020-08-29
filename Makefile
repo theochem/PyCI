@@ -17,7 +17,6 @@ PYTHON ?= python
 CXX ?= c++
 
 SPOOKYHASH_SEED ?= 0xdeadbeefdeadbeefUL
-NUM_THREADS_DEFAULT ?= 4
 
 CFLAGS += --std=c++14
 CFLAGS += -Wall
@@ -42,7 +41,6 @@ CFLAGS += -Ipyci/include
 
 CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
 CFLAGS += -DPYCI_SPOOKYHASH_SEED=$(SPOOKYHASH_SEED)
-CFLAGS += -DPYCI_NUM_THREADS_DEFAULT=$(NUM_THREADS_DEFAULT)
 
 ifeq ($(shell uname -s),Linux)
 CFLAGS += -fopenmp

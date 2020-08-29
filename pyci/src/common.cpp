@@ -23,14 +23,15 @@ long gcd(long, long);
 
 }
 
-long g_number_threads{PYCI_NUM_THREADS_DEFAULT};
+long g_number_threads{std::thread::hardware_concurrency()};
 
 long get_num_threads(void) {
     return g_number_threads;
 }
 
 void set_num_threads(const long n) {
-    g_number_threads = n > 0 ? n : 1;
+    g_number_threads = std::max(n, 1L);
+    Eigen::setNbThreads(g_number_threads);
 }
 
 long binomial(long n, long k) {

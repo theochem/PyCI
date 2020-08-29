@@ -331,7 +331,7 @@ public:
 
     void reserve(const long);
 
-    pybind11::object py_getitem(pybind11::object) const;
+    Array<ulong> py_getitem(const long) const;
 
     Array<ulong> py_to_det_array(long, long) const;
 
@@ -416,7 +416,7 @@ public:
 
     void reserve(const long);
 
-    pybind11::object py_getitem(pybind11::object) const;
+    Array<ulong> py_getitem(const long) const;
 
     Array<ulong> py_to_det_array(long, long) const;
 
@@ -596,7 +596,7 @@ public:
 
     void perform_op_transpose(const double *, double *) const;
 
-    void solve_ci(const double *, const long, const long, const long, const double, double *,
+    void solve_ci(const long, const double *, const long, const long, const double, double *,
                   double *) const;
 
     Array<double> py_matvec(const Array<double>) const;
@@ -607,7 +607,7 @@ public:
 
     Array<double> py_rmatvec_out(const Array<double>, Array<double>) const;
 
-    pybind11::tuple py_solve_ci(const Array<double>, const long, const long, const long,
+    pybind11::tuple py_solve_ci(const long, pybind11::object, const long, const long,
                                 const double) const;
 
 private:
@@ -626,19 +626,6 @@ private:
     void init_thread_sort_row(const long);
 
     void init_thread_condense(SparseOp &, const long);
-
-public:
-    void perform_op_cepa0(const double *, double *, const long) const;
-
-    void perform_op_transpose_cepa0(const double *, double *, const long) const;
-
-    void rhs_cepa0(double *, const long) const;
-
-    Array<double> py_matvec_cepa0(const Array<double>, const long) const;
-
-    Array<double> py_rmatvec_cepa0(const Array<double>, const long) const;
-
-    Array<double> py_rhs_cepa0(const long) const;
 };
 
 /* Free Python interface functions. */

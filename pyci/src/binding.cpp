@@ -47,8 +47,8 @@ m.attr("c_ulong") = py::dtype::of<ulong>();
 
 m.attr("c_double") = py::dtype::of<double>();
 
-if (std::getenv("PYCI_NUM_THREADS") != nullptr)
-    set_num_threads(std::atol(std::getenv("PYCI_NUM_THREADS")));
+char *env_threads = std::getenv("PYCI_NUM_THREADS");
+set_num_threads((env_threads == nullptr) ? g_number_threads : std::atol(env_threads));
 
 /*
 Section: Hamiltonian class
@@ -307,22 +307,17 @@ One-spin wave function base class.
 )""";
 
 one_spin_wfn.def("__getitem__", &OneSpinWfn::py_getitem, R"""(
-Return a determinant, or determinants, from the wave function.
-
-The ``index`` argument can be any object used to index a regular numpy.ndarray.
-
-Note that the returned determinants are copies of the determinants stored in the wave funtion
-object.
+Return a determinant from the wave function.
 
 Parameters
 ----------
-index : object
-    Index or indices of determinants to be returned.
+index : int
+    Index of determinant.
 
 Returns
 -------
 array : numpy.ndarray
-    Array of determinants.
+    Determinant.
 
 )""",
                  py::arg("index"));
@@ -524,22 +519,17 @@ Two-spin wave function base class.
 )""";
 
 two_spin_wfn.def("__getitem__", &TwoSpinWfn::py_getitem, R"""(
-Return a determinant, or determinants, from the wave function.
-
-The ``index`` argument can be any object used to index a regular numpy.ndarray.
-
-Note that the returned determinants are copies of the determinants stored in the wave funtion
-object.
+Return a determinant from the wave function.
 
 Parameters
 ----------
-index : object
-    Index or indices of determinants to be returned.
+index : int
+    Index of determinant.
 
 Returns
 -------
 array : numpy.ndarray
-    Array of determinants.
+    Determinant.
 
 )""",
                  py::arg("index"));
@@ -1053,15 +1043,15 @@ Return the :math:`\left(i, j\right)`-th element of the sparse matrix operator.
 )""",
               py::arg("i"), py::arg("j"));
 
-sparse_op.def("_solve", &SparseOp::py_solve_ci, R"""(
+sparse_op.def("solve", &SparseOp::py_solve_ci, R"""(
 Solve a CI eigenproblem.
 
 Parameters
 ----------
-c0 : np.ndarray
-    Initial guess for lowest eigenvector.
 n : int, default=1
     Number of lowest eigenpairs to find.
+c0 : np.ndarray, default=[1,0,...,0]
+    Initial guess for lowest eigenvector.
 ncv : int, default=min(nrow, max(2 * n + 1, 20))
     Number of Lanczos vectors to use.
 maxiter : int, default=nrow * n * 10
@@ -1077,14 +1067,8 @@ cs : np.ndarray
     Coefficient vectors.
 
 )""",
-              py::arg("c0"), py::arg("n") = 1, py::arg("ncv") = -1, py::arg("maxiter") = -1,
-              py::arg("tol") = 1.0e-12);
-
-sparse_op.def("_matvec_cepa0", &SparseOp::py_matvec_cepa0, py::arg("x"), py::arg("refind") = 0);
-
-sparse_op.def("_rmatvec_cepa0", &SparseOp::py_rmatvec_cepa0, py::arg("x"), py::arg("refind") = 0);
-
-sparse_op.def("_rhs_cepa0", &SparseOp::py_rhs_cepa0, py::arg("refind") = 0);
+              py::arg("n") = 1, py::arg("c0") = py::none(), py::arg("ncv") = -1,
+              py::arg("maxiter") = -1, py::arg("tol") = 1.0e-12);
 
 /*
 Section: Free functions

@@ -91,8 +91,8 @@ const long *SparseOp::indptr_ptr(const long index) const {
 double SparseOp::get_element(const long i, const long j) const {
     const long *start = &indices[indptr[i]];
     const long *end = &indices[indptr[i + 1]];
-    const long *e = std::find(start, end, j);
-    return (e == end) ? 0.0 : data[indptr[i] + e - start];
+    const long *e = std::lower_bound(start, end, j);
+    return (*e == j) ? data[indptr[i] + e - start] : 0.0;
 }
 
 void SparseOp::perform_op(const double *x, double *y) const {
@@ -120,7 +120,7 @@ void SparseOp::perform_op_symm(const double *x, double *y) const {
     yvec = mat.selfadjointView<Eigen::Upper>() * xvec;
 }
 
-void SparseOp::solve_ci(const double *coeffs, const long n, const long ncv, const long maxiter,
+void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, const long maxiter,
                         const double tol, double *evals, double *evecs) const {
     if (n > nrow)
         throw std::runtime_error("cannot find >n eigenpairs for sparse operator with n rows");
@@ -131,6 +131,12 @@ void SparseOp::solve_ci(const double *coeffs, const long n, const long ncv, cons
     }
     Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE, const SparseOp> eigs(
         this, n, (ncv != -1) ? ncv : std::min(nrow, std::max(n * 2 + 1, 20L)));
+    AlignedVector<double> c0;
+    if (coeffs == nullptr) {
+        c0.resize(nrow);
+        c0[0] = 1.0;
+        coeffs = &c0[0];
+    }
     eigs.init(coeffs);
     eigs.compute((maxiter != -1) ? maxiter : n * nrow * 10, tol, Spectra::SMALLEST_ALGE);
     if (eigs.info() != Spectra::SUCCESSFUL)
@@ -169,13 +175,17 @@ Array<double> SparseOp::py_rmatvec_out(const Array<double> x, Array<double> y) c
     return y;
 }
 
-pybind11::tuple SparseOp::py_solve_ci(const Array<double> coeffs, const long n, const long ncv,
+pybind11::tuple SparseOp::py_solve_ci(const long n, pybind11::object coeffs, const long ncv,
                                       const long maxiter, const double tol) const {
     Array<double> eigvals(n);
     Array<double> eigvecs({n, nrow});
-    solve_ci(reinterpret_cast<const double *>(coeffs.request().ptr), n, ncv, maxiter, tol,
-             reinterpret_cast<double *>(eigvals.request().ptr),
-             reinterpret_cast<double *>(eigvecs.request().ptr));
+    const double *cptr =
+        coeffs.is(pybind11::none())
+            ? nullptr
+            : reinterpret_cast<const double *>(coeffs.cast<Array<double>>().request().ptr);
+    double *evals = reinterpret_cast<double *>(eigvals.request().ptr);
+    double *evecs = reinterpret_cast<double *>(eigvecs.request().ptr);
+    solve_ci(n, cptr, ncv, maxiter, tol, evals, evecs);
     return pybind11::make_tuple(eigvals, eigvecs);
 }
 

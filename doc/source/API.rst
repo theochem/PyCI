@@ -36,10 +36,10 @@ Threading
 
 The number of threads to use is decided as follows, in decreasing priority:
 
-- The number of threads specified by a ``nthread=`` keyword to a PyCI function or method.
-- The number of threads specified by calling ``pyci.set_num_threads`` at run time.
-- The number of threads specified by environment variable ``PYCI_NUM_THREADS`` at run time.
-- The number of threads specified by macro variable ``PYCI_NUM_THREADS_DEFAULT`` at compile time.
+- The value of a keyword argument ``nthread=`` to a particular PyCI function or method call
+- The value of ``n`` from the most recent invokation of ``pyci.set_num_threads(n)``
+- The value of environment variable ``PYCI_NUM_THREADS`` when Python is started
+- The number of threads supported by the hardware (``std::thread::hardware_concurrency()``)
 
 The sparse matrix operator matrix-vector product and eigenproblem methods will also use OpenMP for
 multi-threading if PyCI was compiled with OpenMP support, i.e., with the ``-fopenmp`` C++ flag.

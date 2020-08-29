@@ -51,38 +51,35 @@ def test_solve_sparse(filename, wfn_type, occs, energy):
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
     op = pyci.sparse_op(ham, wfn, symmetric=False)
-    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6, method="arpack")
-    npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
-    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6, method="spectra")
+    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6)
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
     op = pyci.sparse_op(ham, wfn, symmetric=True)
-    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6, method="arpack")
-    npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
-    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6, method="spectra")
+    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6)
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [
-        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
         ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
-        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
-        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
-        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
         ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
     ],
 )
 def test_sparse_rectangular(filename, wfn_type, occs, energy):
     ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
-    wfn.add_all_dets()
+    pyci.add_excitations(wfn, 0, 1, 2)
     nrow = len(wfn) - 10
     op = pyci.sparse_op(ham, wfn, nrow)
     assert op.shape == (nrow, len(wfn))
     y = op(np.ones(op.shape[1], dtype=pyci.c_double))
     assert y.ndim == 1
     assert y.shape[0] == op.shape[0]
+    z = np.zeros_like(y)
+    for i in range(op.shape[0]):
+        for j in range(op.shape[1]):
+            z[i] += op.get_element(i, j)
+    npt.assert_allclose(y, z)
 
 
 @pytest.mark.parametrize(
@@ -174,28 +171,6 @@ def test_run_hci(filename, wfn_type, occs, energy):
         assert len(wfn) == np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
     else:
         assert len(wfn) == comb(wfn.nbasis, occs[0], exact=True)
-    npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
-
-
-@pytest.mark.xfail
-@pytest.mark.parametrize(
-    "filename, wfn_type, occs, energy",
-    [
-        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
-        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
-        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
-        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
-        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
-        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
-    ],
-)
-def test_cepa0(filename, wfn_type, occs, energy):
-    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
-    wfn = wfn_type(ham.nbasis, *occs)
-    pyci.add_excitations(wfn, *range(0, max(wfn.nocc - 1, 1)))
-    op = pyci.sparse_op(ham, wfn)
-    es, cs = pyci.solve(op)
-    es, cs = pyci.solve_cepa0(op, e0=es[0], c0=cs[0])
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 

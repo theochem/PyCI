@@ -248,12 +248,8 @@ void OneSpinWfn::reserve(const long n) {
     dict.reserve(n);
 }
 
-pybind11::object OneSpinWfn::py_getitem(pybind11::object index) const {
-    return pybind11::cast<pybind11::object>(
-               Array<const ulong>({ndet, nword}, {nword * sizeof(ulong), sizeof(ulong)},
-                                  det_ptr(0)))
-        .attr("__getitem__")(index)
-        .attr("copy")();
+Array<ulong> OneSpinWfn::py_getitem(const long index) const {
+    return Array<ulong>(nword, det_ptr(index));
 }
 
 Array<ulong> OneSpinWfn::py_to_det_array(long start, long end) const {

@@ -271,13 +271,8 @@ void TwoSpinWfn::reserve(const long n) {
     dict.reserve(n);
 }
 
-pybind11::object TwoSpinWfn::py_getitem(pybind11::object index) const {
-    return pybind11::cast<pybind11::object>(
-               Array<const ulong>({ndet, 2L, nword},
-                                  {nword * 2 * sizeof(ulong), nword * sizeof(ulong), sizeof(ulong)},
-                                  det_ptr(0)))
-        .attr("__getitem__")(index)
-        .attr("copy")();
+Array<ulong> TwoSpinWfn::py_getitem(const long index) const {
+    return Array<const ulong>({2L, nword}, {nword * sizeof(ulong), sizeof(ulong)}, det_ptr(index));
 }
 
 Array<ulong> TwoSpinWfn::py_to_det_array(long start, long end) const {

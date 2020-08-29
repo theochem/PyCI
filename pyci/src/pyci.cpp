@@ -35,7 +35,6 @@ decreases the size of the binary by about 50%, and the compile time is still ver
 #include "fullciwfn.cpp"
 #include "genciwfn.cpp"
 
-#include "cepa0.cpp"
 #include "sparseop.cpp"
 
 #include "enpt2.cpp"
