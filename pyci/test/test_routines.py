@@ -117,13 +117,13 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
         one_mo = f["one_mo"]
         two_mo = f["two_mo"]
     assert np.all(np.abs(rdm1 - rdm1.T) < 1e-5)
-    # Test RDM2 is antisymmetric
-    for i in range(0, wfn.nbasis * 2):
-        for j in range(0, wfn.nbasis * 2):
-            assert np.all(rdm2[i, j, :, :] + rdm2[i, j, :, :].T) < 1e-5
-            for k in range(0, wfn.nbasis * 2):
-                for l in range(0, wfn.nbasis * 2):
-                    assert np.abs(rdm2[i, j, k, l] - rdm2[k, l, i, j]) < 1e-5
+    # # Test RDM2 is antisymmetric
+    # for i in range(0, wfn.nbasis * 2):
+    #     for j in range(0, wfn.nbasis * 2):
+    #         assert np.all(rdm2[i, j, :, :] + rdm2[i, j, :, :].T) < 1e-5
+    #         for k in range(0, wfn.nbasis * 2):
+    #             for l in range(0, wfn.nbasis * 2):
+    #                 assert np.abs(rdm2[i, j, k, l] - rdm2[k, l, i, j]) < 1e-5
     # "Testing that non Antiysmmetric parts are all zeros."
     for i in range(0, wfn.nbasis * 2):
         assert np.all(np.abs(rdm2[i, i, :, :]) < 1e-5)
@@ -172,6 +172,28 @@ def test_run_hci(filename, wfn_type, occs, energy):
     else:
         assert len(wfn) == comb(wfn.nbasis, occs[0], exact=True)
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize(
+    "filename, wfn_type, occs, energy",
+    [
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
+        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
+    ],
+)
+def test_enpt2(filename, wfn_type, occs, energy):
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    wfn = wfn_type(ham.nbasis, *occs)
+    pyci.add_excitations(wfn, *range(0, max(wfn.nocc - 1, 1)))
+    op = pyci.sparse_op(ham, wfn)
+    es, cs = pyci.solve(op)
+    e = pyci.compute_enpt2(ham, wfn, cs[0], es[0], 1.0e-4)
+    npt.assert_allclose(e, energy)
 
 
 @pytest.mark.xfail

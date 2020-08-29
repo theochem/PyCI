@@ -392,9 +392,9 @@ double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coef
         ++n;
     }
     // compute enpt2 correction
-    double result = 0.0;
+    double e = energy - ham.ecore, result = energy;
     for (const auto &keyval : terms)
-        result += keyval.second.first * keyval.second.first / (energy - keyval.second.second);
+        result += keyval.second.first * keyval.second.first / (e - keyval.second.second);
     return result;
 }
 
