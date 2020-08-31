@@ -31,27 +31,23 @@ def make_senzero_integrals(
     one_mo: np.ndarray, two_mo: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     r"""
-    Return the non-zero chunks for seniority-zero of the full one- and two- electron integrals.
+    Return the non-zero chunks for seniority-zero of the full one- and two- particle integrals.
 
     Parameters
     ----------
-    one_mo : np.ndarray
-        Full one-electron integral array.
-    two_mo : np.ndarray
-        Full two-electron integral array.
+    one_mo : numpy.ndarray
+        Full one-particle integral array.
+    two_mo : numpy.ndarray
+        Full two-particle integral array.
 
     Returns
     -------
-    h : np.ndarray
-        Seniority-zero one-electron integrals.
-    v : np.ndarray
-        Seniority-zero two-electron integrals.
-    w : np.ndarray
-        Seniority-two two-electron integrals.
-
-    Notes
-    -----
-    Currently only works for restricted/generalized integrals.
+    h : numpy.ndarray
+        Seniority-zero one-particle integrals.
+    v : numpy.ndarray
+        Seniority-zero two-particle integrals.
+    w : numpy.ndarray
+        Seniority-two two-particle integrals.
 
     """
     h = np.copy(np.diagonal(one_mo))
@@ -66,29 +62,25 @@ def reduce_senzero_integrals(
     h: np.ndarray, v: np.ndarray, w: np.ndarray, nocc: int
 ) -> Tuple[np.ndarray, np.ndarray]:
     r"""
-    Reduce the non-zero chunks for seniority-zero of the one- and two- electron integrals.
+    Reduce the non-zero chunks for seniority-zero of the one- and two- particle integrals.
 
     Parameters
     ----------
-    h : np.ndarray
-        Seniority-zero one-electron integrals.
-    v : np.ndarray
-        Seniority-zero two-electron integrals.
-    w : np.ndarray
-        Seniority-two two-electron integrals.
+    h : numpy.ndarray
+        Seniority-zero one-particle integrals.
+    v : numpy.ndarray
+        Seniority-zero two-particle integrals.
+    w : numpy.ndarray
+        Seniority-two two-particle integrals.
     nocc : int
         Number of pair-occupied orbitals.
 
     Returns
     -------
-    rv : np.ndarray
-        Reduced seniority-zero two-electron integrals.
-    rw : np.ndarray
-        Reduced seniority-two two-electron integrals.
-
-    Notes
-    -----
-    Currently only works for restricted/generalized integrals.
+    rv : numpy.ndarray
+        Reduced seniority-zero two-particle integrals.
+    rw : numpy.ndarray
+        Reduced seniority-two two-particle integrals.
 
     """
     factor = 2.0 / (nocc * 2 - 1)
@@ -110,17 +102,17 @@ def make_rdms(d1: np.ndarray, d2: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
     Parameters
     ----------
-    d1 : np.ndarray
+    d1 : numpy.ndarray
         :math:`D_0` matrix or FullCI 1-RDM spin-blocks.
-    d2 : np.ndarray
+    d2 : numpy.ndarray
         :math:`D_2` matrix or FullCI 2-RDM spin-blocks.
 
     Returns
     -------
-    rdm1 : np.ndarray
-        Generalized one-electron RDM.
-    rdm2 : np.ndarray
-        Generalized two-electron RDM.
+    rdm1 : numpy.ndarray
+        Generalized one-particle RDM.
+    rdm2 : numpy.ndarray
+        Generalized two-particle RDM.
 
     """
     nbasis = d1.shape[1]

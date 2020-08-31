@@ -44,7 +44,7 @@ def solve(
         System to solve.
     n : int, default=1
         Number of lowest eigenpairs to find.
-    c0 : np.ndarray, optional
+    c0 : numpy.ndarray, default=[1,0,...,0]
         Initial guess for lowest eigenvector.
     ncv : int, default=min(nrow, max(2 * n + 1, 20))
         Number of Lanczos vectors to use.
@@ -57,9 +57,9 @@ def solve(
 
     Returns
     -------
-    es : np.ndarray
+    es : numpy.ndarray
         Energies.
-    cs : np.ndarray
+    cs : numpy.ndarray
         Coefficient vectors.
 
     """

@@ -42,7 +42,7 @@ def add_excitations(wfn: pyci.wavefunction, *excitations: Sequence[int], ref=Non
         Wave function.
     excitations : Sequence[int]
         List of excitation levels of determinants to add.
-    ref : np.ndarray, optional
+    ref : numpy.ndarray, optional
         Reference determinant by which to determine excitation levels.
         Default is the Hartree-Fock determinant.
 
@@ -74,7 +74,7 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
         raise ValueError("invalid seniority number specified")
 
     # Make seniority-zero occupation vectors
-    sz_wfn = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up)
+    sz_wfn = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up, wfn.nocc_up)
     sz_wfn.add_all_dets()
     occ_up_array = sz_wfn.to_occ_array()
     del sz_wfn
@@ -182,8 +182,8 @@ def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: fl
     aufbau_occs = np.arange(wfn.nocc_up, dtype=pyci.c_long)
     new_occs = np.copy(aufbau_occs)
     old_occs = np.copy(aufbau_occs)
-    # Index of last electron
-    j_electron = wfn.nocc_up - 1
+    # Index of last particle
+    j_particle = wfn.nocc_up - 1
     # Compute cost of the most important neglected determinant
     nodes_s = nodes[new_occs]
     qs_neg = np.sum(nodes_s[:-1]) * p + (t + 1) * nodes[-1] * p
@@ -191,31 +191,31 @@ def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: fl
     while True:
         if new_occs[wfn.nocc_up - 1] >= wfn.nbasis:
             # Reject determinant b/c of occupying an inactive or non-existant orbital;
-            # go back to last-accepted determinant and excite the previous electron
+            # go back to last-accepted determinant and excite the previous particle
             new_occs[:] = old_occs
-            j_electron -= 1
+            j_particle -= 1
         else:
             # Compute nodes and cost of occupied orbitals
             nodes_s = nodes[new_occs]
             qs = np.sum(nodes_s) + t * np.max(nodes_s)
             if qs < qs_neg:
-                # Accept determinant and excite the last electron again
+                # Accept determinant and excite the last particle again
                 wfn.add_occs(new_occs)
-                j_electron = wfn.nocc_up - 1
+                j_particle = wfn.nocc_up - 1
             else:
                 # Reject determinant because of high cost; go back to last-accepted
-                # determinant and excite the previous electron
+                # determinant and excite the previous particle
                 new_occs[:] = old_occs
-                j_electron -= 1
-        if j_electron < 0:
+                j_particle -= 1
+        if j_particle < 0:
             # Done
             break
-        # Record last-accepted determinant and excite j_electron
+        # Record last-accepted determinant and excite j_particle
         old_occs[:] = new_occs
-        new_occs[j_electron] += 1
-        if j_electron != wfn.nocc_up - 1:
-            for k in range(j_electron + 1, wfn.nocc_up):
-                new_occs[k] = new_occs[j_electron] + k - j_electron
+        new_occs[j_particle] += 1
+        if j_particle != wfn.nocc_up - 1:
+            for k in range(j_particle + 1, wfn.nocc_up):
+                new_occs[k] = new_occs[j_particle] + k - j_particle
 
 
 def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: float) -> None:
@@ -224,8 +224,8 @@ def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: fl
     aufbau_occs[wfn.nocc_up :] -= wfn.nocc_up
     new_occs = np.copy(aufbau_occs)
     old_occs = np.copy(aufbau_occs)
-    # Index of last electron
-    j_electron = wfn.nocc - 1
+    # Index of last particle
+    j_particle = wfn.nocc - 1
     # Compute cost of the most important neglected determinant
     nodes_up = nodes[new_occs[: wfn.nocc_up]]
     nodes_dn = nodes[new_occs[wfn.nocc_up :]]
@@ -235,9 +235,9 @@ def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: fl
     while True:
         if max(new_occs[wfn.nocc_up - 1], new_occs[wfn.nocc - 1]) >= wfn.nbasis:
             # Reject determinant b/c of occupying an inactive or non-existant orbital;
-            # go back to last-accepted determinant and excite the previous electron
+            # go back to last-accepted determinant and excite the previous particle
             new_occs[:] = old_occs
-            j_electron -= 1
+            j_particle -= 1
         else:
             # Compute nodes and cost of occupied orbitals
             nodes_up = nodes[new_occs[: wfn.nocc_up]]
@@ -245,25 +245,25 @@ def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: fl
             q_up = np.sum(nodes_up) + t * np.max(nodes_up)
             q_dn = np.sum(nodes_dn) + t * np.max(nodes_dn)
             if q_up < q_up_neg and q_dn < q_dn_neg:
-                # Accept determinant and excite the last electron again
+                # Accept determinant and excite the last particle again
                 wfn.add_occs(new_occs.reshape(2, -1))
-                j_electron = wfn.nocc - 1
+                j_particle = wfn.nocc - 1
             else:
                 # Reject determinant because of high cost; go back to last-accepted
-                # determinant and excite the previous electron
+                # determinant and excite the previous particle
                 new_occs[:] = old_occs
-                j_electron -= 1
-        if j_electron < 0:
+                j_particle -= 1
+        if j_particle < 0:
             # Done
             break
-        # Record last-accepted determinant and excite j_electron
+        # Record last-accepted determinant and excite j_particle
         old_occs[:] = new_occs
-        new_occs[j_electron] += 1
-        if j_electron < wfn.nocc_up:
-            # excite spin-up electron
-            for k in range(j_electron + 1, wfn.nocc_up):
-                new_occs[k] = new_occs[j_electron] + k - j_electron
-        elif j_electron < wfn.nocc - 1:
-            # excite spin-down electron
-            for k in range(j_electron + 1, wfn.nocc):
-                new_occs[k] = new_occs[j_electron] + k - j_electron
+        new_occs[j_particle] += 1
+        if j_particle < wfn.nocc_up:
+            # excite spin-up particle
+            for k in range(j_particle + 1, wfn.nocc_up):
+                new_occs[k] = new_occs[j_particle] + k - j_particle
+        elif j_particle < wfn.nocc - 1:
+            # excite spin-down particle
+            for k in range(j_particle + 1, wfn.nocc):
+                new_occs[k] = new_occs[j_particle] + k - j_particle

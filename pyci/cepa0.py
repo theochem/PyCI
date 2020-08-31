@@ -54,7 +54,7 @@ class CEPA0:
 
         Returns
         -------
-        dtype : np.dtype
+        dtype : numpy.dtype
             Data type of the linear operator.
 
         """
@@ -75,7 +75,7 @@ class CEPA0:
             System to solve.
         ref : int, default=0
             Index of reference determinant.
-        damp : float, default=np.inf
+        damp : float, default=numpy.inf
             Damping parameter.
 
         """
@@ -99,12 +99,12 @@ class CEPA0:
 
         Parameters
         ----------
-        x : np.ndarray
+        x : numpy.ndarray
             Vector to which linear operator will be applied.
 
         Returns
         -------
-        y : np.ndarray
+        y : numpy.ndarray
             Result of applying linear operator to ``x``.
 
         """
@@ -116,12 +116,12 @@ class CEPA0:
 
         Parameters
         ----------
-        x : np.ndarray
+        x : numpy.ndarray
             Vector to which linear operator will be applied.
 
         Returns
         -------
-        y : np.ndarray
+        y : numpy.ndarray
             Result of applying linear operator to ``x``.
 
         """
@@ -152,12 +152,12 @@ class CEPA0:
 
         Parameters
         ----------
-        x : np.ndarray
+        x : numpy.ndarray
             Vector to which linear operator will be applied.
 
         Returns
         -------
-        y : np.ndarray
+        y : numpy.ndarray
             Result of applying linear operator to ``x``.
 
         """
@@ -181,12 +181,12 @@ class CEPA0:
 
         Parameters
         ----------
-        x : np.ndarray
+        x : numpy.ndarray
             Initial guess.
 
         Returns
         -------
-        rhs : np.ndarray
+        rhs : numpy.ndarray
             Right-hand side vector.
 
         """
@@ -206,7 +206,7 @@ class CEPA0:
 
         Parameters
         ----------
-        c0 : np.ndarray, optional
+        c0 : numpy.ndarray, optional
             Initial guess for lowest eigenvector.
         e0 : float, optional
             Initial guess for energy.
@@ -217,9 +217,9 @@ class CEPA0:
 
         Returns
         -------
-        es : np.ndarray
+        es : numpy.ndarray
             Energy.
-        cs : np.ndarray
+        cs : numpy.ndarray
             Coefficient vector.
 
         """

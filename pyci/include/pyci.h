@@ -35,10 +35,10 @@
 
 #include <Spectra/SymEigsSolver.h>
 
-#include <SpookyV2.h>
-
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+
+#include <SpookyV2.h>
 
 #include <parallel_hashmap/phmap.h>
 
@@ -61,17 +61,9 @@
 #define PYCI_SPOOKYHASH_SEED 0xdeadbeefdeadbeefUL
 #endif
 
-/* Default number of threads. */
-
-#ifndef PYCI_NUM_THREADS_DEFAULT
-#define PYCI_NUM_THREADS_DEFAULT 4
-#endif
-
 namespace pyci {
 
 /* Integer types, popcnt and ctz functions. */
-
-typedef unsigned int uint;
 
 typedef unsigned long ulong;
 
@@ -111,6 +103,11 @@ inline int Ctz(const unsigned long t) {
     return __builtin_ctzl(t);
 }
 
+template<>
+inline int Ctz(const unsigned long long t) {
+    return __builtin_ctzll(t);
+}
+
 /* Vector template types. */
 
 template<typename T>
@@ -119,9 +116,29 @@ using Vector = std::vector<T>;
 template<typename T>
 using AlignedVector = std::vector<T, Eigen::aligned_allocator<T>>;
 
-/* Eigen sparse matrix template type. */
+/* Eigen dense matrix template types. */
+
+#define PYCI_MAT_DYNAMIC Eigen::Dynamic, Eigen::Dynamic
+
 template<typename T>
-using SparseMatrix = Eigen::Map<const Eigen::SparseMatrix<T, Eigen::RowMajor, long>>;
+using DenseMatrix = Eigen::Map<Eigen::Matrix<T, PYCI_MAT_DYNAMIC, Eigen::RowMajor>>;
+
+template<typename T>
+using CDenseMatrix = Eigen::Map<const Eigen::Matrix<T, PYCI_MAT_DYNAMIC, Eigen::RowMajor>>;
+
+template<typename T>
+using DenseVector = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>>;
+
+template<typename T>
+using CDenseVector = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>>;
+
+/* Eigen sparse matrix template types. */
+
+template<typename T>
+using SparseMatrix = Eigen::Map<Eigen::SparseMatrix<T, Eigen::RowMajor, long>>;
+
+template<typename T>
+using CSparseMatrix = Eigen::Map<const Eigen::SparseMatrix<T, Eigen::RowMajor, long>>;
 
 /* Hash map template type. */
 

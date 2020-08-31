@@ -15,8 +15,6 @@
 
 #include <pyci.h>
 
-#include <Spectra/SymEigsSolver.h>
-
 namespace pyci {
 
 SparseOp::SparseOp(const SparseOp &op)
@@ -33,7 +31,7 @@ SparseOp::SparseOp(SparseOp &&op) noexcept
 
 SparseOp::SparseOp(const long rows, const long cols, const bool symm)
     : nrow(rows), ncol(cols), size(0), ecore(0.0), symmetric(symm) {
-    shape = pybind11::make_tuple(nrow, ncol);
+    shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
     indptr.push_back(0);
 }
 
@@ -41,7 +39,7 @@ SparseOp::SparseOp(const Ham &ham, const DOCIWfn &wfn, const long rows, const lo
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
-    shape = pybind11::make_tuple(nrow, ncol);
+    shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
     indptr.push_back(0);
     init<DOCIWfn>(ham, wfn, rows, cols);
 }
@@ -50,7 +48,7 @@ SparseOp::SparseOp(const Ham &ham, const FullCIWfn &wfn, const long rows, const 
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
-    shape = pybind11::make_tuple(nrow, ncol);
+    shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
     indptr.push_back(0);
     init<FullCIWfn>(ham, wfn, rows, cols);
 }
@@ -59,7 +57,7 @@ SparseOp::SparseOp(const Ham &ham, const GenCIWfn &wfn, const long rows, const l
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
-    shape = pybind11::make_tuple(nrow, ncol);
+    shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
     indptr.push_back(0);
     init<GenCIWfn>(ham, wfn, rows, cols);
 }
@@ -98,25 +96,25 @@ double SparseOp::get_element(const long i, const long j) const {
 void SparseOp::perform_op(const double *x, double *y) const {
     if (symmetric)
         return perform_op_symm(x, y);
-    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    Eigen::Map<const Eigen::VectorXd> xvec(x, ncol);
-    Eigen::Map<Eigen::VectorXd> yvec(y, nrow);
+    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    CDenseVector<double> xvec(x, ncol);
+    DenseVector<double> yvec(y, nrow);
     yvec = mat * xvec;
 }
 
 void SparseOp::perform_op_transpose(const double *x, double *y) const {
     if (symmetric)
         return perform_op_symm(x, y);
-    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    Eigen::Map<const Eigen::VectorXd> xvec(x, nrow);
-    Eigen::Map<Eigen::VectorXd> yvec(y, ncol);
+    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    CDenseVector<double> xvec(x, nrow);
+    DenseVector<double> yvec(y, ncol);
     yvec = mat.transpose() * xvec;
 }
 
 void SparseOp::perform_op_symm(const double *x, double *y) const {
-    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    Eigen::Map<const Eigen::VectorXd> xvec(x, ncol);
-    Eigen::Map<Eigen::VectorXd> yvec(y, nrow);
+    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    CDenseVector<double> xvec(x, ncol);
+    DenseVector<double> yvec(y, nrow);
     yvec = mat.selfadjointView<Eigen::Upper>() * xvec;
 }
 
@@ -141,8 +139,8 @@ void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, cons
     eigs.compute((maxiter != -1) ? maxiter : n * nrow * 10, tol, Spectra::SMALLEST_ALGE);
     if (eigs.info() != Spectra::SUCCESSFUL)
         throw std::runtime_error("did not converge");
-    Eigen::Map<Eigen::VectorXd> eigenvalues(evals, n);
-    Eigen::Map<Eigen::MatrixXd> eigenvectors(evecs, nrow, n);
+    DenseVector<double> eigenvalues(evals, n);
+    DenseMatrix<double> eigenvectors(evecs, nrow, n);
     eigenvalues = eigs.eigenvalues();
     for (long i = 0; i < n; ++i)
         evals[i] += ecore;
@@ -185,11 +183,9 @@ Array<double> SparseOp::py_matmat_out(const Array<double> x, Array<double> y) co
     pybind11::buffer_info ybuf = y.request();
     const double *xptr = reinterpret_cast<const double *>(xbuf.ptr);
     double *yptr = reinterpret_cast<double *>(ybuf.ptr);
-    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> xmat(
-        xptr, ncol, xbuf.size / ncol);
-    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> ymat(
-        yptr, nrow, ybuf.size / nrow);
+    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    CDenseMatrix<double> xmat(xptr, ncol, xbuf.size / ncol);
+    DenseMatrix<double> ymat(yptr, nrow, ybuf.size / nrow);
     if (symmetric)
         ymat = mat.selfadjointView<Eigen::Upper>() * xmat;
     else
@@ -207,11 +203,9 @@ Array<double> SparseOp::py_rmatmat_out(const Array<double> x, Array<double> y) c
     pybind11::buffer_info ybuf = y.request();
     const double *xptr = reinterpret_cast<const double *>(xbuf.ptr);
     double *yptr = reinterpret_cast<double *>(ybuf.ptr);
-    SparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> xmat(
-        xptr, nrow, xbuf.size / nrow);
-    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> ymat(
-        yptr, ncol, ybuf.size / ncol);
+    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
+    CDenseMatrix<double> xmat(xptr, nrow, xbuf.size / nrow);
+    DenseMatrix<double> ymat(yptr, ncol, ybuf.size / ncol);
     if (symmetric)
         ymat = mat.selfadjointView<Eigen::Upper>() * xmat;
     else
@@ -249,15 +243,16 @@ void SparseOp::init_thread(SparseOp &op, const Ham &ham, const WfnType &wfn, con
 
 template<class WfnType>
 void SparseOp::init(const Ham &ham, const WfnType &wfn, const long rows, const long cols) {
-    long nthread = get_num_threads(), start, end;
-    long chunksize = nrow / nthread + ((nrow % nthread) ? 1 : 0);
+    long nthread = get_num_threads();
+    long chunksize = nrow / nthread + static_cast<bool>(nrow % nthread);
+    long start, end = 0;
     Vector<SparseOp> v_ops;
     Vector<std::thread> v_threads;
     v_ops.reserve(nthread);
     v_threads.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {
-        start = i * chunksize;
-        end = (start + chunksize < nrow) ? start + chunksize : nrow;
+        start = end;
+        end = std::min(start + chunksize, nrow);
         v_ops.emplace_back(end - start, ncol, symmetric);
         v_threads.emplace_back(&SparseOp::init_thread<WfnType>, std::ref(v_ops.back()),
                                std::ref(ham), std::ref(wfn), start, end);

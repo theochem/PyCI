@@ -49,11 +49,11 @@ def read_fcidump(filename: TextIO) -> Tuple[float, np.ndarray, np.ndarray]:
     Returns
     -------
     ecore : float
-        Constant/"zero-electron" integral.
-    one_mo : np.ndarray
-        Full one-electron integral array.
-    two_mo : np.ndarray
-        Full two-electron integral array.
+        Constant/"zero-particle" integral.
+    one_mo : numpy.ndarray
+        Full one-particle integral array.
+    two_mo : numpy.ndarray
+        Full two-particle integral array.
 
     Notes
     -----
@@ -121,11 +121,11 @@ def write_fcidump(
     filename : TextIO
         FCIDUMP file to write.
     ecore : float
-        Constant/"zero-electron" integral.
-    one_mo : np.ndarray
-        Full one-electron integral array.
-    two_mo : np.ndarray
-        Full two-electron integral array.
+        Constant/"zero-particle" integral.
+    one_mo : numpy.ndarray
+        Full one-particle integral array.
+    two_mo : numpy.ndarray
+        Full two-particle integral array.
     nelec : int, default=0
         Electron number to write to FCIDUMP file.
     ms2 : int, default=0
@@ -143,7 +143,7 @@ def write_fcidump(
         # write header
         f.write(f" &FCI NORB={nbasis},NELEC={nelec},MS2={ms2},\n")
         f.write(f'  ORBSYM={"1," * nbasis}\n  ISYM=1\n &END\n')
-        # write two-electron integrals
+        # write two-particle integrals
         for ii in range(nbasis):
             for jj in range(ii + 1):
                 for kk in range(nbasis):
@@ -155,7 +155,7 @@ def write_fcidump(
                                     f"{val:23.16E} {ii + 1:4d} {jj + 1:4d} {kk + 1:4d} {ll + 1:4d}",
                                     file=f,
                                 )
-        # write one-electron integrals
+        # write one-particle integrals
         for ii in range(nbasis):
             for jj in range(ii + 1):
                 val = one_mo[ii, jj]

@@ -374,14 +374,15 @@ double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coef
                           const double energy, const double eps, long nthread) {
     if (nthread == -1)
         nthread = get_num_threads();
-    long start, end, chunksize = wfn.ndet / nthread + ((wfn.ndet % nthread) ? 1 : 0);
+    long chunksize = wfn.ndet / nthread + static_cast<bool>(wfn.ndet % nthread);
+    long start, end = 0;
     PairHashMap terms;
     Vector<PairHashMap> v_terms(nthread);
     Vector<std::thread> v_threads;
     v_threads.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {
-        start = i * chunksize;
-        end = (start + chunksize < wfn.ndet) ? start + chunksize : wfn.ndet;
+        start = end;
+        end = std::min(start + chunksize, wfn.ndet);
         v_threads.emplace_back(&compute_enpt2_thread<WfnType>, std::ref(ham), std::ref(wfn),
                                std::ref(v_terms[i]), coeffs, eps, start, end);
     }

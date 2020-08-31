@@ -191,7 +191,8 @@ void OneSpinWfn::add_all_dets(long nthread) {
         throw std::domain_error("cannot generate > 2 ** 63 determinants");
     if (nthread == -1)
         nthread = get_num_threads();
-    long start, end, chunksize = maxrank_up / nthread + ((maxrank_up % nthread) ? 1 : 0);
+    long chunksize = maxrank_up / nthread + static_cast<bool>(maxrank_up % nthread);
+    long start, end = 0;
     ndet = maxrank_up;
     std::fill(dets.begin(), dets.end(), 0UL);
     dets.resize(ndet * nword);
@@ -200,8 +201,8 @@ void OneSpinWfn::add_all_dets(long nthread) {
     Vector<std::thread> v_threads;
     v_threads.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {
-        start = i * chunksize;
-        end = (start + chunksize < maxrank_up) ? start + chunksize : maxrank_up;
+        start = end;
+        end = std::min(start + chunksize, maxrank_up);
         v_threads.emplace_back(onespinwfn_add_all_dets_thread, nword, nbasis, nocc_up, &dets[0],
                                start, end);
     }

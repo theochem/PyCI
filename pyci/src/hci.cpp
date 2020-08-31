@@ -271,14 +271,15 @@ long add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const doub
     long ndet_old = wfn.ndet;
     if (nthread == -1)
         nthread = get_num_threads();
-    long start, end, chunksize = ndet_old / nthread + ((ndet_old % nthread) ? 1 : 0);
+    long chunksize = ndet_old / nthread + static_cast<bool>(ndet_old % nthread);
+    long start, end = 0;
     Vector<std::thread> v_threads;
     Vector<WfnType> v_wfns;
     v_threads.reserve(nthread);
     v_wfns.reserve(nthread);
     for (long i = 0; i < nthread; ++i) {
-        start = i * chunksize;
-        end = (start + chunksize < ndet_old) ? start + chunksize : ndet_old;
+        start = end;
+        end = std::min(start + chunksize, ndet_old);
         v_wfns.emplace_back(wfn.nbasis, wfn.nocc_up, wfn.nocc_dn);
         v_threads.emplace_back(&hci_thread<WfnType>, std::ref(ham), std::ref(wfn),
                                std::ref(v_wfns.back()), coeffs, eps, start, end);

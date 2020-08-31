@@ -187,9 +187,9 @@ void twospinwfn_add_all_dets_thread(const long nword, const long nbasis, const l
     long *occs = &v_occs[0];
     ulong *det = &v_det[0];
     long nword2 = nword * 2;
-    long chunksize = maxrank_up / nthread + ((maxrank_up % nthread) ? 1 : 0);
+    long chunksize = maxrank_up / nthread + static_cast<bool>(maxrank_up % nthread);
     long start = ithread * chunksize;
-    long end = (start + chunksize < maxrank_up) ? start + chunksize : maxrank_up;
+    long end = std::min(start + chunksize, maxrank_up);
     long j, k;
     unrank_colex(nbasis, nocc_up, start, occs);
     occs[nocc_up] = nbasis + 1;
@@ -203,9 +203,9 @@ void twospinwfn_add_all_dets_thread(const long nword, const long nbasis, const l
         std::fill(v_det.begin(), v_det.end(), 0UL);
         next_colex(occs);
     }
-    chunksize = maxrank_dn / nthread + ((maxrank_dn % nthread) ? 1 : 0);
+    chunksize = maxrank_dn / nthread + static_cast<bool>(maxrank_dn % nthread);
     start = ithread * chunksize;
-    end = (start + chunksize < maxrank_dn) ? start + chunksize : maxrank_dn;
+    end = std::min(start + chunksize, maxrank_dn);
     unrank_colex(nbasis, nocc_dn, start, occs);
     occs[nocc_dn] = nbasis + 1;
     for (long i = start; i < end; ++i) {
