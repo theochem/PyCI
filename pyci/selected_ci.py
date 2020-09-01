@@ -20,6 +20,8 @@ from typing import List, Sequence, Union
 
 import numpy as np
 
+from scipy.special import gamma, rgamma, polygamma
+
 from . import pyci
 
 
@@ -65,13 +67,13 @@ def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
     """
     # Check wave function
     if not isinstance(wfn, pyci.fullci_wfn):
-        raise TypeError("wfn must be a pyci.fullci_wfn")
+        raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.fullci_wfn`")
 
     # Check specified seniorities
     smin = wfn.nocc_up - wfn.nocc_dn
     smax = min(wfn.nocc_up, wfn.nvir_up)
     if any(s < smin or s > smax or s % 2 != smin % 2 for s in seniorities):
-        raise ValueError("invalid seniority number specified")
+        raise ValueError(f"invalid seniority number in `seniorities = {seniorities}`")
 
     # Make seniority-zero occupation vectors
     sz_wfn = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up, wfn.nocc_up)
@@ -123,7 +125,7 @@ def add_gkci(
     t: float = -0.5,
     p: float = 1.0,
     mode: Union[str, List[int]] = "cntsp",
-    node_dim: int = None,
+    dim: int = 3,
 ) -> None:
     r"""
     Add determinants to the wave function according to the odometer algorithm (Griebel-Knapeck CI).
@@ -135,49 +137,119 @@ def add_gkci(
     wfn : pyci.wavefunction
         Wave function.
     t : float, default=-0.5
-        ???
+        Smoothness factor.
     p : float, default=1.0
-        ???
-    mode : List[int] or ('cntsp' | 'gamma' | 'cubic'), default='cntsp'
+        Cost factor.
+    mode : List[int] or ('cntsp' | 'gamma'), default='cntsp'
         Node pattern.
-    node_dim : int, default=None
-        Number of nodes (if specified).
+    dim : int, default=3
+        Number of nodes (for 'gamma' mode).
 
     """
     # Check arguments
     if isinstance(mode, str):
-        if mode != "gamma" and node_dim is not None:
-            raise ValueError("node_dim must not be specified with mode " + mode)
-        elif mode == "gamma" and node_dim is None:
-            raise ValueError("node_dim must be specified with mode 'gamma'")
-
-        # Construct nodes
         if mode == "cntsp":
-            nodes = list()
-            shell = 1
-            while len(nodes) < wfn.nbasis:
-                nodes.extend([shell - 1.0] * shell ** 2)
-                shell += 1
+            nodes = compute_nodes_cntsp(wfn.nbasis)
         elif mode == "gamma":
-            raise NotImplementedError
-        elif mode == "cubic":
-            raise NotImplementedError
+            nodes = compute_nodes_gamma(wfn.nbasis, dim)
         else:
-            raise ValueError("mode must be one of ('cntsp', 'gamma', 'cubic'")
+            raise ValueError(f"invalid `mode` value `{mode}`; must be one of ('cntsp', 'gamma')")
     else:
-        nodes = mode
-    nodes = np.array(nodes[: wfn.nbasis])
+        nodes = np.asarray(mode)
 
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
-        _odometer_one_spin(wfn, nodes, t, p)
+        odometer_one_spin(wfn, nodes[: wfn.nbasis], t, p)
     elif isinstance(wfn, pyci.fullci_wfn):
-        _odometer_two_spin(wfn, nodes, t, p)
+        odometer_two_spin(wfn, nodes[: wfn.nbasis], t, p)
     else:
-        raise TypeError("wfn must be a pyci.{doci,fullci,genci}_wfn")
+        raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")
 
 
-def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: float) -> None:
+def compute_nodes_cntsp(nbasis: int) -> None:
+    r"""
+    Approximate the number of nodes for each function in a basis set as a sphere.
+
+    Parameters
+    ----------
+    nbasis : int
+        Number of basis functions.
+
+    Returns
+    -------
+    nodes : np.ndarray
+        Number of nodes for each basis function.
+
+    """
+    nodes = list()
+    shell = 1
+    while len(nodes) < nbasis:
+        nodes.extend([shell - 1.0] * shell ** 2)
+        shell += 1
+    return np.asarray(nodes)
+
+
+@np.errstate(invalid="ignore")
+def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 500, tol: float = 1.0e-9):
+    r"""
+    Approximate the number of nodes for each function in a basis set as a polynomial.
+
+    Approximate the number of nodes by solving the following equations for ``n`` (for each basis
+    function ``k``) via the Halley method:
+
+    .. math::
+
+        \frac{\Gamma(n + d + 1)}{\Gamma(d + 1)\Gamma(n + 1)} = k + 1
+
+    Parameters
+    ----------
+    nbasis : int
+        Number of basis functions.
+    d : int
+        Dimension of polynomial.
+    maxiter : int, default=500
+        Maximum number of iterations to perform.
+    tol : float, default=1.0e-9
+        Convergence tolerance.
+
+    Returns
+    -------
+    nodes : np.ndarray
+        Number of nodes for each basis function.
+
+    """
+    nodes = np.zeros(nbasis)
+    # Iterate over basis functions; n = nodes[0] is always equal to zero
+    n = 0
+    for k in range(1, nbasis):
+        # Optimize n using the Halley method
+        for _ in range(maxiter):
+            # Compute function Gamma(d + n + 1)/Gamma(n + 1)*Gamma(d + 1) and its first and
+            # second derivatives wrt number of nodes (n)
+            gnd = gamma(n + d + 1.0)
+            rgd, rgn = rgamma((d + 1.0, n + 1.0))
+            dgn, dgnd = polygamma(0, (n + 1.0, n + d + 1.0))
+            pgn, pgnd = polygamma(1, (n + 1.0, n + d + 1.0))
+            f = gnd * rgd * rgn - k - 1.0
+            fp = (dgnd - dgn) * gnd * rgd * rgn
+            fpp = (dgnd * dgnd + dgn * dgn - 2.0 * dgnd * dgn + pgnd - pgn) * gnd * rgd * rgn
+            # Compute Halley step
+            dn = 2.0 * f * fp / (2.0 * fp * fp - f * fpp)
+            # If we've converged or encountered an invalid value, we're done
+            if np.abs(f) < tol or not np.isfinite(dn):
+                break
+            # Update n
+            n -= dn
+        else:
+            raise RuntimeError(f"Did not converge in {maxiter} iterations")
+        # Update nodes array
+        nodes[k] = n
+        # Set initial guess for next basis function
+        n += n - nodes[k - 1]
+    return nodes
+
+
+def odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: float) -> None:
     r"""Run the odometer algorithm for a one-spin wave function."""
     aufbau_occs = np.arange(wfn.nocc_up, dtype=pyci.c_long)
     new_occs = np.copy(aufbau_occs)
@@ -218,7 +290,7 @@ def _odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: List[int], t: float, p: fl
                 new_occs[k] = new_occs[j_particle] + k - j_particle
 
 
-def _odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: float) -> None:
+def odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: List[int], t: float, p: float) -> None:
     r"""Run the odometer algorithm for a two-spin wave function."""
     aufbau_occs = np.arange(wfn.nocc, dtype=pyci.c_long)
     aufbau_occs[wfn.nocc_up :] -= wfn.nocc_up
