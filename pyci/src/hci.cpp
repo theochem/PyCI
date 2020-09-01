@@ -273,6 +273,10 @@ long add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const doub
         nthread = get_num_threads();
     long chunksize = ndet_old / nthread + static_cast<bool>(ndet_old % nthread);
     long start, end = 0;
+    while (nthread > 1 && chunksize < PYCI_CHUNKSIZE_MIN) {
+        nthread /= 2;
+        chunksize = ndet_old / nthread + static_cast<bool>(ndet_old % nthread);
+    }
     Vector<std::thread> v_threads;
     Vector<WfnType> v_wfns;
     v_threads.reserve(nthread);

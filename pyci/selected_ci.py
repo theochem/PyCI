@@ -189,7 +189,6 @@ def compute_nodes_cntsp(nbasis: int) -> None:
     return np.asarray(nodes)
 
 
-@np.errstate(invalid="ignore")
 def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 500, tol: float = 1.0e-9):
     r"""
     Approximate the number of nodes for each function in a basis set as a polynomial.
@@ -199,7 +198,11 @@ def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 500, tol: float = 1.
 
     .. math::
 
-        \frac{\Gamma(n + d + 1)}{\Gamma(d + 1)\Gamma(n + 1)} = k + 1
+        f(n) = \frac{\Gamma(n + d + 1)}{\Gamma(d + 1)\Gamma(n + 1)} - k - 1 = 0
+
+    .. math::
+
+        \delta n_{i + 1} = n_i - \frac{2 f(n_i) f'(n_i)}{2 {[f'(n_i)]}^2 - f(n_i) f"(n_i)}
 
     Parameters
     ----------
@@ -230,16 +233,16 @@ def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 500, tol: float = 1.
             rgd, rgn = rgamma((d + 1.0, n + 1.0))
             dgn, dgnd = polygamma(0, (n + 1.0, n + d + 1.0))
             pgn, pgnd = polygamma(1, (n + 1.0, n + d + 1.0))
-            f = gnd * rgd * rgn - k - 1.0
-            fp = (dgnd - dgn) * gnd * rgd * rgn
-            fpp = (dgnd * dgnd + dgn * dgn - 2.0 * dgnd * dgn + pgnd - pgn) * gnd * rgd * rgn
-            # Compute Halley step
-            dn = 2.0 * f * fp / (2.0 * fp * fp - f * fpp)
-            # If we've converged or encountered an invalid value, we're done
-            if np.abs(f) < tol or not np.isfinite(dn):
+            if not np.all(np.isfinite((gnd, rgd, rgn, dgn, dgnd, pgn, pgnd))):
                 break
-            # Update n
-            n -= dn
+            f = (gnd * rgd) * rgn - k - 1.0
+            fp = (dgnd - dgn) * (gnd * rgd) * rgn
+            fpp = (dgnd * dgnd + dgn * dgn - 2.0 * dgnd * dgn + pgnd - pgn) * (gnd * rgd) * rgn
+            # If we've converged or encountered an invalid value, we're done
+            if np.abs(f) < tol:
+                break
+            # Update n using Halley step
+            n -= 2.0 * f * (fp / (2.0 * fp * fp - f * fpp))
         else:
             raise RuntimeError(f"Did not converge in {maxiter} iterations")
         # Update nodes array

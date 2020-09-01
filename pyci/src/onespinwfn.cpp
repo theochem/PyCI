@@ -193,6 +193,10 @@ void OneSpinWfn::add_all_dets(long nthread) {
         nthread = get_num_threads();
     long chunksize = maxrank_up / nthread + static_cast<bool>(maxrank_up % nthread);
     long start, end = 0;
+    while (nthread > 1 && chunksize < PYCI_CHUNKSIZE_MIN) {
+        nthread /= 2;
+        chunksize = maxrank_up / nthread + static_cast<bool>(maxrank_up % nthread);
+    }
     ndet = maxrank_up;
     std::fill(dets.begin(), dets.end(), 0UL);
     dets.resize(ndet * nword);

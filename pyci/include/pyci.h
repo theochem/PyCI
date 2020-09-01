@@ -61,6 +61,18 @@
 #define PYCI_SPOOKYHASH_SEED 0xdeadbeefdeadbeefUL
 #endif
 
+/* Dynamic resize factor for SparseOp vectors. */
+
+#ifndef PYCI_SPARSEOP_RESIZE_FACTOR
+#define PYCI_SPARSEOP_RESIZE_FACTOR 1.125
+#endif
+
+/* Minimum number of individual jobs per thread. */
+
+#ifndef PYCI_CHUNKSIZE_MIN
+#define PYCI_CHUNKSIZE_MIN 1024
+#endif
+
 namespace pyci {
 
 /* Integer types, popcnt and ctz functions. */

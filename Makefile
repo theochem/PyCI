@@ -16,6 +16,8 @@
 PYTHON ?= python
 CXX ?= c++
 
+CHUNKSIZE_MIN ?= 1024
+SPARSEOP_RESIZE_FACTOR ?= 1.125
 SPOOKYHASH_SEED ?= 0xdeadbeefdeadbeefUL
 
 CFLAGS += --std=c++14
@@ -40,6 +42,8 @@ CFLAGS += -Ilib/spectra/include
 CFLAGS += -Ipyci/include
 
 CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
+CFLAGS += -DPYCI_CHUNKSIZE_MIN=$(CHUNKSIZE_MIN)
+CFLAGS += -DPYCI_SPARSEOP_RESIZE_FACTOR=$(SPARSEOP_RESIZE_FACTOR)
 CFLAGS += -DPYCI_SPOOKYHASH_SEED=$(SPOOKYHASH_SEED)
 
 ifeq ($(shell uname -s),Linux)

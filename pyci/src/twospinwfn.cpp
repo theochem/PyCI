@@ -226,6 +226,11 @@ void TwoSpinWfn::add_all_dets(long nthread) {
     if (nthread == -1)
         nthread = get_num_threads();
     ndet = maxrank_up * maxrank_dn;
+    long chunksize = ndet / nthread + static_cast<bool>(ndet % nthread);
+    while (nthread > 1 && chunksize < PYCI_CHUNKSIZE_MIN) {
+        nthread /= 2;
+        chunksize = ndet / nthread + static_cast<bool>(ndet % nthread);
+    }
     std::fill(dets.begin(), dets.end(), 0UL);
     dets.resize(ndet * nword2);
     dict.clear();

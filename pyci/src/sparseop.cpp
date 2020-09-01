@@ -17,6 +17,17 @@
 
 namespace pyci {
 
+namespace {
+
+template<class T>
+inline void append(AlignedVector<T> &v, const T &t) {
+    if (v.size() + 1 == v.capacity())
+        v.reserve(std::lround(PYCI_SPARSEOP_RESIZE_FACTOR * v.size() + 0.5));
+    v.push_back(t);
+}
+
+} // namespace
+
 SparseOp::SparseOp(const SparseOp &op)
     : nrow(op.nrow), ncol(op.ncol), size(op.size), ecore(op.ecore), symmetric(op.symmetric),
       shape(op.shape), data(op.data), indices(op.indices), indptr(op.indptr) {
@@ -32,7 +43,7 @@ SparseOp::SparseOp(SparseOp &&op) noexcept
 SparseOp::SparseOp(const long rows, const long cols, const bool symm)
     : nrow(rows), ncol(cols), size(0), ecore(0.0), symmetric(symm) {
     shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
-    indptr.push_back(0);
+    append<long>(indptr, 0);
 }
 
 SparseOp::SparseOp(const Ham &ham, const DOCIWfn &wfn, const long rows, const long cols,
@@ -40,7 +51,7 @@ SparseOp::SparseOp(const Ham &ham, const DOCIWfn &wfn, const long rows, const lo
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
     shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
-    indptr.push_back(0);
+    append<long>(indptr, 0);
     init<DOCIWfn>(ham, wfn, rows, cols);
 }
 
@@ -49,7 +60,7 @@ SparseOp::SparseOp(const Ham &ham, const FullCIWfn &wfn, const long rows, const 
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
     shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
-    indptr.push_back(0);
+    append<long>(indptr, 0);
     init<FullCIWfn>(ham, wfn, rows, cols);
 }
 
@@ -58,7 +69,7 @@ SparseOp::SparseOp(const Ham &ham, const GenCIWfn &wfn, const long rows, const l
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
     shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
-    indptr.push_back(0);
+    append<long>(indptr, 0);
     init<GenCIWfn>(ham, wfn, rows, cols);
 }
 
@@ -238,6 +249,9 @@ void SparseOp::init_thread(SparseOp &op, const Ham &ham, const WfnType &wfn, con
         op.init_thread_add_row(ham, wfn, i, &det[0], &occs[0], &virs[0]);
         op.init_thread_sort_row(row++);
     }
+    op.data.shrink_to_fit();
+    op.indices.shrink_to_fit();
+    op.indptr.shrink_to_fit();
     op.size = op.indices.size();
 }
 
@@ -246,6 +260,10 @@ void SparseOp::init(const Ham &ham, const WfnType &wfn, const long rows, const l
     long nthread = get_num_threads();
     long chunksize = nrow / nthread + static_cast<bool>(nrow % nthread);
     long start, end = 0;
+    while (nthread > 1 && chunksize < PYCI_CHUNKSIZE_MIN) {
+        nthread /= 2;
+        chunksize = nrow / nthread + static_cast<bool>(nrow % nthread);
+    }
     Vector<SparseOp> v_ops;
     Vector<std::thread> v_threads;
     v_ops.reserve(nthread);
@@ -328,19 +346,19 @@ void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const lon
             // check if excited determinant is in wfn
             if ((jdet > jmin) && (jdet < ncol)) {
                 // add single/"pair"-excited matrix element
-                data.push_back(ham.v[k * wfn.nbasis + l]);
-                indices.push_back(jdet);
+                append<double>(data, ham.v[k * wfn.nbasis + l]);
+                append<long>(indices, jdet);
             }
             excite_det(l, k, det);
         }
     }
     // add diagonal element to matrix
     if (idet < ncol) {
-        data.push_back(val1 + val2 * 2);
-        indices.push_back(idet);
+        append<double>(data, val1 + val2 * 2);
+        append<long>(indices, idet);
     }
     // add pointer to next row's indices
-    indptr.push_back(indices.size());
+    append<long>(indptr, indices.size());
 }
 
 void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const long idet,
@@ -397,8 +415,8 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
                     val1 += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
                 }
                 // add 1-0 matrix element
-                data.push_back(sign_up * val1);
-                indices.push_back(jdet);
+                append<double>(data, sign_up * val1);
+                append<long>(indices, jdet);
             }
             // loop over spin-down occupied indices
             for (k = 0; k < wfn.nocc_dn; ++k) {
@@ -413,9 +431,10 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
                     // check if 1-1 excited determinant is in wfn
                     if ((jdet > jmin) && (jdet < ncol)) {
                         // add 1-1 matrix element
-                        data.push_back(sign_up * phase_single_det(wfn.nword, kk, ll, rdet_dn) *
-                                       ham.two_mo[koffset + n1 * jj + ll]);
-                        indices.push_back(jdet);
+                        append<double>(data, sign_up *
+                                                 phase_single_det(wfn.nword, kk, ll, rdet_dn) *
+                                                 ham.two_mo[koffset + n1 * jj + ll]);
+                        append<long>(indices, jdet);
                     }
                     excite_det(ll, kk, det_dn);
                 }
@@ -433,10 +452,10 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
                     // check if 2-0 excited determinant is in wfn
                     if ((jdet > jmin) && (jdet < ncol)) {
                         // add 2-0 matrix element
-                        data.push_back(phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
-                                       (ham.two_mo[koffset + n1 * jj + ll] -
-                                        ham.two_mo[koffset + n1 * ll + jj]));
-                        indices.push_back(jdet);
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
                     }
                     excite_det(ll, kk, det_up);
                 }
@@ -475,8 +494,8 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
                     val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
                 }
                 // add 0-1 matrix element
-                data.push_back(phase_single_det(wfn.nword, ii, jj, rdet_dn) * val1);
-                indices.push_back(jdet);
+                append<double>(data, phase_single_det(wfn.nword, ii, jj, rdet_dn) * val1);
+                append<long>(indices, jdet);
             }
             // loop over spin-down occupied indices
             for (k = i + 1; k < wfn.nocc_dn; ++k) {
@@ -491,10 +510,10 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
                     // check if excited determinant is in wfn
                     if ((jdet > jmin) && (jdet < ncol)) {
                         // add 0-2 matrix element
-                        data.push_back(phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn) *
-                                       (ham.two_mo[koffset + n1 * jj + ll] -
-                                        ham.two_mo[koffset + n1 * ll + jj]));
-                        indices.push_back(jdet);
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
                     }
                     excite_det(ll, kk, det_dn);
                 }
@@ -504,11 +523,11 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
     }
     // add diagonal element to matrix
     if (idet < ncol) {
-        data.push_back(val2);
-        indices.push_back(idet);
+        append<double>(data, val2);
+        append<long>(indices, idet);
     }
     // add pointer to next row's indices
-    indptr.push_back(indices.size());
+    append<long>(indptr, indices.size());
 }
 
 void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const long idet, ulong *det,
@@ -550,8 +569,8 @@ void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const lo
                     val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
                 }
                 // add single excitation matrix element
-                data.push_back(phase_single_det(wfn.nword, ii, jj, rdet) * val1);
-                indices.push_back(jdet);
+                append<double>(data, phase_single_det(wfn.nword, ii, jj, rdet) * val1);
+                append<long>(indices, jdet);
             }
             // loop over occupied indices
             for (k = i + 1; k < wfn.nocc; ++k) {
@@ -566,10 +585,10 @@ void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const lo
                     // check if double excited determinant is in wfn
                     if ((jdet > jmin) && (jdet < ncol)) {
                         // add double matrix element
-                        data.push_back(phase_double_det(wfn.nword, ii, kk, jj, ll, rdet) *
-                                       (ham.two_mo[koffset + n1 * jj + ll] -
-                                        ham.two_mo[koffset + n1 * ll + jj]));
-                        indices.push_back(jdet);
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
                     }
                     excite_det(ll, kk, det);
                 }
@@ -579,11 +598,11 @@ void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const lo
     }
     // add diagonal element to matrix
     if (idet < ncol) {
-        data.push_back(val2);
-        indices.push_back(idet);
+        append<double>(data, val2);
+        append<long>(indices, idet);
     }
     // add pointer to next row's indices
-    indptr.push_back(indices.size());
+    append<long>(indptr, indices.size());
 }
 
 } // namespace pyci

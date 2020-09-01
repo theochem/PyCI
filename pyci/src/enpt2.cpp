@@ -376,6 +376,10 @@ double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coef
         nthread = get_num_threads();
     long chunksize = wfn.ndet / nthread + static_cast<bool>(wfn.ndet % nthread);
     long start, end = 0;
+    while (nthread > 1 && chunksize < PYCI_CHUNKSIZE_MIN) {
+        nthread /= 2;
+        chunksize = wfn.ndet / nthread + static_cast<bool>(wfn.ndet % nthread);
+    }
     PairHashMap terms;
     Vector<PairHashMap> v_terms(nthread);
     Vector<std::thread> v_threads;
