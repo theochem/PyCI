@@ -20,7 +20,7 @@ from typing import List, Sequence, Union
 
 import numpy as np
 
-from scipy.special import gamma, rgamma, polygamma
+from scipy.special import gammaln, polygamma
 
 from . import pyci
 
@@ -189,7 +189,7 @@ def compute_nodes_cntsp(nbasis: int) -> None:
     return np.asarray(nodes)
 
 
-def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 500, tol: float = 1.0e-9):
+def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 100, tol: float = 1.0e-9):
     r"""
     Approximate the number of nodes for each function in a basis set as a polynomial.
 
@@ -210,7 +210,7 @@ def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 500, tol: float = 1.
         Number of basis functions.
     d : int
         Dimension of polynomial.
-    maxiter : int, default=500
+    maxiter : int, default=100
         Maximum number of iterations to perform.
     tol : float, default=1.0e-9
         Convergence tolerance.
@@ -227,22 +227,22 @@ def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 500, tol: float = 1.
     for k in range(1, nbasis):
         # Optimize n using the Halley method
         for _ in range(maxiter):
-            # Compute function Gamma(d + n + 1)/Gamma(n + 1)*Gamma(d + 1) and its first and
-            # second derivatives wrt number of nodes (n)
-            gnd = gamma(n + d + 1.0)
-            rgd, rgn = rgamma((d + 1.0, n + 1.0))
+            # Compute components of function f(n) = Gamma(d + n + 1) / Gamma(n + 1) * Gamma(d + 1)
+            # and its first and second derivatives with respect to the number of nodes n
+            gn, gd, gnd = gammaln((n + 1.0, d + 1.0, n + d + 1.0))
             dgn, dgnd = polygamma(0, (n + 1.0, n + d + 1.0))
             pgn, pgnd = polygamma(1, (n + 1.0, n + d + 1.0))
-            if not np.all(np.isfinite((gnd, rgd, rgn, dgn, dgnd, pgn, pgnd))):
-                break
-            f = (gnd * rgd) * rgn - k - 1.0
-            fp = (dgnd - dgn) * (gnd * rgd) * rgn
-            fpp = (dgnd * dgnd + dgn * dgn - 2.0 * dgnd * dgn + pgnd - pgn) * (gnd * rgd) * rgn
-            # If we've converged or encountered an invalid value, we're done
-            if np.abs(f) < tol:
+            # Compute Halley step
+            t = np.exp(gnd - gd - gn)
+            f = t - k - 1.0
+            fp = (dgnd - dgn) * t
+            fpp = (dgnd * dgnd + dgn * dgn - 2.0 * dgnd * dgn + pgnd - pgn) * t
+            dn = 2.0 * f * (fp / (2.0 * fp * fp - f * fpp))
+            # If we've converged, we're done
+            if np.abs(dn) < tol:
                 break
             # Update n using Halley step
-            n -= 2.0 * f * (fp / (2.0 * fp * fp - f * fpp))
+            n -= dn
         else:
             raise RuntimeError(f"Did not converge in {maxiter} iterations")
         # Update nodes array
