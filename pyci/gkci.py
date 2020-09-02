@@ -85,7 +85,7 @@ def add_gkci(
         raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")
 
 
-def compute_nodes_cntsp(nbasis: int) -> None:
+def compute_nodes_cntsp(nbasis: int) -> np.ndarray:
     r"""
     Approximate the number of nodes for each function in a basis set as a sphere.
 
@@ -111,7 +111,7 @@ def compute_nodes_cntsp(nbasis: int) -> None:
     return nodes
 
 
-def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 100, tol: float = 1.0e-9):
+def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 100, tol: float = 1.0e-9) -> np.ndarray:
     r"""
     Approximate the number of nodes for each function in a basis set as a polynomial.
 
@@ -175,7 +175,7 @@ def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 100, tol: float = 1.
     return nodes
 
 
-def compute_nodes_interval(nbasis: int, es: np.ndarray, width: float):
+def compute_nodes_interval(nbasis: int, es: np.ndarray, width: float) -> np.ndarray:
     r"""
     Approximate the number of nodes for each function via intervals.
 
