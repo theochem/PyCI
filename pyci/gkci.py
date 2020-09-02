@@ -228,7 +228,7 @@ def odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: np.ndarray, t: float, p: fl
     j = wfn.nocc_up - 1
     # Compute cost of the most important neglected determinant
     nodes_up = nodes[new_occs]
-    q_max = max(1.0, np.sum(nodes_up) + t * nodes_up[-1]) * p
+    q_max = (np.sum(nodes_up) + t * nodes_up[-1]) * p
     # Select determinants
     while True:
         if new_occs[wfn.nocc_up - 1] >= wfn.nbasis:
@@ -267,8 +267,8 @@ def odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: np.ndarray, t: float, p: fl
     # Compute cost of the most important neglected determinant
     nodes_up = nodes[new_occs[: wfn.nocc_up]]
     nodes_dn = nodes[new_occs[wfn.nocc_up :]]
-    q_up_max = max(1.0, np.sum(nodes_up) + t * nodes_up[-1]) * p
-    q_dn_max = max(1.0, np.sum(nodes_dn) + t * nodes_dn[-1]) * p
+    q_up_max = (np.sum(nodes_up) + t * nodes_up[-1]) * p
+    q_dn_max = (np.sum(nodes_dn) + t * nodes_dn[-1]) * p
     # Select determinants
     while True:
         if max(new_occs[[wfn.nocc_up - 1, wfn.nocc - 1]]) >= wfn.nbasis:
