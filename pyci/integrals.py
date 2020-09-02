@@ -24,6 +24,8 @@ __all__ = [
     "make_senzero_integrals",
     "reduce_senzero_integrals",
     "make_rdms",
+    "transform_integrals",
+    "natural_orbitals",
 ]
 
 
@@ -153,3 +155,22 @@ def make_rdms(d1: np.ndarray, d2: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         abba -= np.swapaxes(d2[2], 2, 3)  # -abab
         baab -= np.swapaxes(d2[2], 0, 1)  # -abab
     return rdm1, rdm2
+
+
+def transform_integrals(
+    one_mo: np.ndarray, two_mo: np.ndarray, mat: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
+    r"""
+    """
+    return (
+        np.einsum("ij,ia,jb->ab", one_mo, mat, mat, optimize=True),
+        np.einsum("ijkl,ia,jb,kc,ld->abcd", two_mo, mat, mat, mat, mat, optimize=True),
+    )
+
+
+def natural_orbitals(
+    one_mo: np.ndarray, two_mo: np.ndarray, rdm1: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
+    r"""
+    """
+    return transform_integrals(one_mo, two_mo, np.linalg.eigh(rdm1)[1][:, ::-1])

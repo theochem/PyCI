@@ -21,6 +21,7 @@ from .pyci import *
 from .fcidump import *
 from .integrals import *
 from .selected_ci import *
+from .gkci import *
 from .solve import *
 from .cepa0 import *
 

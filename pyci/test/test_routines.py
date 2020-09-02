@@ -58,6 +58,27 @@ def test_solve_sparse(filename, wfn_type, occs, energy):
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 
+@pytest.mark.parametrize(
+    "filename, wfn_type, occs, energy",
+    [
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
+    ],
+)
+def test_natural_orbitals(filename, wfn_type, occs, energy):
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    wfn = wfn_type(ham.nbasis, *occs)
+    pyci.add_excitations(wfn, *range(wfn.nocc_up + 1))
+    op = pyci.sparse_op(ham, wfn, symmetric=True)
+    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-16)
+    rdm1, rdm2 = pyci.compute_rdms(wfn, cs[0])
+    one_mo, two_mo = pyci.natural_orbitals(ham.one_mo, ham.two_mo, (rdm1[0] + rdm1[1]))
+    ham.one_mo[...] = one_mo
+    ham.two_mo[...] = two_mo
+    op = pyci.sparse_op(ham, wfn, symmetric=True)
+    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-16)
+
+
 def test_sparse_matmat():
     ham = pyci.hamiltonian(datafile("be_ccpvdz.fcidump"))
     wfn = pyci.doci_wfn(ham.nbasis, 2, 2)
