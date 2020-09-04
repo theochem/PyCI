@@ -64,11 +64,11 @@ def add_gkci(
     # Check arguments
     if isinstance(mode, str):
         if mode == "cntsp":
-            nodes = compute_nodes_cntsp(wfn.nbasis)
+            nodes = compute_nodes_cntsp(wfn.nbasis + 1)
         elif mode == "gamma":
-            nodes = compute_nodes_gamma(wfn.nbasis, dim)
+            nodes = compute_nodes_gamma(wfn.nbasis + 1, dim)
         elif mode == "interval":
-            nodes = compute_nodes_interval(wfn.nbasis, energies, width)
+            nodes = compute_nodes_interval(wfn.nbasis + 1, energies, width)
         else:
             raise ValueError(
                 f"invalid `mode` value `{mode}`; must be one of ('cntsp', 'gamma', 'interval')"
@@ -195,7 +195,7 @@ def compute_nodes_interval(nbasis: int, es: np.ndarray, width: float) -> np.ndar
 
     """
     # Compute initial intervals
-    w = width / 2
+    w = width * 0.5
     lower = es - w
     upper = es + w
     # Compute union of intervals
@@ -222,83 +222,46 @@ def compute_nodes_interval(nbasis: int, es: np.ndarray, width: float) -> np.ndar
 
 def odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: np.ndarray, t: float, p: float) -> None:
     r"""Run the odometer algorithm for a one-spin wave function."""
-    old_occs = np.arange(wfn.nocc_up, dtype=pyci.c_long)
-    new_occs = np.copy(old_occs)
+    old = np.arange(wfn.nocc_up, dtype=pyci.c_long)
+    new = np.copy(old)
     # Index of last particle
     j = wfn.nocc_up - 1
     # Compute cost of the most important neglected determinant
-    nodes_up = nodes[new_occs]
-    q_max = (np.sum(nodes_up) + t * nodes_up[-1]) * p
+    q_max = (np.sum(nodes[: wfn.nocc_up - 1]) + (t + 1) * nodes[-1]) * p
     # Select determinants
     while True:
-        if new_occs[wfn.nocc_up - 1] >= wfn.nbasis:
-            # Reject determinant and cycle j
-            new_occs[:] = old_occs
-            j -= 1
+        if new[-1] < wfn.nbasis and (np.sum(nodes[new]) + t * nodes[new[-1]]) < q_max:
+            # Accept determinant and go back to last particle
+            wfn.add_occs(new)
+            j = wfn.nocc_up - 1
         else:
-            # Compute nodes and cost of occupied orbitals
-            nodes_up[:] = nodes[new_occs]
-            # Add or reject determinant and cycle j
-            if np.sum(nodes_up) + t * nodes_up[-1] < q_max:
-                wfn.add_occs(new_occs)
-                j = wfn.nocc_up - 1
-            else:
-                new_occs[:] = old_occs
-                j -= 1
+            # Reject determinant and cycle j
+            new[:] = old
+            j -= 1
         # Check termination condition
         if j < 0:
             break
         # Generate next determinant
-        old_occs[:] = new_occs
-        new_occs[j] += 1
-        if j < wfn.nocc_up - 1:
-            # Excite spin-up particle
-            for k in range(j + 1, wfn.nocc_up):
-                new_occs[k] = new_occs[j] + k - j
+        old[:] = new
+        new[j:] = np.arange(new[j] + 1, new[j] + wfn.nocc_up - j + 1)
 
 
 def odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: np.ndarray, t: float, p: float) -> None:
     r"""Run the odometer algorithm for a two-spin wave function."""
-    old_occs = np.arange(wfn.nocc, dtype=pyci.c_long)
-    old_occs[wfn.nocc_up :] -= wfn.nocc_up
-    new_occs = np.copy(old_occs)
-    # Index of last particle
-    j = wfn.nocc - 1
-    # Compute cost of the most important neglected determinant
-    nodes_up = nodes[new_occs[: wfn.nocc_up]]
-    nodes_dn = nodes[new_occs[wfn.nocc_up :]]
-    q_up_max = (np.sum(nodes_up) + t * nodes_up[-1]) * p
-    q_dn_max = (np.sum(nodes_dn) + t * nodes_dn[-1]) * p
-    # Select determinants
-    while True:
-        if max(new_occs[[wfn.nocc_up - 1, wfn.nocc - 1]]) >= wfn.nbasis:
-            # Reject determinant and cycle j
-            new_occs[:] = old_occs
-            j -= 1
-        else:
-            # Compute nodes and cost of occupied orbitals
-            nodes_up = nodes[new_occs[: wfn.nocc_up]]
-            nodes_dn = nodes[new_occs[wfn.nocc_up :]]
-            q_up = np.sum(nodes_up) + t * nodes_up[-1]
-            q_dn = np.sum(nodes_dn) + t * nodes_dn[-1]
-            # Add or reject determinant and cycle j
-            if q_up < q_up_max and q_dn < q_dn_max:
-                wfn.add_occs(new_occs.reshape(2, -1))
-                j = wfn.nocc - 1
-            else:
-                new_occs[:] = old_occs
-                j -= 1
-        # Check termination condition
-        if j < 0:
-            break
-        # Generate next determinant
-        old_occs[:] = new_occs
-        new_occs[j] += 1
-        if j < wfn.nocc_up:
-            # Excite spin-up particle
-            for k in range(j + 1, wfn.nocc_up):
-                new_occs[k] = new_occs[j] + k - j
-        elif j < wfn.nocc - 1:
-            # Excite spin-down particle
-            for k in range(j + 1, wfn.nocc):
-                new_occs[k] = new_occs[j] + k - j
+    wfn_up = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up, wfn.nocc_up)
+    odometer_one_spin(wfn_up, nodes, t, p)
+    if not len(wfn_up):
+        return
+    if wfn.nocc_dn:
+        wfn_dn = pyci.doci_wfn(wfn.nbasis, wfn.nocc_dn, wfn.nocc_dn)
+        odometer_one_spin(wfn_dn, nodes, t, p)
+        if not len(wfn_dn):
+            return
+        for i in range(len(wfn_up)):
+            det_up = wfn_up[i]
+            for j in range(len(wfn_dn)):
+                wfn.add_det(np.vstack((det_up, wfn_dn[j])))
+    else:
+        det_dn = np.zeros_like(wfn_up[0])
+        for i in range(len(wfn_up)):
+            wfn.add_det(np.vstack((wfn_up[i], det_dn)))
