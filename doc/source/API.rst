@@ -81,12 +81,6 @@ Integral transformations
 
 .. autofunction:: pyci.make_rdms
 
-FCIDUMP
--------
-
-.. autofunction:: pyci.read_fcidump
-.. autofunction:: pyci.write_fcidump
-
 Classes
 =======
 
