@@ -18,7 +18,6 @@ r"""PyCI module."""
 from .pyci import __version__, c_long, c_ulong, c_double
 from .pyci import *
 
-from .fcidump import *
 from .integrals import *
 from .selected_ci import *
 from .gkci import *

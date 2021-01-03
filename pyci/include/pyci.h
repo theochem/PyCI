@@ -259,9 +259,6 @@ public:
     Ham(const double, const Array<double>, const Array<double>);
 
     void to_file(const std::string &, const long, const long, const double) const;
-
-private:
-    Ham(const pybind11::tuple &);
 };
 
 /* Wave function classes. */
