@@ -21,7 +21,7 @@ namespace {
 
 template<class T>
 inline void append(AlignedVector<T> &v, const T &t) {
-    if (v.size() + 1 == v.capacity())
+    if (v.size() + 1 >= v.capacity())
         v.reserve(std::lround(PYCI_SPARSEOP_RESIZE_FACTOR * v.size() + 0.5));
     v.push_back(t);
 }
