@@ -23,7 +23,7 @@ long gcd(long, long);
 
 }
 
-long g_number_threads{std::thread::hardware_concurrency()};
+long g_number_threads{1L};
 
 long get_num_threads(void) {
     return g_number_threads;

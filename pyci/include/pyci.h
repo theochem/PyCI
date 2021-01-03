@@ -64,7 +64,7 @@
 /* Dynamic resize factor for SparseOp vectors. */
 
 #ifndef PYCI_SPARSEOP_RESIZE_FACTOR
-#define PYCI_SPARSEOP_RESIZE_FACTOR 1.125
+#define PYCI_SPARSEOP_RESIZE_FACTOR 1.5
 #endif
 
 /* Minimum number of individual jobs per thread. */
