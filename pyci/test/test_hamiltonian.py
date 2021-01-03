@@ -32,8 +32,6 @@ def test_to_from_file(filename):
     ham1.to_file(file1.name)
     ham2 = hamiltonian(file1.name)
 
-    #ham2.to_file(file2.name)
-    #assert compare(file1.name, file2.name, shallow=False)
     npt.assert_allclose(ham2.ecore, ham1.ecore, rtol=0.0, atol=1.0e-12)
     npt.assert_allclose(ham2.one_mo, ham1.one_mo, rtol=0.0, atol=1.0e-12)
     npt.assert_allclose(ham2.two_mo, ham1.two_mo, rtol=0.0, atol=1.0e-12)
