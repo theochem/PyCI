@@ -161,7 +161,7 @@ Ham::Ham(const std::string &filename) {
 }
 
 Ham::Ham(const double e, const Array<double> mo1, const Array<double> mo2)
-    : nbasis(mo1.request().shape[0]), ecore(e), one_mo_array(mo1), two_mo_array(mo1),
+    : nbasis(mo1.request().shape[0]), ecore(e), one_mo_array(mo1), two_mo_array(mo2),
       h_array(nbasis), v_array({nbasis, nbasis}), w_array({nbasis, nbasis}) {
     one_mo = reinterpret_cast<double *>(one_mo_array.request().ptr);
     two_mo = reinterpret_cast<double *>(two_mo_array.request().ptr);
