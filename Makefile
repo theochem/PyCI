@@ -63,3 +63,6 @@ clean:
 
 pyci/pyci.so:
 	$(CXX) $(CFLAGS) -shared pyci/src/pyci.cpp -o pyci/pyci.so
+
+compile_flags.txt:
+	echo "-xc++ $(CFLAGS)" | tr ' ' '\n' > compile_flags.txt
