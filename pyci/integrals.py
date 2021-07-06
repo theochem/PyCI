@@ -173,4 +173,4 @@ def natural_orbitals(
 ) -> Tuple[np.ndarray, np.ndarray]:
     r"""
     """
-    return transform_integrals(one_mo, two_mo, np.linalg.eigh(rdm1)[1][:, ::-1])
+    return transform_integrals(one_mo, two_mo, np.transpose(np.linalg.eigh(rdm1)[1])[::-1])
