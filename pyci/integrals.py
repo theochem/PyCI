@@ -23,6 +23,7 @@ import numpy as np
 __all__ = [
     "make_senzero_integrals",
     "reduce_senzero_integrals",
+    "reduce_active",
     "make_rdms",
     "transform_integrals",
     "natural_orbitals",
@@ -96,6 +97,57 @@ def reduce_senzero_integrals(
     rw *= factor
     rw += w
     return rv, rw
+
+
+def reduce_active(ecore, one_mo, two_mo, ncore):
+    """
+    Reduce Hamiltonian to use active space.
+
+    Parameters
+    ----------
+    ecore : float
+        Constant (or "zero-particle") integral.
+    one_mo : numpy.ndarray
+        Full one-particle integral array.
+    two_mo : numpy.ndarray
+        Full two-particle integral array.
+    ncore : int
+        Number of core orbitals.
+
+    Returns
+    -------
+    ecore : float
+        Active space constant (or "zero-particle") integral.
+    one_mo : numpy.ndarray
+        Active space full one-particle integral array.
+    two_mo : numpy.ndarray
+        Active space full two-particle integral array.
+
+    """
+    # Get NumPy view of Hamiltonian elements
+    one_mo_core = one_mo[:ncore, :ncore]
+    two_mo_core = two_mo[:ncore, :ncore, :ncore, :ncore]
+    one_mo_active = one_mo[ncore:, ncore:].copy()
+    two_mo_active = two_mo[ncore:, ncore:, ncore:, ncore:].copy()
+    two_mo_active_abab = two_mo[ncore:, :ncore, ncore:, :ncore]
+    two_mo_active_abba = two_mo[ncore:, :ncore, :ncore, ncore:]
+    # Core energy
+    # -----------
+    # >> One body term
+    ecore += np.trace(one_mo_core) * 2
+    # >> Hartree part
+    ecore += np.trace(np.trace(two_mo_core, axis2=2)) * 2
+    # >> Exchange part
+    ecore -= np.trace(np.trace(two_mo_core, axis2=3))
+    # One-body integrals
+    # ------------------
+    # >> Direct part
+    one_mo_active += np.trace(two_mo_active_abab, axis1=1, axis2=3) * 2
+    # >> Exchange part
+    one_mo_active -= np.trace(two_mo_active_abba, axis1=1, axis2=2)
+    # Return new reduced Hamiltonian parts
+    # ------------------------------------
+    return ecore, one_mo_active, two_mo_active
 
 
 def make_rdms(d1: np.ndarray, d2: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
