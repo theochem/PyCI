@@ -20,7 +20,7 @@ from .pyci import hamiltonian, wavefunction, doci_wfn, fullci_wfn, genci_wfn, sp
 from .pyci import get_num_threads, set_num_threads, popcnt, ctz, add_hci
 from .pyci import compute_overlap, compute_rdms, compute_enpt2
 
-from .integrals import make_senzero_integrals, reduce_senzero_integrals,
+from .integrals import make_senzero_integrals, reduce_senzero_integrals
 from .integrals import make_rdms, transform_integrals, natural_orbitals
 from .selected_ci import add_excitations, add_seniorities
 from .gkci import add_gkci
