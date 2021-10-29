@@ -155,7 +155,7 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
     npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
 
 
-# @pytest.mark.xfail
+@pytest.mark.xfail
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [
