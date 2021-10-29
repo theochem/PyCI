@@ -81,7 +81,6 @@ Ham::Ham(const std::string &filename) {
     if (f.fail())
         throw std::ios_base::failure("Failed to read the FCIDUMP file " + filename);
 
-    /* See https://github.com/quan-tum/CDFCI/, the header reader is copied from there. */
     std::string header, line;
     while (std::getline(f, line) && line.find("&END") == std::string::npos &&
            line.find("/") == std::string::npos) {
@@ -93,6 +92,7 @@ Ham::Ham(const std::string &filename) {
     if (f.eof())
         throw std::ios_base::failure("FCIDUMP has the wrong header");
 
+    /* FCIDUMP regexes copied from https://github.com/quan-tum/CDFCI/. */
     const std::string int_regex = R"([ ]*=[ ]*(\d+))";
     const std::string bool_regex = R"([ ]*=[ .]*(FALSE|TRUE))";
 

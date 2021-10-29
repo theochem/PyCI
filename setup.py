@@ -23,7 +23,7 @@ Run `python setup.py --help` for help.
 name = "pyci"
 
 
-version = "0.5.0"
+version = "0.6.0"
 
 
 license = "GPLv3"
@@ -38,7 +38,7 @@ author_email = "richerm@mcmaster.ca"
 url = "https://github.com/msricher/PyCI"
 
 
-description = "A flexible ab-initio quantum chemistry library for Configuration Interaction."
+description = "A flexible quantum chemistry CI library for Python 3."
 
 
 long_description = open("README.rst", "r", encoding="utf-8").read()

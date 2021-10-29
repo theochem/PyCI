@@ -1071,6 +1071,17 @@ cs : np.ndarray
               py::arg("n") = 1, py::arg("c0") = py::none(), py::arg("ncv") = -1,
               py::arg("maxiter") = -1, py::arg("tol") = 1.0e-12);
 
+sparse_op.def("reserve", &SparseOp::reserve, R"""(
+Reserve space in memory for ``n`` nonzero elements in the sparse matrix operator.
+
+Parameters
+----------
+n : int
+    Number of elements for which to reserve space.
+
+)""",
+                 py::arg("n"));
+
 /*
 Section: Free functions
 */

@@ -14,32 +14,23 @@
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
 PYTHON ?= python3
+
 CXX ?= c++
 
 CHUNKSIZE_MIN ?= 1024
+
 SPARSEOP_RESIZE_FACTOR ?= 1.5
+
 SPOOKYHASH_SEED ?= 0xdeadbeefdeadbeefUL
 
-CFLAGS += --std=c++14
-CFLAGS += -Wall
-CFLAGS += -pipe
-CFLAGS += -O3
+INC_DIRS := eigen spectra/include parallel-hashmap pybind11/include
 
-CFLAGS += -fPIC
-CFLAGS += -flto
-CFLAGS += -fno-plt
-CFLAGS += -fwrapv
-CFLAGS += -fvisibility=hidden
+CFLAGS := --std=c++14 -Wall -pipe -O3 -pthread -fPIC -flto -fno-plt -fwrapv -fvisibility=hidden
 
-CFLAGS += -pthread
-
+CFLAGS += -Ipyci/include
 CFLAGS += -I$(shell $(PYTHON) -c "import sysconfig; print(sysconfig.get_paths()['include'])")
 CFLAGS += -I$(shell $(PYTHON) -c "import numpy; print(numpy.get_include())")
-CFLAGS += -Ilib/eigen
-CFLAGS += -Ilib/parallel-hashmap
-CFLAGS += -Ilib/pybind11/include
-CFLAGS += -Ilib/spectra/include
-CFLAGS += -Ipyci/include
+CFLAGS += $(addprefix -Ilib/,$(INC_DIRS))
 
 CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
 CFLAGS += -DPYCI_CHUNKSIZE_MIN=$(CHUNKSIZE_MIN)
@@ -49,6 +40,10 @@ CFLAGS += -DPYCI_SPOOKYHASH_SEED=$(SPOOKYHASH_SEED)
 ifeq ($(shell uname -s),Darwin)
 CFLAGS += -undefined dynamic_lookup
 endif
+
+SRCS := $(shell find pyci/src -name '*.cpp')
+HDRS := $(shell find pyci/include -name '*.h')
+LIBS := lib/eigen lib/spectra lib/parallel-hashmap lib/pybind11
 
 .PHONY: all
 all: pyci/pyci.so
@@ -61,17 +56,17 @@ clean:
 clean_lib:
 	rm -rf ./lib
 
+.PHONY: clean_all
+clean_all: clean clean_lib
+
 .PHONY: test
 test:
 	$(PYTHON) -m pytest -sv ./pyci
 	$(PYTHON) -m pycodestyle -v ./pyci
 	$(PYTHON) -m pydocstyle -v ./pyci
 
-.PHONY: clean_all
-clean_all: clean clean_lib
-
-pyci/pyci.so: lib/eigen lib/spectra lib/parallel-hashmap lib/pybind11
-	$(CXX) $(CFLAGS) -shared pyci/src/pyci.cpp -o pyci/pyci.so
+pyci/pyci.so: $(LIBS) $(SRCS) $(HDRS)
+	$(CXX) $(CFLAGS) -shared $(SRCS) -o $@
 
 lib/eigen:
 	@git clone https://gitlab.com/libeigen/eigen.git $@

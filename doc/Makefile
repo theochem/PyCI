@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-BUILDDIR = build
-SOURCEDIR = source
-SPHINXBUILD ?= PYTHONPATH=.. sphinx-build
+PYTHON ?= python3
+BUILDDIR := build
+SOURCEDIR := source
+SPHINXBUILD := PYTHONPATH=.. $(PYTHON) -m sphinx
 SPHINXOPTS ?=
 
 .PHONY: help

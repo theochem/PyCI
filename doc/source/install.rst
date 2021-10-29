@@ -25,7 +25,6 @@ The following programs/libraries are required to run PyCI:
 -  Python_ (≥3.6)
 -  NumPy_ (≥1.13)
 -  SciPy_ (≥1.0)
--  Pytest_ (optional: to run tests)
 
 The following programs/libraries are required to build PyCI:
 
@@ -34,6 +33,13 @@ The following programs/libraries are required to build PyCI:
 -  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
 -  Python_ (≥3.6, including C headers)
 -  NumPy_ (≥1.13, including C headers)
+-  Pytest_ (optional: to run tests)
+-  Pycodestyle_ (optional: to run tests)
+-  Pydocstyle_ (optional: to run tests)
+-  Sphinx_ (optional: to build the documentation)
+-  `Read the Docs Sphinx Theme`__ (optional: to build the documentation)
+
+__ Sphinx-RTD-Theme_
 
 Some header-only C++ libraries are downloaded automatically:
 
@@ -41,6 +47,7 @@ Some header-only C++ libraries are downloaded automatically:
 -  `Parallel Hashmap`__
 -  Pybind11_
 -  Spectra_
+-  SpookyHash_
 
 __ Parallel-Hashmap_
 
@@ -50,13 +57,13 @@ E.g., for Debian- or Ubuntu- based Linux systems:
 
 .. code:: shell
 
-    sudo apt-get install make gcc python3-pip python3-sphinx
+    sudo apt-get install make git gcc python3 python3-devel python3-pip python3-sphinx
 
-The required Python packages can be installed with Pip:
+The required Python packages can be installed with pip:
 
 .. code:: shell
 
-    python3 -m pip install numpy scipy pytest
+    python3 -m pip --user install numpy scipy pytest pycodestyle pydocstyle
 
 Download
 ========
@@ -65,34 +72,23 @@ Run the following in your shell to download PyCI via git:
 
 .. code:: shell
 
-    git clone ttps://github.com/msricher/pyci.git && cd pyci
-
-Build
-=====
-
-Run the following to build PyCI:
-
-.. code:: shell
-
-    make
+    git clone https://github.com/msricher/pyci.git && cd pyci
 
 Install
 =======
 
-Run the following to intall PyCI:
+Run the following to build and install PyCI:
 
 .. code:: shell
 
+    make
     python3 -m pip install -e .
-
-Test
-====
 
 Run the following to test PyCI:
 
 .. code:: shell
 
-    python3 -m pytest pyci
+    make test
 
 Build Documentation
 ===================
@@ -125,8 +121,11 @@ Then, after building PyCI, run the following to build the HTML documentation:
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
 .. _Pybind11:           http://pybind11.readthedocs.io/en/stable/
 .. _Pytest:             http://docs.pytest.org/en/latest/
+.. _Pycodestyle:        http://pycodestyle.pycqa.org/en/latest/
+.. _Pydocstyle:         http://www.pydocstyle.org/en/latest/
 .. _Python:             http://python.org/
 .. _SciPy:              http://docs.scipy.org/doc/scipy/reference/
 .. _Spectra:            http://spectralib.org/
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Sphinx:             http://sphinx-doc.org/
+.. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html

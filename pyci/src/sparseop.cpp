@@ -178,6 +178,15 @@ void SparseOp::py_update(const Ham &ham, const WfnType &wfn) {
     update<WfnType>(ham, wfn, wfn.ndet, wfn.ndet, nrow);
 }
 
+template
+void SparseOp::py_update(const Ham &, const DOCIWfn &);
+
+template
+void SparseOp::py_update(const Ham &, const FullCIWfn &);
+
+template
+void SparseOp::py_update(const Ham &, const GenCIWfn &);
+
 template<class WfnType>
 void SparseOp::update(const Ham &ham, const WfnType &wfn, const long rows, const long cols,
                       const long startrow) {
@@ -192,6 +201,11 @@ void SparseOp::update(const Ham &ham, const WfnType &wfn, const long rows, const
         sort_row(idet);
     }
     size = indices.size();
+}
+
+void SparseOp::reserve(const long n) {
+    indices.reserve(n);
+    data.reserve(n);
 }
 
 void SparseOp::sort_row(const long idet) {

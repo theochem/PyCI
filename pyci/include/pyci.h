@@ -629,6 +629,8 @@ public:
     template<class WfnType>
     void py_update(const Ham &, const WfnType &);
 
+    void reserve(const long);
+
 private:
     void sort_row(const long);
 
