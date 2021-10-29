@@ -16,7 +16,9 @@
 r"""PyCI module."""
 
 from .pyci import __version__, c_long, c_ulong, c_double
-from .pyci import hamiltonian, wavefunction, doci_wfn, fullci_wfn, genci_wfn, sparse_op
+from .pyci import hamiltonian
+from .pyci import wavefunction, one_spin_wfn, two_spin_wfn
+from .pyci import doci_wfn, fullci_wfn, genci_wfn, sparse_op
 from .pyci import get_num_threads, set_num_threads, popcnt, ctz, add_hci
 from .pyci import compute_overlap, compute_rdms, compute_enpt2
 
@@ -34,6 +36,8 @@ __all__ = [
     "c_double",
     "hamiltonian",
     "wavefunction",
+    "one_spin_wfn",
+    "two_spin_wfn",
     "doci_wfn",
     "fullci_wfn",
     "genci_wfn",

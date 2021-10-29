@@ -50,27 +50,24 @@ SparseOp::SparseOp(const Ham &ham, const DOCIWfn &wfn, const long rows, const lo
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
-    shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
     append<long>(indptr, 0);
-    init<DOCIWfn>(ham, wfn, rows, cols);
+    update<DOCIWfn>(ham, wfn, nrow, ncol, 0);
 }
 
 SparseOp::SparseOp(const Ham &ham, const FullCIWfn &wfn, const long rows, const long cols,
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
-    shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
     append<long>(indptr, 0);
-    init<FullCIWfn>(ham, wfn, rows, cols);
+    update<FullCIWfn>(ham, wfn, nrow, ncol, 0);
 }
 
 SparseOp::SparseOp(const Ham &ham, const GenCIWfn &wfn, const long rows, const long cols,
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
-    shape = pybind11::make_tuple(pybind11::cast(nrow), pybind11::cast(ncol));
     append<long>(indptr, 0);
-    init<GenCIWfn>(ham, wfn, rows, cols);
+    update<GenCIWfn>(ham, wfn, nrow, ncol, 0);
 }
 
 long SparseOp::rows(void) const {
@@ -107,48 +104,39 @@ double SparseOp::get_element(const long i, const long j) const {
 void SparseOp::perform_op(const double *x, double *y) const {
     if (symmetric)
         return perform_op_symm(x, y);
-    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    CDenseVector<double> xvec(x, ncol);
-    DenseVector<double> yvec(y, nrow);
+    typedef Eigen::Map<const Eigen::SparseMatrix<double, Eigen::RowMajor, long>> SparseMatrix;
+    SparseMatrix mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], 0);
+    Eigen::Map<const Eigen::VectorXd> xvec(x, ncol);
+    Eigen::Map<Eigen::VectorXd> yvec(y, nrow);
     yvec = mat * xvec;
 }
 
-void SparseOp::perform_op_transpose(const double *x, double *y) const {
-    if (symmetric)
-        return perform_op_symm(x, y);
-    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    CDenseVector<double> xvec(x, nrow);
-    DenseVector<double> yvec(y, ncol);
-    yvec = mat.transpose() * xvec;
-}
-
 void SparseOp::perform_op_symm(const double *x, double *y) const {
-    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    CDenseVector<double> xvec(x, ncol);
-    DenseVector<double> yvec(y, nrow);
-    yvec = mat.selfadjointView<Eigen::Upper>() * xvec;
+    typedef Eigen::Map<const Eigen::SparseMatrix<double, Eigen::RowMajor, long>> SparseMatrix;
+    SparseMatrix mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], 0);
+    Eigen::Map<const Eigen::VectorXd> xvec(x, ncol);
+    Eigen::Map<Eigen::VectorXd> yvec(y, nrow);
+    yvec = mat.selfadjointView<Eigen::Lower>() * xvec;
 }
 
 void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, const long maxiter,
-                        const double tol, double *evals, double *evecs) const {
-    if (n > nrow)
-        throw std::runtime_error("cannot find >n eigenpairs for sparse operator with n rows");
-    else if (nrow == 1) {
+                        const double tol, double *evals, double *evecs) {
+    if (nrow == 1) {
         *evals = get_element(0, 0) + ecore;
         *evecs = 1.0;
         return;
     }
-    Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE, const SparseOp> eigs(
-        this, n, (ncv != -1) ? ncv : std::min(nrow, std::max(n * 2 + 1, 20L)));
-    AlignedVector<double> c0;
-    if (coeffs == nullptr) {
-        c0.resize(nrow);
-        c0[0] = 1.0;
-        coeffs = &c0[0];
+    else if (n >= nrow) {
+        throw std::runtime_error("cannot find >=n eigenpairs for sparse operator with n rows");
     }
-    eigs.init(coeffs);
-    eigs.compute((maxiter != -1) ? maxiter : n * nrow * 10, tol, Spectra::SMALLEST_ALGE);
-    if (eigs.info() != Spectra::SUCCESSFUL)
+    Spectra::SymEigsSolver<SparseOp>
+    eigs(*this, n, (ncv != -1) ? ncv : std::min(nrow, std::max(n * 2 + 1, 20L)));
+    if (coeffs == nullptr)
+        eigs.init();
+    else
+        eigs.init(coeffs);
+    eigs.compute(Spectra::SortRule::SmallestAlge, (maxiter != -1) ? maxiter : n * nrow * 10, tol);
+    if (eigs.info() != Spectra::CompInfo::Successful)
         throw std::runtime_error("did not converge");
     DenseVector<double> eigenvalues(evals, n);
     DenseMatrix<double> eigenvectors(evecs, nrow, n);
@@ -171,61 +159,8 @@ Array<double> SparseOp::py_matvec_out(const Array<double> x, Array<double> y) co
     return y;
 }
 
-Array<double> SparseOp::py_rmatvec(const Array<double> x) const {
-    Array<double> y(nrow);
-    perform_op_transpose(reinterpret_cast<const double *>(x.request().ptr),
-                         reinterpret_cast<double *>(y.request().ptr));
-    return y;
-}
-
-Array<double> SparseOp::py_rmatvec_out(const Array<double> x, Array<double> y) const {
-    perform_op_transpose(reinterpret_cast<const double *>(x.request().ptr),
-                         reinterpret_cast<double *>(y.request().ptr));
-    return y;
-}
-
-Array<double> SparseOp::py_matmat(const Array<double> x) const {
-    Array<double> y({nrow, x.request().size / ncol});
-    return py_matmat_out(x, y);
-}
-
-Array<double> SparseOp::py_matmat_out(const Array<double> x, Array<double> y) const {
-    pybind11::buffer_info xbuf = x.request();
-    pybind11::buffer_info ybuf = y.request();
-    const double *xptr = reinterpret_cast<const double *>(xbuf.ptr);
-    double *yptr = reinterpret_cast<double *>(ybuf.ptr);
-    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    CDenseMatrix<double> xmat(xptr, ncol, xbuf.size / ncol);
-    DenseMatrix<double> ymat(yptr, nrow, ybuf.size / nrow);
-    if (symmetric)
-        ymat = mat.selfadjointView<Eigen::Upper>() * xmat;
-    else
-        ymat = mat * xmat;
-    return y;
-}
-
-Array<double> SparseOp::py_rmatmat(const Array<double> x) const {
-    Array<double> y({ncol, x.request().size / nrow});
-    return py_rmatmat_out(x, y);
-}
-
-Array<double> SparseOp::py_rmatmat_out(const Array<double> x, Array<double> y) const {
-    pybind11::buffer_info xbuf = x.request();
-    pybind11::buffer_info ybuf = y.request();
-    const double *xptr = reinterpret_cast<const double *>(xbuf.ptr);
-    double *yptr = reinterpret_cast<double *>(ybuf.ptr);
-    CSparseMatrix<double> mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], nullptr);
-    CDenseMatrix<double> xmat(xptr, nrow, xbuf.size / nrow);
-    DenseMatrix<double> ymat(yptr, ncol, ybuf.size / ncol);
-    if (symmetric)
-        ymat = mat.selfadjointView<Eigen::Upper>() * xmat;
-    else
-        ymat = mat.transpose() * xmat;
-    return y;
-}
-
 pybind11::tuple SparseOp::py_solve_ci(const long n, pybind11::object coeffs, const long ncv,
-                                      const long maxiter, const double tol) const {
+                                      const long maxiter, const double tol) {
     Array<double> eigvals(n);
     Array<double> eigvecs({n, nrow});
     const double *cptr =
@@ -239,92 +174,36 @@ pybind11::tuple SparseOp::py_solve_ci(const long n, pybind11::object coeffs, con
 }
 
 template<class WfnType>
-void SparseOp::init_thread(SparseOp &op, const Ham &ham, const WfnType &wfn, const long start,
-                           const long end) {
-    AlignedVector<ulong> det(wfn.nword2);
-    AlignedVector<long> occs(wfn.nocc);
-    AlignedVector<long> virs(wfn.nvir);
-    long row = 0;
-    for (long i = start; i < end; ++i) {
-        op.init_thread_add_row(ham, wfn, i, &det[0], &occs[0], &virs[0]);
-        op.init_thread_sort_row(row++);
-    }
-    op.data.shrink_to_fit();
-    op.indices.shrink_to_fit();
-    op.indptr.shrink_to_fit();
-    op.size = op.indices.size();
+void SparseOp::py_update(const Ham &ham, const WfnType &wfn) {
+    update<WfnType>(ham, wfn, wfn.ndet, wfn.ndet, nrow);
 }
 
 template<class WfnType>
-void SparseOp::init(const Ham &ham, const WfnType &wfn, const long rows, const long cols) {
-    long nthread = get_num_threads();
-    long chunksize = nrow / nthread + static_cast<bool>(nrow % nthread);
-    long start, end = 0;
-    while (nthread > 1 && chunksize < PYCI_CHUNKSIZE_MIN) {
-        nthread /= 2;
-        chunksize = nrow / nthread + static_cast<bool>(nrow % nthread);
+void SparseOp::update(const Ham &ham, const WfnType &wfn, const long rows, const long cols,
+                      const long startrow) {
+    AlignedVector<ulong> det(wfn.nword2);
+    AlignedVector<long> occs(wfn.nocc);
+    AlignedVector<long> virs(wfn.nvir);
+    shape = pybind11::make_tuple(pybind11::cast(rows), pybind11::cast(cols));
+    nrow = rows;
+    ncol = cols;
+    for (long idet = startrow; idet < rows; ++idet) {
+        add_row(ham, wfn, idet, &det[0], &occs[0], &virs[0]);
+        sort_row(idet);
     }
-    Vector<SparseOp> v_ops;
-    Vector<std::thread> v_threads;
-    v_ops.reserve(nthread);
-    v_threads.reserve(nthread);
-    for (long i = 0; i < nthread; ++i) {
-        start = end;
-        end = std::min(start + chunksize, nrow);
-        v_ops.emplace_back(end - start, ncol, symmetric);
-        v_threads.emplace_back(&SparseOp::init_thread<WfnType>, std::ref(v_ops.back()),
-                               std::ref(ham), std::ref(wfn), start, end);
-    }
-    long ithread = 0;
-    for (auto &thread : v_threads) {
-        thread.join();
-        v_ops[ithread].init_thread_condense(*this, ithread);
-        ++ithread;
-    }
-    data.shrink_to_fit();
-    indices.shrink_to_fit();
-    indptr.shrink_to_fit();
     size = indices.size();
 }
 
-void SparseOp::init_thread_sort_row(const long idet) {
+void SparseOp::sort_row(const long idet) {
     typedef std::sort_with_arg::value_iterator_t<double, long> iter;
     long start = indptr[idet], end = indptr[idet + 1];
     std::sort(iter(&data[start], &indices[start]), iter(&data[end], &indices[end]));
 }
 
-void SparseOp::init_thread_condense(SparseOp &op, const long ithread) {
-    long i, j, start, end, offset;
-    if (!ithread) {
-        op.data.swap(data);
-        op.indptr.swap(indptr);
-        op.indices.swap(indices);
-    } else if (nrow) {
-        // copy over data array
-        start = op.data.size();
-        op.data.resize(start + size);
-        std::memcpy(&op.data[start], &data[0], sizeof(double) * size);
-        AlignedVector<double>().swap(data);
-        // copy over indices array
-        start = op.indices.size();
-        op.indices.resize(start + size);
-        std::memcpy(&op.indices[start], &indices[0], sizeof(long) * size);
-        AlignedVector<long>().swap(indices);
-        // copy over indptr array
-        start = op.indptr.size();
-        end = start + indptr.size() - 1;
-        offset = op.indptr.back();
-        op.indptr.resize(end);
-        j = 0;
-        for (i = start; i < end; ++i)
-            op.indptr[i] = indptr[++j] + offset;
-        AlignedVector<long>().swap(indptr);
-    }
-}
-
-void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulong *det,
-                                   long *occs, long *virs) {
-    long i, j, k, l, jdet, jmin = symmetric ? idet - 1 : -1;
+void SparseOp::add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulong *det,
+                       long *occs, long *virs) {
+    /* long i, j, k, l, jdet, jmin = symmetric ? idet - 1 : -1; */
+    long i, j, k, l, jdet, jmin = symmetric ? idet : Max<long>();
     double val1 = 0.0, val2 = 0.0;
     wfn.copy_det(idet, det);
     fill_occs(wfn.nword, det, occs);
@@ -344,7 +223,7 @@ void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const lon
             excite_det(k, l, det);
             jdet = wfn.index_det(det);
             // check if excited determinant is in wfn
-            if ((jdet > jmin) && (jdet < ncol)) {
+            if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                 // add single/"pair"-excited matrix element
                 append<double>(data, ham.v[k * wfn.nbasis + l]);
                 append<long>(indices, jdet);
@@ -361,9 +240,9 @@ void SparseOp::init_thread_add_row(const Ham &ham, const DOCIWfn &wfn, const lon
     append<long>(indptr, indices.size());
 }
 
-void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const long idet,
-                                   ulong *det_up, long *occs_up, long *virs_up) {
-    long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet - 1 : -1;
+void SparseOp::add_row(const Ham &ham, const FullCIWfn &wfn, const long idet,
+                       ulong *det_up, long *occs_up, long *virs_up) {
+    long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet  : Max<long>();
     long ioffset, koffset, sign_up;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
@@ -402,7 +281,7 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
             sign_up = phase_single_det(wfn.nword, ii, jj, rdet_up);
             jdet = wfn.index_det(det_up);
             // check if 1-0 excited determinant is in wfn
-            if ((jdet > jmin) && (jdet < ncol)) {
+            if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                 // compute 1-0 matrix element
                 val1 = ham.one_mo[n1 * ii + jj];
                 for (k = 0; k < wfn.nocc_up; ++k) {
@@ -429,7 +308,7 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
                     excite_det(kk, ll, det_dn);
                     jdet = wfn.index_det(det_up);
                     // check if 1-1 excited determinant is in wfn
-                    if ((jdet > jmin) && (jdet < ncol)) {
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                         // add 1-1 matrix element
                         append<double>(data, sign_up *
                                                  phase_single_det(wfn.nword, kk, ll, rdet_dn) *
@@ -450,7 +329,7 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
                     excite_det(kk, ll, det_up);
                     jdet = wfn.index_det(det_up);
                     // check if 2-0 excited determinant is in wfn
-                    if ((jdet > jmin) && (jdet < ncol)) {
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                         // add 2-0 matrix element
                         append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
                                                  (ham.two_mo[koffset + n1 * jj + ll] -
@@ -481,7 +360,7 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
             excite_det(ii, jj, det_dn);
             jdet = wfn.index_det(det_up);
             // check if 0-1 excited determinant is in wfn
-            if ((jdet > jmin) && (jdet < ncol)) {
+            if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                 // compute 0-1 matrix element
                 val1 = ham.one_mo[n1 * ii + jj];
                 for (k = 0; k < wfn.nocc_up; ++k) {
@@ -508,7 +387,7 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
                     excite_det(kk, ll, det_dn);
                     jdet = wfn.index_det(det_up);
                     // check if excited determinant is in wfn
-                    if ((jdet > jmin) && (jdet < ncol)) {
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                         // add 0-2 matrix element
                         append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn) *
                                                  (ham.two_mo[koffset + n1 * jj + ll] -
@@ -530,9 +409,9 @@ void SparseOp::init_thread_add_row(const Ham &ham, const FullCIWfn &wfn, const l
     append<long>(indptr, indices.size());
 }
 
-void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const long idet, ulong *det,
-                                   long *occs, long *virs) {
-    long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet - 1 : -1, ioffset, koffset;
+void SparseOp::add_row(const Ham &ham, const GenCIWfn &wfn, const long idet, ulong *det,
+                       long *occs, long *virs) {
+    long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet : Max<long>(), ioffset, koffset;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
@@ -560,7 +439,7 @@ void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const lo
             excite_det(ii, jj, det);
             jdet = wfn.index_det(det);
             // check if singly-excited determinant is in wfn
-            if ((jdet > jmin) && (jdet < ncol)) {
+            if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                 // compute single excitation matrix element
                 val1 = ham.one_mo[n1 * ii + jj];
                 for (k = 0; k < wfn.nocc; ++k) {
@@ -583,7 +462,7 @@ void SparseOp::init_thread_add_row(const Ham &ham, const GenCIWfn &wfn, const lo
                     excite_det(kk, ll, det);
                     jdet = wfn.index_det(det);
                     // check if double excited determinant is in wfn
-                    if ((jdet > jmin) && (jdet < ncol)) {
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                         // add double matrix element
                         append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet) *
                                                  (ham.two_mo[koffset + n1 * jj + ll] -

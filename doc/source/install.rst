@@ -30,11 +30,12 @@ The following programs/libraries are required to run PyCI:
 The following programs/libraries are required to build PyCI:
 
 -  Make_
+-  Git_
 -  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
 -  Python_ (≥3.6, including C headers)
 -  NumPy_ (≥1.13, including C headers)
 
-Some header-only C++ libraries are included with this git repository as git submodules:
+Some header-only C++ libraries are downloaded automatically:
 
 -  Eigen_
 -  `Parallel Hashmap`__
@@ -60,11 +61,11 @@ The required Python packages can be installed with Pip:
 Download
 ========
 
-Run the following in your shell to download PyCI and its submodules via git:
+Run the following in your shell to download PyCI via git:
 
 .. code:: shell
 
-    git clone --recursive https://github.com/msricher/pyci.git && cd pyci
+    git clone ttps://github.com/msricher/pyci.git && cd pyci
 
 Build
 =====
@@ -73,7 +74,7 @@ Run the following to build PyCI:
 
 .. code:: shell
 
-    PYTHON=python3 make
+    make
 
 Install
 =======
@@ -82,7 +83,7 @@ Run the following to intall PyCI:
 
 .. code:: shell
 
-    python3 -m pip install .
+    python3 -m pip install -e .
 
 Test
 ====
@@ -107,7 +108,7 @@ Run the following in your shell to install the Read the Docs Sphinx theme via pi
 
 .. code:: shell
 
-    python3 -m pip install sphinx-rtd-theme
+    python3 -m pip install --user sphinx-rtd-theme
 
 Then, after building PyCI, run the following to build the HTML documentation:
 
@@ -119,6 +120,7 @@ Then, after building PyCI, run the following to build the HTML documentation:
 .. _Eigen:              http://eigen.tuxfamily.org/
 .. _GCC:                http://gcc.gnu.org/
 .. _Make:               http://gnu.org/software/make/
+.. _Git:                http://git-scm.com/
 .. _NumPy:              http://numpy.org/
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
 .. _Pybind11:           http://pybind11.readthedocs.io/en/stable/

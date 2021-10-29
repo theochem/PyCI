@@ -144,14 +144,6 @@ using DenseVector = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>>;
 template<typename T>
 using CDenseVector = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>>;
 
-/* Eigen sparse matrix template types. */
-
-template<typename T>
-using SparseMatrix = Eigen::Map<Eigen::SparseMatrix<T, Eigen::RowMajor, long>>;
-
-template<typename T>
-using CSparseMatrix = Eigen::Map<const Eigen::SparseMatrix<T, Eigen::RowMajor, long>>;
-
 /* Hash map template type. */
 
 template<class KeyType, class ValueType>
@@ -580,6 +572,7 @@ public:
 
 struct SparseOp final {
 public:
+    using Scalar = double;
     long nrow, ncol, size;
     double ecore;
     bool symmetric;
@@ -620,46 +613,30 @@ public:
 
     void perform_op_symm(const double *, double *) const;
 
-    void perform_op_transpose(const double *, double *) const;
-
     void solve_ci(const long, const double *, const long, const long, const double, double *,
-                  double *) const;
+                  double *);
 
     Array<double> py_matvec(const Array<double>) const;
 
     Array<double> py_matvec_out(const Array<double>, Array<double>) const;
 
-    Array<double> py_rmatvec(const Array<double>) const;
-
-    Array<double> py_rmatvec_out(const Array<double>, Array<double>) const;
-
-    Array<double> py_matmat(const Array<double>) const;
-
-    Array<double> py_matmat_out(const Array<double>, Array<double>) const;
-
-    Array<double> py_rmatmat(const Array<double>) const;
-
-    Array<double> py_rmatmat_out(const Array<double>, Array<double>) const;
-
     pybind11::tuple py_solve_ci(const long, pybind11::object, const long, const long,
-                                const double) const;
+                                const double);
+
+    template<class WfnType>
+    void update(const Ham &, const WfnType &, const long, const long, const long);
+
+    template<class WfnType>
+    void py_update(const Ham &, const WfnType &);
 
 private:
-    template<class WfnType>
-    static void init_thread(SparseOp &, const Ham &, const WfnType &, const long, const long);
+    void sort_row(const long);
 
-    template<class WfnType>
-    void init(const Ham &, const WfnType &, const long, const long);
+    void add_row(const Ham &, const DOCIWfn &, const long, ulong *, long *, long *);
 
-    void init_thread_add_row(const Ham &, const DOCIWfn &, const long, ulong *, long *, long *);
+    void add_row(const Ham &, const FullCIWfn &, const long, ulong *, long *, long *);
 
-    void init_thread_add_row(const Ham &, const FullCIWfn &, const long, ulong *, long *, long *);
-
-    void init_thread_add_row(const Ham &, const GenCIWfn &, const long, ulong *, long *, long *);
-
-    void init_thread_sort_row(const long);
-
-    void init_thread_condense(SparseOp &, const long);
+    void add_row(const Ham &, const GenCIWfn &, const long, ulong *, long *, long *);
 };
 
 /* Free Python interface functions. */

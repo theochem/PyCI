@@ -88,3 +88,6 @@ doc/build/
 
 # Clangd
 compile_flags.txt
+
+# Libraries
+lib/

@@ -38,17 +38,18 @@ The following programs/libraries are required to run PyCI:
 The following programs/libraries are required to build PyCI:
 
 -  Make_
+-  Git_
 -  GCC_ (≥4.8) or `Clang/LLVM`_ (≥3.3) C++ compiler
 -  Python_ (≥3.6, including C headers)
 -  NumPy_ (≥1.13, including C headers)
 
-Some header-only C++ libraries are included with this git repository:
+Some header-only C++ libraries downloaded automatically:
 
--  Eigen_ (git submodule)
--  `Parallel Hashmap`__ (git submodule)
--  Pybind11_ (git submodule)
--  Spectra_ (git submodule)
--  SpookyHash_ (files included directly)
+-  Eigen_
+-  `Parallel Hashmap`__
+-  Pybind11_
+-  Spectra_
+-  SpookyHash_
 
 __ Parallel-Hashmap_
 
@@ -65,18 +66,18 @@ Installation
 Basic Compilation and Install
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run the following in your shell to download PyCI and its submodules via git:
+Run the following in your shell to download PyCI via git:
 
 .. code:: shell
 
-    git clone --recursive https://github.com/msricher/pyci.git && cd pyci
+    git clone https://github.com/msricher/pyci.git && cd pyci
 
 Then, run the following to build and install PyCI:
 
 .. code:: shell
 
     make
-    python setup.py install --user
+    python3 -m pip install -e .
 
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -85,7 +86,7 @@ Run the following in your shell to install the Read the Docs Sphinx theme via pi
 
 .. code:: shell
 
-    pip install sphinx-rtd-theme --user
+    python3 -m pip install --user sphinx-rtd-theme
 
 Then, after installing PyCI, run the following to build the HTML documentation:
 
@@ -97,6 +98,7 @@ Then, after installing PyCI, run the following to build the HTML documentation:
 .. _Eigen:              http://eigen.tuxfamily.org/
 .. _GCC:                http://gcc.gnu.org/
 .. _Make:               http://gnu.org/software/make/
+.. _Git:                http://git-scm.com/
 .. _NumPy:              http://numpy.org/
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
 .. _PyCI:               http://github.com/msricher/PyCI/

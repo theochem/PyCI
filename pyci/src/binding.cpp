@@ -966,6 +966,31 @@ sparse_op.def(py::init<const Ham &, const GenCIWfn &, const long, const long, co
               py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
               py::arg("symmetric") = false);
 
+sparse_op.def("update", &SparseOp::py_update<DOCIWfn>, R"""(
+Update a sparse matrix operator for the HCI algorithm.
+
+Parameters
+----------
+ham : pyci.hamiltonian
+    Hamiltonian.
+wfn : pyci.wavefunction
+    Wave function.
+
+Notes
+-----
+The user is responsible for using the same ``ham`` and ``wfn``.
+This method doesn't work with rectangular operators. Those must
+be re-initialized from the wave function object.
+
+)""",
+              py::arg("ham"), py::arg("wfn"));
+
+sparse_op.def("update", &SparseOp::py_update<FullCIWfn>,
+              py::arg("ham"), py::arg("wfn"));
+
+sparse_op.def("update", &SparseOp::py_update<GenCIWfn>,
+              py::arg("ham"), py::arg("wfn"));
+
 sparse_op.def("__call__", &SparseOp::py_matvec, R"""(
 Compute the matrix vector product of the sparse matrix operator with vector ``x``.
 
@@ -1013,78 +1038,6 @@ y : numpy.ndarray
               py::arg("x"));
 
 sparse_op.def("matvec", &SparseOp::py_matvec_out, py::arg("x"), py::arg("out"));
-
-sparse_op.def("rmatvec", &SparseOp::py_rmatvec, R"""(
-Compute the matrix vector product of the transpose of the sparse matrix operator with vector ``x``.
-
-.. math::
-
-    A^T \mathbf{x} = \mathbf{y}
-
-Parameters
-----------
-x : numpy.ndarray
-    Vector to which the operator will be applied.
-out : numpy.ndarray, default=None
-    Array in which to store the result. One will be created if this is not specified.
-
-Returns
--------
-y : numpy.ndarray
-    Result vector.
-
-)""",
-              py::arg("x"));
-
-sparse_op.def("rmatvec", &SparseOp::py_rmatvec_out, py::arg("x"), py::arg("out"));
-
-sparse_op.def("matmat", &SparseOp::py_matmat, R"""(
-Compute the matrix matrix product of the sparse matrix operator with matrix ``X``.
-
-.. math::
-
-    A X = Y
-
-Parameters
-----------
-x : numpy.ndarray
-    Matrix to which the operator will be applied.
-out : numpy.ndarray, default=None
-    Array in which to store the result. One will be created if this is not specified.
-
-Returns
--------
-y : numpy.ndarray
-    Result matrix.
-
-)""",
-              py::arg("x"));
-
-sparse_op.def("matmat", &SparseOp::py_matmat_out, py::arg("x"), py::arg("out"));
-
-sparse_op.def("rmatmat", &SparseOp::py_rmatmat, R"""(
-Compute the matrix matrix product of the transpose of the sparse matrix operator with matrix ``X``.
-
-.. math::
-
-    A^T X = Y
-
-Parameters
-----------
-x : numpy.ndarray
-    Matrix to which the operator will be applied.
-out : numpy.ndarray, default=None
-    Array in which to store the result. One will be created if this is not specified.
-
-Returns
--------
-y : numpy.ndarray
-    Result matrix.
-
-)""",
-              py::arg("x"));
-
-sparse_op.def("rmatmat", &SparseOp::py_rmatmat_out, py::arg("x"), py::arg("out"));
 
 sparse_op.def("get_element", &SparseOp::get_element, R"""(
 Return the :math:`\left(i, j\right)`-th element of the sparse matrix operator.
