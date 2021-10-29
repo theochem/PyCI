@@ -197,6 +197,7 @@ void SparseOp::update(const Ham &ham, const WfnType &wfn, const long rows, const
     shape = pybind11::make_tuple(pybind11::cast(rows), pybind11::cast(cols));
     nrow = rows;
     ncol = cols;
+    indptr.reserve(nrow + 1);
     for (long idet = startrow; idet < rows; ++idet) {
         add_row(ham, wfn, idet, &det[0], &occs[0], &virs[0]);
         sort_row(idet);
@@ -207,6 +208,12 @@ void SparseOp::update(const Ham &ham, const WfnType &wfn, const long rows, const
 void SparseOp::reserve(const long n) {
     indices.reserve(n);
     data.reserve(n);
+}
+
+void SparseOp::squeeze(void) {
+    indptr.shrink_to_fit();
+    indices.shrink_to_fit();
+    data.shrink_to_fit();
 }
 
 void SparseOp::sort_row(const long idet) {

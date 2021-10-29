@@ -1080,6 +1080,8 @@ n : int
 )""",
               py::arg("n"));
 
+sparse_op.def("squeeze", &SparseOp::squeeze, "Free any unused memory allocated to this object.");
+
 /*
 Section: Free functions
 */

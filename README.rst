@@ -19,15 +19,17 @@
 PyCI
 ====
 
-PyCI_ is a flexible *ab-initio* quantum chemistry library for Slater determinant Configuration
-Interaction, for Python 3.
+PyCI_ is a flexible quantum chemistry Configuration Interaction library for Python 3.
 
 PyCI is distributed under the GNU General Public License version 3 (GPLv3).
 
 See http://www.gnu.org/licenses/ for more information.
 
-Dependencies
+Installation
 ------------
+
+Dependencies
+~~~~~~~~~~~~
 
 The following programs/libraries are required to run PyCI:
 
@@ -60,11 +62,26 @@ Some header-only C++ libraries are downloaded automatically:
 
 __ Parallel-Hashmap_
 
-Installation
-------------
+Install Dependencies
+~~~~~~~~~~~~~~~~~~~~
 
-Basic Compilation and Install
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The programs required to build and run PyCI can be installed with your operating system's package
+manager.
+
+E.g., for Debian- or Ubuntu- based Linux systems:
+
+.. code:: shell
+
+    sudo apt-get install make git gcc python3 python3-devel python3-pip python3-sphinx
+
+The required Python packages can then be installed with pip:
+
+.. code:: shell
+
+    python3 -m pip --user install numpy scipy pytest pycodestyle pydocstyle
+
+Download PyCI
+~~~~~~~~~~~~~
 
 Run the following in your shell to download PyCI via git:
 
@@ -72,7 +89,10 @@ Run the following in your shell to download PyCI via git:
 
     git clone https://github.com/msricher/pyci.git && cd pyci
 
-Then, run the following to build and install PyCI:
+Install PyCI
+~~~~~~~~~~~~
+
+Run the following to build and install PyCI:
 
 .. code:: shell
 
@@ -85,8 +105,8 @@ Run the following to test PyCI:
 
     make test
 
-Building Documentation
-~~~~~~~~~~~~~~~~~~~~~~
+Build Documentation
+~~~~~~~~~~~~~~~~~~~
 
 Run the following in your shell to install the Read the Docs Sphinx theme via pip:
 
@@ -105,24 +125,24 @@ Citing PyCI
 
 See the CONTRIBUTORS file.
 
-.. _`Clang/LLVM`:       http://clang.llvm.org/
 .. _Eigen:              http://eigen.tuxfamily.org/
 .. _GCC:                http://gcc.gnu.org/
-.. _Make:               http://gnu.org/software/make/
 .. _Git:                http://git-scm.com/
+.. _Make:               http://gnu.org/software/make/
 .. _NumPy:              http://numpy.org/
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
 .. _PyCI:               http://github.com/msricher/PyCI/
 .. _Pybind11:           http://pybind11.readthedocs.io/en/stable/
-.. _Pytest:             http://docs.pytest.org/en/latest/
 .. _Pycodestyle:        http://pycodestyle.pycqa.org/en/latest/
 .. _Pydocstyle:         http://www.pydocstyle.org/en/latest/
+.. _Pytest:             http://docs.pytest.org/en/latest/
 .. _Python:             http://python.org/
 .. _SciPy:              http://docs.scipy.org/doc/scipy/reference/
 .. _Spectra:            http://spectralib.org/
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Sphinx:             http://sphinx-doc.org/
 .. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
+.. _`Clang/LLVM`:       http://clang.llvm.org/
 
 .. |Python 3| image:: http://img.shields.io/badge/python-3-blue.svg
    :target: https://docs.python.org/3.8/

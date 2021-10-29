@@ -633,6 +633,8 @@ public:
 
     void reserve(const long);
 
+    void squeeze(void);
+
     Array<double> py_matvec(const Array<double>) const;
 
     Array<double> py_matvec_out(const Array<double>, Array<double>) const;
