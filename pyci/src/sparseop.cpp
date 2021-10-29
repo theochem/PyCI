@@ -120,17 +120,21 @@ void SparseOp::perform_op_symm(const double *x, double *y) const {
 }
 
 void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, const long maxiter,
-                        const double tol, double *evals, double *evecs) {
-    if (nrow == 1) {
+                        const double tol, double *evals, double *evecs) const {
+    if ((nrow > 1 && n >= nrow) || (nrow == 1 && n > 1)) {
+        throw std::runtime_error("cannot find >=n eigenpairs for sparse operator with n rows");
+    } else if (!symmetric) {
+        throw std::runtime_error("Can only solve sparse symmetric matrix operators");
+    } else if (nrow == 1) {
         *evals = get_element(0, 0) + ecore;
         *evecs = 1.0;
         return;
     }
-    else if (n >= nrow) {
-        throw std::runtime_error("cannot find >=n eigenpairs for sparse operator with n rows");
-    }
-    Spectra::SymEigsSolver<SparseOp>
-    eigs(*this, n, (ncv != -1) ? ncv : std::min(nrow, std::max(n * 2 + 1, 20L)));
+    typedef Eigen::Map<const Eigen::SparseMatrix<double, Eigen::RowMajor, long>> SparseMatrix;
+    SparseMatrix mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], 0);
+    Spectra::SparseSymMatProd<double, Eigen::Lower, Eigen::RowMajor, long> op(mat);
+    Spectra::SymEigsSolver<Spectra::SparseSymMatProd<double, Eigen::Lower, Eigen::RowMajor, long>>
+    eigs(op, n, (ncv != -1) ? ncv : std::min(nrow, std::max(n * 2 + 1, 20L)));
     if (coeffs == nullptr)
         eigs.init();
     else
@@ -160,7 +164,7 @@ Array<double> SparseOp::py_matvec_out(const Array<double> x, Array<double> y) co
 }
 
 pybind11::tuple SparseOp::py_solve_ci(const long n, pybind11::object coeffs, const long ncv,
-                                      const long maxiter, const double tol) {
+                                      const long maxiter, const double tol) const {
     Array<double> eigvals(n);
     Array<double> eigvecs({n, nrow});
     const double *cptr =

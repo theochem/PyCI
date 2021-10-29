@@ -34,6 +34,7 @@
 #include <Eigen/SparseCore>
 
 #include <Spectra/SymEigsSolver.h>
+#include <Spectra/MatOp/SparseSymMatProd.h>
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -610,7 +611,7 @@ public:
 
     void perform_op_symm(const double *, double *) const;
 
-    void solve_ci(const long, const double *, const long, const long, const double, double *, double *);
+    void solve_ci(const long, const double *, const long, const long, const double, double *, double *) const;
 
     template<class WfnType>
     void update(const Ham &, const WfnType &, const long, const long, const long);
@@ -621,7 +622,7 @@ public:
 
     Array<double> py_matvec_out(const Array<double>, Array<double>) const;
 
-    pybind11::tuple py_solve_ci(const long, pybind11::object, const long, const long, const double);
+    pybind11::tuple py_solve_ci(const long, pybind11::object, const long, const long, const double) const;
 
     template<class WfnType>
     void py_update(const Ham &, const WfnType &);

@@ -16,7 +16,6 @@
 r"""PyCI selected CI routines module."""
 
 from itertools import combinations
-from typing import Sequence
 
 import numpy as np
 
@@ -24,33 +23,11 @@ from . import pyci
 
 
 __all__ = [
-    "add_excitations",
     "add_seniorities",
 ]
 
 
-def add_excitations(wfn: pyci.wavefunction, *excitations: Sequence[int], ref=None) -> None:
-    r"""
-    Add multiple excitation levels of determinants to a wave function.
-
-    Convenience function.
-
-    Parameters
-    ----------
-    wfn : pyci.wavefunction
-        Wave function.
-    excitations : Sequence[int]
-        List of excitation levels of determinants to add.
-    ref : numpy.ndarray, optional
-        Reference determinant by which to determine excitation levels.
-        Default is the Hartree-Fock determinant.
-
-    """
-    for e in excitations:
-        wfn.add_excited_dets(e, ref=ref)
-
-
-def add_seniorities(wfn: pyci.fullci_wfn, *seniorities: Sequence[int]) -> None:
+def add_seniorities(wfn, *seniorities):
     r"""
     Add determinants of the specified seniority/ies to the wave function.
 

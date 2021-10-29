@@ -15,8 +15,6 @@
 
 r"""PyCI Griebel-Knapek CI routines module."""
 
-from typing import Sequence, Union
-
 import numpy as np
 
 from scipy.special import gammaln, polygamma
@@ -29,15 +27,7 @@ __all__ = [
 ]
 
 
-def add_gkci(
-    wfn: pyci.wavefunction,
-    t: float = -0.5,
-    p: float = 1.0,
-    mode: Union[str, Sequence[int]] = "cntsp",
-    dim: int = 3,
-    energies: np.ndarray = None,
-    width: float = None,
-) -> None:
+def add_gkci(wfn, t=-0.5, p=1.0, mode="cntsp", dim=3, energies=None, width=None):
     r"""
     Add determinants to the wave function according to the odometer algorithm (Griebel-Knapeck CI).
 
@@ -85,7 +75,7 @@ def add_gkci(
         raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")
 
 
-def compute_nodes_cntsp(nbasis: int) -> np.ndarray:
+def compute_nodes_cntsp(nbasis):
     r"""
     Approximate the number of nodes for each function in a basis set as a sphere.
 
@@ -111,7 +101,7 @@ def compute_nodes_cntsp(nbasis: int) -> np.ndarray:
     return nodes
 
 
-def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 100, tol: float = 1.0e-9) -> np.ndarray:
+def compute_nodes_gamma(nbasis, d, maxiter=100, tol=1.0e-9):
     r"""
     Approximate the number of nodes for each function in a basis set as a polynomial.
 
@@ -175,7 +165,7 @@ def compute_nodes_gamma(nbasis: int, d: int, maxiter: int = 100, tol: float = 1.
     return nodes
 
 
-def compute_nodes_interval(nbasis: int, es: np.ndarray, width: float) -> np.ndarray:
+def compute_nodes_interval(nbasis, es, width):
     r"""
     Approximate the number of nodes for each function via intervals.
 
@@ -220,7 +210,7 @@ def compute_nodes_interval(nbasis: int, es: np.ndarray, width: float) -> np.ndar
     return nodes
 
 
-def odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: np.ndarray, t: float, p: float) -> None:
+def odometer_one_spin(wfn, nodes, t, p):
     r"""Run the odometer algorithm for a one-spin wave function."""
     old = np.arange(wfn.nocc_up, dtype=pyci.c_long)
     new = np.copy(old)
@@ -246,7 +236,7 @@ def odometer_one_spin(wfn: pyci.one_spin_wfn, nodes: np.ndarray, t: float, p: fl
         new[j:] = np.arange(new[j] + 1, new[j] + wfn.nocc_up - j + 1)
 
 
-def odometer_two_spin(wfn: pyci.two_spin_wfn, nodes: np.ndarray, t: float, p: float) -> None:
+def odometer_two_spin(wfn, nodes, t, p):
     r"""Run the odometer algorithm for a two-spin wave function."""
     wfn_up = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up, wfn.nocc_up)
     odometer_one_spin(wfn_up, nodes, t, p)

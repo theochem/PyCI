@@ -50,33 +50,9 @@ def test_solve_sparse(filename, wfn_type, occs, energy):
     ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
-    op = pyci.sparse_op(ham, wfn, symmetric=False)
+    op = pyci.sparse_op(ham, wfn)
     es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6)
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
-    op = pyci.sparse_op(ham, wfn, symmetric=True)
-    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6)
-    npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
-
-
-@pytest.mark.parametrize(
-    "filename, wfn_type, occs, energy",
-    [
-        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
-        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
-    ],
-)
-def test_natural_orbitals(filename, wfn_type, occs, energy):
-    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
-    wfn = wfn_type(ham.nbasis, *occs)
-    pyci.add_excitations(wfn, *range(wfn.nocc_up + 1))
-    op = pyci.sparse_op(ham, wfn, symmetric=True)
-    es, cs = pyci.solve(op, n=1, tol=1.0e-16)
-    rdm1, rdm2 = pyci.compute_rdms(wfn, cs[0])
-    one_mo, two_mo = pyci.natural_orbitals(ham.one_mo, ham.two_mo, (rdm1[0] + rdm1[1]))
-    ham.one_mo[...] = one_mo
-    ham.two_mo[...] = two_mo
-    op = pyci.sparse_op(ham, wfn, symmetric=True)
-    es, cs = pyci.solve(op, n=1, tol=1.0e-16)
 
 
 @pytest.mark.parametrize(
@@ -128,10 +104,10 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
         energy += np.einsum("ij,ij", k0, d0)
         energy += np.einsum("ij,ij", k2, d2)
         npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
-        rdm1, rdm2 = pyci.make_rdms(d0, d2)
+        rdm1, rdm2 = pyci.expand_rdms(d0, d2)
     elif isinstance(wfn, pyci.fullci_wfn):
         d1, d2 = pyci.compute_rdms(wfn, cs[0])
-        rdm1, rdm2 = pyci.make_rdms(d1, d2)
+        rdm1, rdm2 = pyci.expand_rdms(d1, d2)
     else:
         rdm1, rdm2 = pyci.compute_rdms(wfn, cs[0])
     with np.load(datafile("{0:s}_spinres.npz".format(filename))) as f:
@@ -268,7 +244,7 @@ def test_make_rdm_rdm2_two_particles_one_up_one_dn():
     coeffs /= np.linalg.norm(coeffs)
 
     d0, d1 = pyci.compute_rdms(wfn, coeffs)
-    _, rdm2 = pyci.make_rdms(d0, d1)
+    _, rdm2 = pyci.expand_rdms(d0, d1)
 
     # "Test out the diagonal RDM2"
     assert np.abs(rdm2[0, 0, 0, 0]) < 1e-5
@@ -401,7 +377,7 @@ def test_make_rdm_rdm1_two_particles_one_up_one_dn():
     coeffs /= np.linalg.norm(coeffs)
 
     d0, d1 = pyci.compute_rdms(wfn, coeffs)
-    rdm1, _ = pyci.make_rdms(d0, d1)
+    rdm1, _ = pyci.expand_rdms(d0, d1)
 
     assert np.abs(rdm1[0, 0] - coeffs[0] ** 2.0 - coeffs[1] ** 2.0) < 1e-5
     assert np.abs(rdm1[0, 1] - coeffs[0] * coeffs[2] - coeffs[1] * coeffs[3]) < 1e-5
