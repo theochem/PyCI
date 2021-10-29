@@ -134,7 +134,7 @@ void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, cons
     SparseMatrix mat(nrow, ncol, size, &indptr[0], &indices[0], &data[0], 0);
     Spectra::SparseSymMatProd<double, Eigen::Lower, Eigen::RowMajor, long> op(mat);
     Spectra::SymEigsSolver<Spectra::SparseSymMatProd<double, Eigen::Lower, Eigen::RowMajor, long>>
-    eigs(op, n, (ncv != -1) ? ncv : std::min(nrow, std::max(n * 2 + 1, 20L)));
+        eigs(op, n, (ncv != -1) ? ncv : std::min(nrow, std::max(n * 2 + 1, 20L)));
     if (coeffs == nullptr)
         eigs.init();
     else
@@ -182,14 +182,11 @@ void SparseOp::py_update(const Ham &ham, const WfnType &wfn) {
     update<WfnType>(ham, wfn, wfn.ndet, wfn.ndet, nrow);
 }
 
-template
-void SparseOp::py_update(const Ham &, const DOCIWfn &);
+template void SparseOp::py_update(const Ham &, const DOCIWfn &);
 
-template
-void SparseOp::py_update(const Ham &, const FullCIWfn &);
+template void SparseOp::py_update(const Ham &, const FullCIWfn &);
 
-template
-void SparseOp::py_update(const Ham &, const GenCIWfn &);
+template void SparseOp::py_update(const Ham &, const GenCIWfn &);
 
 template<class WfnType>
 void SparseOp::update(const Ham &ham, const WfnType &wfn, const long rows, const long cols,
@@ -218,8 +215,8 @@ void SparseOp::sort_row(const long idet) {
     std::sort(iter(&data[start], &indices[start]), iter(&data[end], &indices[end]));
 }
 
-void SparseOp::add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulong *det,
-                       long *occs, long *virs) {
+void SparseOp::add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulong *det, long *occs,
+                       long *virs) {
     /* long i, j, k, l, jdet, jmin = symmetric ? idet - 1 : -1; */
     long i, j, k, l, jdet, jmin = symmetric ? idet : Max<long>();
     double val1 = 0.0, val2 = 0.0;
@@ -258,9 +255,9 @@ void SparseOp::add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulon
     append<long>(indptr, indices.size());
 }
 
-void SparseOp::add_row(const Ham &ham, const FullCIWfn &wfn, const long idet,
-                       ulong *det_up, long *occs_up, long *virs_up) {
-    long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet  : Max<long>();
+void SparseOp::add_row(const Ham &ham, const FullCIWfn &wfn, const long idet, ulong *det_up,
+                       long *occs_up, long *virs_up) {
+    long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet : Max<long>();
     long ioffset, koffset, sign_up;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
@@ -427,8 +424,8 @@ void SparseOp::add_row(const Ham &ham, const FullCIWfn &wfn, const long idet,
     append<long>(indptr, indices.size());
 }
 
-void SparseOp::add_row(const Ham &ham, const GenCIWfn &wfn, const long idet, ulong *det,
-                       long *occs, long *virs) {
+void SparseOp::add_row(const Ham &ham, const GenCIWfn &wfn, const long idet, ulong *det, long *occs,
+                       long *virs) {
     long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet : Max<long>(), ioffset, koffset;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;

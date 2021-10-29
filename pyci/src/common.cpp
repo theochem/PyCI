@@ -55,8 +55,7 @@ long binomial(long n, long k) {
             if (binom >= Max<long>() / nr)
                 return Max<long>();
             binom = binom * nr / dr;
-        }
-        else
+        } else
             binom = binom * n-- / d;
     }
     return binom;
@@ -298,84 +297,6 @@ long py_popcnt(const Array<ulong> det) {
 long py_ctz(const Array<ulong> det) {
     pybind11::buffer_info buf = det.request();
     return ctz_det(buf.shape[0], reinterpret_cast<const ulong *>(buf.ptr));
-}
-
-long py_dociwfn_add_hci(const Ham &ham, DOCIWfn &wfn, const Array<double> coeffs, const double eps,
-                        const long nthread) {
-    return add_hci(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr), eps, nthread);
-}
-
-long py_fullciwfn_add_hci(const Ham &ham, FullCIWfn &wfn, const Array<double> coeffs,
-                          const double eps, const long nthread) {
-    return add_hci(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr), eps, nthread);
-}
-
-long py_genciwfn_add_hci(const Ham &ham, GenCIWfn &wfn, const Array<double> coeffs,
-                         const double eps, const long nthread) {
-    return add_hci(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr), eps, nthread);
-}
-
-double py_dociwfn_compute_overlap(const DOCIWfn &wfn1, const DOCIWfn &wfn2,
-                                  const Array<double> coeffs1, const Array<double> coeffs2) {
-    return compute_overlap(wfn1, wfn2, reinterpret_cast<const double *>(coeffs1.request().ptr),
-                           reinterpret_cast<const double *>(coeffs2.request().ptr));
-}
-
-double py_fullciwfn_compute_overlap(const FullCIWfn &wfn1, const FullCIWfn &wfn2,
-                                    const Array<double> coeffs1, const Array<double> coeffs2) {
-    return compute_overlap(wfn1, wfn2, reinterpret_cast<const double *>(coeffs1.request().ptr),
-                           reinterpret_cast<const double *>(coeffs2.request().ptr));
-}
-
-double py_genciwfn_compute_overlap(const GenCIWfn &wfn1, const GenCIWfn &wfn2,
-                                   const Array<double> coeffs1, const Array<double> coeffs2) {
-    return compute_overlap(wfn1, wfn2, reinterpret_cast<const double *>(coeffs1.request().ptr),
-                           reinterpret_cast<const double *>(coeffs2.request().ptr));
-}
-
-pybind11::tuple py_dociwfn_compute_rdms(const DOCIWfn &wfn, const Array<double> coeffs) {
-    Array<double> d0({wfn.nbasis, wfn.nbasis});
-    Array<double> d2({wfn.nbasis, wfn.nbasis});
-    compute_rdms(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
-                 reinterpret_cast<double *>(d0.request().ptr),
-                 reinterpret_cast<double *>(d2.request().ptr));
-    return pybind11::make_tuple(d0, d2);
-}
-
-pybind11::tuple py_fullciwfn_compute_rdms(const FullCIWfn &wfn, const Array<double> coeffs) {
-    Array<double> rdm1({static_cast<long>(2), wfn.nbasis, wfn.nbasis});
-    Array<double> rdm2({static_cast<long>(3), wfn.nbasis, wfn.nbasis, wfn.nbasis, wfn.nbasis});
-    compute_rdms(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
-                 reinterpret_cast<double *>(rdm1.request().ptr),
-                 reinterpret_cast<double *>(rdm2.request().ptr));
-    return pybind11::make_tuple(rdm1, rdm2);
-}
-
-pybind11::tuple py_genciwfn_compute_rdms(const GenCIWfn &wfn, const Array<double> coeffs) {
-    Array<double> rdm1({wfn.nbasis, wfn.nbasis});
-    Array<double> rdm2({wfn.nbasis, wfn.nbasis, wfn.nbasis, wfn.nbasis});
-    compute_rdms(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
-                 reinterpret_cast<double *>(rdm1.request().ptr),
-                 reinterpret_cast<double *>(rdm2.request().ptr));
-    return pybind11::make_tuple(rdm1, rdm2);
-}
-
-double py_dociwfn_compute_enpt2(const Ham &ham, const DOCIWfn &wfn, const Array<double> coeffs,
-                                const double energy, const double eps, const long nthread) {
-    return compute_enpt2(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr), energy,
-                         eps, nthread);
-}
-
-double py_fullciwfn_compute_enpt2(const Ham &ham, const FullCIWfn &wfn, const Array<double> coeffs,
-                                  const double energy, const double eps, const long nthread) {
-    return compute_enpt2(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr), energy,
-                         eps, nthread);
-}
-
-double py_genciwfn_compute_enpt2(const Ham &ham, const GenCIWfn &wfn, const Array<double> coeffs,
-                                 const double energy, const double eps, const long nthread) {
-    return compute_enpt2(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr), energy,
-                         eps, nthread);
 }
 
 namespace {

@@ -51,7 +51,7 @@ def test_solve_sparse(filename, wfn_type, occs, energy):
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
     op = pyci.sparse_op(ham, wfn)
-    es, cs = pyci.solve(op, n=1, ncv=30, tol=1.0e-6)
+    es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 
@@ -94,7 +94,8 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
     ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
-    es, cs = pyci.solve(ham, wfn, n=1, ncv=30, tol=1.0e-6)
+    op = pyci.sparse_op(ham, wfn)
+    es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
     if isinstance(wfn, pyci.doci_wfn):
         d0, d2 = pyci.compute_rdms(wfn, cs[0])
         npt.assert_allclose(np.trace(d0), wfn.nocc_up, rtol=0, atol=1.0e-9)
@@ -104,10 +105,10 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
         energy += np.einsum("ij,ij", k0, d0)
         energy += np.einsum("ij,ij", k2, d2)
         npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
-        rdm1, rdm2 = pyci.expand_rdms(d0, d2)
+        rdm1, rdm2 = pyci.spinize_rdms(d0, d2)
     elif isinstance(wfn, pyci.fullci_wfn):
         d1, d2 = pyci.compute_rdms(wfn, cs[0])
-        rdm1, rdm2 = pyci.expand_rdms(d1, d2)
+        rdm1, rdm2 = pyci.spinize_rdms(d1, d2)
     else:
         rdm1, rdm2 = pyci.compute_rdms(wfn, cs[0])
     with np.load(datafile("{0:s}_spinres.npz".format(filename))) as f:
@@ -192,7 +193,7 @@ def test_enpt2(filename, wfn_type, occs, energy):
     wfn = wfn_type(ham.nbasis, *occs)
     pyci.add_excitations(wfn, *range(0, max(wfn.nocc - 1, 1)))
     op = pyci.sparse_op(ham, wfn)
-    es, cs = pyci.solve(op)
+    es, cs = op.solve()
     e = pyci.compute_enpt2(ham, wfn, cs[0], es[0], 1.0e-4)
     npt.assert_allclose(e, energy)
 
@@ -244,7 +245,7 @@ def test_make_rdm_rdm2_two_particles_one_up_one_dn():
     coeffs /= np.linalg.norm(coeffs)
 
     d0, d1 = pyci.compute_rdms(wfn, coeffs)
-    _, rdm2 = pyci.expand_rdms(d0, d1)
+    _, rdm2 = pyci.spinize_rdms(d0, d1)
 
     # "Test out the diagonal RDM2"
     assert np.abs(rdm2[0, 0, 0, 0]) < 1e-5
@@ -377,7 +378,7 @@ def test_make_rdm_rdm1_two_particles_one_up_one_dn():
     coeffs /= np.linalg.norm(coeffs)
 
     d0, d1 = pyci.compute_rdms(wfn, coeffs)
-    rdm1, _ = pyci.expand_rdms(d0, d1)
+    rdm1, _ = pyci.spinize_rdms(d0, d1)
 
     assert np.abs(rdm1[0, 0] - coeffs[0] ** 2.0 - coeffs[1] ** 2.0) < 1e-5
     assert np.abs(rdm1[0, 1] - coeffs[0] * coeffs[2] - coeffs[1] * coeffs[3]) < 1e-5

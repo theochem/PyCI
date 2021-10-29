@@ -33,8 +33,8 @@
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 
-#include <Spectra/SymEigsSolver.h>
 #include <Spectra/MatOp/SparseSymMatProd.h>
+#include <Spectra/SymEigsSolver.h>
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -208,27 +208,41 @@ void setbit_det(const long, ulong *);
 
 void clearbit_det(const long, ulong *);
 
-long add_hci(const Ham &, DOCIWfn &, const double *, const double, const long = -1);
-
-long add_hci(const Ham &, FullCIWfn &, const double *, const double, const long = -1);
-
-long add_hci(const Ham &, GenCIWfn &, const double *, const double, const long = -1);
-
-double compute_overlap(const OneSpinWfn &, const OneSpinWfn &, const double *, const double *);
-
-double compute_overlap(const TwoSpinWfn &, const TwoSpinWfn &, const double *, const double *);
-
 void compute_rdms(const DOCIWfn &, const double *, double *, double *);
 
 void compute_rdms(const FullCIWfn &, const double *, double *, double *);
 
 void compute_rdms(const GenCIWfn &, const double *, double *, double *);
 
-double compute_enpt2(const Ham &, const DOCIWfn &, const double *, const double, const double, const long = -1);
+template<class WfnType>
+double compute_overlap(const WfnType &, const WfnType &, const double *, const double *);
 
-double compute_enpt2(const Ham &, const FullCIWfn &, const double *, const double, const double, const long = -1);
+template<class WfnType>
+long add_hci(const Ham &, WfnType &, const double *, const double, const long = -1);
 
-double compute_enpt2(const Ham &, const GenCIWfn &, const double *, const double, const double, const long = -1);
+template<class WfnType>
+double compute_enpt2(const Ham &, const WfnType &, const double *, const double, const double,
+                     const long = -1);
+
+/* Free Python interface functions. */
+
+long py_popcnt(const Array<ulong>);
+
+long py_ctz(const Array<ulong>);
+
+template<class WfnType>
+pybind11::tuple py_compute_rdms(const WfnType &, const Array<double>);
+
+template<class WfnType>
+double py_compute_overlap(const WfnType &, const WfnType &, const Array<double>,
+                          const Array<double>);
+
+template<class WfnType>
+long py_add_hci(const Ham &, WfnType &, const Array<double>, const double, const long = -1);
+
+template<class WfnType>
+double py_compute_enpt2(const Ham &, const WfnType &, const Array<double>, const double,
+                        const double, const long = -1);
 
 /* Hamiltonian class. */
 
@@ -611,7 +625,8 @@ public:
 
     void perform_op_symm(const double *, double *) const;
 
-    void solve_ci(const long, const double *, const long, const long, const double, double *, double *) const;
+    void solve_ci(const long, const double *, const long, const long, const double, double *,
+                  double *) const;
 
     template<class WfnType>
     void update(const Ham &, const WfnType &, const long, const long, const long);
@@ -622,7 +637,8 @@ public:
 
     Array<double> py_matvec_out(const Array<double>, Array<double>) const;
 
-    pybind11::tuple py_solve_ci(const long, pybind11::object, const long, const long, const double) const;
+    pybind11::tuple py_solve_ci(const long, pybind11::object, const long, const long,
+                                const double) const;
 
     template<class WfnType>
     void py_update(const Ham &, const WfnType &);
@@ -636,35 +652,5 @@ private:
 
     void add_row(const Ham &, const GenCIWfn &, const long, ulong *, long *, long *);
 };
-
-/* Free Python interface functions. */
-
-long py_popcnt(const Array<ulong>);
-
-long py_ctz(const Array<ulong>);
-
-long py_dociwfn_add_hci(const Ham &, DOCIWfn &, const Array<double>, const double, const long = -1);
-
-long py_fullciwfn_add_hci(const Ham &, FullCIWfn &, const Array<double>, const double, const long = -1);
-
-long py_genciwfn_add_hci(const Ham &, GenCIWfn &, const Array<double>, const double, const long = -1);
-
-double py_dociwfn_compute_overlap(const DOCIWfn &, const DOCIWfn &, const Array<double>, const Array<double>);
-
-double py_fullciwfn_compute_overlap(const FullCIWfn &, const FullCIWfn &, const Array<double>, const Array<double>);
-
-double py_genciwfn_compute_overlap(const GenCIWfn &, const GenCIWfn &, const Array<double>, const Array<double>);
-
-pybind11::tuple py_dociwfn_compute_rdms(const DOCIWfn &, const Array<double>);
-
-pybind11::tuple py_fullciwfn_compute_rdms(const FullCIWfn &, const Array<double>);
-
-pybind11::tuple py_genciwfn_compute_rdms(const GenCIWfn &, const Array<double>);
-
-double py_dociwfn_compute_enpt2(const Ham &, const DOCIWfn &, const Array<double>, const double, const double, const long = -1);
-
-double py_fullciwfn_compute_enpt2(const Ham &, const FullCIWfn &, const Array<double>, const double, const double, const long = -1);
-
-double py_genciwfn_compute_enpt2(const Ham &, const GenCIWfn &, const Array<double>, const double, const double, const long = -1);
 
 } // namespace pyci

@@ -431,4 +431,40 @@ void compute_rdms(const GenCIWfn &wfn, const double *coeffs, double *rdm1, doubl
     }
 }
 
+namespace {
+
+pybind11::tuple py_compute_rdms_impl(const DOCIWfn &wfn, const Array<double> coeffs) {
+    Array<double> d0({wfn.nbasis, wfn.nbasis});
+    Array<double> d2({wfn.nbasis, wfn.nbasis});
+    compute_rdms(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
+                 reinterpret_cast<double *>(d0.request().ptr),
+                 reinterpret_cast<double *>(d2.request().ptr));
+    return pybind11::make_tuple(d0, d2);
+}
+
+pybind11::tuple py_compute_rdms_impl(const FullCIWfn &wfn, const Array<double> coeffs) {
+    Array<double> rdm1({static_cast<long>(2), wfn.nbasis, wfn.nbasis});
+    Array<double> rdm2({static_cast<long>(3), wfn.nbasis, wfn.nbasis, wfn.nbasis, wfn.nbasis});
+    compute_rdms(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
+                 reinterpret_cast<double *>(rdm1.request().ptr),
+                 reinterpret_cast<double *>(rdm2.request().ptr));
+    return pybind11::make_tuple(rdm1, rdm2);
+}
+
+pybind11::tuple py_compute_rdms_impl(const GenCIWfn &wfn, const Array<double> coeffs) {
+    Array<double> rdm1({wfn.nbasis, wfn.nbasis});
+    Array<double> rdm2({wfn.nbasis, wfn.nbasis, wfn.nbasis, wfn.nbasis});
+    compute_rdms(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
+                 reinterpret_cast<double *>(rdm1.request().ptr),
+                 reinterpret_cast<double *>(rdm2.request().ptr));
+    return pybind11::make_tuple(rdm1, rdm2);
+}
+
+} // namespace
+
+template<class WfnType>
+pybind11::tuple py_compute_rdms(const WfnType &wfn, const Array<double> coeffs) {
+    return py_compute_rdms_impl(wfn, coeffs);
+}
+
 } // namespace pyci

@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-r"""PyCI Griebel-Knapek CI routines module."""
+r"""PyCI Griebel-Knapek CI module."""
 
 import numpy as np
 

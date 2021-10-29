@@ -985,11 +985,9 @@ be re-initialized from the wave function object.
 )""",
               py::arg("ham"), py::arg("wfn"));
 
-sparse_op.def("update", &SparseOp::py_update<FullCIWfn>,
-              py::arg("ham"), py::arg("wfn"));
+sparse_op.def("update", &SparseOp::py_update<FullCIWfn>, py::arg("ham"), py::arg("wfn"));
 
-sparse_op.def("update", &SparseOp::py_update<GenCIWfn>,
-              py::arg("ham"), py::arg("wfn"));
+sparse_op.def("update", &SparseOp::py_update<GenCIWfn>, py::arg("ham"), py::arg("wfn"));
 
 sparse_op.def("__call__", &SparseOp::py_matvec, R"""(
 Compute the matrix vector product of the sparse matrix operator with vector ``x``.
@@ -1080,7 +1078,7 @@ n : int
     Number of elements for which to reserve space.
 
 )""",
-                 py::arg("n"));
+              py::arg("n"));
 
 /*
 Section: Free functions
@@ -1139,7 +1137,7 @@ ctz : int
 )""",
       py::arg("det"));
 
-m.def("add_hci", &py_dociwfn_add_hci, R"""(
+m.def("add_hci", &py_add_hci<DOCIWfn>, R"""(
 Add determinants to a wave function by running an iteration of Heat-Bath CI.
 
 Parameters
@@ -1164,13 +1162,13 @@ ndet : int
       py::arg("ham"), py::arg("wfn"), py::arg("coeffs"), py::arg("eps") = 1.0e-5,
       py::arg("nthread") = -1);
 
-m.def("add_hci", &py_fullciwfn_add_hci, py::arg("ham"), py::arg("wfn"), py::arg("coeffs"),
+m.def("add_hci", &py_add_hci<FullCIWfn>, py::arg("ham"), py::arg("wfn"), py::arg("coeffs"),
       py::arg("eps") = 1.0e-5, py::arg("nthread") = -1);
 
-m.def("add_hci", &py_genciwfn_add_hci, py::arg("ham"), py::arg("wfn"), py::arg("coeffs"),
+m.def("add_hci", &py_add_hci<GenCIWfn>, py::arg("ham"), py::arg("wfn"), py::arg("coeffs"),
       py::arg("eps") = 1.0e-5, py::arg("nthread") = -1);
 
-m.def("compute_overlap", &py_dociwfn_compute_overlap, R"""(
+m.def("compute_overlap", &py_compute_overlap<OneSpinWfn>, R"""(
 Compute the overlap :math:`\left<\Psi_1|\Psi_2\right>` of two wave functions.
 
 Parameters
@@ -1192,13 +1190,10 @@ olp : float
 )""",
       py::arg("wfn1"), py::arg("wfn2"), py::arg("coeffs1"), py::arg("coeffs2"));
 
-m.def("compute_overlap", &py_fullciwfn_compute_overlap, py::arg("wfn1"), py::arg("wfn2"),
+m.def("compute_overlap", &py_compute_overlap<TwoSpinWfn>, py::arg("wfn1"), py::arg("wfn2"),
       py::arg("coeffs1"), py::arg("coeffs2"));
 
-m.def("compute_overlap", &py_genciwfn_compute_overlap, py::arg("wfn1"), py::arg("wfn2"),
-      py::arg("coeffs1"), py::arg("coeffs2"));
-
-m.def("compute_rdms", &py_dociwfn_compute_rdms, R"""(
+m.def("compute_rdms", &py_compute_rdms<DOCIWfn>, R"""(
 Compute the one- and two- particle reduced density matrices (RDMs) of a wave function.
 
 Parameters
@@ -1239,11 +1234,11 @@ For Generalized CI wave functions, ``rdm1`` and ``rdm2`` are the full 1-RDM and 
 )""",
       py::arg("wfn"), py::arg("coeffs"));
 
-m.def("compute_rdms", &py_fullciwfn_compute_rdms, py::arg("wfn"), py::arg("coeffs"));
+m.def("compute_rdms", &py_compute_rdms<FullCIWfn>, py::arg("wfn"), py::arg("coeffs"));
 
-m.def("compute_rdms", &py_genciwfn_compute_rdms, py::arg("wfn"), py::arg("coeffs"));
+m.def("compute_rdms", &py_compute_rdms<GenCIWfn>, py::arg("wfn"), py::arg("coeffs"));
 
-m.def("compute_enpt2", &py_dociwfn_compute_enpt2, R"""(
+m.def("compute_enpt2", &py_compute_enpt2<DOCIWfn>, R"""(
 Compute the second-order multi-reference Epstein-Nesbet (ENPT2) energy for a wave function.
 
 Parameters
@@ -1270,10 +1265,10 @@ pt_energy : float
       py::arg("ham"), py::arg("wfn"), py::arg("coeffs"), py::arg("energy"), py::arg("eps") = 1.0e-5,
       py::arg("nthread") = -1);
 
-m.def("compute_enpt2", &py_fullciwfn_compute_enpt2, py::arg("ham"), py::arg("wfn"),
+m.def("compute_enpt2", &py_compute_enpt2<FullCIWfn>, py::arg("ham"), py::arg("wfn"),
       py::arg("coeffs"), py::arg("energy"), py::arg("eps") = 1.0e-5, py::arg("nthread") = -1);
 
-m.def("compute_enpt2", &py_genciwfn_compute_enpt2, py::arg("ham"), py::arg("wfn"),
+m.def("compute_enpt2", &py_compute_enpt2<GenCIWfn>, py::arg("ham"), py::arg("wfn"),
       py::arg("coeffs"), py::arg("energy"), py::arg("eps") = 1.0e-5, py::arg("nthread") = -1);
 
 END_MODULE

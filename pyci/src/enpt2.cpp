@@ -21,28 +21,6 @@ typedef HashMap<ulong, std::pair<double, double>> PairHashMap;
 
 namespace {
 
-template<class WfnType>
-double compute_enpt2_tmpl(const Ham &, const WfnType &, const double *, const double, const double,
-                          long);
-}
-
-double compute_enpt2(const Ham &ham, const DOCIWfn &wfn, const double *coeffs, const double energy,
-                     const double eps, const long nthread) {
-    return compute_enpt2_tmpl<FullCIWfn>(ham, FullCIWfn(wfn), coeffs, energy, eps, nthread);
-}
-
-double compute_enpt2(const Ham &ham, const FullCIWfn &wfn, const double *coeffs,
-                     const double energy, const double eps, const long nthread) {
-    return compute_enpt2_tmpl<FullCIWfn>(ham, wfn, coeffs, energy, eps, nthread);
-}
-
-double compute_enpt2(const Ham &ham, const GenCIWfn &wfn, const double *coeffs, const double energy,
-                     const double eps, const long nthread) {
-    return compute_enpt2_tmpl<GenCIWfn>(ham, wfn, coeffs, energy, eps, nthread);
-}
-
-namespace {
-
 void compute_enpt2_thread_condense(PairHashMap &terms, PairHashMap &t_terms, const long ithread) {
     std::pair<double, double> *pair;
     if (!ithread)
@@ -369,9 +347,11 @@ void compute_enpt2_thread(const Ham &ham, const WfnType &wfn, PairHashMap &terms
                                    &tmps[0]);
 }
 
+} // namespace
+
 template<class WfnType>
-double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coeffs,
-                          const double energy, const double eps, long nthread) {
+double compute_enpt2(const Ham &ham, const WfnType &wfn, const double *coeffs, const double energy,
+                     const double eps, long nthread) {
     if (nthread == -1)
         nthread = get_num_threads();
     long chunksize = wfn.ndet / nthread + static_cast<bool>(wfn.ndet % nthread);
@@ -403,6 +383,32 @@ double compute_enpt2_tmpl(const Ham &ham, const WfnType &wfn, const double *coef
     return result;
 }
 
-} // namespace
+template double compute_enpt2<FullCIWfn>(const Ham &, const FullCIWfn &, const double *,
+                                         const double, const double, long);
+
+template double compute_enpt2<GenCIWfn>(const Ham &, const GenCIWfn &, const double *, const double,
+                                        const double, long);
+
+template<>
+double compute_enpt2<DOCIWfn>(const Ham &ham, const DOCIWfn &wfn, const double *coeffs,
+                              const double energy, const double eps, long nthread) {
+    return compute_enpt2<FullCIWfn>(ham, FullCIWfn(wfn), coeffs, energy, eps, nthread);
+}
+
+template<class WfnType>
+double py_compute_enpt2(const Ham &ham, const WfnType &wfn, const Array<double> coeffs,
+                        const double energy, const double eps, const long nthread) {
+    return compute_enpt2<WfnType>(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
+                                  energy, eps, nthread);
+}
+
+template double py_compute_enpt2<DOCIWfn>(const Ham &, const DOCIWfn &, const Array<double>,
+                                          const double, const double, const long);
+
+template double py_compute_enpt2<FullCIWfn>(const Ham &, const FullCIWfn &, const Array<double>,
+                                            const double, const double, const long);
+
+template double py_compute_enpt2<GenCIWfn>(const Ham &, const GenCIWfn &, const Array<double>,
+                                           const double, const double, const long);
 
 } // namespace pyci

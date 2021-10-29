@@ -19,27 +19,6 @@ namespace pyci {
 
 namespace {
 
-template<class WfnType>
-long add_hci_tmpl(const Ham &, WfnType &, const double *, const double, long);
-}
-
-long add_hci(const Ham &ham, DOCIWfn &wfn, const double *coeffs, const double eps,
-             const long nthread) {
-    return add_hci_tmpl<DOCIWfn>(ham, wfn, coeffs, eps, nthread);
-}
-
-long add_hci(const Ham &ham, FullCIWfn &wfn, const double *coeffs, const double eps,
-             const long nthread) {
-    return add_hci_tmpl<FullCIWfn>(ham, wfn, coeffs, eps, nthread);
-}
-
-long add_hci(const Ham &ham, GenCIWfn &wfn, const double *coeffs, const double eps,
-             const long nthread) {
-    return add_hci_tmpl<GenCIWfn>(ham, wfn, coeffs, eps, nthread);
-}
-
-namespace {
-
 void hci_thread_add_dets(const Ham &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
                          const double eps, const long idet, ulong *det, long *occs, long *virs) {
     long i, j, k, l;
@@ -265,9 +244,10 @@ void hci_thread(const Ham &ham, const WfnType &wfn, WfnType &t_wfn, const double
         hci_thread_add_dets(ham, wfn, t_wfn, coeffs, eps, i, &det[0], &occs[0], &virs[0]);
 };
 
+} // namespace
+
 template<class WfnType>
-long add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps,
-                  long nthread) {
+long add_hci(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps, long nthread) {
     long ndet_old = wfn.ndet;
     if (nthread == -1)
         nthread = get_num_threads();
@@ -296,6 +276,26 @@ long add_hci_tmpl(const Ham &ham, WfnType &wfn, const double *coeffs, const doub
     return wfn.ndet - ndet_old;
 }
 
-} // namespace
+template long add_hci<DOCIWfn>(const Ham &, DOCIWfn &, const double *, const double, long);
+
+template long add_hci<FullCIWfn>(const Ham &, FullCIWfn &, const double *, const double, long);
+
+template long add_hci<GenCIWfn>(const Ham &, GenCIWfn &, const double *, const double, long);
+
+template<class WfnType>
+long py_add_hci(const Ham &ham, WfnType &wfn, const Array<double> coeffs, const double eps,
+                const long nthread) {
+    return add_hci<WfnType>(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr), eps,
+                            nthread);
+}
+
+template long py_add_hci<DOCIWfn>(const Ham &, DOCIWfn &, const Array<double>, const double,
+                                  const long);
+
+template long py_add_hci<FullCIWfn>(const Ham &, FullCIWfn &, const Array<double>, const double,
+                                    const long);
+
+template long py_add_hci<GenCIWfn>(const Ham &, GenCIWfn &, const Array<double>, const double,
+                                   const long);
 
 } // namespace pyci

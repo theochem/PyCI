@@ -20,7 +20,7 @@ PyCI
 ====
 
 PyCI_ is a flexible *ab-initio* quantum chemistry library for Slater determinant Configuration
-Interaction, in Python 3.
+Interaction, for Python 3.
 
 PyCI is distributed under the GNU General Public License version 3 (GPLv3).
 
