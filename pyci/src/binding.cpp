@@ -956,15 +956,15 @@ symmetric : bool, default=False
 
 )""",
               py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
-              py::arg("symmetric") = false);
+              py::arg("symmetric") = true);
 
 sparse_op.def(py::init<const Ham &, const FullCIWfn &, const long, const long, const bool>(),
               py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
-              py::arg("symmetric") = false);
+              py::arg("symmetric") = true);
 
 sparse_op.def(py::init<const Ham &, const GenCIWfn &, const long, const long, const bool>(),
               py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
-              py::arg("symmetric") = false);
+              py::arg("symmetric") = true);
 
 sparse_op.def("update", &SparseOp::py_update<DOCIWfn>, R"""(
 Update a sparse matrix operator for the HCI algorithm.

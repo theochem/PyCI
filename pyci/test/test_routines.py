@@ -91,7 +91,7 @@ def test_sparse_rectangular(filename, wfn_type, occs, energy):
     wfn = wfn_type(ham.nbasis, *occs)
     pyci.add_excitations(wfn, 0, 1, 2)
     nrow = len(wfn) - 10
-    op = pyci.sparse_op(ham, wfn, nrow)
+    op = pyci.sparse_op(ham, wfn, nrow, symmetric=False)
     assert op.shape == (nrow, len(wfn))
     y = op(np.ones(op.shape[1], dtype=pyci.c_double))
     assert y.ndim == 1

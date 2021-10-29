@@ -17,12 +17,6 @@ PYTHON ?= python3
 
 CXX ?= c++
 
-CHUNKSIZE_MIN ?= 1024
-
-SPARSEOP_RESIZE_FACTOR ?= 1.5
-
-SPOOKYHASH_SEED ?= 0xdeadbeefdeadbeefUL
-
 INC_DIRS := eigen spectra/include parallel-hashmap pybind11/include
 
 CFLAGS := --std=c++14 -Wall -pipe -O3 -pthread -fPIC -flto -fno-plt -fwrapv -fvisibility=hidden
@@ -33,9 +27,6 @@ CFLAGS += -I$(shell $(PYTHON) -c "import numpy; print(numpy.get_include())")
 CFLAGS += $(addprefix -Ilib/,$(INC_DIRS))
 
 CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
-CFLAGS += -DPYCI_CHUNKSIZE_MIN=$(CHUNKSIZE_MIN)
-CFLAGS += -DPYCI_SPARSEOP_RESIZE_FACTOR=$(SPARSEOP_RESIZE_FACTOR)
-CFLAGS += -DPYCI_SPOOKYHASH_SEED=$(SPOOKYHASH_SEED)
 
 ifeq ($(shell uname -s),Darwin)
 CFLAGS += -undefined dynamic_lookup
@@ -65,8 +56,8 @@ test:
 	$(PYTHON) -m pycodestyle -v ./pyci
 	$(PYTHON) -m pydocstyle -v ./pyci
 
-pyci/pyci.so: $(LIBS) $(SRCS) $(HDRS)
-	$(CXX) $(CFLAGS) -shared $(SRCS) -o $@
+pyci/pyci.so: $(SRCS) $(HDRS) $(LIBS)
+	$(CXX) $(CFLAGS) -shared pyci/src/pyci.cpp -o $@
 
 lib/eigen:
 	@git clone https://gitlab.com/libeigen/eigen.git $@
