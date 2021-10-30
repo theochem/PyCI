@@ -14,17 +14,29 @@
     : You should have received a copy of the GNU General Public License
     : along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-README
-######
+|Python 3|
 
-.. include:: README.rst
+PyCI
+####
+
+PyCI_ is a flexible quantum chemistry Configuration Interaction library for Python 3.
+
+PyCI is distributed under the GNU General Public License version 3 (GPLv3).
+
+See http://www.gnu.org/licenses/ for more information.
 
 Table of Contents
-#################
+=================
 
 .. toctree::
    :maxdepth: 2
 
    install
-   getting_started
    API
+..
+    getting_started
+
+.. _PyCI:   http://github.com/msricher/PyCI/
+
+.. |Python 3| image:: http://img.shields.io/badge/python-3-blue.svg
+   :target: https://docs.python.org/3.8/

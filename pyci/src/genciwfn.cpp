@@ -45,24 +45,24 @@ GenCIWfn::GenCIWfn(const FullCIWfn &wfn) : OneSpinWfn(wfn.nbasis * 2, wfn.nocc, 
 
 GenCIWfn::GenCIWfn(const std::string &filename) : OneSpinWfn(filename) {
     if (nocc_dn)
-        throw std::runtime_error("nocc_dn != 0");
+        throw std::invalid_argument("nocc_dn != 0");
 }
 
 GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd) : OneSpinWfn(nb, nu, nd) {
     if (nocc_dn)
-        throw std::runtime_error("nocc_dn != 0");
+        throw std::invalid_argument("nocc_dn != 0");
 }
 
 GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd, const long n, const ulong *ptr)
     : OneSpinWfn(nb, nu, nd, n, ptr) {
     if (nocc_dn)
-        throw std::runtime_error("nocc_dn != 0");
+        throw std::invalid_argument("nocc_dn != 0");
 }
 
 GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd, const long n, const long *ptr)
     : OneSpinWfn(nb, nu, nd, n, ptr) {
     if (nocc_dn)
-        throw std::runtime_error("nocc_dn != 0");
+        throw std::invalid_argument("nocc_dn != 0");
 }
 
 GenCIWfn::GenCIWfn(const long nb, const long nu, const long nd, const Array<ulong> array)

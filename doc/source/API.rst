@@ -17,8 +17,8 @@
 API Documentation
 #################
 
-C++ extension
-=============
+Constants
+=========
 
 .. autodata:: pyci.__version__
 
@@ -30,56 +30,6 @@ Numerical Types
 .. autodata:: pyci.c_ulong
 
 .. autodata:: pyci.c_double
-
-Threading
----------
-
-The number of threads to use is decided as follows, in decreasing priority:
-
-- The value of a keyword argument ``nthread=`` to a particular PyCI function or method call
-- The value of ``n`` from the most recent invokation of ``pyci.set_num_threads(n)``
-- The value of environment variable ``PYCI_NUM_THREADS`` when Python is started
-- The number of threads supported by the hardware (``std::thread::hardware_concurrency()``)
-
-The sparse matrix operator matrix-vector product and eigenproblem methods will also use OpenMP for
-multi-threading if PyCI was compiled with OpenMP support, i.e., with the ``-fopenmp`` C++ flag.
-The threading for these methods can be controlled as usual for OpenMP, or simply by compiling PyCI
-without OpenMP support.
-
-.. autofunction:: pyci.get_num_threads
-
-.. autofunction:: pyci.set_num_threads
-
-Functions
-=========
-
-Selected CI routines
---------------------
-
-.. autofunction:: pyci.add_excitations
-
-.. autofunction:: pyci.add_seniorities
-
-.. autofunction:: pyci.add_gkci
-
-.. autofunction:: pyci.add_hci
-
-CI Solver
----------
-
-.. autofunction:: pyci.solve
-
-Post-CI routines
-----------------
-
-Integral transformations
-------------------------
-
-.. autofunction:: pyci.make_senzero_integrals
-
-.. autofunction:: pyci.reduce_senzero_integrals
-
-.. autofunction:: pyci.make_rdms
 
 Classes
 =======
@@ -125,3 +75,50 @@ Sparse matrix operator
 
 .. autoclass:: pyci.sparse_op
     :members:
+
+Functions
+=========
+
+Threading
+---------
+
+The number of threads to use is decided as follows, in decreasing priority:
+
+- The value of a keyword argument ``nthread=`` to a particular PyCI function or method call
+- The value of ``n`` from the most recent invokation of ``pyci.set_num_threads(n)``
+- The value of environment variable ``PYCI_NUM_THREADS`` when Python is started
+- The number of threads supported by the hardware (``std::thread::hardware_concurrency()``)
+
+.. autofunction:: pyci.get_num_threads
+
+.. autofunction:: pyci.set_num_threads
+
+Selected CI routines
+--------------------
+
+.. autofunction:: pyci.add_hci
+
+.. autofunction:: pyci.add_excitations
+
+.. autofunction:: pyci.add_seniorities
+
+.. autofunction:: pyci.add_gkci
+
+
+Post-CI routines
+----------------
+
+.. autofunction:: pyci.compute_rdms
+
+.. autofunction:: pyci.spinize_rdms
+
+.. autofunction:: pyci.compute_enpt2
+
+.. autofunction:: pyci.compute_overlap
+
+Integral transformations
+------------------------
+
+.. autofunction:: pyci.make_senzero_integrals
+
+.. autofunction:: pyci.reduce_senzero_integrals

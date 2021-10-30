@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-from filecmp import cmp as compare
 from tempfile import NamedTemporaryFile
 
 import pytest

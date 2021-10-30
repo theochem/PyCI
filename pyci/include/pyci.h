@@ -584,7 +584,6 @@ public:
 
 struct SparseOp final {
 public:
-    using Scalar = double;
     long nrow, ncol, size;
     double ecore;
     bool symmetric;
@@ -606,10 +605,6 @@ public:
     SparseOp(const Ham &, const FullCIWfn &, const long, const long, const bool);
 
     SparseOp(const Ham &, const GenCIWfn &, const long, const long, const bool);
-
-    long rows(void) const;
-
-    long cols(void) const;
 
     pybind11::object dtype(void) const;
 

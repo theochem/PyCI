@@ -25,24 +25,24 @@ DOCIWfn::DOCIWfn(DOCIWfn &&wfn) noexcept : OneSpinWfn(wfn) {
 
 DOCIWfn::DOCIWfn(const std::string &filename) : OneSpinWfn(filename) {
     if (nocc_up != nocc_dn)
-        throw std::runtime_error("nocc_up != nocc_dn");
+        throw std::invalid_argument("nocc_up != nocc_dn");
 }
 
 DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd) : OneSpinWfn(nb, nu, nd) {
     if (nocc_up != nocc_dn)
-        throw std::runtime_error("nocc_up != nocc_dn");
+        throw std::invalid_argument("nocc_up != nocc_dn");
 }
 
 DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const long n, const ulong *ptr)
     : OneSpinWfn(nb, nu, nd, n, ptr) {
     if (nocc_up != nocc_dn)
-        throw std::runtime_error("nocc_up != nocc_dn");
+        throw std::invalid_argument("nocc_up != nocc_dn");
 }
 
 DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const long n, const long *ptr)
     : OneSpinWfn(nb, nu, nd, n, ptr) {
     if (nocc_up != nocc_dn)
-        throw std::runtime_error("nocc_up != nocc_dn");
+        throw std::invalid_argument("nocc_up != nocc_dn");
 }
 
 DOCIWfn::DOCIWfn(const long nb, const long nu, const long nd, const Array<ulong> array)

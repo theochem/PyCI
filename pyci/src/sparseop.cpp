@@ -70,14 +70,6 @@ SparseOp::SparseOp(const Ham &ham, const GenCIWfn &wfn, const long rows, const l
     update<GenCIWfn>(ham, wfn, nrow, ncol, 0);
 }
 
-long SparseOp::rows(void) const {
-    return nrow;
-}
-
-long SparseOp::cols(void) const {
-    return ncol;
-}
-
 pybind11::object SparseOp::dtype(void) const {
     return pybind11::dtype::of<double>();
 }
@@ -122,9 +114,9 @@ void SparseOp::perform_op_symm(const double *x, double *y) const {
 void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, const long maxiter,
                         const double tol, double *evals, double *evecs) const {
     if ((nrow > 1 && n >= nrow) || (nrow == 1 && n > 1)) {
-        throw std::runtime_error("cannot find >=n eigenpairs for sparse operator with n rows");
+        throw std::invalid_argument("cannot find >=n eigenpairs for sparse operator with n rows");
     } else if (!symmetric) {
-        throw std::runtime_error("Can only solve sparse symmetric matrix operators");
+        throw pybind11::type_error("Can only solve sparse symmetric matrix operators");
     } else if (nrow == 1) {
         *evals = get_element(0, 0) + ecore;
         *evecs = 1.0;
