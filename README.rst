@@ -62,7 +62,7 @@ Some header-only C++ libraries are downloaded automatically:
 
 __ Parallel-Hashmap_
 
-Install Dependencies
+Install dependencies
 ~~~~~~~~~~~~~~~~~~~~
 
 The programs required to build and run PyCI can be installed with your operating system's package
@@ -105,7 +105,7 @@ Run the following to test PyCI:
 
     make test
 
-Build Documentation
+Build documentation
 ~~~~~~~~~~~~~~~~~~~
 
 Run the following in your shell to install the Read the Docs Sphinx theme via pip:

@@ -21,7 +21,7 @@ import pyci
 project = "PyCI"
 
 
-copyright = "2020, Michael Richer"
+copyright = "2021, Michael Richer"
 
 
 author = "Michael Richer"
