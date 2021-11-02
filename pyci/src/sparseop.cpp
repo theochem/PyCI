@@ -139,7 +139,7 @@ void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, cons
     eigenvalues = eigs.eigenvalues();
     for (long i = 0; i < n; ++i)
         evals[i] += ecore;
-    eigenvectors = eigs.eigenvectors();
+    eigenvectors = eigs.eigenvectors(n);
 }
 
 Array<double> SparseOp::py_matvec(const Array<double> x) const {

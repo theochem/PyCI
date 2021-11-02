@@ -95,7 +95,7 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
     op = pyci.sparse_op(ham, wfn)
-    es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
+    es, cs = op.solve(n=3, ncv=30, tol=1.0e-6)
     if isinstance(wfn, pyci.doci_wfn):
         d0, d2 = pyci.compute_rdms(wfn, cs[0])
         npt.assert_allclose(np.trace(d0), wfn.nocc_up, rtol=0, atol=1.0e-9)

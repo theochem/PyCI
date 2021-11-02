@@ -134,10 +134,10 @@ using AlignedVector = std::vector<T, Eigen::aligned_allocator<T>>;
 #define PYCI_MAT_DYNAMIC Eigen::Dynamic, Eigen::Dynamic
 
 template<typename T>
-using DenseMatrix = Eigen::Map<Eigen::Matrix<T, PYCI_MAT_DYNAMIC, Eigen::RowMajor>>;
+using DenseMatrix = Eigen::Map<Eigen::Matrix<T, PYCI_MAT_DYNAMIC>>;
 
 template<typename T>
-using CDenseMatrix = Eigen::Map<const Eigen::Matrix<T, PYCI_MAT_DYNAMIC, Eigen::RowMajor>>;
+using CDenseMatrix = Eigen::Map<const Eigen::Matrix<T, PYCI_MAT_DYNAMIC>>;
 
 template<typename T>
 using DenseVector = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>>;
