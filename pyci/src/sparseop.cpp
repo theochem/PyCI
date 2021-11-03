@@ -136,10 +136,10 @@ void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, cons
         throw std::runtime_error("did not converge");
     DenseVector<double> eigenvalues(evals, n);
     DenseMatrix<double> eigenvectors(evecs, nrow, n);
-    eigenvalues = eigs.eigenvalues();
+    eigenvalues = eigs.eigenvalues().reverse();
     for (long i = 0; i < n; ++i)
         evals[i] += ecore;
-    eigenvectors = eigs.eigenvectors(n);
+    eigenvectors = eigs.eigenvectors(n).rowwise().reverse();
 }
 
 Array<double> SparseOp::py_matvec(const Array<double> x) const {
