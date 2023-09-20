@@ -19,7 +19,7 @@ CXX ?= c++
 
 INC_DIRS := eigen spectra/include parallel-hashmap pybind11/include
 
-CFLAGS := --std=c++14 -Wall -pipe -O3 -pthread -fPIC -flto -fno-plt -fwrapv -fvisibility=hidden
+CFLAGS := --std=c++17 -Wall -pipe -O3 -pthread -fPIC -flto=auto -fno-plt -fwrapv -fvisibility=hidden
 
 CFLAGS += -Ipyci/include
 CFLAGS += -I$(shell $(PYTHON) -c "import sysconfig; print(sysconfig.get_paths()['include'])")
