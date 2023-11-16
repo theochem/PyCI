@@ -56,6 +56,9 @@ test:
 	$(PYTHON) -m pycodestyle -v ./pyci
 	$(PYTHON) -m pydocstyle -v ./pyci
 
+compile_flags.txt:
+	echo '$(CFLAGS)' | tr ' ' '\n' > $@
+
 pyci/pyci.so: $(SRCS) $(HDRS) $(LIBS)
 	$(CXX) $(CFLAGS) -shared pyci/src/pyci.cpp -o $@
 
