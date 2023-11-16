@@ -1240,6 +1240,57 @@ m.def("compute_rdms", &py_compute_rdms<FullCIWfn>, py::arg("wfn"), py::arg("coef
 
 m.def("compute_rdms", &py_compute_rdms<GenCIWfn>, py::arg("wfn"), py::arg("coeffs"));
 
+m.def("compute_transition_rdms", &py_compute_transition_rdms<DOCIWfn>, R"""(
+Compute the one- and two- particle transition reduced density matrices (RDMs) of two wave functions.
+
+Parameters
+----------
+wfn1 : pyci.wavefunction
+    Wave function.
+wfn2 : pyci.wavefunction
+    Wave function.
+coeffs1 : numpy.ndarray
+    Coefficient vector.
+coeffs2 : numpy.ndarray
+    Coefficient vector.
+
+Returns
+-------
+d1 : numpy.ndarray
+    One-particle TRDM matrix.
+d2 : numpy.ndarray
+    Two-particle TRDM matrix.
+
+Notes
+-----
+For DOCI wave functions, this method returns two nbasis-by-nbasis matrices, which include the unique
+seniority-zero and seniority-two terms from the full 2-TRDMs:
+
+.. math::
+
+    D_0 = \left<pp|qq\right>
+
+.. math::
+
+    D_2 = \left<pq|pq\right>
+
+The diagonal elements of :math:`D_0` are equal to the 1-TRDM elements :math:`\left<p'|p\right>`.
+
+For FullCI wave functions, the leading dimension of ``rdm1`` has length 2 and specifies the
+spin-block 0) "up-up" or 1) "down-down", and the leading dimensions of ``rdm2`` has length 3 and
+specifies the spin-block 0) "up-up-up-up", 1) "down-down-down-down', or 2) "up-down-up-down".
+
+For Generalized CI wave functions, ``rdm1`` and ``rdm2`` are the full 1-TRDM and 2-TRDM, respectively.
+
+)""",
+      py::arg("wfn1"), py::arg("wfn2"), py::arg("coeffs1"), py::arg("coeffs2"));
+
+m.def("compute_transition_rdms", &py_compute_transition_rdms<FullCIWfn>,
+      py::arg("wfn1"), py::arg("wfn2"), py::arg("coeffs1"), py::arg("coeffs2"));
+
+m.def("compute_transition_rdms", &py_compute_transition_rdms<GenCIWfn>,
+      py::arg("wfn1"), py::arg("wfn2"), py::arg("coeffs1"), py::arg("coeffs2"));
+
 m.def("compute_enpt2", &py_compute_enpt2<DOCIWfn>, R"""(
 Compute the second-order multi-reference Epstein-Nesbet (ENPT2) energy for a wave function.
 

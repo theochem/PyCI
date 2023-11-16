@@ -214,6 +214,15 @@ void compute_rdms(const FullCIWfn &, const double *, double *, double *);
 
 void compute_rdms(const GenCIWfn &, const double *, double *, double *);
 
+void compute_transition_rdms(const DOCIWfn &, const DOCIWfn &, const double *, const double *,
+                             double *, double *);
+
+void compute_transition_rdms(const FullCIWfn &, const FullCIWfn &, const double *, const double *,
+                             double *, double *);
+
+void compute_transition_rdms(const GenCIWfn &, const GenCIWfn &, const double *, const double *,
+                             double *, double *);
+
 template<class WfnType>
 double compute_overlap(const WfnType &, const WfnType &, const double *, const double *);
 
@@ -232,6 +241,10 @@ long py_ctz(const Array<ulong>);
 
 template<class WfnType>
 pybind11::tuple py_compute_rdms(const WfnType &, const Array<double>);
+
+template<class WfnType>
+pybind11::tuple py_compute_transition_rdms(const WfnType &, const WfnType &, const Array<double>,
+                                           const Array<double>);
 
 template<class WfnType>
 double py_compute_overlap(const WfnType &, const WfnType &, const Array<double>,

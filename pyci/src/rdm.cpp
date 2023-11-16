@@ -431,6 +431,61 @@ void compute_rdms(const GenCIWfn &wfn, const double *coeffs, double *rdm1, doubl
     }
 }
 
+void compute_transition_rdms(const DOCIWfn &wfn1, const DOCIWfn &wfn2, const double *coeffs1, const double *coeffs2, double *d0, double *d2) {
+    // prepare working vectors
+    AlignedVector<ulong> v_det(wfn1.nword);
+    AlignedVector<long> v_occs(wfn1.nocc_up);
+    AlignedVector<long> v_virs(wfn1.nvir_up);
+    ulong *det = &v_det[0];
+    long *occs = &v_occs[0], *virs = &v_virs[0];
+    // fill rdms with zeros
+    long i = wfn1.nbasis * wfn1.nbasis, j = 0;
+    while (j < i) {
+        d0[j] = 0;
+        d2[j++] = 0;
+    }
+    // iterate over determinants
+    long idet, jdet, k, l;
+    double val1, val2;
+    for (idet = 0; idet < wfn1.ndet; ++idet) {
+        // fill working vectors
+        wfn1.copy_det(idet, det);
+        fill_occs(wfn1.nword, det, occs);
+        fill_virs(wfn1.nword, wfn1.nbasis, det, virs);
+        // diagonal elements
+        jdet = wfn2.index_det(det);
+        val1 = (jdet =! -1) ? (coeffs1[idet] * coeffs2[jdet]) : 0.;
+        for (i = 0; i < wfn1.nocc_up; ++i) {
+            k = occs[i];
+            d0[k * (wfn1.nbasis + 1)] += val1;
+            for (j = i + 1; j < wfn1.nocc_up; ++j) {
+                l = occs[j];
+                d2[wfn1.nbasis * k + l] += 0.5 * val1;
+                d2[wfn1.nbasis * l + k] += 0.5 * val1;
+            }
+            // pair excitation elements
+            for (j = 0; j < wfn1.nvir_up; ++j) {
+                l = virs[j];
+                excite_det(k, l, det);
+                jdet = wfn2.index_det(det);
+                excite_det(l, k, det);
+                // check if excited determinant is in wfn
+                if (jdet != -1) {
+                    val2 = 0.5 * coeffs1[idet] * coeffs2[jdet];
+                    d0[wfn1.nbasis * k + l] += val2;
+                    d0[wfn1.nbasis * l + k] += val2;
+                }
+            }
+        }
+    }
+}
+
+void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const double *coeffs1, const double *coeffs2, double *d0, double *d2) {
+}
+
+void compute_transition_rdms(const GenCIWfn &wfn1, const GenCIWfn &wfn2, const double *coeffs1, const double *coeffs2, double *d0, double *d2) {
+}
+
 namespace {
 
 inline pybind11::tuple py_compute_rdms_impl(const DOCIWfn &wfn, const Array<double> coeffs) {
@@ -460,11 +515,49 @@ inline pybind11::tuple py_compute_rdms_impl(const GenCIWfn &wfn, const Array<dou
     return pybind11::make_tuple(rdm1, rdm2);
 }
 
+inline pybind11::tuple py_compute_transition_rdms_impl(const DOCIWfn &wfn1, const DOCIWfn &wfn2, const Array<double> coeffs1, const Array<double> coeffs2) {
+    Array<double> d0({wfn1.nbasis, wfn1.nbasis});
+    Array<double> d2({wfn1.nbasis, wfn1.nbasis});
+    compute_transition_rdms(wfn1, wfn2,
+                 reinterpret_cast<const double *>(coeffs1.request().ptr),
+                 reinterpret_cast<const double *>(coeffs2.request().ptr),
+                 reinterpret_cast<double *>(d0.request().ptr),
+                 reinterpret_cast<double *>(d2.request().ptr));
+    return pybind11::make_tuple(d0, d2);
+}
+
+inline pybind11::tuple py_compute_transition_rdms_impl(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const Array<double> coeffs1, const Array<double> coeffs2) {
+    Array<double> d0({wfn1.nbasis, wfn1.nbasis});
+    Array<double> d2({wfn1.nbasis, wfn1.nbasis});
+    compute_transition_rdms(wfn1, wfn2,
+                 reinterpret_cast<const double *>(coeffs1.request().ptr),
+                 reinterpret_cast<const double *>(coeffs2.request().ptr),
+                 reinterpret_cast<double *>(d0.request().ptr),
+                 reinterpret_cast<double *>(d2.request().ptr));
+    return pybind11::make_tuple(d0, d2);
+}
+
+inline pybind11::tuple py_compute_transition_rdms_impl(const GenCIWfn &wfn1, const GenCIWfn &wfn2, const Array<double> coeffs1, const Array<double> coeffs2) {
+    Array<double> d0({wfn1.nbasis, wfn1.nbasis});
+    Array<double> d2({wfn1.nbasis, wfn1.nbasis});
+    compute_transition_rdms(wfn1, wfn2,
+                 reinterpret_cast<const double *>(coeffs1.request().ptr),
+                 reinterpret_cast<const double *>(coeffs2.request().ptr),
+                 reinterpret_cast<double *>(d0.request().ptr),
+                 reinterpret_cast<double *>(d2.request().ptr));
+    return pybind11::make_tuple(d0, d2);
+}
+
 } // namespace
 
 template<class WfnType>
 pybind11::tuple py_compute_rdms(const WfnType &wfn, const Array<double> coeffs) {
     return py_compute_rdms_impl(wfn, coeffs);
+}
+
+template<class WfnType>
+pybind11::tuple py_compute_transition_rdms(const WfnType &wfn1, const WfnType &wfn2, const Array<double> coeffs1, const Array<double> coeffs2) {
+    return py_compute_transition_rdms_impl(wfn1, wfn2, coeffs1, coeffs2);
 }
 
 } // namespace pyci
