@@ -890,25 +890,25 @@ inline pybind11::tuple py_compute_transition_rdms_impl(const DOCIWfn &wfn1, cons
 }
 
 inline pybind11::tuple py_compute_transition_rdms_impl(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const Array<double> coeffs1, const Array<double> coeffs2) {
-    Array<double> d0({wfn1.nbasis, wfn1.nbasis});
-    Array<double> d2({wfn1.nbasis, wfn1.nbasis});
+    Array<double> rdm1({static_cast<long>(2), wfn1.nbasis, wfn1.nbasis});
+    Array<double> rdm2({static_cast<long>(3), wfn1.nbasis, wfn1.nbasis, wfn1.nbasis, wfn1.nbasis});
     compute_transition_rdms(wfn1, wfn2,
                  reinterpret_cast<const double *>(coeffs1.request().ptr),
                  reinterpret_cast<const double *>(coeffs2.request().ptr),
-                 reinterpret_cast<double *>(d0.request().ptr),
-                 reinterpret_cast<double *>(d2.request().ptr));
-    return pybind11::make_tuple(d0, d2);
+                 reinterpret_cast<double *>(rdm1.request().ptr),
+                 reinterpret_cast<double *>(rdm2.request().ptr));
+    return pybind11::make_tuple(rdm1, rdm2);
 }
 
 inline pybind11::tuple py_compute_transition_rdms_impl(const GenCIWfn &wfn1, const GenCIWfn &wfn2, const Array<double> coeffs1, const Array<double> coeffs2) {
-    Array<double> d0({wfn1.nbasis, wfn1.nbasis});
-    Array<double> d2({wfn1.nbasis, wfn1.nbasis});
+    Array<double> rdm1({wfn1.nbasis, wfn1.nbasis});
+    Array<double> rdm2({wfn1.nbasis, wfn1.nbasis, wfn1.nbasis, wfn1.nbasis});
     compute_transition_rdms(wfn1, wfn2,
                  reinterpret_cast<const double *>(coeffs1.request().ptr),
                  reinterpret_cast<const double *>(coeffs2.request().ptr),
-                 reinterpret_cast<double *>(d0.request().ptr),
-                 reinterpret_cast<double *>(d2.request().ptr));
-    return pybind11::make_tuple(d0, d2);
+                 reinterpret_cast<double *>(rdm1.request().ptr),
+                 reinterpret_cast<double *>(rdm2.request().ptr));
+    return pybind11::make_tuple(rdm1, rdm2);
 }
 
 } // namespace

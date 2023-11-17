@@ -132,6 +132,53 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
     npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
 
 
+@pytest.mark.parametrize(
+    "filename, wfn_type, occs, energy",
+    [
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
+        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
+    ],
+)
+def test_compute_transition_rdms(filename, wfn_type, occs, energy):
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    wfn1 = wfn_type(ham.nbasis, *occs)
+    wfn1.add_all_dets()
+    op = pyci.sparse_op(ham, wfn1)
+    es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
+    if isinstance(wfn1, pyci.doci_wfn):
+        d0, d2 = pyci.compute_transition_rdms(wfn1, wfn1, cs[0], cs[0])
+        print(d0)
+        print(d2)
+        npt.assert_allclose(np.trace(d0), wfn1.nocc_up, rtol=0, atol=1.0e-9)
+        npt.assert_allclose(np.sum(d2), wfn1.nocc_up * (wfn1.nocc_up - 1), rtol=0, atol=1.0e-9)
+        k0, k2 = pyci.reduce_senzero_integrals(ham.h, ham.v, ham.w, wfn1.nocc_up)
+        energy = ham.ecore
+        energy += np.einsum("ij,ij", k0, d0)
+        energy += np.einsum("ij,ij", k2, d2)
+        npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
+        rdm1, rdm2 = pyci.spinize_rdms(d0, d2)
+    elif isinstance(wfn1, pyci.fullci_wfn):
+        d1, d2 = pyci.compute_transition_rdms(wfn1, wfn1, cs[0], cs[0])
+        rdm1, rdm2 = pyci.spinize_rdms(d1, d2)
+    else:
+        rdm1, rdm2 = pyci.compute_transition_rdms(wfn1, wfn1, cs[0], cs[0])
+    with np.load(datafile("{0:s}_spinres.npz".format(filename))) as f:
+        one_mo = f["one_mo"]
+        two_mo = f["two_mo"]
+    assert np.all(np.abs(rdm1 - rdm1.T) < 1e-5)
+    for i in range(0, wfn1.nbasis * 2):
+        assert np.all(np.abs(rdm2[i, i, :, :]) < 1e-5)
+        assert np.all(np.abs(rdm2[:, :, i, i]) < 1e-5)
+    energy = ham.ecore
+    energy += np.einsum("ij,ij", one_mo, rdm1)
+    energy += 0.25 * np.einsum("ijkl,ijkl", two_mo, rdm2)
+    npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
+
+
 @pytest.mark.xfail
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
