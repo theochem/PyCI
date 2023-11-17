@@ -296,7 +296,7 @@ void compute_rdms(const FullCIWfn &wfn, const double *coeffs, double *rdm1, doub
                         ll = virs_dn[l];
                         // 0-2 excitation elements
                         excite_det(kk, ll, det_dn);
-                        jdet = wfn.index_det(det_up); // ALI I changed this to det_dn.
+                        jdet = wfn.index_det(det_up);
                         // check if excited determinant is in wfn
                         if (jdet > idet) {
                             // compute 2-0 terms
@@ -550,13 +550,11 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
                 sign_up = phase_single_det(wfn1.nword, ii, jj, rdet_up);
                 jdet = wfn2.index_det(det_up);
                 // check if 1-0 excited determinant is in wfn
-                // if (jdet > idet) {
                 if (jdet != -1) {
                     // compute 1-0 terms
                     val2 = coeffs1[idet] * coeffs2[jdet] * sign_up;
                     // aa(ii, jj) += val2;
                     aa[ii * n1 + jj] += val2;
-                    aa[jj * n1 + ii] += val2;
                     for (k = 0; k < wfn1.nocc_up; ++k) {
                         if (i != k) {
                             kk = occs_up[k];
@@ -568,22 +566,12 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
                             aaaa[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
                             // aaaa(kk, ii, jj, kk) -= val2;
                             aaaa[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
-                            // aaaa(jj, kk, ii, kk) += val2;
-                            aaaa[n3 * jj + n2 * kk + n1 * ii + kk] += val2;
-                            // aaaa(jj, kk, kk, ii) -= val2;
-                            aaaa[n3 * jj + n2 * kk + n1 * kk + ii] -= val2;
-                            // aaaa(kk, jj, ii, kk) -= val2;
-                            aaaa[n3 * kk + n2 * jj + n1 * ii + kk] -= val2;
-                            // aaaa(kk, jj, kk, ii) += val2;
-                            aaaa[n3 * kk + n2 * jj + n1 * kk + ii] += val2;
                         }
                     }
                     for (k = 0; k < wfn1.nocc_dn; ++k) {
                         kk = occs_dn[k];
                         // abab(ii, kk, jj, kk) += val2;
                         abab[ii * n3 + kk * n2 + jj * n1 + kk] += val2;
-                        // abab(jj, kk, ii, kk) += val2;
-                        abab[n3 * jj + kk * n2 + ii * n1 + kk] += val2;
                     }
                 }
                 // loop over spin-down occupied indices
@@ -602,8 +590,6 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
                                    phase_single_det(wfn1.nword, kk, ll, rdet_dn);
                             // abab(ii, kk, jj, ll) += val2;
                             abab[ii * n3 + kk * n2 + jj * n1 + ll] += val2;
-                            // abab(jj, ll, ii, kk) += val2;
-                            abab[n3 * jj + n2 * ll + n1 * ii + kk] += val2;
                         }
                         excite_det(ll, kk, det_dn);
                     }
@@ -630,14 +616,6 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
                             aaaa[n3 * kk + n2 * ii + n1 * jj + ll] -= val2;
                             // aaaa(kk, ii, ll, jj) += val2;
                             aaaa[n3 * kk + n2 * ii + n1 * ll + jj] += val2;
-                            // aaaa(jj, ll, ii, kk) += val2;
-                            aaaa[jj * n3 + ll * n2 + ii * n1 + kk] += val2;
-                            // aaaa(jj, ll, kk, ii) -= val2;
-                            aaaa[jj * n3 + ll * n2 + kk * n1 + ii] -= val2;
-                            // aaaa(ll, jj, ii, kk) -= val2;
-                            aaaa[n3 * ll + n2 * jj + n1 * ii + kk] -= val2;
-                            // aaaa(ll, jj, kk, ii) += val2;
-                            aaaa[n3 * ll + n2 * jj + n1 * kk + ii] += val2;
                         }
                         excite_det(ll, kk, det_up);
                     }
@@ -674,13 +652,10 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
                         coeffs1[idet] * coeffs2[jdet] * phase_single_det(wfn1.nword, ii, jj, rdet_dn);
                     // bb(ii, jj) += val2;
                     bb[ii * n1 + jj] += val2;
-                    bb[jj * n1 + ii] += val2;
                     for (k = 0; k < wfn1.nocc_up; ++k) {
                         kk = occs_up[k];
                         // abab(ii, kk, jj, kk) += val2;
                         abab[n3 * kk + n2 * ii + kk * n1 + jj] += val2;
-                        // abab(kk, jj, kk, ii) += val2;
-                        abab[n3 * kk + jj * n2 + kk * n1 + ii] += val2;
                     }
                     for (k = 0; k < wfn1.nocc_dn; ++k) {
                         if (i != k) {
@@ -693,14 +668,6 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
                             bbbb[kk * n3 + ii * n2 + kk * n1 + jj] += val2;
                             // bbbb(kk, ii, jj, kk) -= val2;
                             bbbb[kk * n3 + ii * n2 + jj * n1 + kk] -= val2;
-                            // bbbb(jj, kk, ii, kk) += val2;
-                            bbbb[n3 * jj + n2 * kk + n1 * ii + kk] += val2;
-                            // bbbb(jj, kk, kk, ii) -= val2;
-                            bbbb[n3 * jj + n2 * kk + n1 * kk + ii] -= val2;
-                            // bbbb(kk, jj, ii, kk) -= val2;
-                            bbbb[n3 * kk + n2 * jj + n1 * ii + kk] -= val2;
-                            // bbbb(kk, jj, kk, ii) += val2;
-                            bbbb[n3 * kk + n2 * jj + n1 * kk + ii] += val2;
                         }
                     }
                 }
@@ -712,7 +679,7 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
                         ll = virs_dn[l];
                         // 0-2 excitation elements
                         excite_det(kk, ll, det_dn);
-                        jdet = wfn2.index_det(det_up); // ALI I changed this to det_dn.
+                        jdet = wfn2.index_det(det_up);
                         // check if excited determinant is in wfn
                         if (jdet != -1) {
                             // compute 2-0 terms
@@ -726,14 +693,6 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
                             bbbb[n3 * kk + n2 * ii + n1 * jj + ll] -= val2;
                             // bbbb(kk, ii, ll, jj) += val2;
                             bbbb[n3 * kk + n2 * ii + n1 * ll + jj] += val2;
-                            // bbbb(jj, ll, ii, kk) += val2;
-                            bbbb[jj * n3 + ll * n2 + ii * n1 + kk] += val2;
-                            // bbbb(ll, jj, ii, kk) -= val2;
-                            bbbb[n3 * ll + n2 * jj + n1 * ii + kk] -= val2;
-                            // bbbb(jj, ll, kk, ii) -= val2;
-                            bbbb[jj * n3 + ll * n2 + kk * n1 + ii] -= val2;
-                            // bbbb(ll, jj, kk, ii) += val2;
-                            bbbb[n3 * ll + n2 * jj + n1 * kk + ii] += val2;
                         }
                         excite_det(ll, kk, det_dn);
                     }
@@ -745,6 +704,9 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
 }
 
 void compute_transition_rdms(const GenCIWfn &wfn1, const GenCIWfn &wfn2, const double *coeffs1, const double *coeffs2, double *rdm1, double *rdm2) {
+    /* NOTE: I might not have accounted for double-counting here when translating this
+     * transition-RDM code from the regular RDM code. I think it's correct, though.
+     * GenCIWfn is still unused, so test this function when we start using it! */
     long n1 = wfn1.nbasis;
     long n2 = wfn1.nbasis * wfn1.nbasis;
     long n3 = n1 * n2;
