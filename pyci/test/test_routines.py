@@ -151,8 +151,6 @@ def test_compute_transition_rdms(filename, wfn_type, occs, energy):
     es, cs = op.solve(n=1, ncv=30, tol=1.0e-6)
     if isinstance(wfn1, pyci.doci_wfn):
         d0, d2 = pyci.compute_transition_rdms(wfn1, wfn1, cs[0], cs[0])
-        print(d0)
-        print(d2)
         npt.assert_allclose(np.trace(d0), wfn1.nocc_up, rtol=0, atol=1.0e-9)
         npt.assert_allclose(np.sum(d2), wfn1.nocc_up * (wfn1.nocc_up - 1), rtol=0, atol=1.0e-9)
         k0, k2 = pyci.reduce_senzero_integrals(ham.h, ham.v, ham.w, wfn1.nocc_up)

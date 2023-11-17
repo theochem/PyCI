@@ -454,7 +454,7 @@ void compute_transition_rdms(const DOCIWfn &wfn1, const DOCIWfn &wfn2, const dou
         fill_virs(wfn1.nword, wfn1.nbasis, det, virs);
         // diagonal elements
         jdet = wfn2.index_det(det);
-        val1 = (jdet =! -1) ? (coeffs1[idet] * coeffs2[jdet]) : 0.;
+        val1 = (jdet != -1) ? (coeffs1[idet] * coeffs2[jdet]) : 0.;
         for (i = 0; i < wfn1.nocc_up; ++i) {
             k = occs[i];
             d0[k * (wfn1.nbasis + 1)] += val1;
@@ -473,7 +473,6 @@ void compute_transition_rdms(const DOCIWfn &wfn1, const DOCIWfn &wfn2, const dou
                 if (jdet != -1) {
                     val2 = coeffs1[idet] * coeffs2[jdet];
                     d0[wfn1.nbasis * k + l] += val2;
-                    d0[wfn1.nbasis * l + k] += val2;
                 }
             }
         }
