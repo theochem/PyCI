@@ -135,11 +135,14 @@ void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, cons
     if (eigs.info() != Spectra::CompInfo::Successful)
         throw std::runtime_error("did not converge");
     DenseVector<double> eigenvalues(evals, n);
-    DenseMatrix<double> eigenvectors(evecs, nrow, n);
+    DenseMatrix<double> eigenvectors(evecs, n, nrow);
     eigenvalues = eigs.eigenvalues();
     for (long i = 0; i < n; ++i)
         evals[i] += ecore;
-    eigenvectors = eigs.eigenvectors();
+    // This is needed so that the eigenvectors are in the proper order
+    // when passed back to Python as NumPy arrays
+    eigenvectors.transpose() = eigs.eigenvectors();
+
 }
 
 Array<double> SparseOp::py_matvec(const Array<double> x) const {
