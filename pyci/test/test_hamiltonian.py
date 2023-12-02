@@ -19,7 +19,7 @@ import pytest
 
 import numpy.testing as npt
 
-from pyci import hamiltonian
+from pyci import secondquant_op
 from pyci.test import datafile
 
 
@@ -27,9 +27,9 @@ from pyci.test import datafile
 def test_to_from_file(filename):
     file1 = NamedTemporaryFile()
     file2 = NamedTemporaryFile()
-    ham1 = hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    ham1 = secondquant_op(datafile("{0:s}.fcidump".format(filename)))
     ham1.to_file(file1.name)
-    ham2 = hamiltonian(file1.name)
+    ham2 = secondquant_op(file1.name)
 
     npt.assert_allclose(ham2.ecore, ham1.ecore, rtol=0.0, atol=1.0e-12)
     npt.assert_allclose(ham2.one_mo, ham1.one_mo, rtol=0.0, atol=1.0e-12)

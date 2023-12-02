@@ -47,7 +47,7 @@ def parity(p):
     ],
 )
 def test_solve_sparse(filename, wfn_type, occs, energy):
-    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.secondquant_op(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
     op = pyci.sparse_op(ham, wfn)
@@ -63,7 +63,7 @@ def test_solve_sparse(filename, wfn_type, occs, energy):
     ],
 )
 def test_sparse_rectangular(filename, wfn_type, occs, energy):
-    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.secondquant_op(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     pyci.add_excitations(wfn, 0, 1, 2)
     nrow = len(wfn) - 10
@@ -91,7 +91,7 @@ def test_sparse_rectangular(filename, wfn_type, occs, energy):
     ],
 )
 def test_compute_rdms(filename, wfn_type, occs, energy):
-    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.secondquant_op(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
     op = pyci.sparse_op(ham, wfn)
@@ -144,7 +144,7 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
     ],
 )
 def test_compute_transition_rdms(filename, wfn_type, occs, energy):
-    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.secondquant_op(datafile("{0:s}.fcidump".format(filename)))
     wfn1 = wfn_type(ham.nbasis, *occs)
     wfn1.add_all_dets()
     op = pyci.sparse_op(ham, wfn1)
@@ -190,7 +190,7 @@ def test_compute_transition_rdms(filename, wfn_type, occs, energy):
     ],
 )
 def test_run_hci(filename, wfn_type, occs, energy):
-    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.secondquant_op(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_hartreefock_det()
     op = pyci.sparse_op(ham, wfn)
@@ -234,7 +234,7 @@ def test_run_hci(filename, wfn_type, occs, energy):
     ],
 )
 def test_enpt2(filename, wfn_type, occs, energy):
-    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    ham = pyci.secondquant_op(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     pyci.add_excitations(wfn, *range(0, max(wfn.nocc - 1, 1)))
     op = pyci.sparse_op(ham, wfn)

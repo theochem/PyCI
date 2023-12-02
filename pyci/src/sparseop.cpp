@@ -46,7 +46,7 @@ SparseOp::SparseOp(const long rows, const long cols, const bool symm)
     append<long>(indptr, 0);
 }
 
-SparseOp::SparseOp(const Ham &ham, const DOCIWfn &wfn, const long rows, const long cols,
+SparseOp::SparseOp(const SQuantOp &ham, const DOCIWfn &wfn, const long rows, const long cols,
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
@@ -54,7 +54,7 @@ SparseOp::SparseOp(const Ham &ham, const DOCIWfn &wfn, const long rows, const lo
     update<DOCIWfn>(ham, wfn, nrow, ncol, 0);
 }
 
-SparseOp::SparseOp(const Ham &ham, const FullCIWfn &wfn, const long rows, const long cols,
+SparseOp::SparseOp(const SQuantOp &ham, const FullCIWfn &wfn, const long rows, const long cols,
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
@@ -62,7 +62,7 @@ SparseOp::SparseOp(const Ham &ham, const FullCIWfn &wfn, const long rows, const 
     update<FullCIWfn>(ham, wfn, nrow, ncol, 0);
 }
 
-SparseOp::SparseOp(const Ham &ham, const GenCIWfn &wfn, const long rows, const long cols,
+SparseOp::SparseOp(const SQuantOp &ham, const GenCIWfn &wfn, const long rows, const long cols,
                    const bool symm)
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
@@ -173,18 +173,18 @@ pybind11::tuple SparseOp::py_solve_ci(const long n, pybind11::object coeffs, con
 }
 
 template<class WfnType>
-void SparseOp::py_update(const Ham &ham, const WfnType &wfn) {
+void SparseOp::py_update(const SQuantOp &ham, const WfnType &wfn) {
     update<WfnType>(ham, wfn, wfn.ndet, wfn.ndet, nrow);
 }
 
-template void SparseOp::py_update(const Ham &, const DOCIWfn &);
+template void SparseOp::py_update(const SQuantOp &, const DOCIWfn &);
 
-template void SparseOp::py_update(const Ham &, const FullCIWfn &);
+template void SparseOp::py_update(const SQuantOp &, const FullCIWfn &);
 
-template void SparseOp::py_update(const Ham &, const GenCIWfn &);
+template void SparseOp::py_update(const SQuantOp &, const GenCIWfn &);
 
 template<class WfnType>
-void SparseOp::update(const Ham &ham, const WfnType &wfn, const long rows, const long cols,
+void SparseOp::update(const SQuantOp &ham, const WfnType &wfn, const long rows, const long cols,
                       const long startrow) {
     AlignedVector<ulong> det(wfn.nword2);
     AlignedVector<long> occs(wfn.nocc);
@@ -217,7 +217,7 @@ void SparseOp::sort_row(const long idet) {
     std::sort(iter(&data[start], &indices[start]), iter(&data[end], &indices[end]));
 }
 
-void SparseOp::add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulong *det, long *occs,
+void SparseOp::add_row(const SQuantOp &ham, const DOCIWfn &wfn, const long idet, ulong *det, long *occs,
                        long *virs) {
     /* long i, j, k, l, jdet, jmin = symmetric ? idet - 1 : -1; */
     long i, j, k, l, jdet, jmin = symmetric ? idet : Max<long>();
@@ -257,7 +257,7 @@ void SparseOp::add_row(const Ham &ham, const DOCIWfn &wfn, const long idet, ulon
     append<long>(indptr, indices.size());
 }
 
-void SparseOp::add_row(const Ham &ham, const FullCIWfn &wfn, const long idet, ulong *det_up,
+void SparseOp::add_row(const SQuantOp &ham, const FullCIWfn &wfn, const long idet, ulong *det_up,
                        long *occs_up, long *virs_up) {
     long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet : Max<long>();
     long ioffset, koffset, sign_up;
@@ -426,7 +426,7 @@ void SparseOp::add_row(const Ham &ham, const FullCIWfn &wfn, const long idet, ul
     append<long>(indptr, indices.size());
 }
 
-void SparseOp::add_row(const Ham &ham, const GenCIWfn &wfn, const long idet, ulong *det, long *occs,
+void SparseOp::add_row(const SQuantOp &ham, const GenCIWfn &wfn, const long idet, ulong *det, long *occs,
                        long *virs) {
     long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet : Max<long>(), ioffset, koffset;
     long n1 = wfn.nbasis;

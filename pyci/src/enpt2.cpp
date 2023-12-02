@@ -74,7 +74,7 @@ void compute_enpt2_thread_gather(const FullCIWfn &wfn, const double *one_mo, con
     term.second = diag;
 }
 
-void compute_enpt2_thread_terms(const Ham &ham, const FullCIWfn &wfn, PairHashMap &terms,
+void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairHashMap &terms,
                                 const double *coeffs, const double eps, const long idet,
                                 ulong *det_up, long *occs_up, long *virs_up, long *t_up) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset, sign_up;
@@ -264,7 +264,7 @@ void compute_enpt2_thread_gather(const GenCIWfn &wfn, const double *one_mo, cons
     term.second = diag;
 }
 
-void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, PairHashMap &terms,
+void compute_enpt2_thread_terms(const SQuantOp &ham, const GenCIWfn &wfn, PairHashMap &terms,
                                 const double *coeffs, const double eps, const long idet, ulong *det,
                                 long *occs, long *virs, long *tmps) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
@@ -335,7 +335,7 @@ void compute_enpt2_thread_terms(const Ham &ham, const GenCIWfn &wfn, PairHashMap
 }
 
 template<class WfnType>
-void compute_enpt2_thread(const Ham &ham, const WfnType &wfn, PairHashMap &terms,
+void compute_enpt2_thread(const SQuantOp &ham, const WfnType &wfn, PairHashMap &terms,
                           const double *coeffs, const double eps, const long start,
                           const long end) {
     AlignedVector<ulong> det(wfn.nword2);
@@ -350,7 +350,7 @@ void compute_enpt2_thread(const Ham &ham, const WfnType &wfn, PairHashMap &terms
 } // namespace
 
 template<class WfnType>
-double compute_enpt2(const Ham &ham, const WfnType &wfn, const double *coeffs, const double energy,
+double compute_enpt2(const SQuantOp &ham, const WfnType &wfn, const double *coeffs, const double energy,
                      const double eps, long nthread) {
     if (nthread == -1)
         nthread = get_num_threads();
@@ -383,32 +383,32 @@ double compute_enpt2(const Ham &ham, const WfnType &wfn, const double *coeffs, c
     return result;
 }
 
-template double compute_enpt2<FullCIWfn>(const Ham &, const FullCIWfn &, const double *,
+template double compute_enpt2<FullCIWfn>(const SQuantOp &, const FullCIWfn &, const double *,
                                          const double, const double, long);
 
-template double compute_enpt2<GenCIWfn>(const Ham &, const GenCIWfn &, const double *, const double,
+template double compute_enpt2<GenCIWfn>(const SQuantOp &, const GenCIWfn &, const double *, const double,
                                         const double, long);
 
 template<>
-double compute_enpt2<DOCIWfn>(const Ham &ham, const DOCIWfn &wfn, const double *coeffs,
+double compute_enpt2<DOCIWfn>(const SQuantOp &ham, const DOCIWfn &wfn, const double *coeffs,
                               const double energy, const double eps, long nthread) {
     return compute_enpt2<FullCIWfn>(ham, FullCIWfn(wfn), coeffs, energy, eps, nthread);
 }
 
 template<class WfnType>
-double py_compute_enpt2(const Ham &ham, const WfnType &wfn, const Array<double> coeffs,
+double py_compute_enpt2(const SQuantOp &ham, const WfnType &wfn, const Array<double> coeffs,
                         const double energy, const double eps, const long nthread) {
     return compute_enpt2<WfnType>(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
                                   energy, eps, nthread);
 }
 
-template double py_compute_enpt2<DOCIWfn>(const Ham &, const DOCIWfn &, const Array<double>,
+template double py_compute_enpt2<DOCIWfn>(const SQuantOp &, const DOCIWfn &, const Array<double>,
                                           const double, const double, const long);
 
-template double py_compute_enpt2<FullCIWfn>(const Ham &, const FullCIWfn &, const Array<double>,
+template double py_compute_enpt2<FullCIWfn>(const SQuantOp &, const FullCIWfn &, const Array<double>,
                                             const double, const double, const long);
 
-template double py_compute_enpt2<GenCIWfn>(const Ham &, const GenCIWfn &, const Array<double>,
+template double py_compute_enpt2<GenCIWfn>(const SQuantOp &, const GenCIWfn &, const Array<double>,
                                            const double, const double, const long);
 
 } // namespace pyci

@@ -19,7 +19,7 @@ namespace pyci {
 
 namespace {
 
-void hci_thread_add_dets(const Ham &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
+void hci_thread_add_dets(const SQuantOp &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
                          const double eps, const long idet, ulong *det, long *occs, long *virs) {
     long i, j, k, l;
     ulong rank;
@@ -44,7 +44,7 @@ void hci_thread_add_dets(const Ham &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, con
     }
 }
 
-void hci_thread_add_dets(const Ham &ham, const FullCIWfn &wfn, FullCIWfn &t_wfn,
+void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t_wfn,
                          const double *coeffs, const double eps, const long idet, ulong *det_up,
                          long *occs_up, long *virs_up) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
@@ -178,7 +178,7 @@ void hci_thread_add_dets(const Ham &ham, const FullCIWfn &wfn, FullCIWfn &t_wfn,
     }
 }
 
-void hci_thread_add_dets(const Ham &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, const double *coeffs,
+void hci_thread_add_dets(const SQuantOp &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, const double *coeffs,
                          const double eps, const long idet, ulong *det, long *occs, long *virs) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
     ulong rank;
@@ -235,7 +235,7 @@ void hci_thread_add_dets(const Ham &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, c
 }
 
 template<class WfnType>
-void hci_thread(const Ham &ham, const WfnType &wfn, WfnType &t_wfn, const double *coeffs,
+void hci_thread(const SQuantOp &ham, const WfnType &wfn, WfnType &t_wfn, const double *coeffs,
                 const double eps, const long start, const long end) {
     AlignedVector<ulong> det(wfn.nword2);
     AlignedVector<long> occs(wfn.nocc);
@@ -247,7 +247,7 @@ void hci_thread(const Ham &ham, const WfnType &wfn, WfnType &t_wfn, const double
 } // namespace
 
 template<class WfnType>
-long add_hci(const Ham &ham, WfnType &wfn, const double *coeffs, const double eps, long nthread) {
+long add_hci(const SQuantOp &ham, WfnType &wfn, const double *coeffs, const double eps, long nthread) {
     long ndet_old = wfn.ndet;
     if (nthread == -1)
         nthread = get_num_threads();
@@ -276,26 +276,26 @@ long add_hci(const Ham &ham, WfnType &wfn, const double *coeffs, const double ep
     return wfn.ndet - ndet_old;
 }
 
-template long add_hci<DOCIWfn>(const Ham &, DOCIWfn &, const double *, const double, long);
+template long add_hci<DOCIWfn>(const SQuantOp &, DOCIWfn &, const double *, const double, long);
 
-template long add_hci<FullCIWfn>(const Ham &, FullCIWfn &, const double *, const double, long);
+template long add_hci<FullCIWfn>(const SQuantOp &, FullCIWfn &, const double *, const double, long);
 
-template long add_hci<GenCIWfn>(const Ham &, GenCIWfn &, const double *, const double, long);
+template long add_hci<GenCIWfn>(const SQuantOp &, GenCIWfn &, const double *, const double, long);
 
 template<class WfnType>
-long py_add_hci(const Ham &ham, WfnType &wfn, const Array<double> coeffs, const double eps,
+long py_add_hci(const SQuantOp &ham, WfnType &wfn, const Array<double> coeffs, const double eps,
                 const long nthread) {
     return add_hci<WfnType>(ham, wfn, reinterpret_cast<const double *>(coeffs.request().ptr), eps,
                             nthread);
 }
 
-template long py_add_hci<DOCIWfn>(const Ham &, DOCIWfn &, const Array<double>, const double,
+template long py_add_hci<DOCIWfn>(const SQuantOp &, DOCIWfn &, const Array<double>, const double,
                                   const long);
 
-template long py_add_hci<FullCIWfn>(const Ham &, FullCIWfn &, const Array<double>, const double,
+template long py_add_hci<FullCIWfn>(const SQuantOp &, FullCIWfn &, const Array<double>, const double,
                                     const long);
 
-template long py_add_hci<GenCIWfn>(const Ham &, GenCIWfn &, const Array<double>, const double,
+template long py_add_hci<GenCIWfn>(const SQuantOp &, GenCIWfn &, const Array<double>, const double,
                                    const long);
 
 } // namespace pyci

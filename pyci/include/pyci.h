@@ -157,7 +157,7 @@ using Array = pybind11::array_t<Scalar, pybind11::array::c_style | pybind11::arr
 
 /* Forward-declare classes. */
 
-struct Ham;
+struct SQuantOp;
 struct Wfn;
 struct OneSpinWfn;
 struct TwoSpinWfn;
@@ -227,10 +227,10 @@ template<class WfnType>
 double compute_overlap(const WfnType &, const WfnType &, const double *, const double *);
 
 template<class WfnType>
-long add_hci(const Ham &, WfnType &, const double *, const double, const long = -1);
+long add_hci(const SQuantOp &, WfnType &, const double *, const double, const long = -1);
 
 template<class WfnType>
-double compute_enpt2(const Ham &, const WfnType &, const double *, const double, const double,
+double compute_enpt2(const SQuantOp &, const WfnType &, const double *, const double, const double,
                      const long = -1);
 
 /* Free Python interface functions. */
@@ -251,29 +251,29 @@ double py_compute_overlap(const WfnType &, const WfnType &, const Array<double>,
                           const Array<double>);
 
 template<class WfnType>
-long py_add_hci(const Ham &, WfnType &, const Array<double>, const double, const long = -1);
+long py_add_hci(const SQuantOp &, WfnType &, const Array<double>, const double, const long = -1);
 
 template<class WfnType>
-double py_compute_enpt2(const Ham &, const WfnType &, const Array<double>, const double,
+double py_compute_enpt2(const SQuantOp &, const WfnType &, const Array<double>, const double,
                         const double, const long = -1);
 
-/* Hamiltonian class. */
+/* Second quantized operator class. */
 
-struct Ham final {
+struct SQuantOp final {
 public:
     long nbasis;
     double ecore, *one_mo, *two_mo, *h, *v, *w;
     Array<double> one_mo_array, two_mo_array, h_array, v_array, w_array;
 
-    Ham(void);
+    SQuantOp(void);
 
-    Ham(const Ham &);
+    SQuantOp(const SQuantOp &);
 
-    Ham(Ham &&) noexcept;
+    SQuantOp(SQuantOp &&) noexcept;
 
-    Ham(const std::string &);
+    SQuantOp(const std::string &);
 
-    Ham(const double, const Array<double>, const Array<double>);
+    SQuantOp(const double, const Array<double>, const Array<double>);
 
     void to_file(const std::string &, const long, const long, const double) const;
 };
@@ -613,11 +613,11 @@ public:
 
     SparseOp(const long, const long, const bool);
 
-    SparseOp(const Ham &, const DOCIWfn &, const long, const long, const bool);
+    SparseOp(const SQuantOp &, const DOCIWfn &, const long, const long, const bool);
 
-    SparseOp(const Ham &, const FullCIWfn &, const long, const long, const bool);
+    SparseOp(const SQuantOp &, const FullCIWfn &, const long, const long, const bool);
 
-    SparseOp(const Ham &, const GenCIWfn &, const long, const long, const bool);
+    SparseOp(const SQuantOp &, const GenCIWfn &, const long, const long, const bool);
 
     pybind11::object dtype(void) const;
 
@@ -637,7 +637,7 @@ public:
                   double *) const;
 
     template<class WfnType>
-    void update(const Ham &, const WfnType &, const long, const long, const long);
+    void update(const SQuantOp &, const WfnType &, const long, const long, const long);
 
     void reserve(const long);
 
@@ -651,16 +651,16 @@ public:
                                 const double) const;
 
     template<class WfnType>
-    void py_update(const Ham &, const WfnType &);
+    void py_update(const SQuantOp &, const WfnType &);
 
 private:
     void sort_row(const long);
 
-    void add_row(const Ham &, const DOCIWfn &, const long, ulong *, long *, long *);
+    void add_row(const SQuantOp &, const DOCIWfn &, const long, ulong *, long *, long *);
 
-    void add_row(const Ham &, const FullCIWfn &, const long, ulong *, long *, long *);
+    void add_row(const SQuantOp &, const FullCIWfn &, const long, ulong *, long *, long *);
 
-    void add_row(const Ham &, const GenCIWfn &, const long, ulong *, long *, long *);
+    void add_row(const SQuantOp &, const GenCIWfn &, const long, ulong *, long *, long *);
 };
 
 } // namespace pyci

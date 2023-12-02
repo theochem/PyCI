@@ -51,25 +51,25 @@ char *env_threads = std::getenv("PYCI_NUM_THREADS");
 set_num_threads((env_threads == nullptr) ? g_number_threads : std::atol(env_threads));
 
 /*
-Section: Hamiltonian class
+Section: Second quantized operator class
 */
 
-py::class_<Ham> hamiltonian(m, "hamiltonian");
+py::class_<SQuantOp> secondquant_op(m, "secondquant_op");
 
-hamiltonian.doc() = R"""(
-Hamiltonian class.
+secondquant_op.doc() = R"""(
+Second-quantized operator class.
 
 For arbitrary-seniority systems:
 
 .. math::
 
-    H = \sum_{pq}{t_{pq} a^\dagger_p a_q} + \sum_{pqrs}{g_{pqrs} a^\dagger_p a^\dagger_q a_s a_r}
+    O = \sum_{pq}{t_{pq} a^\dagger_p a_q} + \sum_{pqrs}{g_{pqrs} a^\dagger_p a^\dagger_q a_s a_r}
 
 For seniority-zero systems:
 
     .. math::
 
-    H = \sum_{p}{h_p N_p} + \sum_{p \neq q}{v_{pq} P^\dagger_p P_q} + \sum_{pq}{w_{pq} N_p N_q}
+    O = \sum_{p}{h_p N_p} + \sum_{p \neq q}{v_{pq} P^\dagger_p P_q} + \sum_{pq}{w_{pq} N_p N_q}
 
 where
 
@@ -87,7 +87,7 @@ where
 
 )""";
 
-hamiltonian.def_readonly("nbasis", &Ham::nbasis, R"""(
+secondquant_op.def_readonly("nbasis", &SQuantOp::nbasis, R"""(
 Number of spatial orbital basis functions.
 
 Returns
@@ -97,7 +97,7 @@ nbasis : int
 
 )""");
 
-hamiltonian.def_readonly("ecore", &Ham::ecore, R"""(
+secondquant_op.def_readonly("ecore", &SQuantOp::ecore, R"""(
 Constant (or \"zero-particle\") integral.
 
 Returns
@@ -106,7 +106,7 @@ ecore : float
     Constant (or \"zero-particle\") integral.
 )""");
 
-hamiltonian.def_readonly("one_mo", &Ham::one_mo_array, R"""(
+secondquant_op.def_readonly("one_mo", &SQuantOp::one_mo_array, R"""(
 One-particle molecular integral array.
 
 Returns
@@ -116,7 +116,7 @@ one_mo : numpy.ndarray
 
 )""");
 
-hamiltonian.def_readonly("two_mo", &Ham::two_mo_array, R"""(
+secondquant_op.def_readonly("two_mo", &SQuantOp::two_mo_array, R"""(
 Two-particle molecular integral array.
 
 Returns
@@ -126,7 +126,7 @@ two_mo : numpy.ndarray
 
 )""");
 
-hamiltonian.def_readonly("h", &Ham::h_array, R"""(
+secondquant_op.def_readonly("h", &SQuantOp::h_array, R"""(
 Seniority-zero one-particle molecular integral array.
 
 Returns
@@ -136,7 +136,7 @@ h : numpy.ndarray
 
 )""");
 
-hamiltonian.def_readonly("v", &Ham::v_array, R"""(
+secondquant_op.def_readonly("v", &SQuantOp::v_array, R"""(
 Seniority-zero two-particle molecular integral array.
 
 Returns
@@ -146,7 +146,7 @@ v : numpy.ndarray
 
 )""");
 
-hamiltonian.def_readonly("w", &Ham::w_array, R"""(
+secondquant_op.def_readonly("w", &SQuantOp::w_array, R"""(
 Seniority-two two-particle molecular integral array.
 
 Returns
@@ -156,12 +156,12 @@ w : numpy.ndarray
 
 )""");
 
-hamiltonian.def(py::init<const std::string &>(), R"""(
-Initialize a Hamiltonian instance.
+secondquant_op.def(py::init<const std::string &>(), R"""(
+Initialize a second-quantized operator instance.
 
-If doing a generalized CI problem, the dimension of the Hamiltonian should be equal to the total
+If doing a generalized CI problem, the dimension of the operator should be equal to the total
 number of spin-orbitals. Otherwise, if doing a DOCI or FullCI problem, it should be equal to the
-number of spatial orbitals. This applies whether one is loading the Hamiltonian from an FCIDUMP
+number of spatial orbitals. This applies whether one is loading the operator from an FCIDUMP
 file or from NumPy arrays.
 
 Parameters
@@ -183,11 +183,11 @@ two_mo : np.ndarray
 )""",
                 py::arg("filename"));
 
-hamiltonian.def(py::init<const double, const Array<double>, const Array<double>>(),
+secondquant_op.def(py::init<const double, const Array<double>, const Array<double>>(),
                 py::arg("ecore"), py::arg("one_mo"), py::arg("two_mo"));
 
-hamiltonian.def("to_file", &Ham::to_file, R"""(
-Write this Hamiltonian to an FCIDUMP file.
+secondquant_op.def("to_file", &SQuantOp::to_file, R"""(
+Write this operator to an FCIDUMP file.
 
 Parameters
 ----------
@@ -938,12 +938,12 @@ dtype : numpy.dtype
 
 )""");
 
-sparse_op.def(py::init<const Ham &, const DOCIWfn &, const long, const long, const bool>(), R"""(
+sparse_op.def(py::init<const SQuantOp &, const DOCIWfn &, const long, const long, const bool>(), R"""(
 Initialize a sparse matrix operator.
 
 Parameters
 ----------
-ham : pyci.hamiltonian
+ham : pyci.secondquant_op
     Hamiltonian.
 wfn : pyci.wavefunction
     Wave function.
@@ -958,11 +958,11 @@ symmetric : bool, default=False
               py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
               py::arg("symmetric") = true);
 
-sparse_op.def(py::init<const Ham &, const FullCIWfn &, const long, const long, const bool>(),
+sparse_op.def(py::init<const SQuantOp &, const FullCIWfn &, const long, const long, const bool>(),
               py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
               py::arg("symmetric") = true);
 
-sparse_op.def(py::init<const Ham &, const GenCIWfn &, const long, const long, const bool>(),
+sparse_op.def(py::init<const SQuantOp &, const GenCIWfn &, const long, const long, const bool>(),
               py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
               py::arg("symmetric") = true);
 
@@ -971,7 +971,7 @@ Update a sparse matrix operator for the HCI algorithm.
 
 Parameters
 ----------
-ham : pyci.hamiltonian
+ham : pyci.secondquant_op
     Hamiltonian.
 wfn : pyci.wavefunction
     Wave function.
@@ -1144,7 +1144,7 @@ Add determinants to a wave function by running an iteration of Heat-Bath CI.
 
 Parameters
 ----------
-ham : pyci.hamiltonian
+ham : pyci.secondquant_op
     Hamiltonian.
 wfn : pyci.wavefunction
     Wave function.
@@ -1296,7 +1296,7 @@ Compute the second-order multi-reference Epstein-Nesbet (ENPT2) energy for a wav
 
 Parameters
 ----------
-ham : pyci.hamiltonian
+ham : pyci.secondquant_op
     Hamiltonian.
 wfn : pyci.wavefunction
     Wave function.

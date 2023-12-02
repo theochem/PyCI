@@ -21,16 +21,16 @@
 
 namespace pyci {
 
-Ham::Ham(void) {
+SQuantOp::SQuantOp(void) {
 }
 
-Ham::Ham(const Ham &ham)
+SQuantOp::SQuantOp(const SQuantOp &ham)
     : nbasis(ham.nbasis), ecore(ham.ecore), one_mo(ham.one_mo), two_mo(ham.two_mo), h(ham.h),
       v(ham.v), w(ham.w), one_mo_array(ham.one_mo_array), two_mo_array(ham.two_mo_array),
       h_array(ham.h_array), v_array(ham.v_array), w_array(ham.w_array) {
 }
 
-Ham::Ham(Ham &&ham) noexcept
+SQuantOp::SQuantOp(SQuantOp &&ham) noexcept
     : nbasis(std::exchange(ham.nbasis, 0)), ecore(std::exchange(ham.ecore, 0.0)),
       one_mo(std::exchange(ham.one_mo, nullptr)), two_mo(std::exchange(ham.two_mo, nullptr)),
       h(std::exchange(ham.h, nullptr)), v(std::exchange(ham.v, nullptr)),
@@ -76,7 +76,7 @@ T read_parameter(const std::string &header, const std::string &name,
 
 } // namespace
 
-Ham::Ham(const std::string &filename) {
+SQuantOp::SQuantOp(const std::string &filename) {
     std::ifstream f(filename);
     if (f.fail())
         throw std::ios_base::failure("Failed to read the FCIDUMP file " + filename);
@@ -160,7 +160,7 @@ Ham::Ham(const std::string &filename) {
     }
 }
 
-Ham::Ham(const double e, const Array<double> mo1, const Array<double> mo2)
+SQuantOp::SQuantOp(const double e, const Array<double> mo1, const Array<double> mo2)
     : nbasis(mo1.request().shape[0]), ecore(e), one_mo_array(mo1), two_mo_array(mo2),
       h_array(nbasis), v_array({nbasis, nbasis}), w_array({nbasis, nbasis}) {
     one_mo = reinterpret_cast<double *>(one_mo_array.request().ptr);
@@ -182,7 +182,7 @@ Ham::Ham(const double e, const Array<double> mo1, const Array<double> mo2)
     }
 }
 
-void Ham::to_file(const std::string &filename, const long nelec, const long ms2,
+void SQuantOp::to_file(const std::string &filename, const long nelec, const long ms2,
                   const double tol) const {
     bool uhf = false;
     long n1, n2, n3;

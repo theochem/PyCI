@@ -20,7 +20,7 @@
 #include "enpt2.cpp"
 #include "fullciwfn.cpp"
 #include "genciwfn.cpp"
-#include "ham.cpp"
+#include "squantop.cpp"
 #include "hci.cpp"
 #include "onespinwfn.cpp"
 #include "overlap.cpp"
