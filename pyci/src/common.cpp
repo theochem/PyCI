@@ -25,6 +25,8 @@ long gcd(long, long);
 
 long g_number_threads{1L};
 
+clhasher hasher{0x23a23cf5033c3c81UL, 0xb3816f6a2c68e530UL};
+
 long get_num_threads(void) {
     return g_number_threads;
 }

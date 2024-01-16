@@ -35,11 +35,12 @@ Section: Initialization
 py::options options;
 options.disable_function_signatures();
 
-m.doc() = R"""(
-PyCI C++ extension module.
-)""";
+m.doc() = "PyCI C++ extension module"
+          " v" PYCI_VERSION
+          " (" GIT_BRANCH ", " BUILD_TIME ")"
+          " [" COMPILER_VERSION "]";
 
-m.attr("__version__") = STRINGIZE(PYCI_VERSION);
+m.attr("__version__") = PYCI_VERSION;
 
 m.attr("c_long") = py::dtype::of<long>();
 
@@ -1195,7 +1196,7 @@ olp : float
 m.def("compute_overlap", &py_compute_overlap<TwoSpinWfn>, py::arg("wfn1"), py::arg("wfn2"),
       py::arg("coeffs1"), py::arg("coeffs2"));
 
-m.def("compute_rdms", &py_compute_rdms<DOCIWfn>, R"""(
+m.def("compute_rdms", &py_compute_rdms_doci, R"""(
 Compute the one- and two- particle reduced density matrices (RDMs) of a wave function.
 
 Parameters
@@ -1236,11 +1237,11 @@ For Generalized CI wave functions, ``rdm1`` and ``rdm2`` are the full 1-RDM and 
 )""",
       py::arg("wfn"), py::arg("coeffs"));
 
-m.def("compute_rdms", &py_compute_rdms<FullCIWfn>, py::arg("wfn"), py::arg("coeffs"));
+m.def("compute_rdms", &py_compute_rdms_fullci, py::arg("wfn"), py::arg("coeffs"));
 
-m.def("compute_rdms", &py_compute_rdms<GenCIWfn>, py::arg("wfn"), py::arg("coeffs"));
+m.def("compute_rdms", &py_compute_rdms_genci, py::arg("wfn"), py::arg("coeffs"));
 
-m.def("compute_transition_rdms", &py_compute_transition_rdms<DOCIWfn>, R"""(
+m.def("compute_transition_rdms", &py_compute_transition_rdms_doci, R"""(
 Compute the one- and two- particle transition reduced density matrices (RDMs) of two wave functions.
 
 Parameters
@@ -1285,10 +1286,10 @@ For Generalized CI wave functions, ``rdm1`` and ``rdm2`` are the full 1-TRDM and
 )""",
       py::arg("wfn1"), py::arg("wfn2"), py::arg("coeffs1"), py::arg("coeffs2"));
 
-m.def("compute_transition_rdms", &py_compute_transition_rdms<FullCIWfn>,
+m.def("compute_transition_rdms", &py_compute_transition_rdms_fullci,
       py::arg("wfn1"), py::arg("wfn2"), py::arg("coeffs1"), py::arg("coeffs2"));
 
-m.def("compute_transition_rdms", &py_compute_transition_rdms<GenCIWfn>,
+m.def("compute_transition_rdms", &py_compute_transition_rdms_genci,
       py::arg("wfn1"), py::arg("wfn2"), py::arg("coeffs1"), py::arg("coeffs2"));
 
 m.def("compute_enpt2", &py_compute_enpt2<DOCIWfn>, R"""(

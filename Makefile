@@ -13,63 +13,106 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
+
+# Setup
+# -----
+
+# Set C compiler executable
+CC ?= cc
+export CC
+
+# Set C++ compiler executable
+CXX ?= c++
+export CXX
+
+# Set Python executable
 PYTHON ?= python3
 
-CXX ?= c++
-
-INC_DIRS := eigen spectra/include parallel-hashmap pybind11/include
-
-CFLAGS := --std=c++14 -Wall -pipe -O3 -pthread -fPIC -flto=auto -fno-plt -fwrapv -fvisibility=hidden
-
+# Set C++ compile flags
+CFLAGS := --std=c++14 -Wall -pipe -O3
+CFLAGS += -fPIC -flto=auto -fvisibility=hidden
+CFLAGS += -pthread
 CFLAGS += -Ipyci/include
-CFLAGS += -I$(shell $(PYTHON) -c "import sysconfig; print(sysconfig.get_paths()['include'])")
-CFLAGS += -I$(shell $(PYTHON) -c "import numpy; print(numpy.get_include())")
-CFLAGS += $(addprefix -Ilib/,$(INC_DIRS))
 
-CFLAGS += -DPYCI_VERSION=$(shell $(PYTHON) -c "from setup import version; print(version)")
+# Set Python include directories
+CFLAGS += $(shell $(PYTHON) tools/python_include_dirs.py)
 
+# Set external projects and their include directories
+DEPS := $(addprefix deps/,eigen spectra parallel-hashmap clhash pybind11)
+CFLAGS += $(addprefix -Ideps/,eigen spectra/include parallel-hashmap clhash/include pybind11/include)
+
+# This C++ compile flag is needed in order for Macs to find system libraries
 ifeq ($(shell uname -s),Darwin)
 CFLAGS += -undefined dynamic_lookup
 endif
 
-SRCS := $(shell find pyci/src -name '*.cpp')
-HDRS := $(shell find pyci/include -name '*.h')
-LIBS := lib/eigen lib/spectra lib/parallel-hashmap lib/pybind11
+# Set PyCI version number
+VERSION_MAJOR := 0
+VERSION_MINOR := 7
+VERSION_PATCH := 0
+PYCI_VERSION := $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
+
+# Set preprocessor directives
+DEFS := -D_PYCI_VERSION='$(PYCI_VERSION)'
+DEFS += -D_GIT_BRANCH='$(shell git rev-parse --abbrev-ref HEAD)'
+DEFS += -D_BUILD_TIME='$(shell date -u +%F\ %T)'
+DEFS += -D_COMPILER_VERSION='$(shell $(CXX) --version | head -n 1)'
+
+# Set objects
+OBJECTS := $(patsubst %.cpp,%.o,$(wildcard pyci/src/*.cpp))
+
+
+# Make commands
+# -------------
 
 .PHONY: all
-all: pyci/pyci.so
-
-.PHONY: clean
-clean:
-	rm -rf ./pyci/pyci.so ./build ./dist ./pyci.egg-info
-
-.PHONY: clean_lib
-clean_lib:
-	rm -rf ./lib
-
-.PHONY: clean_all
-clean_all: clean clean_lib
+all: pyci/pyci.so.$(PYCI_VERSION) pyci/pyci.so.$(VERSION_MAJOR) pyci/pyci.so
 
 .PHONY: test
 test:
 	$(PYTHON) -m pytest -sv ./pyci
-	$(PYTHON) -m pycodestyle -v ./pyci
-	$(PYTHON) -m pydocstyle -v ./pyci
+
+.PHONY: clean
+clean:
+	rm -rf pyci/src/*.o pyci/pyci.so*
+
+.PHONY: cleandeps
+cleandeps:
+	rm -rf deps
+
+
+# Make targets
+# ------------
 
 compile_flags.txt:
-	echo '$(CFLAGS)' | tr ' ' '\n' > $@
+	echo $(CFLAGS) | tr ' ' '\n' > $(@)
 
-pyci/pyci.so: $(SRCS) $(HDRS) $(LIBS)
-	$(CXX) $(CFLAGS) -shared pyci/src/pyci.cpp -o $@
+pyci/src/%.o: pyci/src/%.cpp pyci/include/pyci.h $(DEPS)
+	$(CXX) $(CFLAGS) $(DEFS) -c $(<) -o $(@)
 
-lib/eigen:
-	@git clone https://gitlab.com/libeigen/eigen.git $@
+pyci/pyci.so.$(PYCI_VERSION): $(OBJECTS) deps/clhash/clhash.o
+	$(CXX) $(CFLAGS) $(DEFS) -shared $(^) -o $(@)
 
-lib/spectra:
-	@git clone https://github.com/yixuan/spectra.git $@
+pyci/pyci.so.$(VERSION_MAJOR): pyci/pyci.so.$(PYCI_VERSION)
+	ln -s $(notdir $(<)) $(@)
 
-lib/parallel-hashmap:
-	@git clone https://github.com/greg7mdp/parallel-hashmap.git $@
+pyci/pyci.so: pyci/pyci.so.$(PYCI_VERSION)
+	ln -s $(notdir $(<)) $(@)
 
-lib/pybind11:
-	@git clone https://github.com/pybind/pybind11.git $@
+deps/eigen:
+	@git clone https://gitlab.com/libeigen/eigen.git $(@)
+
+deps/spectra:
+	@git clone https://github.com/yixuan/spectra.git $(@)
+
+deps/parallel-hashmap:
+	@git clone https://github.com/greg7mdp/parallel-hashmap.git $(@)
+
+deps/clhash:
+	@git clone https://github.com/lemire/clhash.git $(@)
+
+deps/clhash/clhash.o: deps/clhash
+	$(MAKE) -C $(dir $(@))
+
+deps/pybind11:
+	@git clone https://github.com/pybind/pybind11.git $(@)

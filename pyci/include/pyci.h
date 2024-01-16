@@ -39,7 +39,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-#include <SpookyV2.h>
+#include <clhash.h>
 
 #include <parallel_hashmap/phmap.h>
 
@@ -52,15 +52,10 @@
 
 /* PyCI version. */
 
-#ifndef PYCI_VERSION
-#define PYCI_VERSION 0.0.0
-#endif
-
-/* Seed for SpookyHash. */
-
-#ifndef PYCI_SPOOKYHASH_SEED
-#define PYCI_SPOOKYHASH_SEED 0xdeadbeefdeadbeefUL
-#endif
+#define PYCI_VERSION STRINGIZE(_PYCI_VERSION)
+#define GIT_BRANCH STRINGIZE(_GIT_BRANCH)
+#define BUILD_TIME STRINGIZE(_BUILD_TIME)
+#define COMPILER_VERSION STRINGIZE(_COMPILER_VERSION)
 
 /* Dynamic resize factor for SparseOp vectors. */
 
@@ -170,6 +165,9 @@ struct SparseOp;
 
 extern long g_number_threads;
 
+/* clhash global struct. */
+extern clhasher hasher;
+
 /* PyCI routines. */
 
 long get_num_threads(void);
@@ -239,11 +237,19 @@ long py_popcnt(const Array<ulong>);
 
 long py_ctz(const Array<ulong>);
 
-template<class WfnType>
-pybind11::tuple py_compute_rdms(const WfnType &, const Array<double>);
+pybind11::tuple py_compute_rdms_doci(const DOCIWfn &, const Array<double>);
 
-template<class WfnType>
-pybind11::tuple py_compute_transition_rdms(const WfnType &, const WfnType &, const Array<double>,
+pybind11::tuple py_compute_rdms_fullci(const FullCIWfn &, const Array<double>);
+
+pybind11::tuple py_compute_rdms_genci(const GenCIWfn &, const Array<double>);
+
+pybind11::tuple py_compute_transition_rdms_doci(const DOCIWfn &, const DOCIWfn &, const Array<double>,
+                                           const Array<double>);
+
+pybind11::tuple py_compute_transition_rdms_fullci(const FullCIWfn &, const FullCIWfn &, const Array<double>,
+                                           const Array<double>);
+
+pybind11::tuple py_compute_transition_rdms_genci(const GenCIWfn &, const GenCIWfn &, const Array<double>,
                                            const Array<double>);
 
 template<class WfnType>

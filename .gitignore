@@ -90,4 +90,4 @@ doc/build/
 compile_flags.txt
 
 # Libraries
-lib/
+deps/
