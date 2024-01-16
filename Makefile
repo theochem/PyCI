@@ -48,8 +48,8 @@ endif
 
 # Set PyCI version number
 VERSION_MAJOR := 0
-VERSION_MINOR := 7
-VERSION_PATCH := 0
+VERSION_MINOR := 6
+VERSION_PATCH := 1
 PYCI_VERSION := $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
 
 # Set preprocessor directives

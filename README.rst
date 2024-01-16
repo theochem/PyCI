@@ -58,7 +58,7 @@ Some header-only C++ libraries are downloaded automatically:
 -  `Parallel Hashmap`__
 -  Pybind11_
 -  Spectra_
--  SpookyHash_
+-  CLHash_
 
 __ Parallel-Hashmap_
 
@@ -78,7 +78,7 @@ The required Python packages can then be installed with pip:
 
 .. code:: shell
 
-    python3 -m pip --user install numpy scipy pytest pycodestyle pydocstyle
+    python3 -m pip install numpy scipy pytest pycodestyle pydocstyle
 
 Download PyCI
 ~~~~~~~~~~~~~
@@ -97,13 +97,13 @@ Run the following to build and install PyCI:
 .. code:: shell
 
     make
-    python3 -m pip install -e .
+    python3 -m pip install .
 
 Run the following to test PyCI:
 
 .. code:: shell
 
-    make test
+    python3 -m pytest -v ./pyci
 
 Build documentation
 ~~~~~~~~~~~~~~~~~~~
@@ -112,9 +112,9 @@ Run the following in your shell to install the Read the Docs Sphinx theme via pi
 
 .. code:: shell
 
-    python3 -m pip install --user sphinx-rtd-theme
+    python3 -m pip install sphinx-rtd-theme
 
-Then, after building PyCI, run the following to build the HTML documentation:
+Then, after building PyCI, run the following to build the HTML API documentation:
 
 .. code:: shell
 
@@ -141,7 +141,7 @@ See the CONTRIBUTORS file.
 .. _Spectra:            http://spectralib.org/
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Sphinx:             http://sphinx-doc.org/
-.. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
+.. _CLHash:             https://github.com/lemire/clhash/
 .. _`Clang/LLVM`:       http://clang.llvm.org/
 
 .. |Python 3| image:: http://img.shields.io/badge/python-3-blue.svg
