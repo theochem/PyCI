@@ -29,7 +29,7 @@ version = "0.6.0"
 license = "GPLv3"
 
 
-author = "Michael Richer"
+author = "Michelle Richer"
 
 
 author_email = "richerm@mcmaster.ca"
