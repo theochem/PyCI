@@ -29,7 +29,8 @@ export CXX
 PYTHON ?= python3
 
 # Set C++ compile flags
-CFLAGS := --std=c++14 -Wall -pipe -O3
+CFLAGS := --std=c++14 -Wall -Wextra -pipe -O3
+CFLAGS += -mavx -mavx2 -msse4.2 -march=native
 CFLAGS += -fPIC -flto=auto -fvisibility=hidden
 CFLAGS += -pthread
 CFLAGS += -Ipyci/include
