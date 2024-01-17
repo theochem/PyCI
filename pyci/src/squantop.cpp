@@ -199,18 +199,25 @@ void SQuantOp::to_file(const std::string &filename, const long nelec, const long
         f << "1,";
     f << "\nISYM=1,\n&END\n";
     long i, j, k, l;
+    double val;
     for (i = 0; i != nbasis; ++i)
         for (j = 0; j <= i; ++j)
             for (k = 0; k != nbasis; ++k)
                 for (l = 0; l <= k; ++l)
-                    if ((i * (i + 1)) / 2 + j >= (k * (k + 1)) / 2 + l)
-                        f << std::setw(28) << std::setprecision(20) << std::scientific
-                          << two_mo[i * n3 + k * n2 + j * n1 + l] << ' ' << i + 1 << ' ' << j + 1
-                          << ' ' << k + 1 << ' ' << l + 1 << "\n";
+                    if ((i * (i + 1)) / 2 + j >= (k * (k + 1)) / 2 + l) {
+                        val = two_mo[i * n3 + k * n2 + j * n1 + l];
+                        if (std::abs(val) > tol)
+                            f << std::setw(28) << std::setprecision(20) << std::scientific
+                              << val << ' ' << i + 1 << ' ' << j + 1
+                              << ' ' << k + 1 << ' ' << l + 1 << "\n";
+                    }
     for (i = 0; i != nbasis; ++i)
-        for (j = 0; j <= i; ++j)
-            f << std::setw(28) << std::setprecision(20) << std::scientific << one_mo[i * n1 + j]
-              << ' ' << i + 1 << ' ' << j + 1 << " 0 0\n";
+        for (j = 0; j <= i; ++j) {
+            val = one_mo[i * n1 + j];
+            if (std::abs(val) > tol)
+                f << std::setw(28) << std::setprecision(20) << std::scientific << val
+                  << ' ' << i + 1 << ' ' << j + 1 << " 0 0\n";
+        }
 
     f << std::setw(28) << std::setprecision(20) << std::scientific << ecore << " 0 0 0 0\n";
 }

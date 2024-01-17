@@ -153,6 +153,7 @@ void unrank_colex(long nbasis, const long nocc, long rank, long *occs) {
 }
 
 long phase_single_det(const long nword, const long i, const long a, const ulong *det) {
+    (void)nword; // nword is deliberately unused.
     long j, k, l, m, n, high, low, nperm = 0;
     ulong mask;
     if (i > a) {
@@ -189,6 +190,7 @@ long phase_single_det(const long nword, const long i, const long a, const ulong 
 
 long phase_double_det(const long nword, const long i1, const long i2, const long a1, const long a2,
                       const ulong *det) {
+    (void)nword; // nword is deliberately unused.
     long j, k, l, m, n, high, low, nperm = 0;
     ulong mask;
     // first excitation
