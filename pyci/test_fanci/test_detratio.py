@@ -6,8 +6,8 @@ import pytest
 
 import pyci
 
-from fanci import DetRatio
-from fanci.test import find_datafile, assert_deriv
+from pyci.fanci import DetRatio
+from pyci.test_fanci import find_datafile, assert_deriv
 
 
 @pytest.fixture

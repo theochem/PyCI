@@ -10,8 +10,8 @@ from scipy.optimize import least_squares
 
 import pyci
 
-from fanci import FanCI
-from fanci.test import find_datafile
+from pyci.fanci import FanCI
+from pyci.test_fanci import find_datafile
 
 
 def test_fanci_init():
