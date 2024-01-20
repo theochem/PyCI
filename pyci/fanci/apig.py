@@ -138,30 +138,24 @@ class APIG(FanCI):
         # Reshape parameter array to APIG matrix
         x_mat = x.reshape(self._wfn.nbasis, self._wfn.nocc_up)
 
-        # Shape of y is (no. determinants, no. active parameters excluding energy)
-        y = np.zeros((occs_array.shape[0], self._nactive - self._mask[-1]), dtype=pyci.c_double)
+        # Shape of y is (no. determinants, no. parameters excluding energy)
+        y = np.zeros((occs_array.shape[0], self._nparam - 1), dtype=pyci.c_double)
 
         col_inds = np.arange(self._wfn.nocc_up, dtype=pyci.c_long)
 
         # Iterate over occupation vectors
         for y_row, occs in zip(y, occs_array):
 
-            # Iterate over all parameters (i) and active parameters (j)
-            j = -1
-            for i, m in enumerate(self._mask[:-1]):
-
-                # Check if element is active
-                if not m:
-                    continue
-                j += 1
+            # Iterate over all parameters i
+            for i in range(self.nparam - 1):
 
                 # Compute derivative of overlap
                 rows = occs[occs != (i // self._wfn.nocc_up)]
                 cols = col_inds[col_inds != (i % self._wfn.nocc_up)]
                 if rows.size == cols.size == 0:
-                    y_row[j] = 1.0
+                    y_row[i] = 1.0
                 elif rows.size != occs.size and cols.size != col_inds.size:
-                    y_row[j] = permanent(x_mat[rows, :][:, cols])
+                    y_row[i] = permanent(x_mat[rows, :][:, cols])
 
         # Return overlap derivative matrix
         return y
@@ -197,8 +191,8 @@ def permanent(matrix: np.ndarray) -> float:
     pos = 0
     sign = 1
     bound = n - 1
-    delta = np.ones(n, dtype=np.int)
-    graycode = np.arange(n, dtype=np.int)
+    delta = np.ones(n, dtype=int)
+    graycode = np.arange(n, dtype=int)
 
     # Iterate over every delta
     result = np.prod(np.sum(matrix, axis=0))
