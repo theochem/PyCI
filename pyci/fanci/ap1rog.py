@@ -167,20 +167,14 @@ class AP1roG(FanCI):
         # Reshape parameter array to AP1roG matrix
         x_mat = x.reshape(self._wfn.nocc_up, self._wfn.nvir_up)
 
-        # Shape of y is (no. determinants, no. active parameters excluding energy)
-        y = np.zeros((occs_array.shape[0], self._nactive - self._mask[-1]), dtype=pyci.c_double)
+        # Shape of y is (no. determinants, no. parameters excluding energy)
+        y = np.zeros((occs_array.shape[0], self._nparam - 1), dtype=pyci.c_double)
 
         # Iterate over occupation vectors
         for y_row, holes, parts in zip(y, hlist, plist):
 
-            # Iterate over all parameters (i) and active parameters (j)
-            j = -1
-            for i, m in enumerate(self._mask[:-1]):
-
-                # Check if element is active
-                if not m:
-                    continue
-                j += 1
+            # Iterate over all parameters i
+            for i in range(self.nparam - 1):
 
                 # Check for reference determinant
                 if not holes.size:
@@ -191,9 +185,9 @@ class AP1roG(FanCI):
                 rows = holes[holes != (i // self.wfn.nvir_up)]
                 cols = parts[parts != (i % self.wfn.nvir_up)]
                 if rows.size == cols.size == 0:
-                    y_row[j] = 1.0
+                    y_row[i] = 1.0
                 elif rows.size != holes.size and cols.size != parts.size:
-                    y_row[j] = permanent(x_mat[rows, :][:, cols])
+                    y_row[i] = permanent(x_mat[rows, :][:, cols])
 
         # Return overlap derivative matrix
         return y

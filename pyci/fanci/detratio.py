@@ -91,39 +91,8 @@ class DetRatio(FanCI):
         self._nmatrices = nmatrices
         self._numerator = numerator
         self._denominator = denominator
-        self._matrix_mask = self._mask[:-1].reshape(nmatrices, ham.nbasis, nocc)
         self._sspace_data = sspace_data
         self._pspace_data = pspace_data
-
-    def freeze_matrix(self, *matrices: Sequence[int]) -> None:
-        r"""
-        Set a matrix to be frozen during optimization.
-
-        Parameters
-        ----------
-        matrices : Sequence[int]
-            Indices of matrices to freeze.
-
-        """
-        for matrix in matrices:
-            self._matrix_mask[matrix] = False
-        # Update nactive
-        self._nactive = self._mask.sum()
-
-    def unfreeze_matrix(self, *matrices: Sequence[int]) -> None:
-        r"""
-        Set a matrix to be active during optimization.
-
-        Parameters
-        ----------
-        matrices : Sequence[int]
-            Indices of matrices to unfreeze.
-
-        """
-        for matrix in matrices:
-            self._matrix_mask[matrix] = True
-        # Update nactive
-        self._nactive = self._mask.sum()
 
     def compute_overlap(self, x: np.ndarray, occs_array: Union[np.ndarray, str]) -> np.ndarray:
         r"""
@@ -200,8 +169,8 @@ class DetRatio(FanCI):
         x_mats = x.reshape(self._nmatrices, self._wfn.nbasis, self._wfn.nocc_up)
         mat_size = self._wfn.nbasis * self._wfn.nocc_up
 
-        # Shape of y is (no. determinants, no. active parameters excluding energy)
-        y = np.zeros((occs_array.shape[0], self._nactive - self._mask[-1]), dtype=pyci.c_double)
+        # Shape of y is (no. determinants, no. parameters excluding energy)
+        y = np.zeros((occs_array.shape[0], self._nparam - 1), dtype=pyci.c_double)
 
         # Iterate over occupation vectors
         col_inds = np.arange(self._wfn.nocc_up, dtype=pyci.c_long)
@@ -212,18 +181,11 @@ class DetRatio(FanCI):
             n_det_prod = np.prod(dets[: self._numerator])
             d_det_prod = np.prod(dets[self._numerator :])
 
-            # Iterate over all parameters (i) and active parameters (j)
-            i = -1
-            j = -1
+            # Iterate over all parameters i
+            i = 0
 
             # Iterate over numerator matrices
-            for mask in self._mask[: self._numerator * mat_size]:
-                i += 1
-
-                # Check if element is active
-                if not mask:
-                    continue
-                j += 1
+            for i in range(self._numerator * mat_size):
 
                 # Compute derivative of overlap function
                 m = i // mat_size
@@ -233,22 +195,17 @@ class DetRatio(FanCI):
                 rows = occs[occs != r]
                 cols = col_inds[col_inds != c]
                 if rows.size == cols.size == 0:
-                    y_row[j] = 1.0
+                    y_row[i] = 1.0
                 elif rows.size != occs.size and cols.size != col_inds.size:
                     val = -1 if np.searchsorted(occs, r) % 2 else +1
                     val *= -1 if np.searchsorted(col_inds, c) % 2 else +1
                     val *= n_det_prod * np.linalg.det(x_mats[m][rows, :][:, cols])
                     val /= d_det_prod * dets[m]
-                    y_row[j] = val
+                    y_row[i] = val
 
             # Iterate over denominator matrices
-            for mask in self._mask[self._numerator * mat_size : -1]:
-                i += 1
-
-                # Check if element is active
-                if not mask:
-                    continue
-                j += 1
+            j = i + 1
+            for i in range(j, j + self._numerator * mat_size):
 
                 # Compute derivative of overlap function
                 m = i // mat_size
@@ -258,13 +215,13 @@ class DetRatio(FanCI):
                 rows = occs[occs != r]
                 cols = col_inds[col_inds != c]
                 if rows.size == cols.size == 0:
-                    y_row[j] = 1.0
+                    y_row[i] = 1.0
                 elif rows.size != occs.size and cols.size != col_inds.size:
                     val = -1 if np.searchsorted(occs, r) % 2 else +1
                     val *= +1 if np.searchsorted(col_inds, c) % 2 else -1
                     val *= n_det_prod * np.linalg.det(x_mats[m][rows, :][:, cols])
                     val /= d_det_prod * dets[m]
-                    y_row[j] = val
+                    y_row[i] = val
 
         # Return overlap derivative matrix
         return y

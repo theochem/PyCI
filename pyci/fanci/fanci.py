@@ -52,15 +52,6 @@ class FanCI(metaclass=ABCMeta):
 
         """
         return self._nparam
-
-    @property
-    def nactive(self) -> int:
-        r"""
-        Number of active parameters for this FanCI problem.
-
-        """
-        return self._nactive
-
     @property
     def constraints(self) -> Tuple[str]:
         r"""
@@ -68,14 +59,6 @@ class FanCI(metaclass=ABCMeta):
 
         """
         return tuple(self._constraints.keys())
-
-    @property
-    def mask(self) -> np.ndarray:
-        r"""
-        Frozen parameter mask.
-
-        """
-        return self._mask_view
 
     @property
     def ham(self) -> pyci.hamiltonian:
@@ -166,7 +149,6 @@ class FanCI(metaclass=ABCMeta):
         norm_param: Sequence[Tuple[int, float]] = None,
         norm_det: Sequence[Tuple[int, float]] = None,
         constraints: Dict[str, Tuple[Callable, Callable]] = None,
-        mask: Sequence[int] = None,
         fill: str = "excitation",
     ) -> None:
         r"""
@@ -190,10 +172,6 @@ class FanCI(metaclass=ABCMeta):
             them.
         constraints : Dict[str, Tuple[Callable, Callable]], optional
             Pairs of functions (f, dfdx) corresponding to additional constraints.
-        mask : Sequence[int] or Sequence[bool], optional
-            List of parameters to freeze. If the list contains ints, then each element corresponds
-            to a frozen parameter. If the list contains bools, then each element indicates whether
-            that parameter is active (True) or frozen (False).
         fill : ('excitation' | 'seniority' | None)
             Whether to fill the projection ("P") space by excitation level, by seniority, or not
             at all (in which case ``wfn`` must already be filled).
@@ -217,26 +195,8 @@ class FanCI(metaclass=ABCMeta):
             name = f"<\\psi_{{{index}}}|\\Psi> - v_{{{index}}}"
             constraints[name] = self.make_det_constraint(index, value)
 
-        # Generate mask (True for active parameter, False for frozen parameter)
-        if mask is None:
-            mask = np.ones(nparam, dtype=np.bool)
-        else:
-            mask = np.array(mask)
-            if mask.dtype == np.bool:
-                # Check length of boolean mask
-                if mask.size != nparam:
-                    raise ValueError(f"Mask size is {mask.size}; must have size `nparam={nparam}`")
-            else:
-                # Convert integer mask to boolean
-                ints = mask
-                mask = np.ones(nparam, dtype=np.bool)
-                mask[ints] = 0
-
         # Number of nonlinear equations and active parameters
         nequation = nproj + len(constraints)
-        nactive = mask.sum()
-        if nequation < nactive:
-            raise ValueError(f"System is underdetermined with dimensions {nequation}, {nactive}")
 
         # Generate determinant spaces
         wfn = fill_wavefunction(wfn, nproj, fill)
@@ -252,10 +212,7 @@ class FanCI(metaclass=ABCMeta):
         self._nequation = nequation
         self._nproj = nproj
         self._nparam = nparam
-        self._nactive = nactive
         self._constraints = constraints
-        self._mask = mask
-        self._mask_view = mask[...]
         self._ham = ham
         self._wfn = wfn
         self._ci_op = ci_op
@@ -265,7 +222,6 @@ class FanCI(metaclass=ABCMeta):
         # Set read-only flag on public array attributes
         self._pspace.setflags(write=False)
         self._sspace.setflags(write=False)
-        self._mask_view.setflags(write=False)
 
     def optimize(
         self,
@@ -295,27 +251,15 @@ class FanCI(metaclass=ABCMeta):
             Result of optimization.
 
         """
-        # Check if system is underdetermined
-        if self.nequation < self.nactive:
-            raise ValueError("system is underdetermined")
-
         # Convert x0 to proper dtype array
         x0 = np.asarray(x0, dtype=pyci.c_double)
         # Check input x0 length
         if x0.size != self.nparam:
             raise ValueError("length of `x0` does not match `param`")
 
-        # Prepare objective, Jacobian, x0
-        if self.nactive < self.nparam:
-            # Generate objective, Jacobian, x0 with frozen parameters
-            x_ref = np.copy(x0)
-            f = self.mask_function(self.compute_objective, x_ref)
-            j = self.mask_function(self.compute_jacobian, x_ref)
-            x0 = np.copy(x0[self.mask])
-        else:
-            # Use bare functions
-            f = self.compute_objective
-            j = self.compute_jacobian
+        # Use bare functions
+        f = self.compute_objective
+        j = self.compute_jacobian
 
         # Set up initial arguments to optimizer
         opt_kwargs = kwargs.copy()
@@ -327,8 +271,6 @@ class FanCI(metaclass=ABCMeta):
             opt_args = f, x0
             optimizer = least_squares
         elif mode == "root":
-            if self.nequation != self.nactive:
-                raise ValueError("'root' does not work with over-determined system")
             opt_args = f, x0
             optimizer = root
         elif mode == "cma":
@@ -384,7 +326,6 @@ class FanCI(metaclass=ABCMeta):
         nocc_up = self._wfn.nocc_up
         nocc_dn = self._wfn.nocc_dn
         constraints = self._constraints
-        mask = self._mask
         ci_cls = self._wfn.__class__
 
         # Start at sample 1
@@ -427,7 +368,6 @@ class FanCI(metaclass=ABCMeta):
                 nproj,
                 nparam,
                 constraints=constraints,
-                mask=mask,
                 fill=fill,
             )
 
@@ -467,36 +407,6 @@ class FanCI(metaclass=ABCMeta):
         del self._constraints[name]
         # Update nequation
         self._nequation = self._nproj + len(self._constraints)
-
-    def freeze_parameter(self, *params: Sequence[int]) -> None:
-        r"""
-        Set a FanCI parameter to be frozen during optimization.
-
-        Parameters
-        ----------
-        params : Sequence[int]
-            Indices of parameters to freeze.
-
-        """
-        for param in params:
-            self._mask[param] = False
-        # Update nactive
-        self._nactive = self._mask.sum()
-
-    def unfreeze_parameter(self, *params: Sequence[int]) -> None:
-        r"""
-        Set a FanCI parameter to be active during optimization.
-
-        Parameters
-        ----------
-        params : Sequence[int]
-            Indices of parameters to unfreeze.
-
-        """
-        for param in params:
-            self._mask[param] = True
-        # Update nactive
-        self._nactive = self._mask.sum()
 
     def compute_objective(self, x: np.ndarray) -> np.ndarray:
         r"""
@@ -566,7 +476,7 @@ class FanCI(metaclass=ABCMeta):
 
         """
         # Allocate Jacobian matrix (in transpose memory order)
-        jac = np.empty((self._nequation, self._nactive), order="F", dtype=pyci.c_double)
+        jac = np.empty((self._nequation, self._nparam), order="F", dtype=pyci.c_double)
         jac_proj = jac[: self._nproj]
         jac_cons = jac[self._nproj :]
 
@@ -583,20 +493,17 @@ class FanCI(metaclass=ABCMeta):
         #
         d_ovlp = self.compute_overlap_deriv(x[:-1], "S")
 
-        # Check is energy parameter is active:
-        if self._mask[-1]:
-            #
-            # Compute final Jacobian column if mask[-1] == True
-            #
-            #   dE/d(p_k) <n|\Psi> = dE/d(p_k) \delta_{nk} c_n
-            #
-            ovlp = self.compute_overlap(x[:-1], "P")
-            ovlp *= -1
-            jac_proj[:, -1] = ovlp
-            #
-            # Remove final column from jac_proj
-            #
-            jac_proj = jac_proj[:, :-1]
+        # Compute final Jacobian column
+        #
+        #   dE/d(p_k) <n|\Psi> = dE/d(p_k) \delta_{nk} c_n
+        #
+        ovlp = self.compute_overlap(x[:-1], "P")
+        ovlp *= -1
+        jac_proj[:, -1] = ovlp
+        #
+        # Remove final column from jac_proj
+        #
+        jac_proj = jac_proj[:, :-1]
 
         # Iterate over remaining columns of Jacobian and d_ovlp
         for jac_col, d_ovlp_col in zip(jac_proj.transpose(), d_ovlp.transpose()):
@@ -645,16 +552,15 @@ class FanCI(metaclass=ABCMeta):
             Constraint function p_{i} - v_{i}.
 
             """
-            return x[i] - val if self._mask[i] else 0
+            return x[i] - val
 
         def dfdx(x: np.ndarray) -> np.ndarray:
             r"""
             Constraint gradient \delta_{ki}.
 
             """
-            y = np.zeros(self.nactive, dtype=pyci.c_double)
-            if self._mask[i]:
-                y[self._mask[:i].sum()] = 1
+            y = np.zeros(self.nparam, dtype=pyci.c_double)
+            y[i] = 1
             return y
 
         return f, dfdx
@@ -691,43 +597,12 @@ class FanCI(metaclass=ABCMeta):
             Constraint gradient d(<\psi_{i}|\Psi>)/d(p_{k}).
 
             """
-            y = np.zeros(self._nactive, dtype=pyci.c_double)
+            y = np.zeros(self._nparam, dtype=pyci.c_double)
             d_ovlp = self.compute_overlap_deriv(x[:-1], self._sspace[np.newaxis, i])[0]
-            y[: self._nactive - self._mask[-1]] = d_ovlp
+            y[: -1] = d_ovlp
             return y
 
         return f, dfdx
-
-    def mask_function(self, f: Callable, x_ref: np.ndarray) -> Callable:
-        r"""
-        Generate masked function for optimization with frozen parameters.
-
-        Parameters
-        ----------
-        f : Callable
-            Initial function.
-        x_ref : np.ndarray
-            Full parameter vector including frozen terms.
-
-        Returns
-        -------
-        f : Callable
-            Masked function.
-
-        """
-        if self.nactive == self.nparam:
-            return f
-
-        def masked_f(x: np.ndarray) -> Any:
-            r"""
-            Masked function.
-
-            """
-            y = np.copy(x_ref)
-            y[self._mask] = x
-            return f(y)
-
-        return masked_f
 
     @abstractmethod
     def compute_overlap(self, x: np.ndarray, occs_array: Union[np.ndarray, str]) -> np.ndarray:
