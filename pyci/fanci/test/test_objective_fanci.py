@@ -11,7 +11,7 @@ from scipy.optimize import least_squares
 import pyci
 
 from pyci.fanci import FanCI
-from pyci.test_fanci import find_datafile
+from pyci.fanci.test import find_datafile
 
 
 def test_fanci_init():
@@ -57,12 +57,6 @@ def test_fanci_make_param_constraint():
 
 
 def test_fanci_make_det_constraint():
-    """
-    """
-    pass
-
-
-def test_mask_function():
     """
     """
     pass

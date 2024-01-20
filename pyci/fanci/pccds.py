@@ -198,8 +198,8 @@ class pCCDS(FanCI):
         t_ii = x[:self._wfn.nocc_up * self._wfn.nvir_up].reshape(self._wfn.nocc_up, self._wfn.nvir_up)
         t_i = x[self._wfn.nocc_up * self._wfn.nvir_up:].reshape(self._wfn.nocc, self._wfn.nvir)
 
-        # Shape of y is (no. determinants, no. active parameters excluding energy)
-        y = np.zeros((occs_array.shape[0], self._nactive - self._mask[-1]), dtype=pyci.c_double)
+        # Shape of y is (no. determinants, no. parameters excluding energy)
+        y = np.zeros((occs_array.shape[0], self._nparam - 1), dtype=pyci.c_double)
 
         for y_row, hhs, pps, hs, ps in zip(y, hlist, plist, hlist_ab, plist_ab):
             # Check for reference determinant

@@ -7,7 +7,7 @@ import pytest
 import pyci
 
 from pyci.fanci import DetRatio
-from pyci.test_fanci import find_datafile, assert_deriv
+from pyci.fanci.test import find_datafile, assert_deriv
 
 
 @pytest.fixture
@@ -56,9 +56,7 @@ def test_detratio_init_defaults(dummy_system):
 
     assert test.nparam == 2 * ham.nbasis * nocc + 1
     assert test.nproj == 2 * ham.nbasis * nocc + 1
-    assert test.nactive == 2 * ham.nbasis * nocc + 1
     assert test.nequation == 2 * ham.nbasis * nocc + 1
-    assert np.all(test.mask)
 
     assert isinstance(test.wfn, pyci.doci_wfn)
     assert test.nbasis == ham.nbasis
@@ -67,18 +65,6 @@ def test_detratio_init_defaults(dummy_system):
     assert test.nvir_up == ham.nbasis - nocc
     assert test.nvir_dn == ham.nbasis - nocc
     assert test.pspace.shape[0] == 57
-
-
-def test_detratio_freeze_matrix(dummy_system):
-    ham, nocc, params = dummy_system
-    numerator = 1
-    denominator = 1
-    detratio = DetRatio(ham, nocc, numerator, denominator)
-    detratio.freeze_matrix(0)
-
-    expected = np.ones_like(params, dtype=np.bool)
-    expected[: (ham.nbasis * nocc)] = False
-    assert np.allclose(detratio.mask, expected)
 
 
 def test_detratio_compute_overlap(dummy_system):

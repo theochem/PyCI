@@ -8,7 +8,7 @@ import pyci
 
 from pyci.fanci import pCCDS, AP1roG
 from pyci.fanci.apig import permanent
-from pyci.test_fanci import find_datafile, assert_deriv
+from pyci.fanci.test import find_datafile, assert_deriv
 
 
 @pytest.fixture

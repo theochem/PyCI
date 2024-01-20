@@ -55,6 +55,7 @@ classifiers = [
 install_requires = [
     "numpy>=1.13",
     "scipy>=1.0",
+    "cma>=3.0",
 ]
 
 
