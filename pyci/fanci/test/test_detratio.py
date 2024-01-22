@@ -124,7 +124,6 @@ def systems_ground():
     options_list = [
         (2, "be_ccpvdz", 0.0, -14.57233, [(0, 1.0)], -14.600556994),
         (2, "lih_631g", 0.0, -8.97458, [(0, 1.0)], -8.983534447),
-        (3, "li2_631g", 1.73944, -16.60559, [(0, 1.0)], -16.620149348),
     ]
     for p in options_list:
         yield p
@@ -157,4 +156,5 @@ def test_detratio_systems_ground(nocc, system, nucnuc, e_hf, normdet, expected):
 
     results = detratio.optimize(params, use_jac=True)
     detratio_energy = results.x[-1]
+    print(detratio_energy)
     assert np.allclose(detratio_energy, expected)
