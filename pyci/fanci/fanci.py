@@ -13,8 +13,6 @@ import numpy as np
 
 from scipy.optimize import OptimizeResult, least_squares, root
 
-import cma
-
 import pyci
 
 
@@ -238,7 +236,7 @@ class FanCI(metaclass=ABCMeta):
         ----------
         x0 : np.ndarray
             Initial guess for wave function parameters.
-        mode : ('lstsq' | 'root' | 'cma'), default='lstsq'
+        mode : ('lstsq' | 'root'), default='lstsq'
             Solver mode.
         use_jac : bool, default=False
             Whether to use the Jacobian function or a finite-difference approximation.
@@ -273,11 +271,6 @@ class FanCI(metaclass=ABCMeta):
         elif mode == "root":
             opt_args = f, x0
             optimizer = root
-        elif mode == "cma":
-            if use_jac:
-                raise ValueError("Cannot have 'use_jac=True' with CMA mode")
-            optimizer = optimize_cma
-            opt_args = f, x0, sigma
         else:
             raise ValueError("invalid mode parameter")
 
@@ -302,7 +295,7 @@ class FanCI(metaclass=ABCMeta):
             Number of samples to compute.
         x0 : np.ndarray
             Initial guess for wave function parameters.
-        mode : ('lstsq' | 'root' | 'cma'), default='lstsq'
+        mode : ('lstsq' | 'root'), default='lstsq'
             Solver mode.
         use_jac : bool, default=False
             Whether to use the Jacobian function or a finite-difference approximation.
@@ -719,10 +712,3 @@ def fill_wavefunction(wfn: pyci.wavefunction, nproj: int, fill: str) -> None:
         pyci.add_excitations(wfn, *connections, ref=det)
 
     return wfn
-
-
-def optimize_cma(f, x0, sigma, **kwargs) -> OptimizeResult:
-    r"""Optimize an objective function by CMA-ES method."""
-    g = lambda x: sum(f(x) ** 2)
-    result = cma.fmin(g, x0, sigma, **kwargs)
-    return OptimizeResult(x=result[0])
