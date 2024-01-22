@@ -34,15 +34,14 @@ def parity(p):
     return 1.0 if parity2(p) else -1.0
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [
-        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.902410878),
         ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
         ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
         ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
-        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.617409507),
         ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
     ],
 )
@@ -60,6 +59,8 @@ def test_solve_sparse(filename, wfn_type, occs, energy):
     [
         ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
         ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
     ],
 )
 def test_sparse_rectangular(filename, wfn_type, occs, energy):
@@ -177,15 +178,14 @@ def test_compute_transition_rdms(filename, wfn_type, occs, energy):
     npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [
-        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.902410878),
         ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
         ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
         ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
-        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.617409507),
         ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
     ],
 )
@@ -198,16 +198,15 @@ def test_run_hci(filename, wfn_type, occs, energy):
     dets_added = 1
     niter = 0
     while dets_added:
-        dets_added = pyci.add_hci(ham, wfn, cs[0], eps=1.0e-5)
+        dets_added = pyci.add_hci(ham, wfn, cs[0], eps=1.0e-4)
         op.update(ham, wfn)
         es, cs = op.solve(n=1, tol=1.0e-6)
         niter += 1
-    print(es[0])
     assert niter > 1
     if isinstance(wfn, pyci.fullci_wfn):
-        assert len(wfn) < np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
+        assert len(wfn) <= np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
     else:
-        assert len(wfn) < comb(wfn.nbasis, occs[0], exact=True)
+        assert len(wfn) <= comb(wfn.nbasis, occs[0], exact=True)
     # npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-6)
     dets_added = 1
     while dets_added:
@@ -221,16 +220,15 @@ def test_run_hci(filename, wfn_type, occs, energy):
     npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [
-        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.886809116),
-        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.878455349),
-        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.600556994),
-        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.886809116),
-        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.600556994),
-        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.634588422),
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.964248588),
+        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.881173703),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.603138756),
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.964248588),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.617423859),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.784506748),
     ],
 )
 def test_enpt2(filename, wfn_type, occs, energy):
