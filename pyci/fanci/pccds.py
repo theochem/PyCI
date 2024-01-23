@@ -93,10 +93,13 @@ class pCCDS(FanCI):
         # plist_{up,dn}. This gives hlist_ab and plist_ab.
         ab_lists = [self._sspace, hlist_up, plist_up, hlist_dn, plist_dn]
         hlist_ab, plist_ab = _make_alpha_plus_beta_strings(self._wfn, *ab_lists)
+        # Make a power set of the elements in hlist, plist for each occupation vector: comb_hlist
+        # and comb_plist.
+        comb_hlist, comb_plist = _make_pairexc_powerset(self._sspace, hlist, plist)
 
         # Save sub-class -specific attributes
-        self._sspace_data = [(hlist_ab, plist_ab), (hlist, plist)]
-        self._pspace_data = [(hlist_ab[:nproj], plist_ab[:nproj]), (hlist[:nproj], plist[:nproj])]
+        self._sspace_data = [(hlist_ab, plist_ab), (comb_hlist, comb_plist)]
+        self._pspace_data = [(hlist_ab[:nproj], plist_ab[:nproj]), (comb_hlist[:nproj], comb_plist[:nproj])]
 
     def compute_overlap(self, x: np.ndarray, occs_array: Union[np.ndarray, str]) -> np.ndarray:
         r"""
@@ -122,14 +125,15 @@ class pCCDS(FanCI):
             hlist_up, plist_up, hlist_dn, plist_dn, hlist, plist = _get_hole_particle_indexes(self._wfn, self._ref_occs, occs_array)
             ab_lists = [occs_array, hlist_up, plist_up, hlist_dn, plist_dn]
             hlist_ab, plist_ab = _make_alpha_plus_beta_strings(self._wfn, *ab_lists)
+            comb_hlist, comb_plist = _make_pairexc_powerset(occs_array, hlist, plist)
         elif occs_array == "P":
             occs_array = self._pspace
             hlist_ab, plist_ab = self._pspace_data[0]
-            hlist, plist = self._pspace_data[1]
+            comb_hlist, comb_plist = self._pspace_data[1]
         elif occs_array == "S":
             occs_array = self._sspace
             hlist_ab, plist_ab = self._sspace_data[0]
-            hlist, plist = self._sspace_data[1]
+            comb_hlist, comb_plist = self._sspace_data[1]
         else:
             raise ValueError("invalid `occs_array` argument")
 
@@ -140,20 +144,48 @@ class pCCDS(FanCI):
         # Compute overlaps of occupation vectors
         y = np.zeros(occs_array.shape[0], dtype=pyci.c_double)
 
-        # Determine which spin-orbitals correspond to pair-excitations and which to singles: Change
-        # the elements in {holes,parts} from spatial to spin-orbital notation and compare them with
-        # the ones in the singles excitation description of the occs {holes,parts}_ab. The diference
-        # gives the singles component of the excitation.
-        for i, (occs, holes, parts) in enumerate(zip(occs_array, hlist, plist)):
-            if holes.size > parts.size:
-            # if holes.size != parts.size:
-                continue
-            elif holes.size < parts.size:
-                max_pairs = min(holes.size, parts.size)
-                holes = holes[:max_pairs]
-                parts = parts[:max_pairs]
-            holes_ab, parts_ab = _get_singles_component(self._wfn, holes, parts, hlist_ab[i], plist_ab[i])
-            y[i] += permanent(t_ii[holes, :][:, parts])*permanent(t_i[holes_ab, :][:, parts_ab])
+        # # Determine which spin-orbitals correspond to pair-excitations and which to singles: Change
+        # # the elements in {holes,parts} from spatial to spin-orbital notation and compare them with
+        # # the ones in the singles excitation description of the occs {holes,parts}_ab. The diference
+        # # gives the singles component of the excitation.
+        # for i, (occs, holes, parts) in enumerate(zip(occs_array, hlist, plist)):
+        #     if holes.size > parts.size:
+        #     # if holes.size != parts.size:
+        #         continue
+        #     elif holes.size < parts.size:
+        #         max_pairs = min(holes.size, parts.size)
+        #         holes = holes[:max_pairs]
+        #         parts = parts[:max_pairs]
+        #     holes_ab, parts_ab = _get_singles_component(self._wfn, holes, parts, hlist_ab[i], plist_ab[i])
+        #     y[i] += permanent(t_ii[holes, :][:, parts])*permanent(t_i[holes_ab, :][:, parts_ab])
+
+        # 1- Compute sinlges permanent:
+        # Overlap is equal to one for the reference determinant
+        for i, (occs, holes, parts) in enumerate(zip(occs_array, hlist_ab, plist_ab)):
+            # y[i] = permanent(t_i[holes, :][:, parts]) if np.array(holes).size else 1
+            y[i] = permanent(t_i[holes, :][:, parts])
+        
+        # 2- Add pure pairs permanent (Only for seniority zero occs)
+        # and combinations of sinlges * pair excitations
+        for i, (occs, holes_dict, parts_dict) in enumerate(zip(occs_array, comb_hlist, comb_plist)):
+            for exc_n in holes_dict.keys():
+                holes_c = holes_dict[exc_n] # list of tuples, combinations of exc_n holes
+                parts_c = parts_dict[exc_n] # list of tuples, combinations of exc_n particles
+                for holes in holes_c:
+                    for parts in parts_c:
+                        # Determine which spin-orbitals correspond to pair-excitations and which to
+                        # singles: Change the elements in {holes,parts}_c from spatial to
+                        # spin-orbital notation and compare them with the ones in the singles
+                        # excitation description of the occs {holes,parts}_ab. The diference gives
+                        # the singles component of the excitation.
+                        temp = [h + self._wfn.nocc_up for h in holes] #  holes_dn
+                        temp = np.concatenate((holes, temp), axis=0) # spin-orbs of hole pairs
+                        holes_ab = np.setdiff1d(hlist_ab[i], temp, assume_unique=True) # singles holes
+                        temp = [p + self._wfn.nvir_up for p in parts] # parts_dn
+                        temp = np.concatenate((parts, temp), axis=0) # spin-orbs of particle pairs
+                        parts_ab = np.setdiff1d(plist_ab[i], temp, assume_unique=True) # singles particles
+
+                        y[i] += permanent(t_ii[holes, :][:, parts])*permanent(t_i[holes_ab, :][:, parts_ab])
 
         return y
 
@@ -178,59 +210,7 @@ class pCCDS(FanCI):
             Overlap derivative array.
 
         """
-        # Check if we can use our pre-computed {p,s}space_data
-        if isinstance(occs_array, np.ndarray):
-            hlist_up, plist_up, hlist_dn, plist_dn, hlist, plist = _get_hole_particle_indexes(self._wfn, self._ref_occs, occs_array)
-            ab_lists = [occs_array, hlist_up, plist_up, hlist_dn, plist_dn]
-            hlist_ab, plist_ab = _make_alpha_plus_beta_strings(self._wfn, *ab_lists)
-        elif occs_array == "P":
-            occs_array = self._pspace
-            hlist_ab, plist_ab = self._pspace_data[0]
-            hlist, plist = self._pspace_data[1]
-        elif occs_array == "S":
-            occs_array = self._sspace
-            hlist_ab, plist_ab = self._sspace_data[0]
-            hlist, plist = self._sspace_data[1]
-        else:
-            raise ValueError("invalid `occs_array` argument")
-
-        # Reshape parameter array to pair-CCDS matrices
-        t_ii = x[:self._wfn.nocc_up * self._wfn.nvir_up].reshape(self._wfn.nocc_up, self._wfn.nvir_up)
-        t_i = x[self._wfn.nocc_up * self._wfn.nvir_up:].reshape(self._wfn.nocc, self._wfn.nvir)
-
-        # Shape of y is (no. determinants, no. parameters excluding energy)
-        y = np.zeros((occs_array.shape[0], self._nparam - 1), dtype=pyci.c_double)
-
-        for y_row, hhs, pps, hs, ps in zip(y, hlist, plist, hlist_ab, plist_ab):
-            # Check for reference determinant
-            if not np.array(hs).size:
-                continue
-            # Check broken pair excitation (pair-CCDS restriction)
-            if hhs.size > pps.size:
-                continue
-            # Determine singles (ia) and pairs (jjbb) components of the excitation describing the occupation vector
-            if hhs.size < pps.size:
-                max_pairs = min(hhs.size, pps.size)
-                hhs = hhs[:max_pairs]
-                pps = pps[:max_pairs]
-            hs, ps = _get_singles_component(self._wfn, hhs, pps, hs, ps)
-            # Cut out the rows and columns corresponding to the element wrt which the permanent is
-            # derivatized
-            for t in range(t_ii.size):
-                rows = hhs[hhs != (t // self.wfn.nvir_up)]
-                cols = pps[pps != (t % self.wfn.nvir_up)]
-                if rows.size != hhs.size and cols.size != pps.size:
-                    y_row[t] = permanent(t_ii[rows, :][:, cols])*permanent(t_i[hs, :][:, ps])
-            for t in range(t_i.size):
-                hs = np.array(hs)
-                ps = np.array(ps)
-                rows = hs[hs != (t // self.wfn.nvir)]
-                cols = ps[ps != (t % self.wfn.nvir)]
-                if rows.size != hs.size and cols.size != ps.size:
-                    y_row[t+t_ii.size] = permanent(t_ii[hhs, :][:, pps])*permanent(t_i[rows, :][:, cols])
-
-        # Return overlap derivative matrix
-        return y
+        raise NotImplementedError("Overlap derivative for pCCDS not supported.")
 
 
 def permanent(matrix: np.ndarray) -> float:
@@ -316,3 +296,20 @@ def _get_singles_component(wfn, holes, parts, holesab, partsab):
     temp = np.concatenate((parts, temp), axis=0) # spin-orbs of particle pairs
     ps = np.setdiff1d(partsab, temp, assume_unique=True).tolist()
     return hs, ps
+
+
+def _make_pairexc_powerset(occsarray, hlist, plist):
+    # Make all pair excitations sets (`comb_hlist --> comb_plist`) for each
+    # occupation vector. Does not include the empty set.
+    pairs_lists = zip(occsarray, hlist, plist)
+    comb_hlist = []
+    comb_plist = []
+    for (occs, holes, parts) in pairs_lists:
+        hole_c = {}
+        part_c = {}
+        for y in range(len(holes)):
+            hole_c[y+1] = list(combinations(holes, y+1))
+            part_c[y+1] = list(combinations(parts, y+1))
+        comb_hlist.append(hole_c)
+        comb_plist.append(part_c)
+    return comb_hlist, comb_plist
