@@ -22,7 +22,26 @@ __all___ = [
 
 class DetRatio(FanCI):
     r"""
-    Determinant ratio FanCI class.
+    Determinant ratio FanCI class. This wave function has the form
+
+    .. math::
+
+        \left|\Psi\right> = \sum_k{c_k\prod_{i=1}^N{a^\dagger_{k_i}}\left|\theta\right>}
+
+    where
+
+    .. math::
+
+        c_k = \frac{
+            \prod_{n=1}^{n_\text{numer.}}{\text{det}\left[\vec{x_n;}_{k_1}\mid\cdots\mid\vec{x_n;}_{k_N}\right]}
+        }{
+            \prod_{d=1}^{n_\text{denom.}}{\text{det}\left[\vec{y_d;}_{k_1}\mid\cdots\mid\vec{y_d;}_{k_N}\right]}
+        } \,,
+
+    with the vectors :math:`\left\{x_n\right\}` and :math:`\left\{y_d\right\}` being the parameters
+    of the wave function which are concatenated into matrices according to the occupied indices of
+    each :math:`\psi_k` prior to their determinants being evaluated. For seniority-zero systems,
+    :math:`n_\text{numer.} + n_\text{denom.}` is even, and otherwise it is odd.
 
     """
 
