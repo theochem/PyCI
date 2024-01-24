@@ -21,6 +21,20 @@ class APIG(FanCI):
     r"""
     APIG FanCI class.
 
+    The APIG wave function is the *Antisymmetrized Product of Interacting Geminals* [APIG1]_,
+    which has the form
+
+    .. math::
+
+        \left|\Psi\right> = \prod_{p=1}^{N_\text{elec}/2}{
+            \sum_{k=1}^K{
+                \left( c_{pk} a^\dagger_{\alpha;k} a^\dagger_{\beta;k} \right)
+            }
+        } \left|\psi_0\right> \,.
+
+    .. [APIG1] Silver, David M. "Natural orbital expansion of interacting geminals."
+           *The Journal of Chemical Physics* 50.12 (1969): 5108-5116.
+
     """
 
     def __init__(
