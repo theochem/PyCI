@@ -1,4 +1,4 @@
-""" Test APIG"""
+""" Test pCCDS"""
 
 import numpy as np
 
@@ -8,7 +8,7 @@ import pyci
 
 from pyci.fanci import pCCDS, AP1roG
 from pyci.fanci.apig import permanent
-from pyci.fanci.test import find_datafile, assert_deriv
+from pyci.test import datafile
 
 
 @pytest.fixture
@@ -18,16 +18,6 @@ def dummy_ham():
     two_mo = np.arange(nbasis ** 4, dtype=float).reshape((nbasis,) * 4)
     ham = pyci.hamiltonian(0.0, one_mo, two_mo)
     return ham
-
-
-def systems_ground():
-    options_list = [
-        ((1,1), "h2_hf_631gdp", 0.71317683129, -1.84444, None, -1.1651487544545007,),
-        ((2,2), "lih_hf_sto6g", 0.995317634356, -8.94728, None, -7.972335583974739,),
-    ]
-    for p in options_list:
-        yield p
-
 
 
 def test_4e_5mos_pccds_overlap(dummy_ham):
@@ -75,9 +65,12 @@ def test_4e_5mos_pccds_overlap(dummy_ham):
     # Exc=3, seniority=4
     # alphas: [00110]
     # betas:  [10001]
+    # This Slater determinant does not belong to the pCCSDSpin_sen-o space
+    # and must have zero ovelap. If the wfn were pCCSDSpin_sen-free the it is
+    # allowed and its ovlp = permanent(mat_s[[0,1,3], :][:, [0,1,5]])
     occsv = np.array([[[2,3],[0,4]]])
     ovl = pccsd.compute_overlap(params, occsv)
-    expected = permanent(mat_s[[0,1,3], :][:, [0,1,5]])
+    expected = 0.0
     assert np.allclose(ovl[0], expected)
 
     # Exc=4, seniority=0
@@ -123,9 +116,12 @@ def test_2e_5mos_pccds_overlap(dummy_ham):
     # Exc=1, seniority=2
     # alphas: [01000]
     # betas:  [00100]
+    # This Slater determinant does not belong to the pCCSDSpin_sen-o space
+    # and must have zero ovelap. If the wfn were pCCSDSpin_sen-free the it is
+    # allowed and its ovlp = mat_s[0,0]*mat_s[1,5] + mat_s[0,5]*mat_s[1,0]
     occsv = np.array([[[1],[2]]])
     ovl = pccsd.compute_overlap(params, occsv)
-    expected = mat_s[0,0]*mat_s[1,5] + mat_s[0,5]*mat_s[1,0]
+    expected = 0.0 
     print(expected, ovl[0])
     assert np.allclose(ovl[0], expected)
     # Exc=2, seniority=0
@@ -138,15 +134,28 @@ def test_2e_5mos_pccds_overlap(dummy_ham):
     assert np.allclose(ovl[0], expected)
 
 
-@pytest.mark.parametrize("nocc, system, nucnuc, e_hf, nproj, expected", systems_ground())
-def test_pccds(nocc, system, nucnuc, e_hf, nproj, expected):
-    """Test cases adapted from FanCI's test_wfn_geminal_apig.
+# def systems_ground():
+#     options_list = [
+#         ((1,1), "h2_hf_631gdp", 0.71317683129, -1.84444, None, -1.1651487544545007,),
+#         ((2,2), "lih_hf_sto6g", 0.995317634356, -8.94728, None, -7.972335583974739,),
+#     ]
+#     for p in options_list:
+#         yield p
 
-    """
+
+@pytest.mark.skip(reason="No reference data to compare against")
+@pytest.mark.parametrize(
+    "nocc, system, nucnuc, e_hf, nproj, expected", 
+    [
+        ((1,1), "h2_631gdp", 0.71317683129, -1.84444, None, -1.1651487544545007,),
+        ((2,2), "lih_sto6g", 0.995317634356, -8.94728, None, -7.972335583974739,),
+    ]
+    )
+def test_pccds(nocc, system, nucnuc, e_hf, nproj, expected):
     #
     # Use AP1roG as initial guess for pair excitations wfn params
     #
-    ham = pyci.hamiltonian(find_datafile("{0:s}.fcidump".format(system)))
+    ham = pyci.hamiltonian(datafile("{0:s}.fcidump".format(system)))
     ap1rog = AP1roG(ham, nocc[0], nproj=None)
     ap1_guess = np.zeros(ap1rog.nparam, dtype=pyci.c_double)
     ap1_guess[-1] = e_hf
