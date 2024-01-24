@@ -29,9 +29,12 @@ __all__ = [
 
 def add_gkci(wfn, t=-0.5, p=1.0, mode="cntsp", dim=3, energies=None, width=None):
     r"""
-    Add determinants to the wave function according to the odometer algorithm (Griebel-Knapeck CI).
+    Add determinants to the wave function according to the odometer algorithm
+    (Griebel-Knapeck CI) [GKCI1]_.
 
-    Adapted from Gaby and Farnaz's original code.
+    .. [GKCI1] Anderson, James SM, Farnaz Heidar-Zadeh, and Paul W. Ayers. "Breaking the curse of
+               dimension for the electronic Schrödinger equation with functional analysis."
+               *Computational and Theoretical Chemistry* 1142 (2018): 66-77.
 
     Parameters
     ----------

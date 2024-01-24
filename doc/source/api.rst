@@ -122,3 +122,18 @@ Integral transformations
 .. autofunction:: pyci.make_senzero_integrals
 
 .. autofunction:: pyci.reduce_senzero_integrals
+
+FanCI classes
+=============
+
+.. autoclass:: pyci.fanci.AP1roG
+    :members:
+
+.. autoclass:: pyci.fanci.APIG
+    :members:
+
+.. autoclass:: pyci.fanci.DetRatio
+    :members:
+
+.. autoclass:: pyci.fanci.pCCDS
+    :members:
