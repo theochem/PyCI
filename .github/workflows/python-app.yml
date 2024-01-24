@@ -19,7 +19,7 @@ jobs:
         python-version: "3.10"
     - name: Install dependencies and make C++ library
       run: |
-        python3 -m pip install --user numpy scipy pytest pycodestyle pydocstyle
+        python3 -m pip install --user numpy scipy pytest
         PYTHON=python3 make
     - name: Run PyCI tests
       run: |

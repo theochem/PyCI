@@ -52,10 +52,7 @@ classifiers = [
 ]
 
 
-install_requires = [
-    "numpy>=1.13",
-    "scipy>=1.0",
-]
+install_requires = ["numpy>=1.13", "scipy>=1.0"]
 
 
 extras_require = {
@@ -64,10 +61,7 @@ extras_require = {
 }
 
 
-packages = [
-    "pyci",
-    "pyci.test",
-]
+packages = ["pyci", "pyci.fanci", "pyci.test", "pyci.fanci.test"]
 
 
 package_data = {
