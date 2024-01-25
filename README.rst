@@ -17,7 +17,7 @@
 |Python 3|
 
 PyCI
-====
+####
 
 PyCI_ is a flexible quantum chemistry Configuration Interaction library for Python 3.
 
@@ -26,10 +26,10 @@ PyCI is distributed under the GNU General Public License version 3 (GPLv3).
 See http://www.gnu.org/licenses/ for more information.
 
 Installation
-------------
+============
 
 Dependencies
-~~~~~~~~~~~~
+------------
 
 The following programs/libraries are required to run PyCI:
 
@@ -49,6 +49,8 @@ The following programs/libraries are required to build PyCI:
 -  Pydocstyle_ (optional: to run tests)
 -  Sphinx_ (optional: to build the documentation)
 -  `Read the Docs Sphinx Theme`__ (optional: to build the documentation)
+-  NBSphinx_ (optional: to build the documentation)
+
 
 __ Sphinx-RTD-Theme_
 
@@ -63,7 +65,7 @@ Some header-only C++ libraries are downloaded automatically:
 __ Parallel-Hashmap_
 
 Install dependencies
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 The programs required to build and run PyCI can be installed with your operating system's package
 manager.
@@ -72,7 +74,7 @@ E.g., for Debian- or Ubuntu- based Linux systems:
 
 .. code:: shell
 
-    sudo apt-get install make git gcc python3 python3-devel python3-pip python3-sphinx
+    sudo apt-get install make git gcc python3 python3-devel python3-pip
 
 The required Python packages can then be installed with pip:
 
@@ -81,7 +83,7 @@ The required Python packages can then be installed with pip:
     python3 -m pip install numpy scipy pytest pycodestyle pydocstyle
 
 Download PyCI
-~~~~~~~~~~~~~
+-------------
 
 Run the following in your shell to download PyCI via git:
 
@@ -90,7 +92,7 @@ Run the following in your shell to download PyCI via git:
     git clone https://github.com/msricher/pyci.git && cd pyci
 
 Install PyCI
-~~~~~~~~~~~~
+------------
 
 Run the following to build and install PyCI:
 
@@ -106,13 +108,13 @@ Run the following to test PyCI:
     python3 -m pytest -v ./pyci
 
 Build documentation
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
-Run the following in your shell to install the Read the Docs Sphinx theme via pip:
+Run the following in your shell to install the packages required to build the documentation:
 
 .. code:: shell
 
-    python3 -m pip install sphinx-rtd-theme
+    python3 -m pip install jupyter-notebook sphinx sphinx-rtd-theme nbsphinx
 
 Then, after building PyCI, run the following to build the HTML API documentation:
 
@@ -121,7 +123,7 @@ Then, after building PyCI, run the following to build the HTML API documentation
     cd doc && make html
 
 Citing PyCI
------------
+===========
 
 See the CONTRIBUTORS file.
 
@@ -143,6 +145,8 @@ See the CONTRIBUTORS file.
 .. _Sphinx:             http://sphinx-doc.org/
 .. _CLHash:             https://github.com/lemire/clhash/
 .. _`Clang/LLVM`:       http://clang.llvm.org/
+.. _NBSphinx:           http://nbsphinx.readthedocs.io/
+
 
 .. |Python 3| image:: http://img.shields.io/badge/python-3-blue.svg
    :target: https://docs.python.org/3.8/
