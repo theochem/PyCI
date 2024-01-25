@@ -1141,7 +1141,12 @@ ctz : int
       py::arg("det"));
 
 m.def("add_hci", &py_add_hci<DOCIWfn>, R"""(
-Add determinants to a wave function by running an iteration of Heat-Bath CI.
+Add determinants to a wave function by running an iteration of Heat-Bath CI [HCI1]_.
+
+.. [HCI1] Holmes, Adam A., Norm M. Tubman, and C. J. Umrigar. "Heat-bath configuration
+          interaction: An efficient selected configuration interaction algorithm
+          inspired by heat-bath sampling." *Journal of chemical theory and computation*
+          12.8 (2016): 3674-3680.
 
 Parameters
 ----------

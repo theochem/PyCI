@@ -22,6 +22,23 @@ class AP1roG(FanCI):
     r"""
     AP1roG FanCI class.
 
+    The AP1roG wave function is the *Antisymmetrized Product of 1-reference-orbital
+    Geminals* [AP1roG1]_, which has the form
+
+    .. math::
+
+        \left|\Psi\right> = \prod_{p=1}^{N_\text{elec}/2}{\left(
+            a^\dagger_{\alpha;p} a^\dagger_{\beta;p} +
+            \sum_{k=N/2+1}^K{
+                c_{pk} a^\dagger_{\alpha;k} a^\dagger_{\beta;k}
+            }
+        \right)} \left|\psi_0\right> \,.
+
+    .. [AP1roG1] Limacher, Peter A., et al. "A new mean-field method suitable for strongly
+                 correlated electrons: Computationally facile antisymmetric products of
+                 nonorthogonal geminals." *Journal of chemical theory and computation*
+                 9.3 (2013): 1394-1401.
+
     """
 
     def __init__(

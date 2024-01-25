@@ -57,7 +57,7 @@ install_requires = ["numpy>=1.13", "scipy>=1.0"]
 
 extras_require = {
     "test": ["pytest"],
-    "doc": ["sphinx", "sphinx_rtd_theme"],
+    "doc": ["sphinx", "nbsphinx", "sphinx_rtd_theme"],
 }
 
 

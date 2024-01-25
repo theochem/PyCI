@@ -20,19 +20,28 @@ __all___ = [
 
 class pCCDS(FanCI):
     r"""
-    Copled Cluster Singles and Pairs FanCI class or AP1roGSDspin.
+    Pair coupled cluster doubles + singles (or "AP1roGSDspin") FanCI class.
 
-    ..math::
+    .. math::
 
-        \left| \Psi_{pCCDS(sen-o)} \right> = 
-        \prod_{i=1}^{N/2} \left( 1 + \sum_{a \in virt} t_{i\bar{i};a\bar{a}} \hat{\tau}^{a\bar{a}}_{i\bar{i}} \right) 
-        \prod_{i=1}^{N/2} \left( 1 + \sum_{a \in virt} t_{i;a\bar{a}} \hat{\tau}^{a}_{i} \hat{n}_{\bar{i}} \right) 
-        \left| \Phi_0 \right>
+        \left| \Psi_\text{pCCD+S} \right> =
+        \prod_{i=1}^{N/2} \left(
+            1 + \sum_{a=N/2+1}^K t_{i\bar{i};a\bar{a}} \hat{\tau}^{a\bar{a}}_{i\bar{i}}
+        \right)
+        \prod_{i=1}^{N/2} \left(
+            1 + \sum_{a=N/2+1}^K t_{i;a\bar{a}} \hat{\tau}^{a}_{i} \hat{n}_{\bar{i}}
+        \right)
+        \left| \psi_0 \right> \,.
 
-    This is AP1roG supplemented with single excitations that preserve the spin number, i.e. no alpha to beta excitation
-    is allowed, or viceversa. Furthermore, the single excitations added are those that breack an occupied pair of
-    spin orbitals icreasing the seniority number, this determines the `sen-o` part of the name (from every occupied pair
-    only one element of the pair is excited).
+    This is AP1roG supplemented with single excitations that preserve the spin number, i.e.,
+    no alpha to beta excitation is allowed, or vice-versa. Furthermore, the single excitations
+    added are those that break an occupied pair of spin orbitals, increasing the seniority number.
+    This determines the `sen-o` part of the name (from every occupied pair only one element of the
+    pair is excited) [pCCDS1]_.
+
+    .. [pCCDS1] Gaikwad, Pratiksha B., et al. "Coupled Cluster-Inspired Geminal Wavefunctions."
+                *arXiv preprint* arXiv:2310.01764 (2023).
+
 
     """
 
@@ -122,19 +131,8 @@ class pCCDS(FanCI):
 
         The occupation vector is described in terms of the occupied/virtual indexes of the excitation
         that generates it from the reference. The indexes are further identified as corresponding to
-        excitations of pairs or single spin-orbitals. The overlap is computed as the product of the 
+        excitations of pairs or single spin-orbitals. The overlap is computed as the product of the
         permanents of the matrices formed by the pair and single excitations indexes.
-
-        Examples:
-        ---------
-        ..math::
-
-            < Phi^a_i | pCCDS > &= t_{i,a} \\\\
-            < Phi^{ab}_{i\bar{i}} |pCCDS > &= 0.0 \\\\
-            < Phi^{ab}_{ij} |pCCDS > &= t_{i;a} t_{j;b} - t_{i;b} t_{j;a} \\\\
-            < Phi^{a\bar{a}}_{i\bar{j}} | pCCDS > &= t_{i,a} t_{\bar{a},\bar{j}} - t_{i,\bar{a}} t_{\bar{j},a} \\\\
-            < Phi^{a\bar{a}}_{i\bar{i}} | pCCDS > &=  t_{i\bar{i};a\bar{a}} + t_{i,a} t_{\bar{a},\bar{i}} - t_{i,\bar{a}} t_{\bar{i},a} 
-
 
         Parameters
         ----------
@@ -175,10 +173,10 @@ class pCCDS(FanCI):
         # Compute overlaps of occupation vectors
         y = np.zeros(occs_array.shape[0], dtype=pyci.c_double)
 
-        # For each occupation vector determine which spin-orbital indexes correspond to pair-excitations 
-        # and which to single excitations from the reference. 
-        # To do so map the {holes,parts} indexes of the pair excitations from spatial to spin-orbital 
-        # notation and contrast them with the ones in the singles excitation description of the occs  
+        # For each occupation vector determine which spin-orbital indexes correspond to pair-excitations
+        # and which to single excitations from the reference.
+        # To do so map the {holes,parts} indexes of the pair excitations from spatial to spin-orbital
+        # notation and contrast them with the ones in the singles excitation description of the occs
         # {holes,parts}_ab. The diference gives the singles component of the excitation.
         for i, (occs, holes, parts) in enumerate(zip(occs_array, hlist, plist)):
             if holes.size > parts.size: # Occupation vector outside pCCSDSpin_sen-o space; e.g. Phi^ab_ii-bar
@@ -191,13 +189,13 @@ class pCCDS(FanCI):
             # Make all pair excitations sets including the empty set.
             # For the empty pair, the holes/particles excitation is expressed fully as single excitations
             # from the reference, and the permanent of the singles is added to the overlap of the occupation
-            # vector. 
+            # vector.
             for pair_exc_order in range(len(holes)+1):
                 holes_comb = list(combinations(holes, pair_exc_order))
-                parts_comb = list(combinations(parts, pair_exc_order))                
+                parts_comb = list(combinations(parts, pair_exc_order))
                 for _holes in holes_comb:
                     for _parts in parts_comb:
-                        holes_ab, parts_ab = _get_singles_component(self._wfn, _holes, _parts, hlist_ab[i], plist_ab[i])               
+                        holes_ab, parts_ab = _get_singles_component(self._wfn, _holes, _parts, hlist_ab[i], plist_ab[i])
                         y[i] += permanent(t_ii[_holes, :][:, _parts])*permanent(t_i[holes_ab, :][:, parts_ab])
 
         return y
@@ -271,7 +269,7 @@ def _make_alpha_plus_beta_strings(wfn, occsarray, hlistup, plistup, hlistdn, pli
 
 def _get_hole_particle_indexes(wfn, ref_occs, occsarray):
     # Get the list of alpha and beta hole/particle indexes for each occupation vector:
-    # `hlist_{up, dn}` and `plist_{up, dn}`. 
+    # `hlist_{up, dn}` and `plist_{up, dn}`.
     # Example:
     # reference determinant: Phi_0
     # Slater det. from 2 alpha electrons excited: a^+ b^+ j i Phi_0 = Phi^ab_ij
@@ -283,10 +281,10 @@ def _get_hole_particle_indexes(wfn, ref_occs, occsarray):
     hlist_dn = [np.setdiff1d(ref_occs[1], occs[1], assume_unique=1) for occs in occsarray]
     plist_dn = [np.setdiff1d(occs[1], ref_occs[1], assume_unique=1) - nocc_dn for occs in occsarray]
 
-    # The list `hlist` (`plist`) stores the indexes that compose a double excitations where an alpha-beta pair 
-    # is removed (added), for every occ vector in occsarray. 
+    # The list `hlist` (`plist`) stores the indexes that compose a double excitations where an alpha-beta pair
+    # is removed (added), for every occ vector in occsarray.
     # In pCCSD there can be double excitations from Phi_0 which conserve the seniority (add and remove a pair)
-    # and those which don't (remove a pair and add a broken pair, or viceversa). 
+    # and those which don't (remove a pair and add a broken pair, or viceversa).
     # The four simple cases are:
     # a) double excitation from Phi_0 removing a pair and adding another giving Phi^aa-bar_ii-bar. The
     # corresponding occupation vector contributes one hole, `i`, and one particle index `a` to each list.
@@ -336,7 +334,7 @@ def _get_singles_component(wfn, holes, parts, holesab, partsab):
 
 
 def _make_pairexc_powerset(occsarray, hlist, plist):
-    # Make all pair excitations sets (`comb_hlist --> comb_plist`) for each occupation vector. 
+    # Make all pair excitations sets (`comb_hlist --> comb_plist`) for each occupation vector.
     # Does not include the empty set.
     pairs_lists = zip(occsarray, hlist, plist)
     comb_hlist = []
