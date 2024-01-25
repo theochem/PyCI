@@ -33,7 +33,8 @@ Table of Contents
 
    install
    about
-   tutorial
+   notebooks/pyci_tutorial
+   notebooks/fanci_tutorial
    api
 
 .. _PyCI:   http://github.com/msricher/PyCI/
