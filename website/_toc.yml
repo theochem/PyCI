@@ -7,8 +7,9 @@ parts:
     - caption: User Documentation
       chapters:
       - file: install.rst
-      - file: examples/dummy.ipynb
+      - file: examples/pyci_tutorial.ipynb
+      - file: examples/fanci_tutorial.ipynb
 
-    # - caption: API
-    #   chapters:
-      # - file: _autosummary/pyci.rst
+    - caption: API
+      chapters:
+      - file: _autosummary/pyci.rst
