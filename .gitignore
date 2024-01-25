@@ -91,3 +91,6 @@ compile_flags.txt
 
 # Libraries
 deps/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
