@@ -37,6 +37,7 @@ jobs:
         run: |
           python3 -m pip install --user numpy scipy pytest pycodestyle pydocstyle
           PYTHON=python3 make
+          python3 -m pip install .
 
       - name: Install dependencies
         run: |
