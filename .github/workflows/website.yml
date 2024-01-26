@@ -43,11 +43,11 @@ jobs:
           python3 -m pip install -r website/requirements.txt
 
       # Build the documentation
-      - name: Build the documentation
-        run: |
-          cd doc
-          make html
-          cd ../
+      #- name: Build the documentation
+      # run: |
+      #    cd doc
+      #    make html
+      #    cd ../
 
       # Add soft links to the notebooks
       - name: Add soft links to the notebooks
