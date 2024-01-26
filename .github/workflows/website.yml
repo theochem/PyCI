@@ -45,13 +45,16 @@ jobs:
       # Build the documentation
       - name: Build the documentation
         run: |
-          sphinx-apidoc -o website/_autosummary pyci -M -f
+          cd doc
+          make html
+          cd ../
 
       # Add soft links to the notebooks
       - name: Add soft links to the notebooks
         run: |
           cd website
           ln -s ../notebooks ./examples
+          ln -s ../doc/source ./api
           cd ../
 
       # Build the book
