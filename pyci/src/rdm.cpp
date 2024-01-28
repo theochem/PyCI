@@ -31,9 +31,8 @@ void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *
         d2[j++] = 0;
     }
     // iterate over determinants
-    long idet, jdet, k, l;
-    double val1, val2;
-    for (idet = 0; idet < wfn.ndet; ++idet) {
+    for (long idet = 0, jdet, k, l; idet < wfn.ndet; ++idet) {
+        double val1, val2;
         // fill working vectors
         wfn.copy_det(idet, det);
         fill_occs(wfn.nword, det, occs);
@@ -79,7 +78,6 @@ void compute_rdms(const FullCIWfn &wfn, const double *coeffs, double *rdm1, doub
     AlignedVector<ulong> v_det(wfn.nword2);
     AlignedVector<long> v_occs(wfn.nocc);
     AlignedVector<long> v_virs(wfn.nvir);
-    const ulong *rdet_up, *rdet_dn;
     ulong *det_up = &v_det[0], *det_dn = &v_det[wfn.nword];
     long *occs_up = &v_occs[0], *occs_dn = &v_occs[wfn.nocc_up];
     long *virs_up = &v_virs[0], *virs_dn = &v_virs[wfn.nvir_up];
@@ -93,9 +91,10 @@ void compute_rdms(const FullCIWfn &wfn, const double *coeffs, double *rdm1, doub
     while (j < i)
         rdm2[j++] = 0;
     // iterate over determinants
-    long k, l, ii, jj, kk, ll, jdet, sign_up;
-    double val1, val2;
     for (long idet = 0; idet < wfn.ndet; ++idet) {
+        const ulong *rdet_up, *rdet_dn;
+        double val1, val2;
+        long k, l, ii, jj, kk, ll, jdet, sign_up;
         // fill working vectors
         rdet_up = wfn.det_ptr(idet);
         rdet_dn = rdet_up + wfn.nword;
@@ -337,7 +336,6 @@ void compute_rdms(const GenCIWfn &wfn, const double *coeffs, double *rdm1, doubl
     AlignedVector<ulong> v_det(wfn.nword);
     AlignedVector<long> v_occs(wfn.nocc);
     AlignedVector<long> v_virs(wfn.nvir);
-    const ulong *rdet;
     ulong *det = &v_det[0];
     long *occs = &v_occs[0], *virs = &v_virs[0];
     // fill rdms with zeros
@@ -350,11 +348,11 @@ void compute_rdms(const GenCIWfn &wfn, const double *coeffs, double *rdm1, doubl
     while (j < i)
         rdm2[j++] = 0;
     // loop over determinants
-    long k, l, ii, jj, kk, ll, jdet;
-    double val1, val2;
     for (long idet = 0; idet < wfn.ndet; ++idet) {
+        long k, l, ii, jj, kk, ll, jdet;
+        double val1, val2;
         // fill working vectors
-        rdet = wfn.det_ptr(idet);
+        const ulong *rdet = wfn.det_ptr(idet);
         std::memcpy(det, rdet, sizeof(ulong) * wfn.nword);
         fill_occs(wfn.nword, rdet, occs);
         fill_virs(wfn.nword, n1, rdet, virs);
@@ -445,9 +443,8 @@ void compute_transition_rdms(const DOCIWfn &wfn1, const DOCIWfn &wfn2, const dou
         d2[j++] = 0;
     }
     // iterate over determinants
-    long idet, jdet, k, l;
-    double val1, val2;
-    for (idet = 0; idet < wfn1.ndet; ++idet) {
+    for (long idet = 0, jdet, k, l; idet < wfn1.ndet; ++idet) {
+        double val1, val2;
         // fill working vectors
         wfn1.copy_det(idet, det);
         fill_occs(wfn1.nword, det, occs);
@@ -493,7 +490,6 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
     AlignedVector<ulong> v_det(wfn1.nword2);
     AlignedVector<long> v_occs(wfn1.nocc);
     AlignedVector<long> v_virs(wfn1.nvir);
-    const ulong *rdet_up, *rdet_dn;
     ulong *det_up = &v_det[0], *det_dn = &v_det[wfn1.nword];
     long *occs_up = &v_occs[0], *occs_dn = &v_occs[wfn1.nocc_up];
     long *virs_up = &v_virs[0], *virs_dn = &v_virs[wfn1.nvir_up];
@@ -507,12 +503,12 @@ void compute_transition_rdms(const FullCIWfn &wfn1, const FullCIWfn &wfn2, const
     while (j < i)
         rdm2[j++] = 0;
     // iterate over determinants
-    long k, l, ii, jj, kk, ll, jdet, sign_up;
-    double val1, val2;
     for (long idet = 0; idet < wfn1.ndet; ++idet) {
+        long k, l, ii, jj, kk, ll, jdet, sign_up;
+        double val1, val2;
         // fill working vectors
-        rdet_up = wfn1.det_ptr(idet);
-        rdet_dn = rdet_up + wfn1.nword;
+        const ulong *rdet_up = wfn1.det_ptr(idet);
+        const ulong *rdet_dn = rdet_up + wfn1.nword;
         std::memcpy(det_up, rdet_up, sizeof(ulong) * wfn1.nword2);
         fill_occs(wfn1.nword, rdet_up, occs_up);
         fill_occs(wfn1.nword, rdet_dn, occs_dn);
