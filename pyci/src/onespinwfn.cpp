@@ -192,7 +192,6 @@ void OneSpinWfn::add_all_dets(long nthread) {
     if (nthread == -1)
         nthread = get_num_threads();
     long chunksize = maxrank_up / nthread + static_cast<bool>(maxrank_up % nthread);
-    long start, end = 0;
     while (nthread > 1 && chunksize < PYCI_CHUNKSIZE_MIN) {
         nthread /= 2;
         chunksize = maxrank_up / nthread + static_cast<bool>(maxrank_up % nthread);
@@ -204,7 +203,7 @@ void OneSpinWfn::add_all_dets(long nthread) {
     dict.reserve(ndet);
     Vector<std::thread> v_threads;
     v_threads.reserve(nthread);
-    for (long i = 0; i < nthread; ++i) {
+    for (long i = 0, start, end = 0; i < nthread; ++i) {
         start = end;
         end = std::min(start + chunksize, maxrank_up);
         v_threads.emplace_back(onespinwfn_add_all_dets_thread, nword, nbasis, nocc_up, &dets[0],
