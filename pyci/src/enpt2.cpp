@@ -373,10 +373,10 @@ double compute_enpt2(const SQuantOp &ham, const WfnType &wfn, const double *coef
         ++n;
     }
     // compute enpt2 correction
-    double e = energy - ham.ecore, result = energy;
+    double e = energy - ham.ecore, correction = 0.0;
     for (const auto &keyval : terms)
-        result += keyval.second.first * keyval.second.first / (e - keyval.second.second);
-    return result;
+        correction += keyval.second.first * keyval.second.first / (e - keyval.second.second);
+    return energy + correction;
 }
 
 template double compute_enpt2<FullCIWfn>(const SQuantOp &, const FullCIWfn &, const double *,
