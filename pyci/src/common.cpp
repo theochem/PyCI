@@ -74,8 +74,7 @@ void fill_hartreefock_det(long nocc, ulong *det) {
 }
 
 void fill_det(const long nocc, const long *occs, ulong *det) {
-    long j;
-    for (long i = 0; i < nocc; ++i) {
+    for (long i = 0, j; i < nocc; ++i) {
         j = occs[i];
         det[j / Size<ulong>()] |= 1UL << (j % Size<ulong>());
     }
@@ -136,8 +135,7 @@ long rank_colex(const long nbasis, const long nocc, const ulong *det) {
 }
 
 void unrank_colex(long nbasis, const long nocc, long rank, long *occs) {
-    long i, j, k, binom;
-    for (i = 0; i < nocc; ++i) {
+    for (long i = 0, j, k, binom; i < nocc; ++i) {
         j = nocc - i;
         binom = binomial(nbasis, j);
         if (binom <= rank) {
