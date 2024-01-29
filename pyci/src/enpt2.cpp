@@ -22,12 +22,11 @@ typedef HashMap<ulong, std::pair<double, double>> PairHashMap;
 namespace {
 
 void compute_enpt2_thread_condense(PairHashMap &terms, PairHashMap &t_terms, const long ithread) {
-    std::pair<double, double> *pair;
     if (!ithread)
         terms.swap(t_terms);
     else {
         for (auto &keyval : t_terms) {
-            pair = &terms[keyval.first];
+            std::pair<double, double> *pair = &terms[keyval.first];
             pair->first += keyval.second.first;
             pair->second = keyval.second.second;
         }
@@ -249,9 +248,8 @@ void compute_enpt2_thread_gather(const GenCIWfn &wfn, const double *one_mo, cons
     if (term.second != (double)0.0)
         return;
     // compute diagonal element
-    long i, j, k, l, ioffset, koffset;
     double diag = 0.0;
-    for (i = 0; i < wfn.nocc; ++i) {
+    for (long i=0, j, k, l, ioffset, koffset; i < wfn.nocc; ++i) {
         j = occs[i];
         ioffset = n3 * j;
         diag += one_mo[(wfn.nbasis + 1) * j];
@@ -267,7 +265,6 @@ void compute_enpt2_thread_gather(const GenCIWfn &wfn, const double *one_mo, cons
 void compute_enpt2_thread_terms(const SQuantOp &ham, const GenCIWfn &wfn, PairHashMap &terms,
                                 const double *coeffs, const double eps, const long idet, ulong *det,
                                 long *occs, long *virs, long *tmps) {
-    long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
     ulong rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
@@ -279,7 +276,7 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const GenCIWfn &wfn, PairHa
     fill_virs(wfn.nword, wfn.nbasis, rdet, virs);
     std::memcpy(tmps, occs, sizeof(long) * wfn.nocc);
     // loop over occupied indices
-    for (i = 0; i < wfn.nocc; ++i) {
+    for (long i = 0, j, k, l, ii, jj, kk, ll, ioffset, koffset; i < wfn.nocc; ++i) {
         ii = occs[i];
         ioffset = n3 * ii;
         // loop over virtual indices
@@ -355,7 +352,6 @@ double compute_enpt2(const SQuantOp &ham, const WfnType &wfn, const double *coef
     if (nthread == -1)
         nthread = get_num_threads();
     long chunksize = wfn.ndet / nthread + static_cast<bool>(wfn.ndet % nthread);
-    long start, end = 0;
     while (nthread > 1 && chunksize < PYCI_CHUNKSIZE_MIN) {
         nthread /= 2;
         chunksize = wfn.ndet / nthread + static_cast<bool>(wfn.ndet % nthread);
@@ -364,7 +360,7 @@ double compute_enpt2(const SQuantOp &ham, const WfnType &wfn, const double *coef
     Vector<PairHashMap> v_terms(nthread);
     Vector<std::thread> v_threads;
     v_threads.reserve(nthread);
-    for (long i = 0; i < nthread; ++i) {
+    for (long i = 0, start, end = 0; i < nthread; ++i) {
         start = end;
         end = std::min(start + chunksize, wfn.ndet);
         v_threads.emplace_back(&compute_enpt2_thread<WfnType>, std::ref(ham), std::ref(wfn),
@@ -377,10 +373,10 @@ double compute_enpt2(const SQuantOp &ham, const WfnType &wfn, const double *coef
         ++n;
     }
     // compute enpt2 correction
-    double e = energy - ham.ecore, result = energy;
+    double e = energy - ham.ecore, correction = 0.0;
     for (const auto &keyval : terms)
-        result += keyval.second.first * keyval.second.first / (e - keyval.second.second);
-    return result;
+        correction += keyval.second.first * keyval.second.first / (e - keyval.second.second);
+    return energy + correction;
 }
 
 template double compute_enpt2<FullCIWfn>(const SQuantOp &, const FullCIWfn &, const double *,

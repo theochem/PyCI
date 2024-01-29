@@ -220,13 +220,13 @@ void SparseOp::sort_row(const long idet) {
 void SparseOp::add_row(const SQuantOp &ham, const DOCIWfn &wfn, const long idet, ulong *det, long *occs,
                        long *virs) {
     /* long i, j, k, l, jdet, jmin = symmetric ? idet - 1 : -1; */
-    long i, j, k, l, jdet, jmin = symmetric ? idet : Max<long>();
+    long  jdet, jmin = symmetric ? idet : Max<long>();
     double val1 = 0.0, val2 = 0.0;
     wfn.copy_det(idet, det);
     fill_occs(wfn.nword, det, occs);
     fill_virs(wfn.nword, wfn.nbasis, det, virs);
     // loop over occupied indices
-    for (i = 0; i < wfn.nocc_up; ++i) {
+    for (long i = 0, j, k, l ; i < wfn.nocc_up; ++i) {
         k = occs[i];
         // compute part of diagonal matrix element
         val1 += ham.v[k * (wfn.nbasis + 1)];
@@ -428,7 +428,7 @@ void SparseOp::add_row(const SQuantOp &ham, const FullCIWfn &wfn, const long ide
 
 void SparseOp::add_row(const SQuantOp &ham, const GenCIWfn &wfn, const long idet, ulong *det, long *occs,
                        long *virs) {
-    long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet : Max<long>(), ioffset, koffset;
+    long jdet, jmin = symmetric ? idet : Max<long>();
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
@@ -439,7 +439,7 @@ void SparseOp::add_row(const SQuantOp &ham, const GenCIWfn &wfn, const long idet
     fill_occs(wfn.nword, rdet, occs);
     fill_virs(wfn.nword, wfn.nbasis, rdet, virs);
     // loop over occupied indices
-    for (i = 0; i < wfn.nocc; ++i) {
+    for (long i = 0, j, k, l, ii, jj, kk, ll, ioffset, koffset; i < wfn.nocc; ++i) {
         ii = occs[i];
         ioffset = n3 * ii;
         // compute part of diagonal matrix element

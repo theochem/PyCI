@@ -21,16 +21,15 @@ namespace {
 
 void hci_thread_add_dets(const SQuantOp &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
                          const double eps, const long idet, ulong *det, long *occs, long *virs) {
-    long i, j, k, l;
     ulong rank;
     // fill working vectors
     wfn.copy_det(idet, det);
     fill_occs(wfn.nword, det, occs);
     fill_virs(wfn.nword, wfn.nbasis, det, virs);
     // single/"pair"-excited elements elements
-    for (i = 0; i < wfn.nocc_up; ++i) {
+    for (long i = 0, k; i < wfn.nocc_up; ++i) {
         k = occs[i];
-        for (j = 0; j < wfn.nvir_up; ++j) {
+        for (long j = 0, l; j < wfn.nvir_up; ++j) {
             l = virs[j];
             excite_det(k, l, det);
             // add determinant if |H*c| > eps and not already in wfn
@@ -180,7 +179,6 @@ void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t
 
 void hci_thread_add_dets(const SQuantOp &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, const double *coeffs,
                          const double eps, const long idet, ulong *det, long *occs, long *virs) {
-    long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
     ulong rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
@@ -190,11 +188,11 @@ void hci_thread_add_dets(const SQuantOp &ham, const GenCIWfn &wfn, GenCIWfn &t_w
     fill_occs(wfn.nword, det, occs);
     fill_virs(wfn.nword, wfn.nbasis, det, virs);
     // loop over occupied indices
-    for (i = 0; i < wfn.nocc; ++i) {
+    for (long i = 0, ii, ioffset, koffset; i < wfn.nocc; ++i) {
         ii = occs[i];
         ioffset = n3 * ii;
         // loop over virtual indices
-        for (j = 0; j < wfn.nvir; ++j) {
+        for (long j = 0, jj, k, kk; j < wfn.nvir; ++j) {
             jj = virs[j];
             // single excitation elements
             excite_det(ii, jj, det);
@@ -215,7 +213,7 @@ void hci_thread_add_dets(const SQuantOp &ham, const GenCIWfn &wfn, GenCIWfn &t_w
                 kk = occs[k];
                 koffset = ioffset + n2 * kk;
                 // loop over virtual indices
-                for (l = j + 1; l < wfn.nvir; ++l) {
+                for (long l = j + 1, ll; l < wfn.nvir; ++l) {
                     ll = virs[l];
                     // double excitation elements
                     excite_det(kk, ll, det);
@@ -252,7 +250,7 @@ long add_hci(const SQuantOp &ham, WfnType &wfn, const double *coeffs, const doub
     if (nthread == -1)
         nthread = get_num_threads();
     long chunksize = ndet_old / nthread + static_cast<bool>(ndet_old % nthread);
-    long start, end = 0;
+
     while (nthread > 1 && chunksize < PYCI_CHUNKSIZE_MIN) {
         nthread /= 2;
         chunksize = ndet_old / nthread + static_cast<bool>(ndet_old % nthread);
@@ -261,7 +259,7 @@ long add_hci(const SQuantOp &ham, WfnType &wfn, const double *coeffs, const doub
     Vector<WfnType> v_wfns;
     v_threads.reserve(nthread);
     v_wfns.reserve(nthread);
-    for (long i = 0; i < nthread; ++i) {
+    for (long i = 0, start, end = 0; i < nthread; ++i) {
         start = end;
         end = std::min(start + chunksize, ndet_old);
         v_wfns.emplace_back(wfn.nbasis, wfn.nocc_up, wfn.nocc_dn);
