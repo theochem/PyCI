@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - master
-      - websiteupd
+      - website
 
   pull_request:
     types: [opened, synchronize, reopened, closed]
