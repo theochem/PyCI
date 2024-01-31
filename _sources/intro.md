@@ -7,7 +7,7 @@
 Michelle Richer, Gabriela Sanchez-Diaz, Farnaz Heidar-Zadeh,and Paul W. Ayers
 
 
-The PyCI source code is hosted on [GitHub](https://github.com/QuantumElephant/PyCI) and is released under the [GNU LESSER GENERAL PUBLIC LICENSE](https://github.com/QuantumElephant/PyCI/blob/master/LICENSE). We welcome any contributions to the PyCI library in accordance with our [Code of Conduct](CODE_OF_CONDUCT.md); please see our [Contributing Guidelines](CONTRIBUTING.md). Please report any issues you encounter while using GBasis library on [GitHub Issues](https://github.com/QuantumElephant/PyCI/issues). For further information and inquiries please contact us at qcdevs@gmail.com.
+The PyCI source code is hosted on [GitHub](https://github.com/QuantumElephant/PyCI) and is released under the [GNU LESSER GPLv3](https://github.com/QuantumElephant/PyCI/blob/master/LICENSE). We welcome any contributions to the PyCI library in accordance with our [Code of Conduct](CODE_OF_CONDUCT.md); please see our [Contributing Guidelines](CONTRIBUTING.md). Please report any issues you encounter while using GBasis library on [GitHub Issues](https://github.com/QuantumElephant/PyCI/issues). For further information and inquiries please contact us at qcdevs@gmail.com.
 
 ## Why PyCI?
 PyCI is a versatile, free, and open-source Python 3 library designed for setting up and executing arbitrary determinant CI (Configuration Interaction) and FanCI (Fan Configuration Interaction) computations. This library is your gateway to efficiently generate arbitrary sets of Slater determinants and construct selected CI wave functions through intuitive Python scripting.
