@@ -53,18 +53,10 @@
     <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script src="../_static/design-tabs.js?v=36754332"></script>
-    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
-const thebe_selector = ".thebe,.cell"
-const thebe_selector_input = "pre"
-const thebe_selector_output = ".output, .cell_output"
-</script>
-    <script async="async" src="../_static/sphinx-thebe.js?v=afe5de03"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
-const thebe_selector = ".thebe,.cell"
-const thebe_selector_input = "pre"
-const thebe_selector_output = ".output, .cell_output"
-</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/api';</script>
@@ -401,7 +393,18 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#classes">Classes</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hamiltonian">Hamiltonian</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#second-quantized-operator-class">Second-quantized operator class</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op"><code class="docutils literal notranslate"><span class="pre">secondquant_op</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.ecore"><code class="docutils literal notranslate"><span class="pre">secondquant_op.ecore</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.h"><code class="docutils literal notranslate"><span class="pre">secondquant_op.h</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.nbasis"><code class="docutils literal notranslate"><span class="pre">secondquant_op.nbasis</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.one_mo"><code class="docutils literal notranslate"><span class="pre">secondquant_op.one_mo</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.to_file"><code class="docutils literal notranslate"><span class="pre">secondquant_op.to_file()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.two_mo"><code class="docutils literal notranslate"><span class="pre">secondquant_op.two_mo</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.v"><code class="docutils literal notranslate"><span class="pre">secondquant_op.v</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.w"><code class="docutils literal notranslate"><span class="pre">secondquant_op.w</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.hamiltonian"><code class="docutils literal notranslate"><span class="pre">hamiltonian</span></code></a></li>
 </ul>
 </li>
@@ -577,12 +580,148 @@ document.write(`
 </section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">#</a></h2>
-<section id="hamiltonian">
-<h3>Hamiltonian<a class="headerlink" href="#hamiltonian" title="Link to this heading">#</a></h3>
+<section id="second-quantized-operator-class">
+<h3>Second-quantized operator class<a class="headerlink" href="#second-quantized-operator-class" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.secondquant_op">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">secondquant_op</span></span><a class="headerlink" href="#pyci.secondquant_op" title="Link to this definition">#</a></dt>
+<dd><p>Second-quantized operator class.</p>
+<p>For arbitrary-seniority systems:</p>
+<div class="math notranslate nohighlight">
+\[O = \sum_{pq}{t_{pq} a^\dagger_p a_q} + \sum_{pqrs}{g_{pqrs} a^\dagger_p a^\dagger_q a_s a_r}\]</div>
+<p>For seniority-zero systems:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\]</div>
+<p>O = sum_{p}{h_p N_p} + sum_{p neq q}{v_{pq} P^dagger_p P_q} + sum_{pq}{w_{pq} N_p N_q}</p>
+</div></blockquote>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[h_{p} = \left&lt;p|T|p\right&gt; = t_{pp}\]</div>
+<div class="math notranslate nohighlight">
+\[v_{pq} = \left&lt;pp|V|qq\right&gt; = g_{ppqq}\]</div>
+<div class="math notranslate nohighlight">
+\[w_{pq} = 2 \left&lt;pq|V|pq\right&gt; - \left&lt;pq|V|qp\right&gt; = 2 * g_{pqpq} - g_{pqqp}\]</div>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.ecore">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ecore</span></span><a class="headerlink" href="#pyci.secondquant_op.ecore" title="Link to this definition">#</a></dt>
+<dd><p>Constant (or &quot;zero-particle&quot;) integral.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ecore</strong> – Constant (or &quot;zero-particle&quot;) integral.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.h">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">h</span></span><a class="headerlink" href="#pyci.secondquant_op.h" title="Link to this definition">#</a></dt>
+<dd><p>Seniority-zero one-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>h</strong> – Seniority-zero one-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.nbasis">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nbasis</span></span><a class="headerlink" href="#pyci.secondquant_op.nbasis" title="Link to this definition">#</a></dt>
+<dd><p>Number of spatial orbital basis functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nbasis</strong> – Number of spatial orbital basis functions.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.one_mo">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">one_mo</span></span><a class="headerlink" href="#pyci.secondquant_op.one_mo" title="Link to this definition">#</a></dt>
+<dd><p>One-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>one_mo</strong> – One-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.secondquant_op.to_file">
+<span class="sig-name descname"><span class="pre">to_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.secondquant_op.to_file" title="Link to this definition">#</a></dt>
+<dd><p>Write this operator to an FCIDUMP file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>TextIO</em>) – Name of FCIDUMP file to write.</p></li>
+<li><p><strong>nelec</strong> (<em>int</em><em>, </em><em>default=0</em>) – Number of electrons to write.</p></li>
+<li><p><strong>ms2</strong> (<em>int</em><em>, </em><em>default=0</em>) – Spin number to write.</p></li>
+<li><p><strong>tol</strong> (<em>float</em><em>, </em><em>default=0.0</em>) – Only write integrals with magnitude larger than this value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.two_mo">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">two_mo</span></span><a class="headerlink" href="#pyci.secondquant_op.two_mo" title="Link to this definition">#</a></dt>
+<dd><p>Two-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>two_mo</strong> – Two-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.v">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">v</span></span><a class="headerlink" href="#pyci.secondquant_op.v" title="Link to this definition">#</a></dt>
+<dd><p>Seniority-zero two-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>v</strong> – Seniority-zero two-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.w">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">w</span></span><a class="headerlink" href="#pyci.secondquant_op.w" title="Link to this definition">#</a></dt>
+<dd><p>Seniority-two two-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>w</strong> – Seniority-two two-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyci.hamiltonian">
 <span class="sig-name descname"><span class="pre">hamiltonian</span></span><a class="headerlink" href="#pyci.hamiltonian" title="Link to this definition">#</a></dt>
-<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">secondquant_op</span></code></p>
+<dd><p>alias of <a class="reference internal" href="#pyci.secondquant_op" title="pyci.pyci.secondquant_op"><code class="xref py py-class docutils literal notranslate"><span class="pre">secondquant_op</span></code></a></p>
 </dd></dl>
 
 </section>
@@ -1281,7 +1420,7 @@ neither are specified, the whole determinant is returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ham</strong> (<em>pyci.secondquant_op</em>) – Hamiltonian.</p></li>
+<li><p><strong>ham</strong> (<a class="reference internal" href="#pyci.secondquant_op" title="pyci.pyci.secondquant_op"><em>pyci.secondquant_op</em></a>) – Hamiltonian.</p></li>
 <li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Wave function.</p></li>
 </ul>
 </dd>
@@ -1351,7 +1490,7 @@ inspired by heat-bath sampling.” <em>Journal of chemical theory and computatio
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ham</strong> (<em>pyci.secondquant_op</em>) – Hamiltonian.</p></li>
+<li><p><strong>ham</strong> (<a class="reference internal" href="#pyci.secondquant_op" title="pyci.pyci.secondquant_op"><em>pyci.secondquant_op</em></a>) – Hamiltonian.</p></li>
 <li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Wave function.</p></li>
 <li><p><strong>coeffs</strong> (<em>numpy.ndarray</em>) – Coefficient vector.</p></li>
 <li><p><strong>eps</strong> (<em>float</em><em>, </em><em>default=1.0e-5</em>) – <span class="math notranslate nohighlight">\(\epsilon\)</span> value for Heat-Bath CI routine.</p></li>
@@ -1489,7 +1628,7 @@ specifies the spin-block 0) “up-up-up-up”, 1) “down-down-down-down’, or 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ham</strong> (<em>pyci.secondquant_op</em>) – Hamiltonian.</p></li>
+<li><p><strong>ham</strong> (<a class="reference internal" href="#pyci.secondquant_op" title="pyci.pyci.secondquant_op"><em>pyci.secondquant_op</em></a>) – Hamiltonian.</p></li>
 <li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Wave function.</p></li>
 <li><p><strong>coeffs</strong> (<em>numpy.ndarray</em>) – Coefficient vector.</p></li>
 <li><p><strong>energy</strong> (<em>float</em>) – Variational CI energy for this wave function and Hamiltonian.</p></li>
@@ -1582,7 +1721,7 @@ specifies the spin-block 0) “up-up-up-up”, 1) “down-down-down-down’, or 
 <h2>FanCI classes<a class="headerlink" href="#fanci-classes" title="Link to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyci.fanci.AP1roG">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AP1roG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">secondquant_op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.doci_wfn" title="pyci.pyci.doci_wfn"><span class="pre">doci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.AP1roG" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AP1roG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.secondquant_op" title="pyci.pyci.secondquant_op"><span class="pre">secondquant_op</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.doci_wfn" title="pyci.pyci.doci_wfn"><span class="pre">doci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.AP1roG" title="Link to this definition">#</a></dt>
 <dd><p>AP1roG FanCI class.</p>
 <p>The AP1roG wave function is the <em>Antisymmetrized Product of 1-reference-orbital
 Geminals</em> <a class="reference internal" href="#ap1rog1" id="id3"><span>[AP1roG1]</span></a>, which has the form</p>
@@ -1650,7 +1789,7 @@ or “S” space, so that a more efficient, specialized computation can be done 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pyci.fanci.APIG">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">APIG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">secondquant_op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.doci_wfn" title="pyci.pyci.doci_wfn"><span class="pre">doci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.APIG" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">APIG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.secondquant_op" title="pyci.pyci.secondquant_op"><span class="pre">secondquant_op</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.doci_wfn" title="pyci.pyci.doci_wfn"><span class="pre">doci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.APIG" title="Link to this definition">#</a></dt>
 <dd><p>APIG FanCI class.</p>
 <p>The APIG wave function is the <em>Antisymmetrized Product of Interacting Geminals</em> <a class="reference internal" href="#apig1" id="id4"><span>[APIG1]</span></a>,
 which has the form</p>
@@ -1715,7 +1854,7 @@ or “S” space, so that a more efficient, specialized computation can be done 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pyci.fanci.DetRatio">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DetRatio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">secondquant_op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numerator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">denominator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.doci_wfn" title="pyci.pyci.doci_wfn"><span class="pre">doci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.DetRatio" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DetRatio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.secondquant_op" title="pyci.pyci.secondquant_op"><span class="pre">secondquant_op</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numerator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">denominator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.doci_wfn" title="pyci.pyci.doci_wfn"><span class="pre">doci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.DetRatio" title="Link to this definition">#</a></dt>
 <dd><p>Determinant ratio FanCI class. This wave function has the form</p>
 <div class="math notranslate nohighlight">
 \[\left|\Psi\right&gt; = \sum_k{c_k\prod_{i=1}^N{a^\dagger_{k_i}}\left|\theta\right&gt;}\]</div>
@@ -1778,7 +1917,7 @@ or “S” space, so that a more efficient, specialized computation can be done 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pyci.fanci.pCCDS">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pCCDS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">secondquant_op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc_up</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc_dn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.fullci_wfn" title="pyci.pyci.fullci_wfn"><span class="pre">fullci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.pCCDS" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pCCDS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.secondquant_op" title="pyci.pyci.secondquant_op"><span class="pre">secondquant_op</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc_up</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc_dn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.fullci_wfn" title="pyci.pyci.fullci_wfn"><span class="pre">fullci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.pCCDS" title="Link to this definition">#</a></dt>
 <dd><p>Pair coupled cluster doubles + singles (or “AP1roGSDspin”) FanCI class.</p>
 <div class="math notranslate nohighlight">
 \[\left| \Psi_\text{pCCD+S} \right&gt; =
@@ -1920,7 +2059,18 @@ or “S” space, so that a more efficient, specialized computation can be done 
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#classes">Classes</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hamiltonian">Hamiltonian</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#second-quantized-operator-class">Second-quantized operator class</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op"><code class="docutils literal notranslate"><span class="pre">secondquant_op</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.ecore"><code class="docutils literal notranslate"><span class="pre">secondquant_op.ecore</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.h"><code class="docutils literal notranslate"><span class="pre">secondquant_op.h</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.nbasis"><code class="docutils literal notranslate"><span class="pre">secondquant_op.nbasis</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.one_mo"><code class="docutils literal notranslate"><span class="pre">secondquant_op.one_mo</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.to_file"><code class="docutils literal notranslate"><span class="pre">secondquant_op.to_file()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.two_mo"><code class="docutils literal notranslate"><span class="pre">secondquant_op.two_mo</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.v"><code class="docutils literal notranslate"><span class="pre">secondquant_op.v</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.w"><code class="docutils literal notranslate"><span class="pre">secondquant_op.w</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.hamiltonian"><code class="docutils literal notranslate"><span class="pre">hamiltonian</span></code></a></li>
 </ul>
 </li>

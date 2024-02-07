@@ -38,6 +38,7 @@ The following programs/libraries are required to build PyCI:
 -  Pydocstyle_ (optional: to run tests)
 -  Sphinx_ (optional: to build the documentation)
 -  `Read the Docs Sphinx Theme`__ (optional: to build the documentation)
+-  NBSphinx_ (optional: to build the documentation)
 
 __ Sphinx-RTD-Theme_
 
@@ -47,7 +48,7 @@ Some header-only C++ libraries are downloaded automatically:
 -  `Parallel Hashmap`__
 -  Pybind11_
 -  Spectra_
--  SpookyHash_
+-  CLHash_
 
 __ Parallel-Hashmap_
 
@@ -61,13 +62,13 @@ E.g., for Debian- or Ubuntu- based Linux systems:
 
 .. code:: shell
 
-    sudo apt-get install make git gcc python3 python3-devel python3-pip python3-sphinx
+    sudo apt-get install make git gcc python3 python3-devel python3-pip
 
 The required Python packages can then be installed with pip:
 
 .. code:: shell
 
-    python3 -m pip --user install numpy scipy pytest pycodestyle pydocstyle
+    python3 -m pip install numpy scipy pytest pycodestyle pydocstyle
 
 Download PyCI
 =============
@@ -76,7 +77,7 @@ Run the following in your shell to download PyCI via git:
 
 .. code:: shell
 
-    git clone https://github.com/msricher/pyci.git && cd pyci
+    git clone https://github.com/theochem/pyci.git && cd pyci
 
 Install PyCI
 ============
@@ -86,7 +87,7 @@ Run the following to build and install PyCI:
 .. code:: shell
 
     make
-    python3 -m pip install -e .
+    python3 -m pip install .
 
 Run the following to test PyCI:
 
@@ -97,18 +98,19 @@ Run the following to test PyCI:
 Build documentation
 ===================
 
-The following programs/libraries are required to build the PyCI documentation:
-
--  Sphinx_
--  `Read the Docs Sphinx Theme`__
-
-__ Sphinx-RTD-Theme_
-
-Run the following in your shell to install the Read the Docs Sphinx theme via pip:
+Run the following in your shell to install PanDoc_ via your system's package manager.
+E.g., for Debian- or Ubuntu- based Linux systems:
 
 .. code:: shell
 
-    python3 -m pip install --user sphinx-rtd-theme
+    sudo apt-get install pandoc
+
+Run the following in your shell to install the packages required to build the documentation via pip:
+
+.. code:: shell
+
+    python3 -m pip install pandoc sphinx nbsphinx sphinx-rtd-theme jupyter-notebook
+
 
 Then, after building PyCI, run the following to build the HTML documentation:
 
@@ -116,11 +118,15 @@ Then, after building PyCI, run the following to build the HTML documentation:
 
     cd doc && make html
 
+.. _`Clang/LLVM`:       http://clang.llvm.org/
+.. _CLHash:             https://github.com/lemire/clhash/
 .. _Eigen:              http://eigen.tuxfamily.org/
 .. _GCC:                http://gcc.gnu.org/
 .. _Git:                http://git-scm.com/
 .. _Make:               http://gnu.org/software/make/
+.. _NBSphinx:           http://nbsphinx.readthedocs.io/
 .. _NumPy:              http://numpy.org/
+.. _PanDoc:             http://pandoc.org/
 .. _Parallel-Hashmap:   http://github.com/greg7mdp/parallel-hashmap/
 .. _Pybind11:           http://pybind11.readthedocs.io/en/stable/
 .. _Pycodestyle:        http://pycodestyle.pycqa.org/en/latest/
@@ -131,5 +137,3 @@ Then, after building PyCI, run the following to build the HTML documentation:
 .. _Spectra:            http://spectralib.org/
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Sphinx:             http://sphinx-doc.org/
-.. _SpookyHash:         http://www.burtleburtle.net/bob/hash/spooky.html
-.. _`Clang/LLVM`:       http://clang.llvm.org/

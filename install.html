@@ -53,18 +53,10 @@
     <script src="_static/togglebutton.js?v=4a39c7ea"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script src="_static/design-tabs.js?v=36754332"></script>
-    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
-const thebe_selector = ".thebe,.cell"
-const thebe_selector_input = "pre"
-const thebe_selector_output = ".output, .cell_output"
-</script>
-    <script async="async" src="_static/sphinx-thebe.js?v=afe5de03"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
-const thebe_selector = ".thebe,.cell"
-const thebe_selector_input = "pre"
-const thebe_selector_output = ".output, .cell_output"
-</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'install';</script>
     <link rel="icon" href="_static/favicon.png"/>
     <link rel="index" title="Index" href="genindex.html" />
@@ -427,6 +419,7 @@ document.write(`
 <li><p><a class="reference external" href="http://www.pydocstyle.org/en/latest/">Pydocstyle</a> (optional: to run tests)</p></li>
 <li><p><a class="reference external" href="http://sphinx-doc.org/">Sphinx</a> (optional: to build the documentation)</p></li>
 <li><p><a class="reference external" href="http://sphinx-rtd-theme.readthedocs.io/">Read the Docs Sphinx Theme</a> (optional: to build the documentation)</p></li>
+<li><p><a class="reference external" href="http://nbsphinx.readthedocs.io/">NBSphinx</a> (optional: to build the documentation)</p></li>
 </ul>
 <p>Some header-only C++ libraries are downloaded automatically:</p>
 <ul class="simple">
@@ -434,7 +427,7 @@ document.write(`
 <li><p><a class="reference external" href="http://github.com/greg7mdp/parallel-hashmap/">Parallel Hashmap</a></p></li>
 <li><p><a class="reference external" href="http://pybind11.readthedocs.io/en/stable/">Pybind11</a></p></li>
 <li><p><a class="reference external" href="http://spectralib.org/">Spectra</a></p></li>
-<li><p><a class="reference external" href="http://www.burtleburtle.net/bob/hash/spooky.html">SpookyHash</a></p></li>
+<li><p><a class="reference external" href="https://github.com/lemire/clhash/">CLHash</a></p></li>
 </ul>
 </section>
 <section id="install-dependencies">
@@ -442,18 +435,18 @@ document.write(`
 <p>The programs required to build and run PyCI can be installed with your operating system’s package
 manager.</p>
 <p>E.g., for Debian- or Ubuntu- based Linux systems:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>make<span class="w"> </span>git<span class="w"> </span>gcc<span class="w"> </span>python3<span class="w"> </span>python3-devel<span class="w"> </span>python3-pip<span class="w"> </span>python3-sphinx
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>make<span class="w"> </span>git<span class="w"> </span>gcc<span class="w"> </span>python3<span class="w"> </span>python3-devel<span class="w"> </span>python3-pip
 </pre></div>
 </div>
 <p>The required Python packages can then be installed with pip:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>--user<span class="w"> </span>install<span class="w"> </span>numpy<span class="w"> </span>scipy<span class="w"> </span>pytest<span class="w"> </span>pycodestyle<span class="w"> </span>pydocstyle
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>numpy<span class="w"> </span>scipy<span class="w"> </span>pytest<span class="w"> </span>pycodestyle<span class="w"> </span>pydocstyle
 </pre></div>
 </div>
 </section>
 <section id="download-pyci">
 <h2>Download PyCI<a class="headerlink" href="#download-pyci" title="Link to this heading">#</a></h2>
 <p>Run the following in your shell to download PyCI via git:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/msricher/pyci.git<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>pyci
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/theochem/pyci.git<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>pyci
 </pre></div>
 </div>
 </section>
@@ -461,7 +454,7 @@ manager.</p>
 <h2>Install PyCI<a class="headerlink" href="#install-pyci" title="Link to this heading">#</a></h2>
 <p>Run the following to build and install PyCI:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>make
-python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
 </div>
 <p>Run the following to test PyCI:</p>
@@ -471,13 +464,13 @@ python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </s
 </section>
 <section id="build-documentation">
 <h2>Build documentation<a class="headerlink" href="#build-documentation" title="Link to this heading">#</a></h2>
-<p>The following programs/libraries are required to build the PyCI documentation:</p>
-<ul class="simple">
-<li><p><a class="reference external" href="http://sphinx-doc.org/">Sphinx</a></p></li>
-<li><p><a class="reference external" href="http://sphinx-rtd-theme.readthedocs.io/">Read the Docs Sphinx Theme</a></p></li>
-</ul>
-<p>Run the following in your shell to install the Read the Docs Sphinx theme via pip:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>sphinx-rtd-theme
+<p>Run the following in your shell to install <a class="reference external" href="http://pandoc.org/">PanDoc</a> via your system’s package manager.
+E.g., for Debian- or Ubuntu- based Linux systems:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>pandoc
+</pre></div>
+</div>
+<p>Run the following in your shell to install the packages required to build the documentation via pip:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pandoc<span class="w"> </span>sphinx<span class="w"> </span>nbsphinx<span class="w"> </span>sphinx-rtd-theme<span class="w"> </span>jupyter-notebook
 </pre></div>
 </div>
 <p>Then, after building PyCI, run the following to build the HTML documentation:</p>

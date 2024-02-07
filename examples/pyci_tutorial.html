@@ -53,18 +53,10 @@
     <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script src="../_static/design-tabs.js?v=36754332"></script>
-    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
-const thebe_selector = ".thebe,.cell"
-const thebe_selector_input = "pre"
-const thebe_selector_output = ".output, .cell_output"
-</script>
-    <script async="async" src="../_static/sphinx-thebe.js?v=afe5de03"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
-const thebe_selector = ".thebe,.cell"
-const thebe_selector_input = "pre"
-const thebe_selector_output = ".output, .cell_output"
-</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'examples/pyci_tutorial';</script>
     <link rel="icon" href="../_static/favicon.png"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -446,7 +438,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#seniority-truncated-ci">Seniority-truncated CI</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#griebel-knapeck-ci-gkci">Griebel-Knapeck CI (GKCI)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#heat-bath-ci">Heat Bath CI</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#overlap-matrix">Overlap matrix</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#overlap">Overlap</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-reduced-density-matrices">Computing reduced density matrices</a></li>
 </ul>
 </li>
@@ -466,7 +458,7 @@ document.write(`
 <p>PyCI is a flexible quantum chemistry Configuration Interaction library for Python 3. The main objective of PyCI is to provide a simple and flexible framework to implement and test new CI methods. PyCI is not intended to be a high performance library, but rather a tool to test new ideas and methods.</p>
 <section id="supported-ci-methods">
 <h2>Supported CI methods<a class="headerlink" href="#supported-ci-methods" title="Link to this heading">#</a></h2>
-<p>Through its main classes, <a class="reference internal" href="#www.github.com/PyCI/PyCI"><span class="xref myst">PyCI</span></a> supports the pair-occupied spatial orbital <a class="reference internal" href="#"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">doci_wfn</span></code></span></a>, orthogonal spin-orbital <a class="reference internal" href="#"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">fullci_wfn</span></code></span></a>, and generalized orbital <a class="reference internal" href="#"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">genci_wfn</span></code></span></a> wavefunction symmetries. The package also supports the use of the restricted and generalized Hamiltonians (unrestricted Hamiltonians can be constructed as a special case of generalized Hamiltonian). These features, combined with routines to control the type of configurations added, according to their excitation level or seniority, allows the user to easily program any CI method.</p>
+<p>Through its main classes, <a class="reference internal" href="#www.github.com/PyCI/PyCI"><span class="xref myst">PyCI</span></a> supports the pair-occupied spatial orbital <a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.doci_wfn"><code class="docutils literal notranslate"><span class="pre">doci_wfn</span></code></a>, orthogonal spin-orbital <a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fullci_wfn"><code class="docutils literal notranslate"><span class="pre">fullci_wfn</span></code></a>, and generalized orbital <a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.genci_wfn"><code class="docutils literal notranslate"><span class="pre">genci_wfn</span></code></a> wavefunction symmetries. The package also supports the use of the restricted and generalized Hamiltonians (unrestricted Hamiltonians can be constructed as a special case of generalized Hamiltonian). These features, combined with routines to control the type of configurations added, according to their excitation level or seniority, allows the user to easily program any CI method.</p>
 <p>In the following tutorial we will look at the following wavefunction models using <strong>Be</strong> as our toy model:</p>
 <ul class="simple">
 <li><p>Full CI</p></li>
@@ -477,7 +469,7 @@ document.write(`
 </ul>
 <section id="loading-data-and-defining-the-hamiltonian">
 <h3>Loading data and defining the Hamiltonian<a class="headerlink" href="#loading-data-and-defining-the-hamiltonian" title="Link to this heading">#</a></h3>
-<p>First, we need to load the integrals data from a quantum chemistry package. PyCI supports the use of files in the <a class="reference external" href="https://doi.org/10.1016/0010-4655(89)90033-7">FCIDUMP</a> file format. The following code shows how to load the integrals from a FCIDUMP file and define the <a class="reference internal" href="#"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">hamiltonian</span></code></span></a> object.</p>
+<p>First, we need to load the integrals data from a quantum chemistry package. PyCI supports the use of files in the <a class="reference external" href="https://doi.org/10.1016/0010-4655(89)90033-7">FCIDUMP</a> file format. The following code shows how to load the integrals from a FCIDUMP file and define the <a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.secondquant_op"><code class="docutils literal notranslate"><span class="pre">hamiltonian</span></code></a> object.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyci</span>
@@ -620,7 +612,7 @@ Seniority Truncated CI energy: -14.61722574 a.u.
 </section>
 <section id="griebel-knapeck-ci-gkci">
 <h3>Griebel-Knapeck CI (GKCI)<a class="headerlink" href="#griebel-knapeck-ci-gkci" title="Link to this heading">#</a></h3>
-<p>The <a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S2210271X18304250">Griebel-Knapeck CI</a> method is a CI method which tries to include the determinants such that the CI truncation error is equal to the basis set truncation error. For this, the selection of the determinants to include in the expansion is based on a cost function. The following code shows how to define a GKCI wavefunction and compute the energy for the lowest singlet state of the beryllium atom.</p>
+<p>The <a class="reference external" href="https://doi.org/10.1016/j.comptc.2018.08.017">Griebel-Knapeck CI</a> method is a CI method which tries to include the determinants such that the CI truncation error is equal to the basis set truncation error. For this, the selection of the determinants to include in the expansion is based on a cost function. The following code shows how to define a GKCI wavefunction and compute the energy for the lowest singlet state of the beryllium atom.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">wfn4</span> <span class="o">=</span> <span class="n">pyci</span><span class="o">.</span><span class="n">fullci_wfn</span><span class="p">(</span><span class="n">ham</span><span class="o">.</span><span class="n">nbasis</span><span class="p">,</span> <span class="o">*</span><span class="n">occs</span><span class="p">)</span>
@@ -647,7 +639,7 @@ Generalized Seniority Truncated CI energy: -14.61684259 a.u.
 </section>
 <section id="heat-bath-ci">
 <h3>Heat Bath CI<a class="headerlink" href="#heat-bath-ci" title="Link to this heading">#</a></h3>
-<p>The <a class="reference internal" href="#"><span class="xref myst">Heat Bath CI</span></a> starts with the Hartree-Fock determinant then use a sampling method to generate determinants connected to the HF determinant with a Hamiltonian matrix element larger than a given threshold. The algorithm is repeated until convergence, each time using the lowest eigenvalue in the selected subspace as the new reference determinant. The following code shows how to define a Heat Bath CI wavefunction and compute the energy for the lowest singlet state of the beryllium atom.</p>
+<p>The <a class="reference external" href="https://doi.org/10.1021/acs.jctc.6b00407">Heat Bath CI</a> starts with the Hartree-Fock determinant then use a sampling method to generate determinants connected to the HF determinant with a Hamiltonian matrix element larger than a given threshold. The algorithm is repeated until convergence, each time using the lowest eigenvalue in the selected subspace as the new reference determinant. The following code shows how to define a Heat Bath CI wavefunction and compute the energy for the lowest singlet state of the beryllium atom.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">wfn5</span> <span class="o">=</span> <span class="n">pyci</span><span class="o">.</span><span class="n">fullci_wfn</span><span class="p">(</span><span class="n">ham</span><span class="o">.</span><span class="n">nbasis</span><span class="p">,</span> <span class="o">*</span><span class="n">occs</span><span class="p">)</span>
@@ -714,9 +706,9 @@ HCI                    282  -14.61740      99.99%
 </div>
 </div>
 </section>
-<section id="overlap-matrix">
-<h3>Overlap matrix<a class="headerlink" href="#overlap-matrix" title="Link to this heading">#</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">PyCI</span></code> also provides a simple framework to compute the overlap matrix between two wavefunction objects. The following code shows how to compute the overlap matrix between the different wavefunction models discussed in this tutorial.</p>
+<section id="overlap">
+<h3>Overlap<a class="headerlink" href="#overlap" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">PyCI</span></code> also provides a simple framework to compute the overlap between two wavefunction objects. The following code shows how to compute the overlap between the different wavefunction models discussed in this tutorial.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ovl0</span> <span class="o">=</span> <span class="n">pyci</span><span class="o">.</span><span class="n">compute_overlap</span><span class="p">(</span><span class="n">wfn0</span><span class="p">,</span> <span class="n">wfn1</span><span class="p">,</span> <span class="n">e_vecs0</span><span class="p">,</span> <span class="n">e_vecs1</span><span class="p">)</span>
@@ -853,7 +845,7 @@ Number of electron pairs = 6.0
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#seniority-truncated-ci">Seniority-truncated CI</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#griebel-knapeck-ci-gkci">Griebel-Knapeck CI (GKCI)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#heat-bath-ci">Heat Bath CI</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#overlap-matrix">Overlap matrix</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#overlap">Overlap</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-reduced-density-matrices">Computing reduced density matrices</a></li>
 </ul>
 </li>

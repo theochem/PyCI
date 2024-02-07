@@ -53,18 +53,10 @@
     <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script src="../_static/design-tabs.js?v=36754332"></script>
-    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
-const thebe_selector = ".thebe,.cell"
-const thebe_selector_input = "pre"
-const thebe_selector_output = ".output, .cell_output"
-</script>
-    <script async="async" src="../_static/sphinx-thebe.js?v=afe5de03"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
-    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
-const thebe_selector = ".thebe,.cell"
-const thebe_selector_input = "pre"
-const thebe_selector_output = ".output, .cell_output"
-</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'examples/fanci_tutorial';</script>
@@ -474,18 +466,20 @@ document.write(`
 <li><p><a class="reference external" href="https://doi.org/10.1021/ct300902c">AP1roG</a> (closed-shell)</p></li>
 <li><p><a class="reference external" href="https://doi.org/10.48550/arXiv.2310.01764">pCCD+S</a> (open-shell)</p></li>
 </ul>
-<p>Other available methods include:</p>
+<p>Available methods include:</p>
 <section id="closed-shell">
 <h3>Closed-shell<a class="headerlink" href="#closed-shell" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p><a class="reference internal" href="#"><span class="xref myst">APIG</span></a></p></li>
-<li><p><a class="reference internal" href="#"><span class="xref myst">Determinant ratio</span></a></p></li>
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.AP1roG">AP1roG</a></p></li>
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.APIG">APIG</a></p></li>
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.DetRatio">Determinant ratio</a></p></li>
 </ul>
 </section>
 <section id="open-shell">
 <h3>Open-shell<a class="headerlink" href="#open-shell" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p><a class="reference internal" href="#"><span class="xref myst">Determinant ratio</span></a></p></li>
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.pCCDS">pCCD+S</a></p></li>
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.DetRatio">Determinant ratio</a></p></li>
 </ul>
 </section>
 <section id="loading-data-and-defining-the-hamiltonian">
