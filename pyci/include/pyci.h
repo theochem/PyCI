@@ -156,10 +156,13 @@ using CDenseVector = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>>;
 template<class KeyType, class ValueType>
 using HashMap = phmap::flat_hash_map<KeyType, ValueType>;
 
-/* Pybind11 NumPy array type. */
+/* Pybind11 NumPy array types. */
 
 template<typename Scalar>
 using Array = pybind11::array_t<Scalar, pybind11::array::c_style | pybind11::array::forcecast>;
+
+template<typename Scalar>
+using ColMajorArray = pybind11::array_t<Scalar, pybind11::array::f_style | pybind11::array::forcecast>;
 
 /* Forward-declare classes. */
 
@@ -675,6 +678,91 @@ private:
     void add_row(const SQuantOp &, const FullCIWfn &, const long, ulong *, long *, long *);
 
     void add_row(const SQuantOp &, const GenCIWfn &, const long, ulong *, long *, long *);
+};
+
+/* FanCI objective classes. */
+
+template<class Wfn>
+class Objective {
+public:
+    std::size_t nproj;
+    std::size_t nconn;
+    std::size_t nparam;
+    std::size_t n_detcons;
+    std::size_t n_paramcons;
+    std::vector<double> ovlp;
+    std::vector<double> d_ovlp;
+    std::vector<long> idx_detcons;
+    std::vector<long> idx_paramcons;
+    std::vector<double> val_detcons;
+    std::vector<double> val_paramcons;
+
+public:
+
+    Objective(const SparseOp &, const Wfn &,
+              const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
+              const std::size_t = 0UL, const long * = nullptr, const double * = nullptr);
+
+    Objective(const SparseOp &, const Wfn &,
+              const pybind11::object, const pybind11::object,
+              const pybind11::object, const pybind11::object);
+
+    Objective(const Objective &);
+
+    Objective(Objective &&) noexcept;
+
+    void init(const std::size_t, const long *, const double *,
+              const std::size_t, const long *, const double *);
+
+    void objective(const SparseOp &, const double *, double *);
+
+    void jacobian(const SparseOp &, const double *, double *);
+
+    Array<double> py_objective(const SparseOp &, const Array<double> &);
+
+    ColMajorArray<double> py_jacobian(const SparseOp &, const Array<double> &);
+
+    Array<double> py_overlap(const Array<double> &);
+
+    ColMajorArray<double> py_d_overlap(const Array<double> &);
+
+    virtual void overlap(const std::size_t, const double *, double *) = 0;
+
+    virtual void d_overlap(const std::size_t, const double *, double *) = 0;
+};
+
+class AP1roGObjective : public Objective<DOCIWfn> {
+public:
+    using Objective<DOCIWfn>::nproj;
+    using Objective<DOCIWfn>::nconn;
+    using Objective<DOCIWfn>::nparam;
+    using Objective<DOCIWfn>::ovlp;
+    using Objective<DOCIWfn>::d_ovlp;
+
+    std::size_t nrow;
+    std::size_t ncol;
+    std::vector<std::size_t> nexc_list;
+    std::vector<std::size_t> hole_list;
+    std::vector<std::size_t> part_list;
+
+public:
+    AP1roGObjective(const SparseOp &, const DOCIWfn &,
+                    const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
+                    const std::size_t = 0UL, const long * = nullptr, const double * = nullptr);
+
+    AP1roGObjective(const SparseOp &, const DOCIWfn &,
+                    const pybind11::object, const pybind11::object,
+                    const pybind11::object, const pybind11::object);
+
+    AP1roGObjective(const AP1roGObjective &);
+
+    AP1roGObjective(AP1roGObjective &&) noexcept;
+
+    void init_overlap(const DOCIWfn &);
+
+    virtual void overlap(const size_t, const double *x, double *y);
+
+    virtual void d_overlap(const size_t, const double *x, double *y);
 };
 
 } // namespace pyci

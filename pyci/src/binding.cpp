@@ -1330,4 +1330,86 @@ m.def("compute_enpt2", &py_compute_enpt2<FullCIWfn>, py::arg("ham"), py::arg("wf
 m.def("compute_enpt2", &py_compute_enpt2<GenCIWfn>, py::arg("ham"), py::arg("wfn"),
       py::arg("coeffs"), py::arg("energy"), py::arg("eps") = 1.0e-5, py::arg("nthread") = -1);
 
+/*
+Section: FanCI classes
+*/
+
+static constexpr char DOCSTRING_OVERLAP[] = R"""(
+)""";
+
+static constexpr char DOCSTRING_D_OVERLAP[] = R"""(
+)""";
+
+static constexpr char DOCSTRING_OBJECTIVE[] = R"""(
+)""";
+
+static constexpr char DOCSTRING_JACOBIAN[] = R"""(
+)""";
+
+py::class_<Objective<DOCIWfn>> doci_objective(m, "DOCIObjective");
+
+doci_objective.doc() = R"""(
+DOCI-FanCI objective class.
+)""";
+
+doci_objective.def("overlap", &Objective<DOCIWfn>::py_overlap, DOCSTRING_OVERLAP,
+    py::arg("x"));
+
+doci_objective.def("d_overlap", &Objective<DOCIWfn>::py_d_overlap, DOCSTRING_D_OVERLAP,
+    py::arg("x"));
+
+doci_objective.def("objective", &Objective<DOCIWfn>::py_objective, DOCSTRING_OBJECTIVE,
+    py::arg("op"), py::arg("x"));
+
+doci_objective.def("jacobian", &Objective<DOCIWfn>::py_jacobian, DOCSTRING_JACOBIAN,
+    py::arg("op"), py::arg("x"));
+
+py::class_<Objective<FullCIWfn>> fullci_objective(m, "FullCIObjective");
+
+fullci_objective.doc() = R"""(
+FullCI-FanCI objective class.
+)""";
+
+fullci_objective.def("overlap", &Objective<FullCIWfn>::py_overlap, DOCSTRING_OVERLAP,
+    py::arg("x"));
+
+fullci_objective.def("d_overlap", &Objective<FullCIWfn>::py_d_overlap, DOCSTRING_D_OVERLAP,
+    py::arg("x"));
+
+fullci_objective.def("objective", &Objective<FullCIWfn>::py_objective, DOCSTRING_OBJECTIVE,
+    py::arg("op"), py::arg("x"));
+
+fullci_objective.def("jacobian", &Objective<FullCIWfn>::py_jacobian, DOCSTRING_JACOBIAN,
+    py::arg("op"), py::arg("x"));
+
+py::class_<Objective<GenCIWfn>> genci_objective(m, "GenCIObjective");
+
+genci_objective.doc() = R"""(
+GenCI-FanCI objective class.
+)""";
+
+genci_objective.def("overlap", &Objective<GenCIWfn>::py_overlap, DOCSTRING_OVERLAP,
+    py::arg("x"));
+
+genci_objective.def("d_overlap", &Objective<GenCIWfn>::py_d_overlap, DOCSTRING_D_OVERLAP,
+    py::arg("x"));
+
+genci_objective.def("objective", &Objective<GenCIWfn>::py_objective, DOCSTRING_OBJECTIVE,
+    py::arg("op"), py::arg("x"));
+
+genci_objective.def("jacobian", &Objective<GenCIWfn>::py_jacobian, DOCSTRING_JACOBIAN,
+    py::arg("op"), py::arg("x"));
+
+py::class_<AP1roGObjective, Objective<DOCIWfn>> ap1rog_objective(m, "AP1roGObjective");
+
+ap1rog_objective.doc() = R"""(
+AP1roG objective class.
+)""";
+
+ap1rog_objective.def(py::init<const SparseOp &, const DOCIWfn &, const py::object, const py::object, const py::object, const py::object>(),
+R"""(
+)""",
+    py::arg("op"), py::arg("wfn"), py::arg("idx_det_cons") = py::none(), py::arg("det_cons") = py::none(),
+    py::arg("idx_param_cons") = py::none(), py::arg("param_cons") = py::none());
+
 END_MODULE

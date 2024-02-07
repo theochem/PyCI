@@ -1,12 +1,14 @@
 """ Test APIG"""
 
 import numpy as np
+from scipy.optimize import least_squares
 
 import pytest
 
 import pyci
 
 from pyci.fanci import AP1roG
+from pyci.fanci.fanci import fill_wavefunction
 from pyci.fanci.apig import permanent
 from pyci.fanci.test import find_datafile, assert_deriv
 
@@ -67,8 +69,8 @@ def test_ap1rog_compute_overlap_deriv(dummy_system):
     ham, nocc, params = dummy_system
     apig = AP1roG(ham, nocc, nproj=None)
 
-    f = lambda x: apig.compute_overlap(x, "S")
-    j = lambda x: apig.compute_overlap_deriv(x, "S")
+    f = lambda x: apig.compute_overlap(x)
+    j = lambda x: apig.compute_overlap_deriv(x)
     origin = np.random.rand(params[:-1].shape[0])
     assert_deriv(f, j, origin)
 
@@ -80,7 +82,7 @@ def test_ap1rog_compute_objective(dummy_system):
 
     objective = ap1rog.compute_objective(params)
     op = pyci.sparse_op(ap1rog.ham, ap1rog.wfn, nproj, symmetric=False)
-    ovlp = ap1rog.compute_overlap(params[:-1], "S")
+    ovlp = ap1rog.compute_overlap(params[:-1])
     answer = op(ovlp) - params[-1] * ovlp[:nproj]
     assert np.allclose(objective, answer)
 
@@ -105,7 +107,7 @@ def test_ap1rog_systems_ground(nocc, system, nucnuc, e_hf, nproj, expected):
 
     params_guess = np.zeros(ap1rog.nparam, dtype=pyci.c_double)
     params_guess[-1] = e_hf
-    results = ap1rog.optimize(params_guess, use_jac=True)
+    results = ap1rog.optimize(params_guess.copy(), use_jac=True)
     ap1rog_energy = results.x[-1] + nucnuc
     assert np.allclose(ap1rog_energy, expected)
 
