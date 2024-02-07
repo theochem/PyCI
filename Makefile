@@ -89,7 +89,7 @@ cleandeps:
 # ------------
 
 compile_flags.txt:
-	echo $(CFLAGS) | tr ' ' '\n' > $(@)
+	echo "$(CFLAGS)" | tr ' ' '\n' > $(@)
 
 pyci/src/%.o: pyci/src/%.cpp pyci/include/pyci.h $(DEPS)
 	$(CXX) $(CFLAGS) $(DEFS) -c $(<) -o $(@)

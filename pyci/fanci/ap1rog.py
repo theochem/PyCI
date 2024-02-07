@@ -10,6 +10,7 @@ import numpy as np
 
 import pyci
 
+from ..pyci import AP1roGObjective
 from .fanci import FanCI
 
 
@@ -87,19 +88,28 @@ class AP1roG(FanCI):
         # Initialize base class
         FanCI.__init__(self, ham, wfn, nproj, nparam, **kwargs)
 
-        # Assign reference occupations
-        ref_occs = np.arange(nocc, dtype=pyci.c_long)
+        # Initialize C extension
+        try:
+            norm_det = kwargs["norm_det"]
+            idx_det_cons = np.asarray([elem[0] for elem in norm_det], dtype=int)
+            det_cons = np.asarray([elem[1] for elem in norm_det], dtype=float)
+        except KeyError:
+            idx_det_cons = None
+            det_cons = None
+        try:
+            norm_param = kwargs["norm_param"]
+            idx_param_cons = np.asarray([elem[0] for elem in norm_param], dtype=int)
+            param_cons = np.asarray([elem[1] for elem in norm_param], dtype=float)
+        except KeyError:
+            idx_param_cons = None
+            param_cons = None
+        self._cext = AP1roGObjective(
+            self._ci_op, self._wfn,
+            idx_det_cons=idx_det_cons, det_cons=det_cons,
+            idx_param_cons=idx_param_cons, param_cons=param_cons,
+        )
 
-        # Use set differences to get hole/particle indices
-        hlist = [np.setdiff1d(ref_occs, occs, assume_unique=1) for occs in self._sspace]
-        plist = [np.setdiff1d(occs, ref_occs, assume_unique=1) - nocc for occs in self._sspace]
-
-        # Save sub-class -specific attributes
-        self._ref_occs = ref_occs
-        self._sspace_data = hlist, plist
-        self._pspace_data = hlist[:nproj], plist[:nproj]
-
-    def compute_overlap(self, x: np.ndarray, occs_array: Union[np.ndarray, str]) -> np.ndarray:
+    def compute_overlap(self, x: np.ndarray) -> np.ndarray:
         r"""
         Compute the FanCI overlap vector.
 
@@ -107,10 +117,6 @@ class AP1roG(FanCI):
         ----------
         x : np.ndarray
             Parameter array, [p_0, p_1, ..., p_n].
-        occs_array : (np.ndarray | 'P' | 'S')
-            Array of determinant occupations for which to compute overlap. A string "P" or "S" can
-            be passed instead that indicates whether ``occs_array`` corresponds to the "P" space
-            or "S" space, so that a more efficient, specialized computation can be done for these.
 
         Returns
         -------
@@ -118,35 +124,9 @@ class AP1roG(FanCI):
             Overlap array.
 
         """
-        # Check if we can use our pre-computed {p,s}space_data
-        if isinstance(occs_array, np.ndarray):
-            # Use set differences to get hole/particle indices
-            nocc = self._wfn.nocc_up
-            ref_occs = self._ref_occs
-            hlist = [np.setdiff1d(ref_occs, occs, assume_unique=1) for occs in occs_array]
-            plist = [np.setdiff1d(occs, ref_occs, assume_unique=1) - nocc for occs in occs_array]
-        elif occs_array == "P":
-            occs_array = self._pspace
-            hlist, plist = self._pspace_data
-        elif occs_array == "S":
-            occs_array = self._sspace
-            hlist, plist = self._sspace_data
-        else:
-            raise ValueError("invalid `occs_array` argument")
+        return self._cext.overlap(x)
 
-        # Reshape parameter array to AP1roG matrix
-        x_mat = x.reshape(self._wfn.nocc_up, self._wfn.nvir_up)
-
-        # Compute overlaps of occupation vectors
-        y = np.empty(occs_array.shape[0], dtype=pyci.c_double)
-        for i, (occs, holes, parts) in enumerate(zip(occs_array, hlist, plist)):
-            # Overlap is equal to one for the reference determinant
-            y[i] = permanent(x_mat[holes, :][:, parts]) if holes.size else 1
-        return y
-
-    def compute_overlap_deriv(
-        self, x: np.ndarray, occs_array: Union[np.ndarray, str]
-    ) -> np.ndarray:
+    def compute_overlap_deriv(self, x: np.ndarray) -> np.ndarray:
         r"""
         Compute the FanCI overlap derivative matrix.
 
@@ -154,10 +134,6 @@ class AP1roG(FanCI):
         ----------
         x : np.ndarray
             Parameter array, [p_0, p_1, ..., p_n].
-        occs_array : (np.ndarray | 'P' | 'S')
-            Array of determinant occupations for which to compute overlap. A string "P" or "S" can
-            be passed instead that indicates whether ``occs_array`` corresponds to the "P" space
-            or "S" space, so that a more efficient, specialized computation can be done for these.
 
         Returns
         -------
@@ -165,65 +141,42 @@ class AP1roG(FanCI):
             Overlap derivative array.
 
         """
-        # Check if we can use our precomputed {p,s}space_{exc,pos}_data
-        if isinstance(occs_array, np.ndarray):
-            # Use set differences to get hole/particle indices
-            nocc = self._wfn.nocc_up
-            ref_occs = self._ref_occs
-            hlist = [np.setdiff1d(ref_occs, occs, assume_unique=1) for occs in occs_array]
-            plist = [np.setdiff1d(occs, ref_occs, assume_unique=1) - nocc for occs in occs_array]
-        elif occs_array == "P":
-            occs_array = self._pspace
-            hlist, plist = self._pspace_data
-        elif occs_array == "S":
-            occs_array = self._sspace
-            hlist, plist = self._sspace_data
-        else:
-            raise ValueError("invalid `occs_array` argument")
+        return self._cext.d_overlap(x)
 
-        # Reshape parameter array to AP1roG matrix
-        x_mat = x.reshape(self._wfn.nocc_up, self._wfn.nvir_up)
+    def compute_objective(self, x: np.ndarray) -> np.ndarray:
+        r"""
+        Compute the FanCI objective function.
 
-        # Shape of y is (no. determinants, no. parameters excluding energy)
-        y = np.zeros((occs_array.shape[0], self._nparam - 1), dtype=pyci.c_double)
+            f : x[k] -> y[n]
 
-        # Iterate over occupation vectors
-        for y_row, holes, parts in zip(y, hlist, plist):
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter array, [p_0, p_1, ..., p_n, E].
 
-            # Iterate over all parameters i
-            for i in range(self.nparam - 1):
+        Returns
+        -------
+        obj : np.ndarray
+            Objective vector.
 
-                # Check for reference determinant
-                if not holes.size:
-                    continue
+        """
+        return self._cext.objective(self._ci_op, x)
 
-                # Cut out the rows and columns corresponding to the element wrt which the permanent
-                # is derivatized
-                rows = holes[holes != (i // self.wfn.nvir_up)]
-                cols = parts[parts != (i % self.wfn.nvir_up)]
-                if rows.size == cols.size == 0:
-                    y_row[i] = 1.0
-                elif rows.size != holes.size and cols.size != parts.size:
-                    y_row[i] = permanent(x_mat[rows, :][:, cols])
+    def compute_jacobian(self, x: np.ndarray) -> np.ndarray:
+        r"""
+        Compute the Jacobian of the FanCI objective function.
 
-        # Return overlap derivative matrix
-        return y
+            j : x[k] -> y[n, k]
 
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter array, [p_0, p_1, ..., p_n, E].
 
-def permanent(matrix: np.ndarray) -> float:
-    r"""
-    Compute the permanent of a square matrix.
+        Returns
+        -------
+        jac : np.ndarray
+            Jacobian matrix.
 
-    Parameters
-    ----------
-    matrix : np.ndarray
-        Square matrix.
-
-    Returns
-    -------
-    result : matrix.dtype
-        Permanent of the matrix.
-
-    """
-    rows = np.arange(matrix.shape[0])
-    return sum(np.prod(matrix[rows, cols]) for cols in permutations(rows))
+        """
+        return self._cext.jacobian(self._ci_op, x)
