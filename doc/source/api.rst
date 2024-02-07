@@ -34,8 +34,11 @@ Numerical Types
 Classes
 =======
 
-Hamiltonian
------------
+Second-quantized operator class
+-------------------------------
+
+.. autoclass:: pyci.secondquant_op
+    :members:
 
 .. autoclass:: pyci.hamiltonian
     :members:
