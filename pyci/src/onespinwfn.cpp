@@ -125,7 +125,7 @@ long OneSpinWfn::index_det(const ulong *det) const {
     return (search == dict.end()) ? -1 : search->second;
 }
 
-long OneSpinWfn::index_det_from_rank(const ulong rank) const {
+long OneSpinWfn::index_det_from_rank(const Hash rank) const {
     const auto &search = dict.find(rank);
     return (search == dict.end()) ? -1 : search->second;
 }
@@ -134,8 +134,8 @@ void OneSpinWfn::copy_det(const long i, ulong *det) const {
     std::memcpy(det, &dets[i * nword], sizeof(ulong) * nword);
 }
 
-ulong OneSpinWfn::rank_det(const ulong *det) const {
-    return hasher.operator()<ulong>(det, nword);
+Hash OneSpinWfn::rank_det(const ulong *det) const {
+    return spookyhash(nword, det);
 }
 
 long OneSpinWfn::add_det(const ulong *det) {
@@ -147,7 +147,7 @@ long OneSpinWfn::add_det(const ulong *det) {
     return -1;
 }
 
-long OneSpinWfn::add_det_with_rank(const ulong *det, const ulong rank) {
+long OneSpinWfn::add_det_with_rank(const ulong *det, const Hash rank) {
     if (dict.insert(std::make_pair(rank, ndet)).second) {
         dets.resize(dets.size() + nword);
         std::memcpy(&dets[nword * ndet], det, sizeof(ulong) * nword);
@@ -288,7 +288,7 @@ long OneSpinWfn::py_index_det(const Array<ulong> det) const {
     return index_det(reinterpret_cast<const ulong *>(det.request().ptr));
 }
 
-ulong OneSpinWfn::py_rank_det(const Array<ulong> det) const {
+Hash OneSpinWfn::py_rank_det(const Array<ulong> det) const {
     return rank_det(reinterpret_cast<const ulong *>(det.request().ptr));
 }
 

@@ -17,7 +17,7 @@
 
 namespace pyci {
 
-typedef HashMap<ulong, std::pair<double, double>> PairHashMap;
+typedef HashMap<Hash, std::pair<double, double>> PairHashMap;
 
 namespace {
 
@@ -77,7 +77,7 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairH
                                 const double *coeffs, const double eps, const long idet,
                                 ulong *det_up, long *occs_up, long *virs_up, long *t_up) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset, sign_up;
-    ulong rank;
+    Hash rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
@@ -265,7 +265,7 @@ void compute_enpt2_thread_gather(const GenCIWfn &wfn, const double *one_mo, cons
 void compute_enpt2_thread_terms(const SQuantOp &ham, const GenCIWfn &wfn, PairHashMap &terms,
                                 const double *coeffs, const double eps, const long idet, ulong *det,
                                 long *occs, long *virs, long *tmps) {
-    ulong rank;
+    Hash rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
