@@ -39,9 +39,9 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-#include <clhash.h>
-
 #include <parallel_hashmap/phmap.h>
+
+#include <SpookyV2.h>
 
 #include <sort_with_arg.h>
 
@@ -116,6 +116,17 @@ inline int Ctz(const unsigned long long t) {
     return __builtin_ctzll(t);
 }
 
+/* Hash function. */
+
+typedef std::pair<ulong, ulong> Hash;
+
+template<typename T, typename U>
+Hash spookyhash(T length, const U *data) {
+    Hash h(0x23a23cf5033c3c81UL, 0xb3816f6a2c68e530UL);
+    SpookyHash::Hash128(reinterpret_cast<const void *>(data), length * sizeof(U), &h.first, &h.second);
+    return h;
+}
+
 /* Vector template types. */
 
 template<typename T>
@@ -164,9 +175,6 @@ struct SparseOp;
 /* Number of threads global variable. */
 
 extern long g_number_threads;
-
-/* clhash global struct. */
-extern clhasher hasher;
 
 /* PyCI routines. */
 
@@ -293,7 +301,7 @@ public:
 
 protected:
     AlignedVector<ulong> dets;
-    HashMap<ulong, long> dict;
+    HashMap<Hash, long> dict;
 
 public:
     Wfn(const Wfn &);
@@ -358,15 +366,15 @@ public:
 
     long index_det(const ulong *) const;
 
-    long index_det_from_rank(const ulong) const;
+    long index_det_from_rank(const Hash) const;
 
     void copy_det(const long, ulong *) const;
 
-    ulong rank_det(const ulong *) const;
+    Hash rank_det(const ulong *) const;
 
     long add_det(const ulong *);
 
-    long add_det_with_rank(const ulong *, const ulong);
+    long add_det_with_rank(const ulong *, const Hash);
 
     long add_det_from_occs(const long *);
 
@@ -388,7 +396,7 @@ public:
 
     long py_index_det(const Array<ulong>) const;
 
-    ulong py_rank_det(const Array<ulong>) const;
+    Hash py_rank_det(const Array<ulong>) const;
 
     long py_add_det(const Array<ulong>);
 
@@ -443,15 +451,15 @@ public:
 
     long index_det(const ulong *) const;
 
-    long index_det_from_rank(const ulong) const;
+    long index_det_from_rank(const Hash) const;
 
     void copy_det(const long, ulong *) const;
 
-    ulong rank_det(const ulong *) const;
+    Hash rank_det(const ulong *) const;
 
     long add_det(const ulong *);
 
-    long add_det_with_rank(const ulong *, const ulong);
+    long add_det_with_rank(const ulong *, const Hash);
 
     long add_det_from_occs(const long *);
 
@@ -473,7 +481,7 @@ public:
 
     long py_index_det(const Array<ulong>) const;
 
-    ulong py_rank_det(const Array<ulong>) const;
+    Hash py_rank_det(const Array<ulong>) const;
 
     long py_add_det(const Array<ulong>);
 

@@ -29,18 +29,21 @@ export CXX
 PYTHON ?= python3
 
 # Set C++ compile flags
-CFLAGS := --std=c++14 -Wall -Wextra -pipe -O3
-CFLAGS += -mavx -mavx2 -msse4.2 -march=native
+CFLAGS := -std=c++14 -Wall -Wextra -pipe -O3
 CFLAGS += -fPIC -flto=auto -fvisibility=hidden
 CFLAGS += -pthread
 CFLAGS += -Ipyci/include
+
+ifneq ($(MAKE_NATIVE),)
+CFLAGS += -mavx -mavx2 -msse4.2 -march=native -mtune=native
+endif
 
 # Set Python include directories
 CFLAGS += $(shell $(PYTHON) tools/python_include_dirs.py)
 
 # Set external projects and their include directories
-DEPS := $(addprefix deps/,eigen spectra parallel-hashmap clhash pybind11)
-CFLAGS += $(addprefix -Ideps/,eigen spectra/include parallel-hashmap clhash/include pybind11/include)
+DEPS := $(addprefix deps/,eigen spectra parallel-hashmap pybind11)
+CFLAGS += $(addprefix -Ideps/,eigen spectra/include parallel-hashmap pybind11/include)
 
 # This C++ compile flag is needed in order for Macs to find system libraries
 ifeq ($(shell uname -s),Darwin)
@@ -91,7 +94,7 @@ compile_flags.txt:
 pyci/src/%.o: pyci/src/%.cpp pyci/include/pyci.h $(DEPS)
 	$(CXX) $(CFLAGS) $(DEFS) -c $(<) -o $(@)
 
-pyci/pyci.so.$(PYCI_VERSION): $(OBJECTS) deps/clhash/clhash.o
+pyci/pyci.so.$(PYCI_VERSION): $(OBJECTS)
 	$(CXX) $(CFLAGS) $(DEFS) -shared $(^) -o $(@)
 
 pyci/pyci.so.$(VERSION_MAJOR): pyci/pyci.so.$(PYCI_VERSION)
@@ -108,12 +111,6 @@ deps/spectra:
 
 deps/parallel-hashmap:
 	@git clone https://github.com/greg7mdp/parallel-hashmap.git $(@)
-
-deps/clhash:
-	@git clone https://github.com/lemire/clhash.git $(@)
-
-deps/clhash/clhash.o: deps/clhash
-	$(MAKE) -C $(dir $(@))
 
 deps/pybind11:
 	@git clone https://github.com/pybind/pybind11.git $(@)

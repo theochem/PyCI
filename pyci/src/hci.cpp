@@ -21,7 +21,7 @@ namespace {
 
 void hci_thread_add_dets(const SQuantOp &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
                          const double eps, const long idet, ulong *det, long *occs, long *virs) {
-    ulong rank;
+    Hash rank;
     // fill working vectors
     wfn.copy_det(idet, det);
     fill_occs(wfn.nword, det, occs);
@@ -47,7 +47,7 @@ void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t
                          const double *coeffs, const double eps, const long idet, ulong *det_up,
                          long *occs_up, long *virs_up) {
     long i, j, k, l, ii, jj, kk, ll, ioffset, koffset;
-    ulong rank;
+    Hash rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
@@ -179,7 +179,7 @@ void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t
 
 void hci_thread_add_dets(const SQuantOp &ham, const GenCIWfn &wfn, GenCIWfn &t_wfn, const double *coeffs,
                          const double eps, const long idet, ulong *det, long *occs, long *virs) {
-    ulong rank;
+    Hash rank;
     long n1 = wfn.nbasis;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
