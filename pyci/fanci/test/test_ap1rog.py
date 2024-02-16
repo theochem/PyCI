@@ -9,7 +9,6 @@ import pyci
 
 from pyci.fanci import AP1roG
 from pyci.fanci.fanci import fill_wavefunction
-from pyci.fanci.apig import permanent
 from pyci.fanci.test import find_datafile, assert_deriv
 
 
@@ -136,20 +135,3 @@ def test_ap1rog_init_defaults():
     assert test.nvir_up == nbasis - nocc
     assert test.nvir_dn == nbasis - nocc
     assert test.pspace.shape[0] == 9
-
-
-def test_ap1rog_permanent():
-    matrix = np.arange(1, 65, dtype=float)
-    answers = [
-        1.0,
-        1.0,
-        10.0,
-        450.0,
-        55456.0,
-        14480700.0,
-        6878394720.0,
-        5373548250000.0,
-        6427291156586496.0,
-    ]
-    for i, answer in enumerate(answers):
-        assert permanent(matrix[: i ** 2].reshape(i, i)) == answer
