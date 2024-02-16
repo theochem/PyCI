@@ -1408,6 +1408,54 @@ AP1roG objective class.
 
 ap1rog_objective.def(py::init<const SparseOp &, const DOCIWfn &, const py::object, const py::object, const py::object, const py::object>(),
 R"""(
+Initialize the AP1roG objective instance.
+
+Parameters
+----------
+op : pyci.sparse_op
+    Sparse operator instance with ``nproj`` rows ("P" space) and ``nconn`` columns ("S" space).
+wfn : pyci.doci_wfn
+    DOCI wave function with ``nconn`` determinants.
+    The first ``nproj`` determinants should correspond to the "S" space.
+idx_det_cons : np.ndarray(Nd, dtype=pyci.c_long)
+    The indices of the determinants on which constraints should be placed.
+det_cons : np.ndarray(Nd, dtype=pyci.c_double)
+    The values to which the constrained determinants' overlaps should be equal.
+idx_param_cons : np.ndarray(Np, dtype=pyci.c_long)
+    The indices of the parameters on which constraints should be placed.
+param_cons : np.ndarray(Np, dtype=pyci.c_double)
+    The values to which the constrained parameters should be equal.
+
+)""",
+    py::arg("op"), py::arg("wfn"), py::arg("idx_det_cons") = py::none(), py::arg("det_cons") = py::none(),
+    py::arg("idx_param_cons") = py::none(), py::arg("param_cons") = py::none());
+
+py::class_<APIGObjective, Objective<DOCIWfn>> apig_objective(m, "APIGObjective");
+
+apig_objective.doc() = R"""(
+APIG objective class.
+)""";
+
+apig_objective.def(py::init<const SparseOp &, const DOCIWfn &, const py::object, const py::object, const py::object, const py::object>(),
+R"""(
+Initialize the APIG objective instance.
+
+Parameters
+----------
+op : pyci.sparse_op
+    Sparse operator instance with ``nproj`` rows ("P" space) and ``nconn`` columns ("S" space).
+wfn : pyci.doci_wfn
+    DOCI wave function with ``nconn`` determinants.
+    The first ``nproj`` determinants should correspond to the "S" space.
+idx_det_cons : np.ndarray(Nd, dtype=pyci.c_long)
+    The indices of the determinants on which constraints should be placed.
+det_cons : np.ndarray(Nd, dtype=pyci.c_double)
+    The values to which the constrained determinants' overlaps should be equal.
+idx_param_cons : np.ndarray(Np, dtype=pyci.c_long)
+    The indices of the parameters on which constraints should be placed.
+param_cons : np.ndarray(Np, dtype=pyci.c_double)
+    The values to which the constrained parameters should be equal.
+
 )""",
     py::arg("op"), py::arg("wfn"), py::arg("idx_det_cons") = py::none(), py::arg("det_cons") = py::none(),
     py::arg("idx_param_cons") = py::none(), py::arg("param_cons") = py::none());

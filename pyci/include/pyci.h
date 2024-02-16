@@ -765,4 +765,36 @@ public:
     virtual void d_overlap(const size_t, const double *x, double *y);
 };
 
+class APIGObjective : public Objective<DOCIWfn> {
+public:
+    using Objective<DOCIWfn>::nproj;
+    using Objective<DOCIWfn>::nconn;
+    using Objective<DOCIWfn>::nparam;
+    using Objective<DOCIWfn>::ovlp;
+    using Objective<DOCIWfn>::d_ovlp;
+
+    std::size_t nrow;
+    std::size_t ncol;
+    std::vector<std::size_t> part_list;
+
+public:
+    APIGObjective(const SparseOp &, const DOCIWfn &,
+                    const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
+                    const std::size_t = 0UL, const long * = nullptr, const double * = nullptr);
+
+    APIGObjective(const SparseOp &, const DOCIWfn &,
+                    const pybind11::object, const pybind11::object,
+                    const pybind11::object, const pybind11::object);
+
+    APIGObjective(const APIGObjective &);
+
+    APIGObjective(APIGObjective &&) noexcept;
+
+    void init_overlap(const DOCIWfn &);
+
+    virtual void overlap(const size_t, const double *x, double *y);
+
+    virtual void d_overlap(const size_t, const double *x, double *y);
+};
+
 } // namespace pyci
