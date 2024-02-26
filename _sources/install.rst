@@ -48,9 +48,12 @@ Some header-only C++ libraries are downloaded automatically:
 -  `Parallel Hashmap`__
 -  Pybind11_
 -  Spectra_
--  CLHash_
 
 __ Parallel-Hashmap_
+
+Some public domain C++ libraries are included directly with the source code:
+
+-  SpookyHash_
 
 Install dependencies
 ====================
@@ -119,7 +122,6 @@ Then, after building PyCI, run the following to build the HTML documentation:
     cd doc && make html
 
 .. _`Clang/LLVM`:       http://clang.llvm.org/
-.. _CLHash:             https://github.com/lemire/clhash/
 .. _Eigen:              http://eigen.tuxfamily.org/
 .. _GCC:                http://gcc.gnu.org/
 .. _Git:                http://git-scm.com/
@@ -137,3 +139,4 @@ Then, after building PyCI, run the following to build the HTML documentation:
 .. _Spectra:            http://spectralib.org/
 .. _Sphinx-RTD-Theme:   http://sphinx-rtd-theme.readthedocs.io/
 .. _Sphinx:             http://sphinx-doc.org/
+.. _SpookyHash:         http://burtleburtle.net/bob/hash/spooky.html
