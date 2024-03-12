@@ -94,3 +94,4 @@ deps/
 
 # Jupyter Notebooks
 .ipynb_checkpoints
+.DS_Store
