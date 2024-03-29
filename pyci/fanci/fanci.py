@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 
-from scipy.optimize import OptimizeResult, least_squares, root
+from scipy.optimize import OptimizeResult, least_squares, root,minimize
 
 import pyci
 
@@ -227,6 +227,7 @@ class FanCI(metaclass=ABCMeta):
         mode: str = "lstsq",
         use_jac: bool = False,
         sigma: float = 0.1,
+	    custom_optimizer: callable=None,
         **kwargs: Any,
     ) -> OptimizeResult:
         r"""
@@ -236,7 +237,7 @@ class FanCI(metaclass=ABCMeta):
         ----------
         x0 : np.ndarray
             Initial guess for wave function parameters.
-        mode : ('lstsq' | 'root'), default='lstsq'
+        mode : ('lstsq' | 'root' | 'custom'), default='lstsq'
             Solver mode.
         use_jac : bool, default=False
             Whether to use the Jacobian function or a finite-difference approximation.
@@ -263,17 +264,22 @@ class FanCI(metaclass=ABCMeta):
         opt_kwargs = kwargs.copy()
         if use_jac:
             opt_kwargs["jac"] = j
-
+            
         # Parse mode parameter; choose optimizer and fix arguments
         if mode == "lstsq":
-            opt_args = f, x0
             optimizer = least_squares
-        elif mode == "root":
             opt_args = f, x0
+        elif mode == "root":
             optimizer = root
+            opt_args = f, x0
+        elif mode == 'custom':
+            if custom_optimizer is None:
+                raise ValueError("Optimizer is not provided")
+            optimizer = custom_optimizer
+            opt_args = f, x0
         else:
             raise ValueError("invalid mode parameter")
-
+        
         # Run optimizer
         return optimizer(*opt_args, **opt_kwargs)
 
