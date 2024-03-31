@@ -16,7 +16,7 @@
 r"""PyCI utility module."""
 
 import numpy as np
-
+import pyci
 
 __all__ = [
     "make_senzero_integrals",
@@ -147,3 +147,83 @@ def spinize_rdms(d1, d2):
         abba -= np.swapaxes(d2[2], 2, 3)  # -abab
         baab -= np.swapaxes(d2[2], 0, 1)  # -abab
     return rdm1, rdm2
+
+
+def odometer_one_spin(wfn, nodes, t, qmax):
+    r"""
+    Iterates over determinants of a one-spin wave function, adding those that satisfy
+    the given condition to the wave function in place.
+
+    Parameters
+    ----------
+    wfn : pyci.wavefunction
+        The wave function to be modified.
+    nodes : np.ndarray
+        Array of node weights, typically representing some property of the nodes
+        like spin or charge that impacts the condition check for each determinant.
+    t : float
+        A scaling factor for the last node's weight in the condition check, adjusting
+        the influence of the last particle's node weight on the overall determinant evaluation.
+    qmax : float
+        Cost of the most important neglected determinant.
+
+    """
+    old = np.arange(wfn.nocc_up, dtype=pyci.c_long)
+    new = np.copy(old)
+    # Index of last particle
+    j = wfn.nocc_up - 1
+    # Select determinants
+    while True:
+        if new[-1] < wfn.nbasis and (np.sum(nodes[new]) + t * nodes[new[-1]]) < qmax:
+            # Accept determinant and go back to last particle
+            wfn.add_occs(new)
+            j = wfn.nocc_up - 1
+        else:
+            # Reject determinant and cycle j
+            new[:] = old
+            j -= 1
+        # Check termination condition
+        if j < 0:
+            break
+        # Generate next determinant
+        old[:] = new
+        new[j:] = np.arange(new[j] + 1, new[j] + wfn.nocc_up - j + 1)
+
+
+def odometer_two_spin(wfn, nodes, t, qmax):
+    r"""
+    Processes a two-spin wave function, applying the odometer algorithm to both up-spin
+    and down-spin components and combining the accepted determinants into the wave function.
+
+    Parameters
+    ----------
+    wfn : pyci.wavefunction
+        The wave function to be modified.
+    nodes : np.ndarray
+        Array of node weights, typically representing some property of the nodes
+        like spin or charge that impacts the condition check for each determinant.
+    t : float
+        A scaling factor for the last node's weight in the condition check, adjusting
+        the influence of the last particle's node weight on the overall determinant evaluation.
+    qmax : float
+        Cost of the most important neglected determinant.
+
+    """
+
+    wfn_up = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up, wfn.nocc_up)
+    odometer_one_spin(wfn_up, nodes, t, qmax)
+    if not len(wfn_up):
+        return
+    if wfn.nocc_dn:
+        wfn_dn = pyci.doci_wfn(wfn.nbasis, wfn.nocc_dn, wfn.nocc_dn)
+        odometer_one_spin(wfn_dn, nodes, t, qmax)
+        if not len(wfn_dn):
+            return
+        for i in range(len(wfn_up)):
+            det_up = wfn_up[i]
+            for j in range(len(wfn_dn)):
+                wfn.add_det(np.vstack((det_up, wfn_dn[j])))
+    else:
+        det_dn = np.zeros_like(wfn_up[0])
+        for i in range(len(wfn_up)):
+            wfn.add_det(np.vstack((wfn_up[i], det_dn)))
