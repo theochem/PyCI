@@ -147,3 +147,37 @@ def spinize_rdms(d1, d2):
         abba -= np.swapaxes(d2[2], 2, 3)  # -abab
         baab -= np.swapaxes(d2[2], 0, 1)  # -abab
     return rdm1, rdm2
+
+
+def default_condition(new, wfn, nodes, t, p, qmax = None) -> bool, float:
+    if qmax is None:
+        # Compute cost of the most important neglected determinant
+        q_max = (np.sum(nodes[: wfn.nocc_up - 1]) + (t + 1) * nodes[-1]) * p
+    
+    return new[-1] < wfn.nbasis and (np.sum(nodes[new]) + t * nodes[new[-1]]) < q_max, qmax
+
+
+def odometer_one_spin(wfn, condition = default_condition, *args, **kwargs):
+    r"""Run the odometer algorithm for a one-spin wave function."""
+    old = np.arange(wfn.nocc_up, dtype=pyci.c_long)
+    new = np.copy(old)
+    # Index of last particle
+    j = wfn.nocc_up - 1
+    # Select determinants
+    qmax = None
+    while True:
+        flag, qmax = condition(new, wfn, qmax=qmax, *args, **kwargs)
+        if flag:
+            # Accept determinant and go back to last particle
+            wfn.add_occs(new)
+            j = wfn.nocc_up - 1
+        else:
+            # Reject determinant and cycle j
+            new[:] = old
+            j -= 1
+        # Check termination condition
+        if j < 0:
+            break
+        # Generate next determinant
+        old[:] = new
+        new[j:] = np.arange(new[j] + 1, new[j] + wfn.nocc_up - j + 1)
