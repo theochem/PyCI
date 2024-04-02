@@ -181,3 +181,24 @@ def odometer_one_spin(wfn, condition = default_condition, *args, **kwargs):
         # Generate next determinant
         old[:] = new
         new[j:] = np.arange(new[j] + 1, new[j] + wfn.nocc_up - j + 1)
+
+
+def odometer_two_spin(wfn, condition = default_condition, *args, **kwargs):
+    r"""Run the odometer algorithm for a two-spin wave function."""
+    wfn_up = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up, wfn.nocc_up)
+    odometer_one_spin(wfn_up, condition = default_condition, *args, **kwargs)
+    if not len(wfn_up):
+        return
+    if wfn.nocc_dn:
+        wfn_dn = pyci.doci_wfn(wfn.nbasis, wfn.nocc_dn, wfn.nocc_dn)
+        odometer_one_spin(wfn_dn, condition = default_condition, *args, **kwargs)
+        if not len(wfn_dn):
+            return
+        for i in range(len(wfn_up)):
+            det_up = wfn_up[i]
+            for j in range(len(wfn_dn)):
+                wfn.add_det(np.vstack((det_up, wfn_dn[j])))
+    else:
+        det_dn = np.zeros_like(wfn_up[0])
+        for i in range(len(wfn_up)):
+            wfn.add_det(np.vstack((wfn_up[i], det_dn)))
