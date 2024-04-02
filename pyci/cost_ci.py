@@ -48,9 +48,9 @@ def add_energy(wfn, t=-0.5, p=1.0, energies=None):
     """
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
-        odometer_one_spin(wfn, energies, t, p)
+        odometer_one_spin(wfn, nodes=energies, t=t, p=p)
     elif isinstance(wfn, pyci.fullci_wfn):
-        odometer_two_spin(wfn, energies, t, p)
+        odometer_two_spin(wfn, nodes=energies, t=t, p=p)
     else:
         raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")
 
