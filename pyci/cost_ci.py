@@ -17,17 +17,15 @@ r"""PyCI Griebel-Knapek CI module."""
 
 import numpy as np
 
-from scipy.special import gammaln, polygamma
-
 from . import pyci
 
 
 __all__ = [
-    "add_gkci",
+    "add_energy",
 ]
 
 
-def add_energy(wfn, t=-0.5, p=1.0, energies=None, width=None):
+def add_energy(wfn, t=-0.5, p=1.0, energies=None):
     r"""
     Add determinants to the wave function according to the odometer algorithm
     (Griebel-Knapeck CI) [GKCI1]_.
