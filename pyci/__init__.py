@@ -28,6 +28,7 @@ from .utility import make_senzero_integrals, reduce_senzero_integrals, spinize_r
 from .excitation_ci import add_excitations
 from .seniority_ci import add_seniorities
 from .gkci import add_gkci
+from .cost_ci import add_energy
 
 
 __all__ = [
@@ -59,6 +60,7 @@ __all__ = [
     "add_excitations",
     "add_seniorities",
     "add_gkci",
+    "add_energy",
 ]
 
 
