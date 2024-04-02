@@ -16,7 +16,7 @@
 r"""PyCI utility module."""
 
 import numpy as np
-
+import pyci
 
 __all__ = [
     "make_senzero_integrals",
@@ -149,16 +149,31 @@ def spinize_rdms(d1, d2):
     return rdm1, rdm2
 
 
-def default_condition(new, wfn, nodes, t, p, qmax = None) -> bool, float:
+def default_condition(new, wfn, nodes, t, p, qmax=None) -> (bool, float):
     if qmax is None:
         # Compute cost of the most important neglected determinant
-        q_max = (np.sum(nodes[: wfn.nocc_up - 1]) + (t + 1) * nodes[-1]) * p
-    
-    return new[-1] < wfn.nbasis and (np.sum(nodes[new]) + t * nodes[new[-1]]) < q_max, qmax
+        qmax = (np.sum(nodes[: wfn.nocc_up - 1]) + (t + 1) * nodes[-1]) * p
+
+    return new[-1] < wfn.nbasis and (np.sum(nodes[new]) + t * nodes[new[-1]]) < qmax
 
 
-def odometer_one_spin(wfn, condition = default_condition, *args, **kwargs):
-    r"""Run the odometer algorithm for a one-spin wave function."""
+def odometer_one_spin(wfn, condition=default_condition, *args, **kwargs):
+    r"""
+    Iterates over determinants of a one-spin wave function, adding those that satisfy
+    the given condition to the wave function in place.
+
+    Parameters
+    ----------
+    wfn : pyci.wavefunction
+        The wave function to be modified.
+    condition : function, optional
+        A function that evaluates determinants against a condition. It returns a tuple
+        `(bool, float)` indicating whether the determinant satisfies the condition and
+        a condition-related value for use in subsequent iterations.
+    *args, **kwargs :
+        Additional arguments for the `condition` function.
+
+    """
     old = np.arange(wfn.nocc_up, dtype=pyci.c_long)
     new = np.copy(old)
     # Index of last particle
@@ -183,15 +198,31 @@ def odometer_one_spin(wfn, condition = default_condition, *args, **kwargs):
         new[j:] = np.arange(new[j] + 1, new[j] + wfn.nocc_up - j + 1)
 
 
-def odometer_two_spin(wfn, condition = default_condition, *args, **kwargs):
-    r"""Run the odometer algorithm for a two-spin wave function."""
+def odometer_two_spin(wfn, condition=default_condition, *args, **kwargs):
+    r"""
+    Processes a two-spin wave function, applying the odometer algorithm to both up-spin
+    and down-spin components and combining the accepted determinants into the wave function.
+
+    Parameters
+    ----------
+    wfn : pyci.wavefunction
+        The wave function to be modified.
+    condition : function, optional
+        A function that evaluates determinants against a condition. It returns a tuple
+        `(bool, float)` indicating whether the determinant satisfies the condition and
+        a condition-related value for use in subsequent iterations.
+    *args, **kwargs :
+        Additional arguments for the `condition` function.
+
+    """
+
     wfn_up = pyci.doci_wfn(wfn.nbasis, wfn.nocc_up, wfn.nocc_up)
-    odometer_one_spin(wfn_up, condition = default_condition, *args, **kwargs)
+    odometer_one_spin(wfn_up, condition=condition, *args, **kwargs)
     if not len(wfn_up):
         return
     if wfn.nocc_dn:
         wfn_dn = pyci.doci_wfn(wfn.nbasis, wfn.nocc_dn, wfn.nocc_dn)
-        odometer_one_spin(wfn_dn, condition = default_condition, *args, **kwargs)
+        odometer_one_spin(wfn_dn, condition=condition, *args, **kwargs)
         if not len(wfn_dn):
             return
         for i in range(len(wfn_up)):
