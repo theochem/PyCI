@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 
-def add_energy(wfn, t=-0.5, p=1.0, energies=None):
+def add_energy(wfn, energies, t=-0.5, p=1.0):
     r"""
     Add determinants to the wave function according to the odometer algorithm
     (Griebel-Knapeck CI) [GKCI1]_.
@@ -38,12 +38,12 @@ def add_energy(wfn, t=-0.5, p=1.0, energies=None):
     ----------
     wfn : pyci.wavefunction
         Wave function.
+    energies : np.ndarray
+        Orbital energies. 
     t : float, default=-0.5
         Smoothness factor.
     p : float, default=1.0
         Cost factor.
-    energies : np.ndarray
-        Orbital energies 
 
     """
     # Run odometer algorithm
