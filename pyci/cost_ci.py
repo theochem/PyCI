@@ -27,7 +27,7 @@ __all__ = [
 ]
 
 
-def add_energy(wfn, t=-0.5, p=1.0, mode="cntsp", dim=3, energies=None, width=None):
+def add_energy(wfn, t=-0.5, p=1.0, energies=None, width=None):
     r"""
     Add determinants to the wave function according to the odometer algorithm
     (Griebel-Knapeck CI) [GKCI1]_.
@@ -44,36 +44,30 @@ def add_energy(wfn, t=-0.5, p=1.0, mode="cntsp", dim=3, energies=None, width=Non
         Smoothness factor.
     p : float, default=1.0
         Cost factor.
-    mode : Sequence[int] or ('cntsp' | 'gamma' | 'interval'), default='cntsp'
-        Node pattern.
-    dim : int, default=3
-        Number of nodes (for 'gamma' mode).
-    es : np.ndarray, optional
-        Orbital energies (required for 'interval' mode).
-    width : float, optional
-        Width of one interval (required for 'interval' mode).
+    energies : np.ndarray
+        Orbital energies 
 
     """
-    # Check arguments
-    if isinstance(mode, str):
-        if mode == "cntsp":
-            nodes = compute_nodes_cntsp(wfn.nbasis + 1)
-        elif mode == "gamma":
-            nodes = compute_nodes_gamma(wfn.nbasis + 1, dim)
-        elif mode == "interval":
-            nodes = compute_nodes_interval(wfn.nbasis + 1, energies, width)
-        else:
-            raise ValueError(
-                f"invalid `mode` value `{mode}`; must be one of ('cntsp', 'gamma', 'interval')"
-            )
-    else:
-        nodes = np.asarray(mode)
+    # # Check arguments
+    # if isinstance(mode, str):
+    #     if mode == "cntsp":
+    #         nodes = compute_nodes_cntsp(wfn.nbasis + 1)
+    #     elif mode == "gamma":
+    #         nodes = compute_nodes_gamma(wfn.nbasis + 1, dim)
+    #     elif mode == "interval":
+    #         nodes = compute_nodes_interval(wfn.nbasis + 1, energies, width)
+    #     else:
+    #         raise ValueError(
+    #             f"invalid `mode` value `{mode}`; must be one of ('cntsp', 'gamma', 'interval')"
+    #         )
+    # else:
+    #     nodes = np.asarray(mode)
 
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
-        odometer_one_spin(wfn, nodes, t, p)
+        odometer_one_spin(wfn, energies, t, p)
     elif isinstance(wfn, pyci.fullci_wfn):
-        odometer_two_spin(wfn, nodes, t, p)
+        odometer_two_spin(wfn, energies, t, p)
     else:
         raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")
 
