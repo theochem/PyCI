@@ -29,7 +29,7 @@ from .utility import odometer_one_spin, odometer_two_spin
 from .excitation_ci import add_excitations
 from .seniority_ci import add_seniorities
 from .gkci import add_gkci
-from .cost_ci import add_energy
+from .cost_ci import add_cost
 
 
 __all__ = [
@@ -61,7 +61,7 @@ __all__ = [
     "add_excitations",
     "add_seniorities",
     "add_gkci",
-    "add_energy",
+    "add_cost",
 ]
 
 
