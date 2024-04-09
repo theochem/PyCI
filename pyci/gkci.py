@@ -48,7 +48,7 @@ def add_gkci(wfn, t=-0.5, p=1.0, mode="cntsp", dim=3, energies=None, width=None)
         Node pattern.
     dim : int, default=3
         Number of nodes (for 'gamma' mode).
-    es : np.ndarray, optional
+    energies : np.ndarray, optional
         Orbital energies (required for 'interval' mode).
     width : float, optional
         Width of one interval (required for 'interval' mode).
