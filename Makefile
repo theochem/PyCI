@@ -98,10 +98,10 @@ pyci/pyci.so.$(PYCI_VERSION): $(OBJECTS)
 	$(CXX) $(CFLAGS) $(DEFS) -shared $(^) -o $(@)
 
 pyci/pyci.so.$(VERSION_MAJOR): pyci/pyci.so.$(PYCI_VERSION)
-	ln -s $(notdir $(<)) $(@)
+	ln -sf $(notdir $(<)) $(@)
 
 pyci/pyci.so: pyci/pyci.so.$(PYCI_VERSION)
-	ln -s $(notdir $(<)) $(@)
+	ln -sf $(notdir $(<)) $(@)
 
 deps/eigen:
 	@git clone https://gitlab.com/libeigen/eigen.git $(@)
