@@ -521,8 +521,6 @@ document.write(`
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG"><code class="docutils literal notranslate"><span class="pre">APIG</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_jacobian"><code class="docutils literal notranslate"><span class="pre">APIG.compute_jacobian()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_objective"><code class="docutils literal notranslate"><span class="pre">APIG.compute_objective()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_overlap"><code class="docutils literal notranslate"><span class="pre">APIG.compute_overlap()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">APIG.compute_overlap_deriv()</span></code></a></li>
 </ul>
@@ -1841,52 +1839,17 @@ which has the form</p>
 </div>
 </div>
 <dl class="py method">
-<dt class="sig sig-object py" id="pyci.fanci.APIG.compute_jacobian">
-<span class="sig-name descname"><span class="pre">compute_jacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_jacobian" title="Link to this definition">#</a></dt>
-<dd><p>Compute the Jacobian of the FanCI objective function.</p>
-<blockquote>
-<div><p>j : x[k] -&gt; y[n, k]</p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n, E].</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>jac</strong> – Jacobian matrix.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyci.fanci.APIG.compute_objective">
-<span class="sig-name descname"><span class="pre">compute_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_objective" title="Link to this definition">#</a></dt>
-<dd><p>Compute the FanCI objective function.</p>
-<blockquote>
-<div><p>f : x[k] -&gt; y[n]</p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n, E].</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>obj</strong> – Objective vector.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pyci.fanci.APIG.compute_overlap">
-<span class="sig-name descname"><span class="pre">compute_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_overlap" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">compute_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occs_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_overlap" title="Link to this definition">#</a></dt>
 <dd><p>Compute the FanCI overlap vector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p></li>
+<li><p><strong>occs_array</strong> (<em>(</em><em>np.ndarray</em><em> | </em><em>'P'</em><em> | </em><em>'S'</em><em>)</em>) – Array of determinant occupations for which to compute overlap. A string “P” or “S” can
+be passed instead that indicates whether <code class="docutils literal notranslate"><span class="pre">occs_array</span></code> corresponds to the “P” space
+or “S” space, so that a more efficient, specialized computation can be done for these.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>ovlp</strong> – Overlap array.</p>
@@ -1899,11 +1862,16 @@ which has the form</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyci.fanci.APIG.compute_overlap_deriv">
-<span class="sig-name descname"><span class="pre">compute_overlap_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_overlap_deriv" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">compute_overlap_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occs_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_overlap_deriv" title="Link to this definition">#</a></dt>
 <dd><p>Compute the FanCI overlap derivative matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p></li>
+<li><p><strong>occs_array</strong> (<em>(</em><em>np.ndarray</em><em> | </em><em>'P'</em><em> | </em><em>'S'</em><em>)</em>) – Array of determinant occupations for which to compute overlap. A string “P” or “S” can
+be passed instead that indicates whether <code class="docutils literal notranslate"><span class="pre">occs_array</span></code> corresponds to the “P” space
+or “S” space, so that a more efficient, specialized computation can be done for these.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>ovlp</strong> – Overlap derivative array.</p>
@@ -2251,8 +2219,6 @@ or “S” space, so that a more efficient, specialized computation can be done 
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG"><code class="docutils literal notranslate"><span class="pre">APIG</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_jacobian"><code class="docutils literal notranslate"><span class="pre">APIG.compute_jacobian()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_objective"><code class="docutils literal notranslate"><span class="pre">APIG.compute_objective()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_overlap"><code class="docutils literal notranslate"><span class="pre">APIG.compute_overlap()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">APIG.compute_overlap_deriv()</span></code></a></li>
 </ul>
