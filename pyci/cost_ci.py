@@ -49,8 +49,8 @@ def add_cost(wfn, cost, q_max, t=-0.5, p=1.0):
     """
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
-        pyci.odometer_one_spin(wfn, nodes=cost, q_max=q_max, t=t, p=p)
+        pyci.odometer_one_spin(wfn, cost, q_max=q_max, t=t, p=p)
     elif isinstance(wfn, pyci.fullci_wfn):
-        pyci.odometer_two_spin(wfn, nodes=cost, q_max=q_max, t=t, p=p)
+        pyci.odometer_two_spin(wfn, cost, q_max=q_max, t=t, p=p)
     else:
         raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")

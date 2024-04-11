@@ -74,9 +74,9 @@ def add_gkci(wfn, t=-0.5, p=1.0, mode="cntsp", dim=3, energies=None, width=None)
 
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
-        pyci.odometer_one_spin(wfn, nodes=nodes, q_max=q_max, t=t, p=p)
+        pyci.odometer_one_spin(wfn, cost=nodes, q_max=q_max, t=t, p=p)
     elif isinstance(wfn, pyci.fullci_wfn):
-        pyci.odometer_two_spin(wfn, nodes=nodes, q_max=q_max, t=t, p=p)
+        pyci.odometer_two_spin(wfn, cost=nodes, q_max=q_max, t=t, p=p)
     else:
         raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")
 
