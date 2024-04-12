@@ -6,7 +6,6 @@ import pyci
 from .fanci import FanCI
 from ..fanpt import FANPTUpdater, FANPTContainerEParam, FANPTContainerEFree
 
-
 def solve_fanpt(
     fanci_wfn,
     ham0,
