@@ -80,12 +80,6 @@ def solve_fanpt(
     # Select FANPT method
     if energy_active:
         fanptcontainer = FANPTContainerEParam
-        if not fanci_wfn.mask[-1]:
-            fanci_wfn.unfreeze_parameter(-1)
-    else:
-        fanptcontainer = FANPTContainerEFree
-        if fanci_wfn.mask[-1]:
-            fanci_wfn.freeze_parameter(-1)
 
     if resum:
         if energy_active:
@@ -107,8 +101,7 @@ def solve_fanpt(
 
     # Get initial guess for parameters at initial lambda value.
     results = fanci_wfn.optimize(guess_params, **solver_kwargs)
-    guess_params[fanci_wfn.mask] = results.x
-    params = guess_params
+    params = results.x
 
     # Solve FANPT equations
     for l in np.linspace(lambda_i, lambda_f, steps, endpoint=False):
@@ -151,9 +144,7 @@ def solve_fanpt(
         # Take the params given by fanci and use them as initial params in the
         # fanpt calculation for the next lambda.
         results = fanci_wfn.optimize(fanpt_params, **solver_kwargs)
-
-        fanpt_params[fanci_wfn.mask] = results.x
-        params = fanpt_params
+        params = results.x
 
         if not energy_active:
             fanci_wfn.freeze_parameter([-1])
@@ -167,7 +158,6 @@ def solve_fanpt(
     #        "steps": steps,
     #        "inorm": inorm,
     #        "norm_det": norm_det,
-    #        "eactive": fanci_wfn.mask[-1],
     #        "final_l": final_l,
     #    },
     #}
@@ -187,7 +177,7 @@ def update_fanci_wfn(ham, fanciwfn, norm_det, fill):
 
     # FIXME: for FanCI class
     #return fanci_class(
-    #    ham, fanciwfn.wfn, fanciwfn.nproj, fanciwfn.nparam, norm_det=norm_det, mask=fanciwfn.mask, fill=fill
+    #    ham, fanciwfn.wfn, fanciwfn.nproj, fanciwfn.nparam, norm_det=norm_det, fill=fill
     #)
 
     # for fanpy class
@@ -196,7 +186,7 @@ def update_fanci_wfn(ham, fanciwfn, norm_det, fill):
         ham, fanciwfn._fanpy_wfn, fanciwfn._wfn.nocc_up + fanciwfn._wfn.nocc_dn,
         nproj=fanciwfn.nproj, wfn=fanciwfn.wfn, fill=fill, seniority=fanciwfn.seniority,
         step_print=fanciwfn.step_print, step_save=fanciwfn.step_save, tmpfile=fanciwfn.tmpfile,
-        mask=fanciwfn._mask, objective_type=fanciwfn.objective_type, norm_det=norm_det,
+        objective_type=fanciwfn.objective_type, norm_det=norm_det,
         param_selection=fanciwfn.indices_component_params,
         constraints=fanciwfn._constraints
     )
