@@ -240,7 +240,7 @@ class FanCI(metaclass=ABCMeta):
         ----------
         x0 : np.ndarray
             Initial guess for wave function parameters.
-        mode : ('lstsq' | 'root' | 'custom_scalar' | 'custom_vectorial'), default='lstsq'
+        mode : ('lstsq' | 'root' | 'custom_scalar' | 'custom_vector'), default='lstsq'
             Solver mode.
         use_jac : bool, default=False
             Whether to use the Jacobian function or a finite-difference approximation.
@@ -275,7 +275,7 @@ class FanCI(metaclass=ABCMeta):
         elif mode == "root":
             optimizer = root
             opt_args = f, x0
-        elif mode == "custom_vectorial":
+        elif mode == "custom_vector":
             if custom_optimizer is None:
                 raise ValueError("Optimizer is not provided")
             optimizer = custom_optimizer
