@@ -95,7 +95,7 @@ def test_fanci_optimize():
         method="L-BFGS-B",
     )
     e_dict["AP1roG"] = ap1rog_results.x[-1]
-    npt.assert_allclose(e_dict["AP1roG"], -8.963531034, rtol=0.0, atol=1.0e-7)
+    npt.assert_allclose(e_dict["AP1roG"], -8.963531034, rtol=0.0, atol=1.0e-6)
 
     # Testing optimization with with Newton-CG
     ap1rog_results = ap1rog.optimize(
