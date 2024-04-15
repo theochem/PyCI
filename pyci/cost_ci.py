@@ -24,7 +24,7 @@ __all__ = [
 
 
 
-def add_cost(wfn, cost, q_max, t=-0.5, p=1.0):
+def add_cost(wfn, cost, q_max, t=-0.5):
     r"""
     Add determinants to the wave function according to the odometer algorithm
     (Griebel-Knapeck CI) [GKCI1]_.
@@ -43,14 +43,12 @@ def add_cost(wfn, cost, q_max, t=-0.5, p=1.0):
         Maximum cost of selected determinant
     t : float, default=-0.5
         Smoothness factor.
-    p : float, default=1.0
-        Cost factor.
 
     """
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
-        pyci.odometer_one_spin(wfn, cost, q_max=q_max, t=t, p=p)
+        pyci.odometer_one_spin(wfn, cost, q_max=q_max, t=t)
     elif isinstance(wfn, pyci.fullci_wfn):
-        pyci.odometer_two_spin(wfn, cost, q_max=q_max, t=t, p=p)
+        pyci.odometer_two_spin(wfn, cost, q_max=q_max, t=t)
     else:
         raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")
