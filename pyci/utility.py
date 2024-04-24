@@ -175,6 +175,7 @@ def odometer_one_spin(wfn, cost, t, qmax):
     j = wfn.nocc_up - 1
     # Select determinants
     while True:
+        x = np.sum(cost[new])
         if new[-1] < wfn.nbasis and (np.sum(cost[new]) + t * cost[new[-1]]) < qmax:
             # Accept determinant and go back to last particle
             wfn.add_occs(new)
