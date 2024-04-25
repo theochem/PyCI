@@ -21,7 +21,7 @@ __all__ = [
     "find_closest_sdp",
 ]
 
-def find_closest_sdp():
+def find_closest_sdp(dm, constraint, alpha):
     r"""
     Projection onto a semidefinite constraint.
 
@@ -31,5 +31,24 @@ def find_closest_sdp():
         Density matrix.
     constraint : function
         Positive semidefinite constraint, linear mapping.
+    alpha : float
+        Value of the correct trace.
 
     """
+    #symmetrize if necessary
+    L = constraint(dm) + constraint(dm).conj().T
+    #find eigendecomposition
+    vals, vecs = np.linalg.eig(L)
+    #calculate the shift, sigma0
+    sigma0 = calculate_shift(vals)
+    
+    #calculate the closest semidefinite positive matrix with correct trace
+    L_closest = vals @ np.diag(vecs - sigma0) @ vecs.conj().T
+
+    # return the reconstructed density matrix
+    return constraint(L_closest).conj().T
+
+
+def calculate_shift(eigenvalues, alpha):
+    pass
+
