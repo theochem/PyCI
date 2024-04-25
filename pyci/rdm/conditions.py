@@ -50,5 +50,17 @@ def find_closest_sdp(dm, constraint, alpha):
 
 
 def calculate_shift(eigenvalues, alpha):
+    r"""
+    Calculate the shift for density matrix for it to have the correct trace. 
+    This step shifts the spectrum and eliminates the negative eigenvalues.
+
+    Parameters
+    ----------
+    eigenvalues : np.ndarray
+        Eigenvalues of not shifted matrix.
+    alpha : float
+        Value of the coprrect trace.
+        
+    """
     pass
 
