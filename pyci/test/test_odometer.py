@@ -66,3 +66,7 @@ cost2 = get_cost(wfn2, ham2, 4)
 def test_odometer_one_spin(wfn, cost, t, q_max):
     odometer_one_spin(wfn, cost, t, q_max)
     assert 1==1
+
+
+odometer_one_spin(wfn1, cost1, 0, 1.2)
+print(wfn1.to_occ_array())

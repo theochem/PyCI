@@ -22,6 +22,8 @@ __all__ = [
     "make_senzero_integrals",
     "reduce_senzero_integrals",
     "spinize_rdms",
+    "odometer_one_spin",
+    "odometer_two_spin",
 ]
 
 
