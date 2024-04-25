@@ -17,5 +17,19 @@ r"""PyCI RDM Conditions module."""
 
 import numpy as np
 
+__all__ = [
+    "find_closest_sdp",
+]
+
 def find_closest_sdp():
-    pass
+    r"""
+    Projection onto a semidefinite constraint.
+
+    Parameters
+    ----------
+    dm : np.ndarray
+        Density matrix.
+    constraint : function
+        Positive semidefinite constraint, linear mapping.
+
+    """
