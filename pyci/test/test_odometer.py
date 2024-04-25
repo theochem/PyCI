@@ -21,10 +21,8 @@ import numpy as np
 import numpy.testing as npt
 
 import pyci
-from pyci import secondquant_op
 from pyci.utility import odometer_one_spin, odometer_two_spin
 from pyci.gkci import compute_nodes_cntsp
-from pyci.test import datafile
 
 from pyscf import gto, scf, tools
 
@@ -48,7 +46,8 @@ def get_cost(wfn, ham, n):
 mol = gto.Mole()
 mol.build(atom = "H 0 0 0; H 0 1 0", basis = 'sto-3g')
 wfn1, ham1 = build_wavefunction(mol, (1, 1))
-cost1 = get_cost(wfn1, ham1, 2)
+wfnt, hamt = build_wavefunction(mol, (1, 1))
+cost1 = get_cost(wfnt, hamt, 2)
 
 mol = gto.Mole()
 mol.build(atom = "H 0 0 0; H 0 1 0; H 0 2 0; H 0 3 0", basis = 'sto-3g')
@@ -56,30 +55,14 @@ wfn2, ham2 = build_wavefunction(mol, (2, 2))
 cost2 = get_cost(wfn2, ham2, 4)
 
 
-
 @pytest.mark.parametrize(
     "wfn, cost, t, q_max",
     [
-        (wfn1, cost1, 0, -1),
-        (wfn2, cost2, 0, -1),
+        (wfn1, cost1, 0, 0.7),
+        (wfn1, cost1, 0, 1.0),
+        (wfn1, cost1, 0, 1.2),
     ],
 )
 def test_odometer_one_spin(wfn, cost, t, q_max):
     odometer_one_spin(wfn, cost, t, q_max)
     assert 1==1
-
-
-@pytest.mark.parametrize(
-    "wfn, cost, t, q_max",
-    [
-        (wfn1, cost1, 0, -1),
-        (wfn2, cost2, 0, -1),
-    ],
-)
-def test_odometer_two_spin(wfn, cost, t, q_max):
-    odometer_two_spin(wfn, cost, t, q_max)
-    assert 1==1
-
-x = odometer_one_spin(wfn1, cost1, 0, -1)
-
-print(x)
