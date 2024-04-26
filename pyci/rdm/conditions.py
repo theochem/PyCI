@@ -40,7 +40,7 @@ def find_closest_sdp(dm, constraint, alpha):
     #find eigendecomposition
     vals, vecs = np.linalg.eig(L)
     #calculate the shift, sigma0
-    sigma0 = calculate_shift(vals)
+    sigma0 = calculate_shift(vals, alpha)
     
     #calculate the closest semidefinite positive matrix with correct trace
     L_closest = vals @ np.diag(vecs - sigma0) @ vecs.conj().T

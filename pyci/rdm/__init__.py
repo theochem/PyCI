@@ -4,7 +4,7 @@ rdm module.
 """
 from rdm import *
 
-from conditions import find_closest_sdp
+from .conditions import find_closest_sdp
 
 
 __all__ = [
