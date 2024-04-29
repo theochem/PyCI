@@ -22,6 +22,12 @@ from scipy.optimize import root
 
 __all__ = [
     "find_closest_sdp",
+    "calc_P",
+    "calc_Q",
+    "calc_G",
+    "calc_T1",
+    "calc_T2",
+    "calc_T2_prime",
 ]
 
 def find_closest_sdp(dm, constraint, alpha):
@@ -71,3 +77,22 @@ def calculate_shift(eigenvalues, alpha):
     constraint = lambda x: trace(x) - alpha  
     res = root(constraint, 0) 
     return res
+
+def calc_P():
+    pass
+
+def calc_Q():
+    pass
+
+def calc_G():
+    pass
+
+def calc_T1():
+    pass
+
+def calc_T2():
+    pass
+
+def calc_T2_prime():
+    pass
+
