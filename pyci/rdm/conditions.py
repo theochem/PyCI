@@ -17,6 +17,9 @@ r"""PyCI RDM Conditions module."""
 
 import numpy as np
 
+from scipy.optimize import root  
+
+
 __all__ = [
     "find_closest_sdp",
 ]
@@ -62,5 +65,8 @@ def calculate_shift(eigenvalues, alpha):
         Value of the coprrect trace.
         
     """
-    pass
-
+    #sample code, to be confirmed
+    trace = lambda sigma0: np.sum(np.heaviside(eigenvalues - sigma0, 0.5)*(eigenvalues - sigma0))  
+    constraint = lambda x: trace(x) - alpha  
+    res = root(constraint, 0) 
+    return res
