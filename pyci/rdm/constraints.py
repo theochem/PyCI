@@ -76,7 +76,7 @@ def calculate_shift(eigenvalues, alpha):
     trace = lambda sigma0: np.sum(np.heaviside(eigenvalues - sigma0, 0.5)*(eigenvalues - sigma0))  
     constraint = lambda x: trace(x) - alpha  
     res = root(constraint, 0) 
-    return res
+    return res.x
 
 def calc_P():
     pass
