@@ -42,7 +42,7 @@ def find_closest_sdp(dm, constraint, alpha):
     constrained = constraint(dm)
     L = constrained + constrained.conj().T
     #find eigendecomposition
-    vals, vecs = np.linalg.eig(L)
+    vals, vecs = np.linalg.eigh(L)
     #calculate the shift, sigma0
     sigma0 = calculate_shift(vals, alpha)
     
