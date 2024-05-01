@@ -24,10 +24,12 @@ from .pyci import compute_overlap, compute_rdms, compute_transition_rdms
 from .pyci import add_hci, compute_enpt2
 
 from .utility import make_senzero_integrals, reduce_senzero_integrals, spinize_rdms
+from .utility import odometer_one_spin, odometer_two_spin
 
 from .excitation_ci import add_excitations
 from .seniority_ci import add_seniorities
 from .gkci import add_gkci
+from .cost_ci import add_cost
 
 
 __all__ = [
@@ -59,6 +61,7 @@ __all__ = [
     "add_excitations",
     "add_seniorities",
     "add_gkci",
+    "add_cost",
 ]
 
 

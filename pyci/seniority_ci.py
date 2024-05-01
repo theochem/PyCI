@@ -45,7 +45,9 @@ def add_seniorities(wfn, *seniorities):
 
     # Check specified seniorities
     smin = wfn.nocc_up - wfn.nocc_dn
-    smax = min(wfn.nocc_up, wfn.nvir_up)
+    smax = bin(
+        ((1 << wfn.nocc_up) - 1) ^ ((1 << wfn.nocc_dn) - 1) ^ ((1 << wfn.nbasis) - 1)
+    ).count("1")
     if any(s < smin or s > smax or s % 2 != smin % 2 for s in seniorities):
         raise ValueError(f"invalid seniority number in `seniorities = {seniorities}`")
 

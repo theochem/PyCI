@@ -9,7 +9,6 @@ import numpy as np
 
 import pyci
 
-from ..pyci import APIGObjective
 from .fanci import FanCI
 
 
@@ -83,28 +82,7 @@ class APIG(FanCI):
         # Initialize base class
         FanCI.__init__(self, ham, wfn, nproj, nparam, **kwargs)
 
-        # Initialize C extension
-        try:
-            norm_det = kwargs["norm_det"]
-            idx_det_cons = np.asarray([elem[0] for elem in norm_det], dtype=int)
-            det_cons = np.asarray([elem[1] for elem in norm_det], dtype=float)
-        except KeyError:
-            idx_det_cons = None
-            det_cons = None
-        try:
-            norm_param = kwargs["norm_param"]
-            idx_param_cons = np.asarray([elem[0] for elem in norm_param], dtype=int)
-            param_cons = np.asarray([elem[1] for elem in norm_param], dtype=float)
-        except KeyError:
-            idx_param_cons = None
-            param_cons = None
-        self._cext = APIGObjective(
-            self._ci_op, self._wfn,
-            idx_det_cons=idx_det_cons, det_cons=det_cons,
-            idx_param_cons=idx_param_cons, param_cons=param_cons,
-        )
-
-    def compute_overlap(self, x: np.ndarray) -> np.ndarray:
+    def compute_overlap(self, x: np.ndarray, occs_array: Union[np.ndarray, str]) -> np.ndarray:
         r"""
         Compute the FanCI overlap vector.
 
@@ -112,6 +90,10 @@ class APIG(FanCI):
         ----------
         x : np.ndarray
             Parameter array, [p_0, p_1, ..., p_n].
+        occs_array : (np.ndarray | 'P' | 'S')
+            Array of determinant occupations for which to compute overlap. A string "P" or "S" can
+            be passed instead that indicates whether ``occs_array`` corresponds to the "P" space
+            or "S" space, so that a more efficient, specialized computation can be done for these.
 
         Returns
         -------
@@ -119,9 +101,27 @@ class APIG(FanCI):
             Overlap array.
 
         """
-        return self._cext.overlap(x)
+        if isinstance(occs_array, np.ndarray):
+            pass
+        elif occs_array == "P":
+            occs_array = self._pspace
+        elif occs_array == "S":
+            occs_array = self._sspace
+        else:
+            raise ValueError("invalid `occs_array` argument")
 
-    def compute_overlap_deriv(self, x: np.ndarray) -> np.ndarray:
+        # Reshape parameter array to APIG matrix
+        x_mat = x.reshape(self._wfn.nbasis, self._wfn.nocc_up)
+
+        # Compute overlaps of occupation vectors
+        y = np.empty(occs_array.shape[0], dtype=pyci.c_double)
+        for i, occs in enumerate(occs_array):
+            y[i] = permanent(x_mat[occs])
+        return y
+
+    def compute_overlap_deriv(
+        self, x: np.ndarray, occs_array: Union[np.ndarray, str]
+    ) -> np.ndarray:
         r"""
         Compute the FanCI overlap derivative matrix.
 
@@ -129,6 +129,10 @@ class APIG(FanCI):
         ----------
         x : np.ndarray
             Parameter array, [p_0, p_1, ..., p_n].
+        occs_array : (np.ndarray | 'P' | 'S')
+            Array of determinant occupations for which to compute overlap. A string "P" or "S" can
+            be passed instead that indicates whether ``occs_array`` corresponds to the "P" space
+            or "S" space, so that a more efficient, specialized computation can be done for these.
 
         Returns
         -------
@@ -136,42 +140,86 @@ class APIG(FanCI):
             Overlap derivative array.
 
         """
-        return self._cext.d_overlap(x)
+        if isinstance(occs_array, np.ndarray):
+            pass
+        elif occs_array == "P":
+            occs_array = self._pspace
+        elif occs_array == "S":
+            occs_array = self._sspace
+        else:
+            raise ValueError("invalid `occs_array` argument")
 
-    def compute_objective(self, x: np.ndarray) -> np.ndarray:
-        r"""
-        Compute the FanCI objective function.
+        # Reshape parameter array to APIG matrix
+        x_mat = x.reshape(self._wfn.nbasis, self._wfn.nocc_up)
 
-            f : x[k] -> y[n]
+        # Shape of y is (no. determinants, no. parameters excluding energy)
+        y = np.zeros((occs_array.shape[0], self._nparam - 1), dtype=pyci.c_double)
 
-        Parameters
-        ----------
-        x : np.ndarray
-            Parameter array, [p_0, p_1, ..., p_n, E].
+        col_inds = np.arange(self._wfn.nocc_up, dtype=pyci.c_long)
 
-        Returns
-        -------
-        obj : np.ndarray
-            Objective vector.
+        # Iterate over occupation vectors
+        for y_row, occs in zip(y, occs_array):
 
-        """
-        return self._cext.objective(self._ci_op, x)
+            # Iterate over all parameters i
+            for i in range(self.nparam - 1):
 
-    def compute_jacobian(self, x: np.ndarray) -> np.ndarray:
-        r"""
-        Compute the Jacobian of the FanCI objective function.
+                # Compute derivative of overlap
+                rows = occs[occs != (i // self._wfn.nocc_up)]
+                cols = col_inds[col_inds != (i % self._wfn.nocc_up)]
+                if rows.size == cols.size == 0:
+                    y_row[i] = 1.0
+                elif rows.size != occs.size and cols.size != col_inds.size:
+                    y_row[i] = permanent(x_mat[rows, :][:, cols])
 
-            j : x[k] -> y[n, k]
+        # Return overlap derivative matrix
+        return y
 
-        Parameters
-        ----------
-        x : np.ndarray
-            Parameter array, [p_0, p_1, ..., p_n, E].
 
-        Returns
-        -------
-        jac : np.ndarray
-            Jacobian matrix.
+def permanent(matrix: np.ndarray) -> float:
+    r"""
+    Compute the permanent of a square matrix using Glynn's algorithm.
 
-        """
-        return self._cext.jacobian(self._ci_op, x)
+    Gray code generation from Knuth, D. E. (2005). The Art of Computer Programming,
+    Volume 4, Fascicle 2: Generating All Tuples and Permutations.
+
+    Glynn's algorithm from Glynn, D. G. (2010). The permanent of a square matrix.
+    European Journal of Combinatorics, 31(7), 1887-1891.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Square matrix.
+
+    Returns
+    -------
+    result : matrix.dtype
+        Permanent of the matrix.
+
+    """
+    # Permanent of zero-by-zero matrix is 1
+    n = matrix.shape[0]
+    if not n:
+        return 1
+
+    # Initialize gray code
+    pos = 0
+    sign = 1
+    bound = n - 1
+    delta = np.ones(n, dtype=int)
+    graycode = np.arange(n, dtype=int)
+
+    # Iterate over every delta
+    result = np.prod(np.sum(matrix, axis=0))
+    while pos < bound:
+        # Update delta and add term to permanent
+        sign *= -1
+        delta[bound - pos] *= -1
+        result += sign * np.prod(delta.dot(matrix))
+        # Update gray code and position
+        graycode[0] = 0
+        graycode[pos] = graycode[pos + 1]
+        graycode[pos + 1] = pos + 1
+        pos = graycode[0]
+
+    # Divide by constant factor
+    return result / (2 ** bound)
