@@ -7,7 +7,6 @@ import pytest
 import pyci
 
 from pyci.fanci import pCCDS, AP1roG
-from pyci.fanci.apig import permanent
 from pyci.test import datafile
 
 
@@ -177,3 +176,53 @@ def test_pccds(nocc, system, nucnuc, e_hf, nproj, expected):
     print('E_sol', energy)
     print('E_ref', expected)
     # assert np.allclose(energy, expected)
+
+
+def permanent(matrix: np.ndarray) -> float:
+    r"""
+    Compute the permanent of a square matrix using Glynn's algorithm.
+
+    Gray code generation from Knuth, D. E. (2005). The Art of Computer Programming,
+    Volume 4, Fascicle 2: Generating All Tuples and Permutations.
+
+    Glynn's algorithm from Glynn, D. G. (2010). The permanent of a square matrix.
+    European Journal of Combinatorics, 31(7), 1887-1891.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Square matrix.
+
+    Returns
+    -------
+    result : matrix.dtype
+        Permanent of the matrix.
+
+    """
+    # Permanent of zero-by-zero matrix is 1
+    n = matrix.shape[0]
+    if not n:
+        return 1
+
+    # Initialize gray code
+    pos = 0
+    sign = 1
+    bound = n - 1
+    delta = np.ones(n, dtype=int)
+    graycode = np.arange(n, dtype=int)
+
+    # Iterate over every delta
+    result = np.prod(np.sum(matrix, axis=0))
+    while pos < bound:
+        # Update delta and add term to permanent
+        sign *= -1
+        delta[bound - pos] *= -1
+        result += sign * np.prod(delta.dot(matrix))
+        # Update gray code and position
+        graycode[0] = 0
+        graycode[pos] = graycode[pos + 1]
+        graycode[pos + 1] = pos + 1
+        pos = graycode[0]
+
+    # Divide by constant factor
+    return result / (2 ** bound)

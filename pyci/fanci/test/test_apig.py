@@ -7,7 +7,6 @@ import pytest
 import pyci
 
 from pyci.fanci import APIG
-from pyci.fanci.apig import permanent
 from pyci.fanci.test import find_datafile, assert_deriv
 
 
@@ -67,8 +66,8 @@ def test_apig_compute_overlap_deriv(dummy_system):
     ham, nocc, params = dummy_system
     apig = APIG(ham, nocc, nproj=None)
 
-    f = lambda x: apig.compute_overlap(x, apig.sspace)
-    j = lambda x: apig.compute_overlap_deriv(x, apig.sspace)
+    f = lambda x: apig.compute_overlap(x)
+    j = lambda x: apig.compute_overlap_deriv(x)
     origin = np.random.rand(params[:-1].shape[0])
     assert_deriv(f, j, origin)
 
@@ -80,7 +79,7 @@ def test_apig_compute_objective(dummy_system):
 
     objective = apig.compute_objective(params)
     op = pyci.sparse_op(apig.ham, apig.wfn, nproj, symmetric=False)
-    ovlp = apig.compute_overlap(params[:-1], apig.sspace)
+    ovlp = apig.compute_overlap(params[:-1])
     answer = op(ovlp) - params[-1] * ovlp[:nproj]
     assert np.allclose(objective, answer)
 
@@ -152,20 +151,3 @@ def test_apig_init_defaults():
     assert test.nvir_up == nbasis - nocc
     assert test.nvir_dn == nbasis - nocc
     assert test.pspace.shape[0] == 13
-
-
-def test_apig_permanent():
-    matrix = np.arange(1, 65, dtype=float)
-    answers = [
-        1.0,
-        1.0,
-        10.0,
-        450.0,
-        55456.0,
-        14480700.0,
-        6878394720.0,
-        5373548250000.0,
-        6427291156586496.0,
-    ]
-    for i, answer in enumerate(answers):
-        assert permanent(matrix[: i ** 2].reshape(i, i)) == answer
