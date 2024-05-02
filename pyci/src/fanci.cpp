@@ -207,8 +207,12 @@ void Objective<Wfn>::jacobian(const SparseOp &op, const double *x, double *y)
 
            dE/d(p_k) <n|\Psi> = dE/d(p_k) \delta_{nk} c_n
     */
-    for (std::size_t i = 0; i != nproj; ++i) {
+    std::size_t i = 0;
+    for (; i != nproj; ++i) {
         y[i] = -ovlp[i];
+    }
+    for (; i != nproj + n_detcons + n_paramcons; ++i) {
+        y[i] = 0.0;
     }
 }
 
