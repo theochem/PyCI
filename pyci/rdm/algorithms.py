@@ -111,4 +111,43 @@ class Neumann(Dykstra):
             if is_stop:
                 break
         return D
+class Halpern(Dykstra):
+    def __init__(self, initial_guess:np.ndarray, constraints:list, alpha:float =1.0, max_iterations:int =100, eps:float =1e-6)-> None:
+        super().__init__(initial_guess, constraints,alpha,max_iterations,eps)
+        r"""
+        Halpern's class for projection onto convex sets.
+
+        Parameters
+        ----------
+        initial_guess : np.ndarray
+            Initial guess for the density matrix \Gamma_0.
+        constraints : list
+            List of projection operators $J$ onto convex subspaces C_i related to the constraints.
+        alpha : float
+            Tunning parameter, by default 1
+        max_iterations : int, optional
+            Number of maximum iterations, by default 100
+        eps : float
+            Tolerance, by default 1e-6
+        """        
+    def optimize(self)-> np.ndarray:
+        r"""
+        Halpern's algorithm to find the optimal wave function that satisfies all the constraints        
+        
+        Returns
+        ----------
+        D: np.ndarray
+            Optminal rdm that satisfies the given constraints
+        """
+        D = np.copy(self.initial_guess)
+        norm = []
+        for i in range (1,self.max_iterations):
+            for projection in self.constraints:
+                D = projection(D)
+            D=(1.0/(i+1))*self.initial_guess +(i/(i+1))*D
+            norm.append(np.linalg.norm(D - self.initial_guess))
+            is_stop = self.alpha * abs(norm[i] - norm[i - 1]) + (1 - self.alpha) * norm[i] < self.eps
+            if is_stop:
+                break
+        return D
 
