@@ -18,4 +18,3 @@ __all__ = [
     "calc_T2",
     "calc_T2_prime",
 ]
-
