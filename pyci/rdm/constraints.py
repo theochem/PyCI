@@ -84,8 +84,38 @@ def calc_P():
 def calc_Q():
     pass
 
-def calc_G():
-    pass
+def calc_G(gamma, N, conjugate=False):
+    """
+    Calculating G tensor
+
+    Parameters
+    ----------
+    gamma: np.ndarray
+        1DM tensor
+    N: int
+        number of electrons in the system
+    conjugate: bool
+        conjugate or regular condition
+
+    Returns
+    -------
+    np.ndarray
+
+    Notes
+    -----
+    G is defined as:
+
+    .. math::
+        \mathcal{G}_1(\Gamma)_{\alpha \beta ; \gamma \delta}=\delta_{\beta \delta} \rho_{\alpha \gamma}-\Gamma_{\alpha \delta ; \gamma \beta}
+        \mathcal{G}^{\prime}(\Gamma)_{\alpha \beta ; \gamma \delta}=\delta_{\beta \delta} \rho_{\alpha \gamma}-\Gamma_{\alpha \delta ; \gamma \beta}-\rho_{\alpha \beta} \rho_{\gamma \delta}
+    """
+    eye = np.eye(gamma.shape[0])
+    rho = 1/(N - 1) * np.einsum('abgb -> ag', gamma)
+    res = np.einsum('bd, ag -> abgd', eye, rho) - np.einsum('adgb -> abgd', gamma)
+    if not conjugate:
+        return res
+    else: 
+        return res - np.einsum('ab, gd -> abgd', eye, eye)
 
 def calc_T1():
     pass
