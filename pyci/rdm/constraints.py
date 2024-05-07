@@ -125,8 +125,91 @@ def calc_G(gamma, N, conjugate=False):
 def calc_T1():
     pass
 
-def calc_T2():
-    pass
+def calc_T2(gamma, N, conjugate=False):
+    """
+    Calculating T2 tensor
+
+    Parameters
+    ----------
+    gamma: np.ndarray
+        1DM tensor
+    N: int
+        number of electrons in the system
+    conjugate: bool
+        conjugate or regular condition
+
+    Returns
+    -------
+    np.ndarray
+
+    Notes
+    -----
+    T2 is defined as:
+
+    .. math::
+        \begin{aligned}
+        \mathcal{T}_2(\Gamma)_{\alpha \beta \gamma ; \delta \epsilon \zeta}= & \left(\delta_{\alpha \delta} \delta_{\beta \epsilon}-\delta_{\alpha \epsilon} \delta_{\beta \delta}\right) \rho_{\gamma \zeta}+\delta_{\gamma \zeta} \Gamma_{\alpha \beta ; \delta \epsilon} \\
+        & -\delta_{\alpha \delta} \Gamma_{\gamma \epsilon ; \zeta \beta}+\delta_{\beta \delta} \Gamma_{\gamma \epsilon ; \zeta \alpha}+\delta_{\alpha \epsilon} \Gamma_{\gamma \delta ; \zeta \beta}-\delta_{\beta \epsilon} \Gamma_{\gamma \delta ; \zeta \alpha}
+        \end{aligned}
+
+        \begin{aligned}
+        \mathcal{T}_2^{\dagger}(A)_{\alpha \beta ; \gamma \delta}= & \frac{1}{2(N-1)}\left[\delta_{\beta \delta} \tilde{\tilde{A}}_{\alpha \gamma}-\delta_{\alpha \delta} \tilde{\tilde{A}}_{\beta \gamma}-\delta_{\beta \gamma} \tilde{\tilde{A}}_{\alpha \delta}+\delta_{\alpha \gamma} \tilde{\tilde{A}}_{\beta \delta}\right] \\
+        & +\bar{A}_{\alpha \beta ; \gamma \delta}-\left[\tilde{A}_{\delta \alpha ; \beta \gamma}-\tilde{A}_{\delta \beta ; \alpha \gamma}-\tilde{A}_{\gamma \alpha ; \beta \delta}+\tilde{A}_{\gamma \beta ; \alpha \delta}\right]
+\       end{aligned}
+    """
+    eye = np.eye(gamma.shape[0])
+    if not conjugate:
+        rho = 1/(N-1) * np.einsum('abgb -> ag', gamma)
+        term_1 = np.einsum('ad, be, gz -> abgdez', eye, eye, rho) -\
+                 np.einsum('ae, bd, gz -> abgdez', eye, eye, rho)
+        term_2 = np.einsum('gz, abde -> abgdez', eye, gamma)
+        term_3 = np.einsum('ad, gezb -> abgdez', eye, gamma)
+        term_4 = np.einsum('bd, geza -> abgdez', eye, gamma)
+        term_5 = np.einsum('ae, gdzb -> abgdez', eye, gamma)
+        term_6 = np.einsum('be, gdza -> abgdez', eye, gamma)
+        return term_1 + term_2 - term_3 + term_4 + term_5 - term_6
+    a_dtilda = np.einsum('lkalkg -> ag', gamma)
+    a_tilda = np.einsum('lablgd -> abgd', gamma)
+    a_bar = np.einsum('ablgdl -> abgd', gamma)
+
+    term_1 = np.einsum('bd, ag -> abgd', eye, a_dtilda)
+    term_2 = np.einsum('ad, bg -> abgd', eye, a_dtilda)
+    term_3 = np.einsum('bg, ad -> abgd', eye, a_dtilda)
+    term_4 = np.einsum('ag, bd -> abgd', eye, a_dtilda)    
+    # term_5 = a_bar
+    term_6 = np.einsum('dabg -> abgd', a_tilda)
+    term_7 = np.einsum('dbag -> abgd', a_tilda)
+    term_8 = np.einsum('gabd -> abgd', a_tilda)
+    term_9 = np.einsum('gbad -> abgd', a_tilda)
+    return 0.5/(N-1) * (term_1 - term_2 - term_3 + term_4) +\
+        a_bar - (term_6 - term_7 - term_8 + term_9)
+    eye = np.eye(gamma.shape[0])
+    rho = 1/(N-1) * np.einsum('abgb -> ag', gamma)
+    if not conjugate:
+        term_1 = np.einsum('ad, be, gz -> abgdez', eye, eye, rho) -\
+                 np.einsum('ae, bd, gz -> abgdez', eye, eye, rho)
+        term_2 = np.einsum('gz, abde -> abgdez', eye, gamma)
+        term_3 = np.einsum('ad, gezb -> abgdez', eye, gamma)
+        term_4 = np.einsum('bd, geza -> abgdez', eye, gamma)
+        term_5 = np.einsum('ae, gdzb -> abgdez', eye, gamma)
+        term_6 = np.einsum('be, gdza -> abgdez', eye, gamma)
+        return term_1 + term_2 - term_3 + term_4 + term_5 - term_6
+    a_dtilda = np.einsum('lkalkg -> ag', gamma)
+    a_tilda = np.einsum('lablgd -> abgd', gamma)
+    a_bar = np.einsum('ablgdl -> abgd', gamma)
+
+    term_1 = np.einsum('bd, ag -> abgd', eye, a_dtilda)
+    term_2 = np.einsum('ad, bg -> abgd', eye, a_dtilda)
+    term_3 = np.einsum('bg, ad -> abgd', eye, a_dtilda)
+    term_4 = np.einsum('ag, bd -> abgd', eye, a_dtilda)    
+    # term_5 = a_bar
+    term_6 = np.einsum('dabg -> abgd', a_tilda)
+    term_7 = np.einsum('dbag -> abgd', a_tilda)
+    term_8 = np.einsum('gabd -> abgd', a_tilda)
+    term_9 = np.einsum('gbad -> abgd', a_tilda)
+    return 0.5/(N-1) * (term_1 - term_2 - term_3 + term_4) +\
+        a_bar - (term_6 - term_7 - term_8 + term_9)
+
 
 def calc_T2_prime():
     pass
