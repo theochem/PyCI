@@ -110,12 +110,17 @@ def calc_G(gamma, N, conjugate=False):
         \mathcal{G}^{\prime}(\Gamma)_{\alpha \beta ; \gamma \delta}=\delta_{\beta \delta} \rho_{\alpha \gamma}-\Gamma_{\alpha \delta ; \gamma \beta}-\rho_{\alpha \beta} \rho_{\gamma \delta}
     """
     eye = np.eye(gamma.shape[0])
-    rho = 1/(N - 1) * np.einsum('abgb -> ag', gamma)
-    res = np.einsum('bd, ag -> abgd', eye, rho) - np.einsum('adgb -> abgd', gamma)
+    a_bar = np.einsum('abgb -> ag', gamma)
+    rho = 1/(N - 1) * a_bar
     if not conjugate:
-        return res
-    else: 
-        return res - np.einsum('ab, gd -> abgd', eye, eye)
+        return np.einsum('bd, ag -> abgd', eye, rho) - np.einsum('adgb -> abgd', gamma)
+    term_1 = 1/(N-1) *\
+          (np.einsum('bd, ag -> abgd', eye, a_bar) - np.einsum('ad, bg -> abgd', eye, a_bar) -\
+           np.einsum('bg, ad -> abgd', eye, a_bar) + np.einsum('ag, bd -> abgd', eye, a_bar)
+    )
+    term_2 = -np.einsum('adgb -> abgd', gamma) + np.einsum('bdga -> abgd', gamma) +\
+              np.einsum('agdb -> abgd', gamma) - np.einsum('bgda -> abgd', gamma)
+    return term_1 + term_2
 
 def calc_T1():
     pass
