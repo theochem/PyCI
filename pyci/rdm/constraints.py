@@ -174,7 +174,36 @@ def calc_T1(gamma, N, conjugate):
     eye = np.eye(gamma.shape[0])
 
     if not conjugate:
-        pass
+        rho = 1 / (N-1) * np.einsum('abgb -> ag', gamma)
+        term_1 = np.einsum('gz, be, ad -> abgdez', eye, eye, eye) + \
+                 np.einsum('ge, ad, bz -> abgdez', eye, eye, eye) + \
+                 np.einsum('az, ge, bd -> abgdez', eye, eye, eye) + \
+                 np.einsum('gz, ae, bd -> abgdez', eye, eye, eye) + \
+                 np.einsum('az, be, gd -> abgdez', eye, eye, eye)
+        term_2 = - np.einsum('gz, be, ad -> abgdez', eye, eye, rho) + \
+                   np.einsum('bz, ge, ad -> abgdez', eye, eye, rho) + \
+                   np.einsum('gz, ae, bd -> abgdez', eye, eye, rho) - \
+                   np.einsum('az, ge, bd -> abgdez', eye, eye, rho) - \
+                   np.einsum('bz, ae, gd -> abgdez', eye, eye, rho) + \
+                   np.einsum('az, be, gd -> abgdez', eye, eye, rho)
+        term_3 = np.einsum('gz, bd, ae -> abgdez', eye, eye, rho) - \
+                 np.einsum('bz, gd, ae -> abgdez', eye, eye, rho) - \
+                 np.einsum('gz, ad, eb -> abgdez', eye, eye, rho) + \
+                 np.einsum('az, gd, eb -> abgdez', eye, eye, rho) + \
+                 np.einsum('bz, ad, ge -> abgdez', eye, eye, rho) - \
+                 np.einsum('az, bd, ge -> abgdez', eye, eye, rho)
+        term_4 = - np.einsum('bd, ge, az -> abgdez', eye, eye, rho) + \
+                   np.einsum('be, gd, az -> abgdez', eye, eye, rho) + \
+                   np.einsum('ge, ad, bz -> abgdez', eye, eye, rho) - \
+                   np.einsum('ae, gd, bz -> abgdez', eye, eye, rho) - \
+                   np.einsum('be, ad, gz -> abgdez', eye, eye, rho) + \
+                   np.einsum('ae, bd, gz -> abgdez', eye, eye, rho)
+        term_5 = np.einsum('gz, abde -> abgdez', eye, gamma) - np.einsum('bz, agde -> abgdez', eye, gamma) + \
+                 np.einsum('az, bgde -> abgdez', eye, gamma) - np.einsum('ge, abdz -> abgdez', eye, gamma) + \
+                 np.einsum('be, agdz -> abgdez', eye, gamma) - np.einsum('ae, bgdz -> abgdez', eye, gamma) + \
+                 np.einsum('gd, abez -> abgdez', eye, gamma) - np.einsum('bd, agez -> abgdez', eye, gamma) + \
+                 np.einsum('ad, bgez -> abgdez', eye, gamma)
+        return term_1 + term_2 + term_3 + term_4 + term_5
 
     else:
         tr_gamma = np.einsum('aaaaaa', gamma)
