@@ -123,7 +123,30 @@ def calc_G(gamma, N, conjugate=False):
     return term_1 + term_2
 
 def calc_T1():
-    pass
+     """
+    Calculating T1 tensor
+
+    Parameters
+    ----------
+    gamma: np.ndarray
+        1DM tensor
+    N: int
+        number of electrons in the system
+    conjugate: bool
+        conjugate or regular condition
+
+    Returns
+    -------
+    np.ndarray
+
+    Notes
+    -----
+    G is defined as:
+
+    .. math::
+        \mathcal{G}_1(\Gamma)_{\alpha \beta ; \gamma \delta}=\delta_{\beta \delta} \rho_{\alpha \gamma}-\Gamma_{\alpha \delta ; \gamma \beta}
+        \mathcal{G}^{\prime}(\Gamma)_{\alpha \beta ; \gamma \delta}=\delta_{\beta \delta} \rho_{\alpha \gamma}-\Gamma_{\alpha \delta ; \gamma \beta}-\rho_{\alpha \beta} \rho_{\gamma \delta}
+    """
 
 def calc_T2(gamma, N, conjugate=False):
     """
