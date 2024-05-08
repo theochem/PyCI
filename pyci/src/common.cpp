@@ -29,6 +29,10 @@ long get_num_threads(void) {
     return g_number_threads;
 }
 
+long end_chunk_idx(const long thread_idx, const long num_threads, const long sideLength) {
+    return ceil(sqrt(thread_idx / num_threads) * sideLength);
+}
+
 void set_num_threads(const long n) {
     g_number_threads = std::max(n, 1L);
     Eigen::setNbThreads(g_number_threads);
