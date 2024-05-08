@@ -259,9 +259,10 @@ long add_hci(const SQuantOp &ham, WfnType &wfn, const double *coeffs, const doub
     Vector<WfnType> v_wfns;
     v_threads.reserve(nthread);
     v_wfns.reserve(nthread);
-    for (long i = 0, start, end = 0; i < nthread; ++i) {
-        start = end;
-        end = std::min(start + chunksize, ndet_old);
+    for (long i = 0; i < nthread; ++i) {
+        long start = end_chunk_idx(i, nthread, ndet_old);
+        long end = end_chunk_idx(i + 1, nthread, ndet_old);
+        end = std::min(end, ndet_old);
         v_wfns.emplace_back(wfn.nbasis, wfn.nocc_up, wfn.nocc_dn);
         v_threads.emplace_back(&hci_thread<WfnType>, std::ref(ham), std::ref(wfn),
                                std::ref(v_wfns.back()), coeffs, eps, start, end);

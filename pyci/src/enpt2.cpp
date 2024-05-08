@@ -360,9 +360,10 @@ double compute_enpt2(const SQuantOp &ham, const WfnType &wfn, const double *coef
     Vector<PairHashMap> v_terms(nthread);
     Vector<std::thread> v_threads;
     v_threads.reserve(nthread);
-    for (long i = 0, start, end = 0; i < nthread; ++i) {
-        start = end;
-        end = std::min(start + chunksize, wfn.ndet);
+    for (long i = 0; i < nthread; ++i) {
+        long start = end_chunk_idx(i, nthread, wfn.ndet);
+        long end = end_chunk_idx(i + 1, nthread, wfn.ndet);
+        end = std::min(end, wfn.ndet);
         v_threads.emplace_back(&compute_enpt2_thread<WfnType>, std::ref(ham), std::ref(wfn),
                                std::ref(v_terms[i]), coeffs, eps, start, end);
     }

@@ -42,9 +42,9 @@ double compute_overlap(const WfnType &wfn1, const WfnType &wfn2, const double *c
     Vector<std::future<double>> v_threads;
     v_threads.reserve(nthread);
     for (long i = 0, start, end; i < nthread; ++i) {
-        start = ceil(sqrt(i / nthread) * wfn1.ndet);
-        end = ceil(sqrt((i + 1) / nthread) * wfn1.ndet);
-        end = (end < wfn1.ndet) ? end : wfn1.ndet;
+        start = end_chunk_idx(i, nthread, wfn1.ndet);
+        end = end_chunk_idx(i + 1, nthread, wfn1.ndet);
+        end = std::min(end, wfn1.ndet);
         v_threads.push_back(std::async(std::launch::async, &compute_overlap_thread<WfnType>,
                                        std::ref(wfn1), std::ref(wfn2), coeffs1, coeffs2, start,
                                        end));

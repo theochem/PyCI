@@ -203,9 +203,10 @@ void OneSpinWfn::add_all_dets(long nthread) {
     dict.reserve(ndet);
     Vector<std::thread> v_threads;
     v_threads.reserve(nthread);
-    for (long i = 0, start, end = 0; i < nthread; ++i) {
-        start = end;
-        end = std::min(start + chunksize, maxrank_up);
+    for (long i = 0; i < nthread; ++i) {
+        long start = end_chunk_idx(i, nthread, maxrank_up);
+        long end = end_chunk_idx(i + 1, nthread, maxrank_up);
+        end = std::min(end, maxrank_up);
         v_threads.emplace_back(onespinwfn_add_all_dets_thread, nword, nbasis, nocc_up, &dets[0],
                                start, end);
     }
