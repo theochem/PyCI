@@ -183,6 +183,8 @@ extern long g_number_threads;
 
 long get_num_threads(void);
 
+long end_chunk_idx(const long, const long, const long);
+
 void set_num_threads(const long);
 
 long binomial(long, long);
