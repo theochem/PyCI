@@ -129,7 +129,7 @@ def calc_T1(gamma, N, conjugate):
     Parameters
     ----------
     gamma: np.ndarray
-        1DM tensor
+        1DM or 2DM tensor
     N: int
         number of electrons in the system
     conjugate: bool
@@ -152,6 +152,27 @@ def calc_T1(gamma, N, conjugate):
         \mathcal{T}_1^(\Gamma)_{\alpha \beta \gamma; \delta \epsilon \zeta}= ...
 
     """
+    eye = np.eye(gamma.shape[0])
+
+    if not conjugate:
+        pass
+
+    else:
+        tr_gamma = np.einsum('aaaaaa', gamma)
+        gamma_abgd = np.einsum('ablgdl -> abgd', gamma)
+        term_1 = 2 / (N*N - N) *\
+                (np.einsum('ag, bd -> abgd', eye, eye) - np.einsum('ad, bg -> abgd', eye, eye)) * tr_gamma + gamma_abgd        
+        
+        gamma_ag = np.einsum('abgd -> ag', gamma_abgd)
+        gamma_bg = np.einsum('abdg -> bg', gamma_abgd)
+        gamma_ad = np.einsum('abdg -> ad', gamma_abgd)
+        gamma_bd = np.einsum('abdg -> bd', gamma_abgd)
+        
+        term_2 = - 2 / (2*N - 2)*\
+                (np.einsum('bd, ag -> abgd', eye, gamma_ag) - np.einsum('ad, bg -> abgd', eye, gamma_bg) -\
+                 np.einsum('bg, ad -> abgd', eye, gamma_ad) + np.einsum('ag, bd -> abgd', eye, gamma_bd))
+
+        return term_1 + term_2
 
 def calc_T2(gamma, N, conjugate=False):
     """
