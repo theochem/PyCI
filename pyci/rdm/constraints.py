@@ -122,8 +122,8 @@ def calc_G(gamma, N, conjugate=False):
               np.einsum('agdb -> abgd', gamma) - np.einsum('bgda -> abgd', gamma)
     return term_1 + term_2
 
-def calc_T1():
-     """
+def calc_T1(gamma, N, conjugate):
+    """
     Calculating T1 tensor
 
     Parameters
@@ -141,11 +141,16 @@ def calc_T1():
 
     Notes
     -----
-    G is defined as:
+    T1 is defined as:
 
     .. math::
-        \mathcal{G}_1(\Gamma)_{\alpha \beta ; \gamma \delta}=\delta_{\beta \delta} \rho_{\alpha \gamma}-\Gamma_{\alpha \delta ; \gamma \beta}
-        \mathcal{G}^{\prime}(\Gamma)_{\alpha \beta ; \gamma \delta}=\delta_{\beta \delta} \rho_{\alpha \gamma}-\Gamma_{\alpha \delta ; \gamma \beta}-\rho_{\alpha \beta} \rho_{\gamma \delta}
+        \begin{aligned}
+                \mathcal{T}_1^{\dagger}(\Gamma)_{\alpha \beta ; \gamma \delta}=&\frac{2N}{N(N-1)}(\delta_{\alpha \gamma}\delta_{\beta \delta} - \delta_{\alpha \delta}\delta_{\beta \gamma}) \rm{Tr} A +\bar{A}_{\alpha\beta;\gamma\delta} \\
+                &-\frac{1}{2(N-1)} [\delta_{\beta \delta} \bar{\bar{A}}_{\alpha \gamma} - \delta_{\alpha \delta}\bar{\bar{A}}_{\beta \gamma} - \delta_{\beta \gamma}\bar{\bar{A}}_{\alpha \delta} + \delta_{\alpha \gamma}\bar{\bar{A}}_{\beta \delta}]
+        \end{aligned}
+
+        \mathcal{T}_1^(\Gamma)_{\alpha \beta \gamma; \delta \epsilon \zeta}= ...
+
     """
 
 def calc_T2(gamma, N, conjugate=False):
