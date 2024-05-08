@@ -211,10 +211,10 @@ def calc_T1(gamma, N, conjugate):
         term_1 = 2 / (N*N - N) *\
                 (np.einsum('ag, bd -> abgd', eye, eye) - np.einsum('ad, bg -> abgd', eye, eye)) * tr_gamma + gamma_abgd        
         
-        gamma_ag = np.einsum('abgd -> ag', gamma_abgd)
-        gamma_bg = np.einsum('abdg -> bg', gamma_abgd)
-        gamma_ad = np.einsum('abdg -> ad', gamma_abgd)
-        gamma_bd = np.einsum('abdg -> bd', gamma_abgd)
+        gamma_ag = np.einsum('abgb -> ag', gamma_abgd)
+        gamma_bg = np.einsum('abag -> bg', gamma_abgd)
+        gamma_ad = np.einsum('agdg -> ad', gamma_abgd)
+        gamma_bd = np.einsum('abda -> bd', gamma_abgd)
         
         term_2 = - 2 / (2*N - 2)*\
                 (np.einsum('bd, ag -> abgd', eye, gamma_ag) - np.einsum('ad, bg -> abgd', eye, gamma_bg) -\
