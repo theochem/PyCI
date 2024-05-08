@@ -145,11 +145,30 @@ def calc_T1(gamma, N, conjugate):
 
     .. math::
         \begin{aligned}
-                \mathcal{T}_1^{\dagger}(\Gamma)_{\alpha \beta ; \gamma \delta}=&\frac{2N}{N(N-1)}(\delta_{\alpha \gamma}\delta_{\beta \delta} - \delta_{\alpha \delta}\delta_{\beta \gamma}) \rm{Tr} A +\bar{A}_{\alpha\beta;\gamma\delta} \\
-                &-\frac{1}{2(N-1)} [\delta_{\beta \delta} \bar{\bar{A}}_{\alpha \gamma} - \delta_{\alpha \delta}\bar{\bar{A}}_{\beta \gamma} - \delta_{\beta \gamma}\bar{\bar{A}}_{\alpha \delta} + \delta_{\alpha \gamma}\bar{\bar{A}}_{\beta \delta}]
+            \mathcal{T}_1^{\dagger}(\Gamma)_{\alpha \beta ; \gamma \delta}=&\frac{2N}{N(N-1)}(\delta_{\alpha \gamma}\delta_{\beta \delta} - \delta_{\alpha \delta}\delta_{\beta \gamma}) \rm{Tr} A +\bar{A}_{\alpha\beta;\gamma\delta} \\
+            &-\frac{1}{2(N-1)} [\delta_{\beta \delta} \bar{\bar{A}}_{\alpha \gamma} - \delta_{\alpha \delta}\bar{\bar{A}}_{\beta \gamma} - \delta_{\beta \gamma}\bar{\bar{A}}_{\alpha \delta} + \delta_{\alpha \gamma}\bar{\bar{A}}_{\beta \delta}]
         \end{aligned}
 
-        \mathcal{T}_1^(\Gamma)_{\alpha \beta \gamma; \delta \epsilon \zeta}= ...
+        \begin{aligned}
+            \mathcal{T}_1^(\Gamma)_{\alpha \beta \gamma; \delta \epsilon \zeta}=&   \delta_{\gamma\zeta}\delta_{\beta\epsilon}\delta_{\alpha\delta} - \delta_{\gamma\epsilon}\delta_{\alpha\delta}\delta_{\beta\zeta} 
+                                                                                  + \delta_{\alpha\zeta}\delta_{\gamma\epsilon}\delta_{\beta\delta} + \delta_{\gamma\zeta}\delta_{\alpha\epsilon}\delta_{\beta\delta}
+                                                                                  + \delta_{\beta\zeta}\delta_{\alpha\epsilon}\delta_{\gamma\delta} - \delta_{\alpha\zeta}\delta_{\beta\epsilon}\delta_{\gamma\delta} \\
+                                                                                & -(\delta_{\gamma\zeta}\delta_{\beta\epsilon} - \delta_{\beta\zeta}\delta_{gamma\epsilon})\rho_{\alpha\delta}
+                                                                                  +(\delta_{\gamma]zeta}\delta_{\aplha\epsilon} - \delta_{\alpha\zeta}\delta_{\gamma\epsilon})\rho_{\beta\delta}
+                                                                                  -(\delta_{\beta\zeta}\delta_{\alpha\epsilon} - \delta_{\alpha\zeta}\delta_{\beta\epsilon})\rho_{\gamma\delta} \\
+                                                                                & +(\delta_{\gamma\zeta}\delta_{\beta\delta} - \delta_{\beta\zeta}\delta_{\gamma\delta})\rho_{\alpha\epsilon}
+                                                                                  -(\delta_{\gamma\zeta}\delta_{\alpha\delta} - \delta_{\alpha\zeta}\delta_{\gamma\delta})\rho_{\epsilon\beta}
+                                                                                  +(\delta_{\beta\zeta}\delta_{\alpha\delta} - \delta_{alpha\zeta}\delta_{\beta\delta})\rho_{gamma\epsilon} \\
+                                                                                & -(\delta_{\beta\delta}\delta_{\gamma\epsilon} - \delta_{\beta\epsilon}\delta_{\gamma\delta})\rho_{alpha\zeta} 
+                                                                                  +(\delta_{\gamma\epsilon}\delta_{\alpha\delta} - \delta_{\alpha\epsilon}\delta_{\gamma\delta})\rho_{\beta\zeta}
+                                                                                  -(\delta_{\beta\epsilon}\delta_{\alpha\delta} - \delta_{\alpha\epsilon}\delta_{\beta\delta})\rho_{\gamma\zeta} \\
+                                                                                & + \delta_{\gamma\zeta}\Gamma_{\alpha\beta;\delta\epsilon} - \delta_{\beta\zeta}\Gamma_{\alpha\gamma;\delta\epsilon}
+                                                                                  + \delta_{\alpha\zeta}\Gamma_{\beta\gamma;\delta\epsilon} - \delta_{\gamma\epsilon}\Gamma_{\alpha\beta;\delta\zeta}
+                                                                                  + \delta_{\beta\epsilon}\Gamma_{\alpha\gemma;\delta\zeta} - \delta_{\alpha\epsilon}\Gamma_{\beta\gamma;\delta]zeta} \\
+                                                                                & + \delta_{\gamma\delta}\Gamma_{\alpha\beta;\epsilon\zeta} - \delta_{\beta\delta}\Gamma_{\alpha\gamma;\epsilon\zeta}
+                                                                                  + \delta_{\alpha\delta}\Gamma_{\beta\gamma;\epsilon\zeta} .                                                        
+        \end{aligned}
+        
 
     """
     eye = np.eye(gamma.shape[0])
