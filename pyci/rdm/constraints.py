@@ -122,8 +122,106 @@ def calc_G(gamma, N, conjugate=False):
               np.einsum('agdb -> abgd', gamma) - np.einsum('bgda -> abgd', gamma)
     return term_1 + term_2
 
-def calc_T1():
-    pass
+def calc_T1(gamma, N, conjugate):
+    """
+    Calculating T1 tensor
+
+    Parameters
+    ----------
+    gamma: np.ndarray
+        1DM or 2DM tensor
+    N: int
+        number of electrons in the system
+    conjugate: bool
+        conjugate or regular condition
+
+    Returns
+    -------
+    np.ndarray
+
+    Notes
+    -----
+    T1 is defined as:
+
+    .. math::
+        \begin{aligned}
+            \mathcal{T}_1^{\dagger}(\Gamma)_{\alpha \beta ; \gamma \delta}=&\frac{2N}{N(N-1)}(\delta_{\alpha \gamma}\delta_{\beta \delta} - \delta_{\alpha \delta}\delta_{\beta \gamma}) \rm{Tr} A +\bar{A}_{\alpha\beta;\gamma\delta} \\
+            &-\frac{1}{2(N-1)} [\delta_{\beta \delta} \bar{\bar{A}}_{\alpha \gamma} - \delta_{\alpha \delta}\bar{\bar{A}}_{\beta \gamma} - \delta_{\beta \gamma}\bar{\bar{A}}_{\alpha \delta} + \delta_{\alpha \gamma}\bar{\bar{A}}_{\beta \delta}]
+        \end{aligned}
+
+        \begin{aligned}
+            \mathcal{T}_1^(\Gamma)_{\alpha \beta \gamma; \delta \epsilon \zeta}=&   \delta_{\gamma\zeta}\delta_{\beta\epsilon}\delta_{\alpha\delta} - \delta_{\gamma\epsilon}\delta_{\alpha\delta}\delta_{\beta\zeta} 
+                                                                                  + \delta_{\alpha\zeta}\delta_{\gamma\epsilon}\delta_{\beta\delta} + \delta_{\gamma\zeta}\delta_{\alpha\epsilon}\delta_{\beta\delta}
+                                                                                  + \delta_{\beta\zeta}\delta_{\alpha\epsilon}\delta_{\gamma\delta} - \delta_{\alpha\zeta}\delta_{\beta\epsilon}\delta_{\gamma\delta} \\
+                                                                                & -(\delta_{\gamma\zeta}\delta_{\beta\epsilon} - \delta_{\beta\zeta}\delta_{gamma\epsilon})\rho_{\alpha\delta}
+                                                                                  +(\delta_{\gamma]zeta}\delta_{\aplha\epsilon} - \delta_{\alpha\zeta}\delta_{\gamma\epsilon})\rho_{\beta\delta}
+                                                                                  -(\delta_{\beta\zeta}\delta_{\alpha\epsilon} - \delta_{\alpha\zeta}\delta_{\beta\epsilon})\rho_{\gamma\delta} \\
+                                                                                & +(\delta_{\gamma\zeta}\delta_{\beta\delta} - \delta_{\beta\zeta}\delta_{\gamma\delta})\rho_{\alpha\epsilon}
+                                                                                  -(\delta_{\gamma\zeta}\delta_{\alpha\delta} - \delta_{\alpha\zeta}\delta_{\gamma\delta})\rho_{\epsilon\beta}
+                                                                                  +(\delta_{\beta\zeta}\delta_{\alpha\delta} - \delta_{alpha\zeta}\delta_{\beta\delta})\rho_{gamma\epsilon} \\
+                                                                                & -(\delta_{\beta\delta}\delta_{\gamma\epsilon} - \delta_{\beta\epsilon}\delta_{\gamma\delta})\rho_{alpha\zeta} 
+                                                                                  +(\delta_{\gamma\epsilon}\delta_{\alpha\delta} - \delta_{\alpha\epsilon}\delta_{\gamma\delta})\rho_{\beta\zeta}
+                                                                                  -(\delta_{\beta\epsilon}\delta_{\alpha\delta} - \delta_{\alpha\epsilon}\delta_{\beta\delta})\rho_{\gamma\zeta} \\
+                                                                                & + \delta_{\gamma\zeta}\Gamma_{\alpha\beta;\delta\epsilon} - \delta_{\beta\zeta}\Gamma_{\alpha\gamma;\delta\epsilon}
+                                                                                  + \delta_{\alpha\zeta}\Gamma_{\beta\gamma;\delta\epsilon} - \delta_{\gamma\epsilon}\Gamma_{\alpha\beta;\delta\zeta}
+                                                                                  + \delta_{\beta\epsilon}\Gamma_{\alpha\gemma;\delta\zeta} - \delta_{\alpha\epsilon}\Gamma_{\beta\gamma;\delta]zeta} \\
+                                                                                & + \delta_{\gamma\delta}\Gamma_{\alpha\beta;\epsilon\zeta} - \delta_{\beta\delta}\Gamma_{\alpha\gamma;\epsilon\zeta}
+                                                                                  + \delta_{\alpha\delta}\Gamma_{\beta\gamma;\epsilon\zeta} .                                                        
+        \end{aligned}
+        
+
+    """
+    eye = np.eye(gamma.shape[0])
+
+    if not conjugate:
+        rho = 1 / (N-1) * np.einsum('abgb -> ag', gamma)
+        term_1 = np.einsum('gz, be, ad -> abgdez', eye, eye, eye) + \
+                 np.einsum('ge, ad, bz -> abgdez', eye, eye, eye) + \
+                 np.einsum('az, ge, bd -> abgdez', eye, eye, eye) + \
+                 np.einsum('gz, ae, bd -> abgdez', eye, eye, eye) + \
+                 np.einsum('az, be, gd -> abgdez', eye, eye, eye)
+        term_2 = - np.einsum('gz, be, ad -> abgdez', eye, eye, rho) + \
+                   np.einsum('bz, ge, ad -> abgdez', eye, eye, rho) + \
+                   np.einsum('gz, ae, bd -> abgdez', eye, eye, rho) - \
+                   np.einsum('az, ge, bd -> abgdez', eye, eye, rho) - \
+                   np.einsum('bz, ae, gd -> abgdez', eye, eye, rho) + \
+                   np.einsum('az, be, gd -> abgdez', eye, eye, rho)
+        term_3 = np.einsum('gz, bd, ae -> abgdez', eye, eye, rho) - \
+                 np.einsum('bz, gd, ae -> abgdez', eye, eye, rho) - \
+                 np.einsum('gz, ad, eb -> abgdez', eye, eye, rho) + \
+                 np.einsum('az, gd, eb -> abgdez', eye, eye, rho) + \
+                 np.einsum('bz, ad, ge -> abgdez', eye, eye, rho) - \
+                 np.einsum('az, bd, ge -> abgdez', eye, eye, rho)
+        term_4 = - np.einsum('bd, ge, az -> abgdez', eye, eye, rho) + \
+                   np.einsum('be, gd, az -> abgdez', eye, eye, rho) + \
+                   np.einsum('ge, ad, bz -> abgdez', eye, eye, rho) - \
+                   np.einsum('ae, gd, bz -> abgdez', eye, eye, rho) - \
+                   np.einsum('be, ad, gz -> abgdez', eye, eye, rho) + \
+                   np.einsum('ae, bd, gz -> abgdez', eye, eye, rho)
+        term_5 = np.einsum('gz, abde -> abgdez', eye, gamma) - np.einsum('bz, agde -> abgdez', eye, gamma) + \
+                 np.einsum('az, bgde -> abgdez', eye, gamma) - np.einsum('ge, abdz -> abgdez', eye, gamma) + \
+                 np.einsum('be, agdz -> abgdez', eye, gamma) - np.einsum('ae, bgdz -> abgdez', eye, gamma) + \
+                 np.einsum('gd, abez -> abgdez', eye, gamma) - np.einsum('bd, agez -> abgdez', eye, gamma) + \
+                 np.einsum('ad, bgez -> abgdez', eye, gamma)
+        return term_1 + term_2 + term_3 + term_4 + term_5
+
+    else:
+        tr_gamma = np.einsum('aaaaaa', gamma)
+        gamma_abgd = np.einsum('ablgdl -> abgd', gamma)
+        term_1 = 2 / (N*N - N) *\
+                (np.einsum('ag, bd -> abgd', eye, eye) - np.einsum('ad, bg -> abgd', eye, eye)) * tr_gamma + gamma_abgd        
+        
+        gamma_ag = np.einsum('abgb -> ag', gamma_abgd)
+        gamma_bg = np.einsum('abag -> bg', gamma_abgd)
+        gamma_ad = np.einsum('agdg -> ad', gamma_abgd)
+        gamma_bd = np.einsum('abda -> bd', gamma_abgd)
+        
+        term_2 = - 2 / (2*N - 2)*\
+                (np.einsum('bd, ag -> abgd', eye, gamma_ag) - np.einsum('ad, bg -> abgd', eye, gamma_bg) -\
+                 np.einsum('bg, ad -> abgd', eye, gamma_ad) + np.einsum('ag, bd -> abgd', eye, gamma_bd))
+
+        return term_1 + term_2
+
 
 def calc_T2(gamma, N, conjugate=False):
     """
