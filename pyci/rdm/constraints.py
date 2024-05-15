@@ -78,8 +78,28 @@ def calculate_shift(eigenvalues, alpha):
     res = root(constraint, 0) 
     return res.x
 
-def calc_P():
-    pass
+def calc_P(gamma, N, conjugate=False):
+    """
+    Calculating P tensor
+
+    Parameters
+    ----------
+    gamma: np.ndarray
+        1DM tensor
+    N: int
+        number of electrons in the system
+    conjugate: bool
+        conjugate or regular condition
+
+    Returns
+    -------
+    np.ndarray
+
+    Notes
+    -----
+    
+    """
+    return gamma
 
 def calc_Q():
     pass
@@ -381,5 +401,5 @@ def calc_T2_prime(gamma, N, conjugate=False):
         term3 = np.einsum('ad, gb -> abgd', eye, rho)
         term4 = np.einsum('bg, da -> abgd', eye, rho)
         term5 = np.einsum('ag, db -> abgd', eye, rho)
-        
+
         return term1 + 1 / (N - 1) * (term2 - term3 - term4 + term5)
