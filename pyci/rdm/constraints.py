@@ -309,6 +309,77 @@ def calc_T2(gamma, N, conjugate=False):
         a_bar - (term_6 - term_7 - term_8 + term_9)
 
 
-def calc_T2_prime():
-    pass
+def calc_T2_prime(gamma, N, conjugate=False):
+    """
+    Calculating T2' tensor
 
+    Parameters
+    ----------
+    gamma: np.ndarray
+        1DM tensor
+    N: int
+        number of electrons in the system
+    conjugate: bool
+        conjugate or regular condition
+
+    Returns
+    -------
+    np.ndarray
+
+    Notes
+    -----
+    T2' is defined as:
+
+    .. math::
+        \begin{aligned}
+        \mathcal{T}'_{2}(\Gamma)
+        = \left( \begin{matrix}
+            \mathcal{T}_{2}(\Gamma)_{\alpha \beta \gamma; \delta \epsilon \zeta} & (\Gamma_\omega)_{\alpha \beta \gamma; \nu} \\
+            (\Gamma_\omega^{\dagger})_{\mu; \delta \epsilon \zeta} & (\Gamma_\rho)_{\mu \nu}
+        \end{matrix} \right)
+        \end{aligned}
+
+        \begin{aligned}
+        \mathcal{T}'^{\dagger}_{2}(\Gamma)_{\alpha \beta; \gamma \delta} 
+        = &
+            \mathcal{T}^{\dagger}_{2}(A_{\mathcal{T}}) 
+            + (\Gamma_{\omega})_{\alpha \beta \delta; \gamma} 
+            + (\Gamma_{\omega})_{\gamma \delta \beta; \alpha} 
+        \\
+        &
+            - (\Gamma_{\omega})_{\alpha \beta \gamma; \delta} 
+            - (\Gamma_{\omega})_{\gamma \delta \alpha; \beta} 
+        \\
+        &
+            + \frac{1}{N-1} 
+            \left( 
+                \delta_{\beta \delta} (\Gamma_{\rho})_{\gamma \alpha} 
+                - \delta_{\alpha \delta} (\Gamma_{\rho})_{\gamma \beta} 
+                - \delta_{\beta \gamma} (\Gamma_{\rho})_{\delta \alpha} 
+                + \delta_{\alpha \gamma} (\Gamma_{\rho})_{\delta \beta} 
+            \right)
+    \end{aligned}
+    """
+    omega = np.einsum('abgd -> abdg', gamma)
+    rho = 1/(N-1) * np.einsum('abgb -> ag', gamma)
+
+    if not conjugate:
+        t2 = calc_T2(gamma, N, False)
+        omega_d = omega.conj().T
+        n = t2.shape[0]
+        return np.block([
+            [t2.reshape(n**3, n**3), omega.reshape((n**3, n))],
+            [omega_d.reshape(n, n**3), rho]
+        ])
+    else:
+        t2 = calc_T2(gamma, N, False)
+        t2_d = calc_T2(t2, N, True)
+        eye = np.eye(N)
+
+        term1 = np.einsum('abgd, abdg, gdba, abgd, gdab -> abgd', t2_d, omega, omega, -omega, -omega) 
+        term2 = np.einsum('bd, ga -> abgd', eye, rho)
+        term3 = np.einsum('ad, gb -> abgd', eye, rho)
+        term4 = np.einsum('bg, da -> abgd', eye, rho)
+        term5 = np.einsum('ag, db -> abgd', eye, rho)
+        
+        return term1 + 1 / (N - 1) * (term2 - term3 - term4 + term5)
