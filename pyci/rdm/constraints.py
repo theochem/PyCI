@@ -396,10 +396,14 @@ def calc_T2_prime(gamma, N, conjugate=False):
         t2_d = calc_T2(t2, N, True)
         eye = np.eye(N)
 
-        term1 = np.einsum('abgd, abdg, gdba, abgd, gdab -> abgd', t2_d, omega, omega, -omega, -omega) 
-        term2 = np.einsum('bd, ga -> abgd', eye, rho)
-        term3 = np.einsum('ad, gb -> abgd', eye, rho)
-        term4 = np.einsum('bg, da -> abgd', eye, rho)
-        term5 = np.einsum('ag, db -> abgd', eye, rho)
+        term1 = t2_d
+        term2 = np.einsum('abdg -> abgd', omega)
+        term3 = np.einsum('gdba -> abgd', omega)
+        term4 = omega
+        term5 = np.einsum('gdab -> abgd', omega)
+        term6 = np.einsum('bd, ga -> abgd', eye, rho)
+        term7 = np.einsum('ad, gb -> abgd', eye, rho)
+        term8 = np.einsum('bg, da -> abgd', eye, rho)
+        term9 = np.einsum('ag, db -> abgd', eye, rho)
 
-        return term1 + 1 / (N - 1) * (term2 - term3 - term4 + term5)
+        return term1 + term2 + term3 - term4 - term5 + 1 / (N - 1) * (term6 - term7 - term8 + term9)
