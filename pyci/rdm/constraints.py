@@ -18,6 +18,7 @@ r"""PyCI RDM Constraints module."""
 import numpy as np
 
 from scipy.optimize import root  
+from pyci.rdm.tools import flat_tensor
 
 
 __all__ = [
@@ -355,7 +356,7 @@ def calc_T2_prime(gamma, N, conjugate=False):
         \mathcal{T}'_{2}(\Gamma)
         = \left( \begin{matrix}
             \mathcal{T}_{2}(\Gamma)_{\alpha \beta \gamma; \delta \epsilon \zeta} & (\Gamma_\omega)_{\alpha \beta \gamma; \nu} \\
-            (\Gamma_\omega^{\dagger})_{\mu; \delta \epsilon \zeta} & (\Gamma_\rho)_{\mu \nu}
+            (\Gamma_\omega)_{\mu; \delta \epsilon \zeta} & (\Gamma_\rho)_{\mu \nu}
         \end{matrix} \right)
         \end{aligned}
 
@@ -385,11 +386,10 @@ def calc_T2_prime(gamma, N, conjugate=False):
 
     if not conjugate:
         t2 = calc_T2(gamma, N, False)
-        omega_d = omega.conj().T
         n = t2.shape[0]
-        return np.block([
-            [t2.reshape(n**3, n**3), omega.reshape((n**3, n))],
-            [omega_d.reshape(n, n**3), rho]
+        return np.block([  
+            [flat_tensor(t2, (n**3, n**3)), flat_tensor(omega, (n**3, n))],  
+            [flat_tensor(omega, (n, n**3)), rho]  
         ])
     else:
         t2 = calc_T2(gamma, N, False)
