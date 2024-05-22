@@ -1,8 +1,9 @@
 import numpy as np 
 from abc import ABC, abstractmethod
+
 class Projection(ABC):
     
-    def __init__(self, initial_guess: np.ndarray,constraints: list)-> None:
+    def __init__(self, initial_guess: np.ndarray, constraints: list) -> None:
         r"""
         Initialize the Projection object.
 
@@ -30,7 +31,8 @@ class Projection(ABC):
         pass
 
 class Dykstra(Projection):
-    def __init__(self, initial_guess:np.ndarray, constraints:list, alpha:float =1.0, max_iterations:int =100, eps:float =1e-6)-> None:
+    
+    def __init__(self, initial_guess:np.ndarray, constraints:list, alpha:float =1.0, max_iterations:int =100, eps:float =1e-6) -> None:
         r"""
         Dykstra's class for projection onto convex sets.
 
@@ -51,7 +53,8 @@ class Dykstra(Projection):
         self.alpha = alpha
         self.max_iterations = max_iterations
         self.eps = eps
-    def optimize(self)-> np.ndarray:
+    
+    def optimize(self) -> np.ndarray:
         r"""
         Dykstra's algorithm to find the optimal wave function that satisfies all the constraints        
         
@@ -73,9 +76,10 @@ class Dykstra(Projection):
             if is_stop:
                 break
         return D
+
 class Neumann(Dykstra):
-    def __init__(self, initial_guess:np.ndarray, constraints:list, alpha:float =1.0, max_iterations:int =100, eps:float =1e-6)-> None:
-        super().__init__(initial_guess, constraints,alpha,max_iterations,eps)
+    
+    def __init__(self, initial_guess:np.ndarray, constraints:list, alpha:float =1.0, max_iterations:int =100, eps:float =1e-6) -> None:
         r"""
         Neumann's class for projection onto convex sets.
 
@@ -91,8 +95,10 @@ class Neumann(Dykstra):
             Number of maximum iterations, by default 100
         eps : float
             Tolerance, by default 1e-6
-        """        
-    def optimize(self)-> np.ndarray:
+        """       
+        super().__init__(initial_guess, constraints, alpha, max_iterations,eps) 
+    
+    def optimize(self) -> np.ndarray:
         r"""
         Neumann's algorithm to find the optimal wave function that satisfies all the constraints        
         
@@ -111,8 +117,10 @@ class Neumann(Dykstra):
             if is_stop:
                 break
         return D
+
 class Halpern(Dykstra):
-    def __init__(self, initial_guess:np.ndarray, constraints:list, alpha:float =1.0, max_iterations:int =100, eps:float =1e-6)-> None:
+    
+    def __init__(self, initial_guess:np.ndarray, constraints:list, alpha:float =1.0, max_iterations:int =100, eps:float =1e-6) -> None:
         super().__init__(initial_guess, constraints,alpha,max_iterations,eps)
         r"""
         Halpern's class for projection onto convex sets.
@@ -130,24 +138,25 @@ class Halpern(Dykstra):
         eps : float
             Tolerance, by default 1e-6
         """        
-    def optimize(self)-> np.ndarray:
+    
+    def optimize(self) -> np.ndarray:
         r"""
         Halpern's algorithm to find the optimal wave function that satisfies all the constraints        
         
         Returns
         ----------
-        D: np.ndarray
+        gamma_new: np.ndarray
             Optminal rdm that satisfies the given constraints
         """
-        D = np.copy(self.initial_guess)
+        gamma_new = np.copy(self.initial_guess)
         norm = []
-        for i in range (1,self.max_iterations):
+        for i in range (1,self.max_iterations+1):
             for projection in self.constraints:
-                D = projection(D)
-            D=(1.0/(i+1))*self.initial_guess +(i/(i+1))*D
-            norm.append(np.linalg.norm(D - self.initial_guess))
+                gamma_new = projection(gamma_new)
+            gamma_new=(1.0/(i+1))*self.initial_guess +(i/(i+1))*gamma_new
+            norm.append(np.linalg.norm(gamma_new - self.initial_guess))
             is_stop = self.alpha * abs(norm[i] - norm[i - 1]) + (1 - self.alpha) * norm[i] < self.eps
             if is_stop:
                 break
-        return D
+        return gamma_new
 
