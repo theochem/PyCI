@@ -83,7 +83,7 @@ def calc_P():
     pass
 
 
-def calc_Q(gamma, N):
+def calc_Q(gamma, N, conjugate=False):
     """
     Calculate the Q tensor.
 
@@ -93,6 +93,8 @@ def calc_Q(gamma, N):
         One-particle density matrix (1DM) tensor.
     N: int
         Number of electrons in the system.
+    conjugate: bool
+        conjugate or regular condition
 
     Returns
     -------
@@ -107,6 +109,8 @@ def calc_Q(gamma, N):
         \delta_{\alpha \delta}\delta_{\beta \gamma} + \Gamma_{\alpha \beta ; \gamma \delta} -
         \delta_{\alpha \gamma}\rho_{\beta \delta} + \delta_{\beta \gamma}\rho_{\alpha \delta} +
         \delta_{\alpha \delta}\rho_{\beta \gamma} - \delta_{\beta \delta}\rho_{\alpha \gamma}
+
+    Q is self-adjoint as stated in Appendix F of Poelman's thesis https://biblio.ugent.be/publication/6933577
     """
     dim = gamma.shape[0]
     eye = np.eye(dim)
