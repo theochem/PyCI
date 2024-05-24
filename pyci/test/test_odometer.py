@@ -24,18 +24,12 @@ import pyci
 from pyci.utility import odometer_one_spin, odometer_two_spin
 from pyci.gkci import compute_nodes_cntsp
 
-from pyscf import gto, scf, tools
 
-def build_wavefunction(mol, occs):
-    mf = scf.RHF(mol)
-    mf.kernel()
-
-    with NamedTemporaryFile(mode='w+', delete=True) as tmpfile:
-        tools.fcidump.from_scf(mf, tmpfile.name)
-        ham = pyci.hamiltonian(tmpfile.name)
-
+def get_wfn_ham(fn, occs):
+    ham = pyci.hamiltonian(fn)
     wfn = pyci.fullci_wfn(ham.nbasis, *occs)
     return wfn, ham
+
 
 def get_cost(wfn, ham, n):
     wfn.add_all_dets()
@@ -43,16 +37,14 @@ def get_cost(wfn, ham, n):
     e_vals, e_vecs = op.solve(n=n, tol=1.0e-9)
     return e_vals * -1
 
-mol = gto.Mole()
-mol.build(atom = "H 0 0 0; H 0 1 0", basis = 'sto-3g')
-wfn1, ham1 = build_wavefunction(mol, (1, 1))
-wfnt, hamt = build_wavefunction(mol, (1, 1))
+
+wfn1, ham1 = get_wfn_ham("data/h2.fcidump", (1, 1))
+wfnt, hamt = get_wfn_ham("data/h2.fcidump", (1, 1))
 cost1 = get_cost(wfnt, hamt, 2)
 
-mol = gto.Mole()
-mol.build(atom = "H 0 0 0; H 0 1 0; H 0 2 0; H 0 3 0", basis = 'sto-3g')
-wfn2, ham2 = build_wavefunction(mol, (2, 2))
-cost2 = get_cost(wfn2, ham2, 4)
+wfn2, ham2 = get_wfn_ham("data/h4.fcidump", (2, 2))
+wfnt, hamt = get_wfn_ham("data/h4.fcidump", (2, 2))
+cost2 = get_cost(wfnt, hamt, 4)
 
 
 @pytest.mark.parametrize(

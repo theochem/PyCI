@@ -176,11 +176,19 @@ def odometer_one_spin(wfn, cost, t, qmax):
     # Index of last particle
     j = wfn.nocc_up - 1
     # Select determinants
+    if isinstance(wfn, pyci.fullci_wfn):
+        two_spin = True
+    elif isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
+        two_spin = False
+    else:
+        raise TypeError
     while True:
-        x = np.sum(cost[new])
         if new[-1] < wfn.nbasis and (np.sum(cost[new]) + t * cost[new[-1]]) < qmax:
             # Accept determinant and go back to last particle
-            wfn.add_occs(new)
+            if two_spin:
+                wfn.add_occs(np.vstack((new, new)))
+            else:
+                wfn.add_occs(new)
             j = wfn.nocc_up - 1
         else:
             # Reject determinant and cycle j
