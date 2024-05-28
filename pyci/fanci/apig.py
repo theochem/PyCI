@@ -104,7 +104,7 @@ class APIG(FanCI):
             idx_param_cons=idx_param_cons, param_cons=param_cons,
         )
 
-    def compute_overlap(self, x: np.ndarray) -> np.ndarray:
+    def compute_overlap(self, x: np.ndarray, occs_array = None) -> np.ndarray:
         r"""
         Compute the FanCI overlap vector.
 
@@ -121,7 +121,7 @@ class APIG(FanCI):
         """
         return self._cext.overlap(x)
 
-    def compute_overlap_deriv(self, x: np.ndarray) -> np.ndarray:
+    def compute_overlap_deriv(self, x: np.ndarray, occs_array = None) -> np.ndarray:
         r"""
         Compute the FanCI overlap derivative matrix.
 
