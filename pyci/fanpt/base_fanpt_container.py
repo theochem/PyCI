@@ -50,10 +50,6 @@ class FANPTContainer(metaclass=ABCMeta):
         Wavefunction parameters.
     energy : float
         Energy for the current value of lambda.
-    active_energy : bool
-        Indicates if the energy will be varied in the calculations.
-        It is False either when the energy is frozen in a E-param calculation
-        or in any E-free calculation.
     ham_ci_op : pyci.sparse_op
         PyCI sparse operator corresponding to the perturbed Hamiltonian.
     f_pot_ci_op : pyci.sparse_op
@@ -141,7 +137,6 @@ class FANPTContainer(metaclass=ABCMeta):
         self.params = params
         self.wfn_params = params[:-1]
         self.energy = params[-1]
-        self.active_energy = fanci_wfn.mask[-1]
         self.inorm = inorm
 
         # Assign ideal and real Hamiltonians.
@@ -167,7 +162,6 @@ class FANPTContainer(metaclass=ABCMeta):
         else:
             self.f_pot = FANPTContainer.linear_comb_ham(self.ham1, self.ham0, 1.0, -1.0)
             self.f_pot_ci_op = pyci.sparse_op(self.f_pot, self.fanci_wfn.wfn, self.fanci_wfn.nproj)
-
         if ovlp_s:
             self.ovlp_s = ovlp_s
         else:
