@@ -176,9 +176,9 @@ def odometer_one_spin(wfn, cost, t, qmax):
     # Index of last particle
     j = wfn.nocc_up - 1
     # Select determinants
-    if isinstance(wfn, pyci.fullci_wfn):
+    if isinstance(wfn, pyci.two_spin_wfn):
         two_spin = True
-    elif isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
+    elif isinstance(wfn, pyci.one_spin_wfn):
         two_spin = False
     else:
         raise TypeError

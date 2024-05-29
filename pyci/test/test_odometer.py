@@ -38,12 +38,12 @@ def get_cost(wfn, ham, n):
     return e_vals * -1
 
 
-wfn1, ham1 = get_wfn_ham("data/h2.fcidump", (1, 1))
-wfnt, hamt = get_wfn_ham("data/h2.fcidump", (1, 1))
+wfn1, ham1 = get_wfn_ham("data/h2_sto3g.fcidump", (1, 1))
+wfnt, hamt = get_wfn_ham("data/h2_sto3g.fcidump", (1, 1))
 cost1 = get_cost(wfnt, hamt, 2)
 
-wfn2, ham2 = get_wfn_ham("data/h4.fcidump", (2, 2))
-wfnt, hamt = get_wfn_ham("data/h4.fcidump", (2, 2))
+wfn2, ham2 = get_wfn_ham("data/h4_sto3g.fcidump", (2, 2))
+wfnt, hamt = get_wfn_ham("data/h4_sto3g.fcidump", (2, 2))
 cost2 = get_cost(wfnt, hamt, 4)
 
 
@@ -62,3 +62,5 @@ def test_odometer_one_spin(wfn, cost, t, q_max):
 
 odometer_one_spin(wfn1, cost1, 0, 1.2)
 print(wfn1.to_occ_array())
+print(type(wfn1.to_occ_array()))
+print(cost1)
