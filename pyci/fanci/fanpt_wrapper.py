@@ -80,6 +80,8 @@ def solve_fanpt(
     # Select FANPT method
     if energy_active:
         fanptcontainer = FANPTContainerEParam
+    else:
+        fanptcontainer = FANPTContainerEFree
 
     if resum:
         if energy_active:
@@ -87,11 +89,11 @@ def solve_fanpt(
                 "The energy parameter must be inactive with the resumation option."
             )
         nequation = fanci_wfn.nequation
-        nactive = fanci_wfn.nactive
+        nparams = len(fanci_wfn.wfn_params)
         steps = 1
-        if not inorm and (nequation == nactive):
+        if not inorm and (nequation == nparams):
             norm_det = [(ref_sd, 1.0)]
-        elif inorm and (nequation - 1) == nactive:
+        elif inorm and (nequation - 1) == nparams:
             fanci_wfn.remove_constraint(f"<\\psi_{{{ref_sd}}}|\\Psi> - v_{{{ref_sd}}}")
             inorm = False
         else:
@@ -146,9 +148,6 @@ def solve_fanpt(
         results = fanci_wfn.optimize(fanpt_params, **solver_kwargs)
         params = results.x
 
-        if not energy_active:
-            fanci_wfn.freeze_parameter([-1])
-
     # Output for debugging purposes
     results["energy"] = fanpt_params[-1]
     results["residuals"] = results.fun
@@ -172,23 +171,8 @@ def update_fanci_wfn(ham, fanciwfn, norm_det, fill):
     else:
         nocc = fanciwfn.wfn.nocc_up
 
-    # Activate energy parameter
-    fanciwfn.unfreeze_parameter([-1])
-
-    # FIXME: for FanCI class
-    #return fanci_class(
-    #    ham, fanciwfn.wfn, fanciwfn.nproj, fanciwfn.nparam, norm_det=norm_det, fill=fill
-    #)
-
-    # for fanpy class
-    # ASSUMING GeneratedFanCI class
     return fanci_class(
-        ham, fanciwfn._fanpy_wfn, fanciwfn._wfn.nocc_up + fanciwfn._wfn.nocc_dn,
-        nproj=fanciwfn.nproj, wfn=fanciwfn.wfn, fill=fill, seniority=fanciwfn.seniority,
-        step_print=fanciwfn.step_print, step_save=fanciwfn.step_save, tmpfile=fanciwfn.tmpfile,
-        objective_type=fanciwfn.objective_type, norm_det=norm_det,
-        param_selection=fanciwfn.indices_component_params,
-        constraints=fanciwfn._constraints
+       ham, nocc, fanciwfn.nproj, fanciwfn.wfn
     )
 
 

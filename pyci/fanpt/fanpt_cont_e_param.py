@@ -110,6 +110,7 @@ class FANPTContainerEParam(FANPTContainer):
         params,
         ham0,
         ham1,
+        active_energy=True,
         l=0,
         ref_sd=0,
         inorm=False,
@@ -144,11 +145,13 @@ class FANPTContainerEParam(FANPTContainer):
         d_ovlp_s : {np.ndarray, None}
             Derivatives of the overlaps in the "S" projection space.
         """
+
         super().__init__(
             fanci_wfn,
             params,
             ham0,
             ham1,
+            active_energy,
             l,
             ref_sd,
             inorm,
@@ -185,14 +188,16 @@ class FANPTContainerEParam(FANPTContainer):
         d2_g_lambda_wfnparams : np.ndarray
             Derivative of the FANPT equations with respect to lambda and the wavefunction
             parameters.
-            numpy array with shape (self.nequations, len(self.wfn_params_active)).
+            numpy array with shape (self.nequations, self.nactive).
         """
         if self.active_energy:
             ncolumns = self.nactive - 1
         else:
             ncolumns = self.nactive
+
         f = np.zeros((self.nequation, ncolumns), order="F")
         f_proj = f[: self.nproj]
+
         for f_proj_col, d_ovlp_col in zip(f_proj.transpose(), self.d_ovlp_s.transpose()):
             self.f_pot_ci_op(d_ovlp_col, out=f_proj_col)
         self.d2_g_lambda_wfnparams = f
@@ -208,7 +213,7 @@ class FANPTContainerEParam(FANPTContainer):
         d2_g_e_wfnparams : np.ndarray
             Derivative of the FANPT equations with respect to the energy and the wavefunction
             parameters.
-            numpy array with shape (self.nequations, len(self.wfn_params_active)).
+            numpy array with shape (self.nequations, self.nactive).
         """
         if self.active_energy:
             ncolumns = self.nactive - 1
