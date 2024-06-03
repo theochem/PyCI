@@ -311,9 +311,8 @@ class FANPTUpdater:
             else:
                 wfn_responses = self.responses
             corrections = np.sum(wfn_responses * dl.reshape(self.final_order, 1), axis=0)
-        active_wfn_indices = np.where(self.fanpt_container.fanci_wfn.mask[:-1])[0]
-        for c, active_index in zip(corrections, active_wfn_indices):
-            wfn_params[active_index] += c
+        for index, c in enumerate(corrections):
+            wfn_params[index] += c
         self.new_wfn_params = wfn_params
 
     def energy_ham_ovlp_updater(self):

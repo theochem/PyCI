@@ -50,6 +50,10 @@ class FANPTContainer(metaclass=ABCMeta):
         Wavefunction parameters.
     energy : float
         Energy for the current value of lambda.
+    active_energy : bool
+        Indicates if the energy will be varied in the calculations.
+        It is False either when the energy is frozen in a E-param calculation
+        or in any E-free calculation.
     ham_ci_op : pyci.sparse_op
         PyCI sparse operator corresponding to the perturbed Hamiltonian.
     f_pot_ci_op : pyci.sparse_op
@@ -99,6 +103,7 @@ class FANPTContainer(metaclass=ABCMeta):
         params,
         ham0,
         ham1,
+        active_energy,
         l=0,
         ref_sd=0,
         inorm=False,
@@ -119,6 +124,10 @@ class FANPTContainer(metaclass=ABCMeta):
             PyCI Hamiltonian of the ideal system.
         ham1 : pyci.hamiltonian
             PyCI Hamiltonian of the real system.
+        active_energy : bool
+            Indicates if the energy will be varied in the calculations.
+            It is False either when the energy is frozen in a E-param calculation
+            or in any E-free calculation.
         l : float
             Lambda value.
         ref_sd : int
@@ -138,6 +147,12 @@ class FANPTContainer(metaclass=ABCMeta):
         self.wfn_params = params[:-1]
         self.energy = params[-1]
         self.inorm = inorm
+
+        self.active_energy = active_energy
+        if active_energy:
+            self.nactive = len(params)
+        else:
+            self.nactive = len(params) - 1
 
         # Assign ideal and real Hamiltonians.
         self.ham1 = ham1
@@ -214,17 +229,6 @@ class FANPTContainer(metaclass=ABCMeta):
         one_mo = a1 * ham1.one_mo + a0 * ham0.one_mo
         two_mo = a1 * ham1.two_mo + a0 * ham0.two_mo
         return pyci.hamiltonian(ecore, one_mo, two_mo)
-
-    @property
-    def nactive(self):
-        r"""Return the number of active parameters.
-
-        Returns
-        -------
-        self.fanci_wfn.nactive : int
-            Number of active parameters.
-        """
-        return self.fanci_wfn.nactive
 
     @property
     def nequation(self):

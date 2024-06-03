@@ -108,6 +108,7 @@ class FANPTContainerEFree(FANPTContainerEParam):
         params,
         ham0,
         ham1,
+        active_energy=False,
         l=0,
         ref_sd=0,
         inorm=False,
@@ -142,7 +143,7 @@ class FANPTContainerEFree(FANPTContainerEParam):
         d_ovlp_s : {np.ndarray, None}
             Derivatives of the overlaps in the "S" projection space.
         """
-        if fanci_wfn.mask[-1]:
+        if active_energy:
             raise TypeError("The energy cannot be an active parameter.")
         else:
             super().__init__(
@@ -150,6 +151,7 @@ class FANPTContainerEFree(FANPTContainerEParam):
                 params,
                 ham0,
                 ham1,
+                active_energy,
                 l,
                 ref_sd,
                 inorm,
@@ -244,6 +246,7 @@ class FANPTContainerEFree(FANPTContainerEParam):
             numpy array with shape (self.nequations, len(self.nactive)).
         """
         super().gen_coeff_matrix()
+        self.c_matrix = self.c_matrix[:, :self.nactive]
         f_proj = np.empty((self.nproj, self.nactive), order="F")
         for f_proj_col, d_ovlp_col in zip(f_proj.transpose(), self.d_ovlp_s.transpose()):
             self.ham_ci_op(d_ovlp_col, out=f_proj_col)
