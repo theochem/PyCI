@@ -13,54 +13,67 @@
 # You should have received a copy of the GNU General Public License
 # along with PyCI. If not, see <http://www.gnu.org/licenses/>.
 
-from tempfile import NamedTemporaryFile
-
 import pytest
 
 import numpy as np
-import numpy.testing as npt
 
 import pyci
 from pyci.utility import odometer_one_spin, odometer_two_spin
-from pyci.gkci import compute_nodes_cntsp
+from pyci.test import datafile
 
 
-def get_wfn_ham(fn, occs):
+def get_wfn(fn, wfntype, occs):
     ham = pyci.hamiltonian(fn)
-    wfn = pyci.fullci_wfn(ham.nbasis, *occs)
+    if wfntype == "fullci":
+        wfn = pyci.fullci_wfn(ham.nbasis, *occs)
+    elif wfntype == "doci":
+        wfn = pyci.doci_wfn(ham.nbasis, *occs)
+    elif wfntype == "genci":
+        wfn = pyci.genci_wfn(ham.nbasis, *occs)
+    else:
+        raise ValueError
     return wfn, ham
 
 
-def get_cost(wfn, ham, n):
+def get_cost(fn, wfntype, occs):
+    wfn, ham = get_wfn(fn, wfntype, occs)
     wfn.add_all_dets()
+    n = len(wfn.to_occ_array()) - 1
     op = pyci.sparse_op(ham, wfn)
     e_vals, e_vecs = op.solve(n=n, tol=1.0e-9)
     return e_vals * -1
 
 
-wfn1, ham1 = get_wfn_ham("data/h2_sto3g.fcidump", (1, 1))
-wfnt, hamt = get_wfn_ham("data/h2_sto3g.fcidump", (1, 1))
-cost1 = get_cost(wfnt, hamt, 2)
-
-wfn2, ham2 = get_wfn_ham("data/h4_sto3g.fcidump", (2, 2))
-wfnt, hamt = get_wfn_ham("data/h4_sto3g.fcidump", (2, 2))
-cost2 = get_cost(wfnt, hamt, 4)
+@pytest.mark.parametrize(
+    "fn, wfntype, occs, expected",
+    [
+        (datafile("h4_sto3g.fcidump"), "doci", (2, 2), {0.15: np.array([]).reshape(0, 2),
+                                                        0.16: np.array([[0, 1]]),
+                                                        0.74: np.array([[0, 1], [0, 2]])}),
+    ],
+)
+def test_odometer_one_spin(fn, wfntype, occs, expected):
+    cost = get_cost(fn, wfntype, occs)
+    for q_max in expected:
+        wfn, ham = get_wfn(fn, wfntype, occs)
+        odometer_one_spin(wfn, cost, 0, q_max)
+        assert (wfn.to_occ_array() == expected[q_max]).all() == True
 
 
 @pytest.mark.parametrize(
-    "wfn, cost, t, q_max",
+    "fn, wfntype, occs, expected",
     [
-        (wfn1, cost1, 0, 0.7),
-        (wfn1, cost1, 0, 1.0),
-        (wfn1, cost1, 0, 1.2),
+        (datafile("h2_sto3g.fcidump"), "fullci", (1, 1), {0.34: np.array([]),
+                                                          0.35: np.array([[0], [0]]),
+                                                          0.75: np.array([[[0], [0]], [[0], [1]], [[1], [0]], [[1], [1]]])}),
+        (datafile("h4_sto3g.fcidump"), "fullci", (2, 2), {-1.175: np.array([]).reshape(0, 2, 2),
+                                                          -1.174: np.array([[[0, 1], [0, 1]]]),
+                                                          -0.9038: np.array([[[0, 1], [0, 1]], [[0, 1], [0, 2]], [[0, 2], [0, 1]], [[0, 2], [0, 2]]])}),
     ],
 )
-def test_odometer_one_spin(wfn, cost, t, q_max):
-    odometer_one_spin(wfn, cost, t, q_max)
-    assert 1==1
-
-
-odometer_one_spin(wfn1, cost1, 0, 1.2)
-print(wfn1.to_occ_array())
-print(type(wfn1.to_occ_array()))
-print(cost1)
+def test_odometer_two_spin(fn, wfntype, occs, expected):
+    cost = get_cost(fn, wfntype, occs)
+    for q_max in expected:
+        wfn, ham = get_wfn(fn, wfntype, occs)
+        odometer_two_spin(wfn, cost, 0, q_max)
+        assert (wfn.to_occ_array() == expected[q_max]).all() == True
