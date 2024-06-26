@@ -195,7 +195,7 @@ class FANPTContainer(metaclass=ABCMeta):
                 self.ref_sd = ref_sd
             else:
                 raise KeyError(
-                    "The normalization of the Slater determinant is not constrained"
+                    "The normalization of the Slater determinant is not constrained "
                     "in the FanCI wavefunction."
                 )
         else:
