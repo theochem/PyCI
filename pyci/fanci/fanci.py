@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 
-from scipy.optimize import OptimizeResult, least_squares, root
+from scipy.optimize import OptimizeResult, least_squares, root, minimize
 
 import pyci
 
@@ -50,6 +50,7 @@ class FanCI(metaclass=ABCMeta):
 
         """
         return self._nparam
+
     @property
     def constraints(self) -> Tuple[str]:
         r"""
@@ -181,7 +182,9 @@ class FanCI(metaclass=ABCMeta):
         elif isinstance(constraints, dict):
             constraints = OrderedDict(constraints)
         else:
-            raise TypeError(f"Invalid `constraints` type `{type(constraints)}`; must be dictionary")
+            raise TypeError(
+                f"Invalid `constraints` type `{type(constraints)}`; must be dictionary"
+            )
 
         # Add norm_det and norm_param constraints
         norm_param = list() if norm_param is None else norm_param
@@ -227,6 +230,7 @@ class FanCI(metaclass=ABCMeta):
         mode: str = "lstsq",
         use_jac: bool = False,
         sigma: float = 0.1,
+        custom_optimizer: callable = None,
         **kwargs: Any,
     ) -> OptimizeResult:
         r"""
@@ -236,7 +240,7 @@ class FanCI(metaclass=ABCMeta):
         ----------
         x0 : np.ndarray
             Initial guess for wave function parameters.
-        mode : ('lstsq' | 'root'), default='lstsq'
+        mode : ('lstsq' | 'root' | 'custom_scalar' | 'custom_vector'), default='lstsq'
             Solver mode.
         use_jac : bool, default=False
             Whether to use the Jacobian function or a finite-difference approximation.
@@ -266,11 +270,25 @@ class FanCI(metaclass=ABCMeta):
 
         # Parse mode parameter; choose optimizer and fix arguments
         if mode == "lstsq":
-            opt_args = f, x0
             optimizer = least_squares
-        elif mode == "root":
             opt_args = f, x0
+        elif mode == "root":
             optimizer = root
+            opt_args = f, x0
+        elif mode == "custom_vector":
+            if custom_optimizer is None:
+                raise ValueError("Optimizer is not provided")
+            optimizer = custom_optimizer
+            opt_args = f, x0
+        elif mode == "custom_scalar":
+            if custom_optimizer is None:
+                raise ValueError("Optimizer is not provided")
+            optimizer = custom_optimizer
+            f_scalar = lambda x: np.sum(f(x) ** 2)
+            opt_args = f_scalar, x0
+            if use_jac:
+                j_scalar = lambda x: 2 * f(x) @ j(x)
+                opt_kwargs["jac"] = j_scalar
         else:
             raise ValueError("invalid mode parameter")
 
@@ -592,13 +610,15 @@ class FanCI(metaclass=ABCMeta):
             """
             y = np.zeros(self._nparam, dtype=pyci.c_double)
             d_ovlp = self.compute_overlap_deriv(x[:-1], self._sspace[np.newaxis, i])[0]
-            y[: -1] = d_ovlp
+            y[:-1] = d_ovlp
             return y
 
         return f, dfdx
 
     @abstractmethod
-    def compute_overlap(self, x: np.ndarray, occs_array: Union[np.ndarray, str]) -> np.ndarray:
+    def compute_overlap(
+        self, x: np.ndarray, occs_array: Union[np.ndarray, str]
+    ) -> np.ndarray:
         r"""
         Compute the FanCI overlap vector.
 
@@ -673,7 +693,9 @@ def fill_wavefunction(wfn: pyci.wavefunction, nproj: int, fill: str) -> None:
         s_max = min(wfn.nocc_up, wfn.nvir_up)
         connections = (1, 2)
     else:
-        raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")
+        raise TypeError(
+            f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`"
+        )
 
     # Use new wavefunction; don't modify original object
     wfn = wfn.__class__(wfn)
@@ -705,7 +727,9 @@ def fill_wavefunction(wfn: pyci.wavefunction, nproj: int, fill: str) -> None:
 
     # Truncate wave function if we generated > nproj determinants
     if len(wfn) > nproj:
-        wfn = wfn.__class__(wfn.nbasis, wfn.nocc_up, wfn.nocc_dn, wfn.to_det_array(nproj))
+        wfn = wfn.__class__(
+            wfn.nbasis, wfn.nocc_up, wfn.nocc_dn, wfn.to_det_array(nproj)
+        )
 
     # Fill wfn with S space determinants
     for det in wfn.to_det_array(nproj):
