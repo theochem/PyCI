@@ -62,7 +62,7 @@ def test_fanpt_e_free(filename, nocc, expected):
                                 solver_kwargs={'mode':'lstsq', 'use_jac':True, 'xtol':1.0e-8,
                                 'ftol':1.0e-8, 'gtol':1.0e-5, 'max_nfev':pyci_wfn.nparam, 'verbose':2})
 
-    assert np.allclose(fanpt_results['energy'], expected)
+    assert np.allclose(fanpt_results.x[-1], expected)
 
 @pytest.mark.parametrize("filename, nocc, expected", [("he_ccpvqz",  1, -2.8868091056425156),
                                                       ("be_ccpvdz",  2, -14.600556842700215),
@@ -102,4 +102,4 @@ def test_fanpt_e_param(filename, nocc, expected):
                                 solver_kwargs={'mode':'lstsq', 'use_jac':True, 'xtol':1.0e-8,
                                 'ftol':1.0e-8, 'gtol':1.0e-5, 'max_nfev':pyci_wfn.nparam, 'verbose':2})
 
-    assert np.allclose(fanpt_results['energy'], expected)
+    assert np.allclose(fanpt_results.x[-1], expected)

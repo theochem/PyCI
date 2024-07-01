@@ -148,7 +148,6 @@ def solve_fanpt(
         results = fanci_wfn.optimize(fanpt_params, **solver_kwargs)
         params = results.x
 
-    results["energy"] = params[-1]
     results["residuals"] = results.fun
 
     return results
