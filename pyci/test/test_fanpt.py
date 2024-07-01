@@ -21,104 +21,18 @@ import pytest
 from pyci.test import datafile
 from pyci.fanci import AP1roG
 
-from pyci.fanci.fanpt_wrapper import reduce_to_fock
+from pyci.fanci.fanpt_wrapper import reduce_to_fock, solve_fanpt
 from pyci.fanpt import FANPTUpdater, FANPTContainerEParam, FANPTContainerEFree
 
-# Tests for FanPT
-@pytest.mark.parametrize("filename, nocc, expected", [("he_ccpvqz", 2, -1.4828564433468483), ("be_ccpvdz", 4, -12.956853565213162), ("li2_ccpvdz", 4, -16.710930177695687), ("lih_sto6g", 4, -6.790870061240047), ("h2_631gdp", 2, -0.8746939753865841)])
-def test_fanpt_e_param(filename, nocc, expected):
-    nsteps = 10
-    order = 2
-
-    # Define ham0 and ham1
-    ham1 = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
-    ham0 = pyci.hamiltonian(ham1.ecore, ham1.one_mo, reduce_to_fock(ham1.two_mo))
-
-    # contruct empty fci wave function class instance from # of basis functions and occupation
-    wfn0 = pyci.fullci_wfn(ham0.nbasis, nocc, nocc)
-    wfn0.add_hartreefock_det()
-
-    # initialize sparse matrix operator (hamiltonian into wave function)
-    op = pyci.sparse_op(ham0, wfn0)
-
-    # solve for the lowest eigenvalue and eigenvector
-    e_hf, e_vecs0 = op.solve(n=1, tol=1.0e-9)
-
-    # Get params as the solution of the fanci wfn with ham0 (last element will be the energy of the "ideal" system).
-    nproj = int(comb(ham1.nbasis, nocc))
-    pyci_wfn = AP1roG(ham1, nocc, nproj=nproj, norm_det=[(0, 1.0)], wfn=None)
-
-    params_guess = np.zeros(pyci_wfn.nparam, dtype=pyci.c_double)
-    params_guess[-1] = e_hf[0]
-    params_guess[:-1] = np.eye(ham1.nbasis, nocc).reshape(-1)[len(params_guess)]
-
-    results = pyci_wfn.optimize(params_guess, use_jac=True)
-
-    # Set the initial variables:
-    params = results.x
-    ham0 = ham0
-    ham1 = ham1
-    ref_sd = 0
-    ham_ci_op = None
-    f_pot_ci_op = None
-    ovlp_s = None
-    d_ovlp_s = None
-
-    # steps = int (number of steps that will be taken along the path)
-    steps = nsteps
-
-    # final_order = int (order up to which we'll solve the fanpt equations)
-    final_order = order
-
-    # inorm = bool (whether intermediate normalization is applied or not)
-    inorm = True
-
-    for l in np.linspace(0.0, 1.0, steps, endpoint=False):
-        fanpt_container = FANPTContainerEParam(
-            fanci_wfn=pyci_wfn,
-            params=params,
-            ham0=ham0,
-            ham1=ham1,
-            l=l,
-            ref_sd=ref_sd,
-            inorm=inorm,
-            ham_ci_op=ham_ci_op,
-            f_pot_ci_op=f_pot_ci_op,
-            ovlp_s=ovlp_s,
-            d_ovlp_s=d_ovlp_s,
-        )
-
-        final_l = l + 1 / steps
-        fanpt_updater = FANPTUpdater(
-            fanpt_container=fanpt_container,
-            final_order=final_order,
-            final_l=final_l,
-            solver=None,
-            resum=False,
-        )
-        new_wfn_params = fanpt_updater.new_wfn_params
-        new_energy = fanpt_updater.new_energy
-
-        # These params serve as initial guess to solve the FanCI equations for the given lambda.
-        fanpt_params = np.append(new_wfn_params, new_energy)
-
-        # Initialize perturbed Hamiltonian with the current value of lambda using the static method of fanpt_container.
-        ham = fanpt_container.linear_comb_ham(ham1, ham0, final_l, 1 - final_l)
-
-        # Initialize wfn with the perturbed Hamiltonian.
-        pyci_wfn = AP1roG(ham, nocc, nproj=nproj, norm_det=[(0, 1.0)], wfn=None)
-
-        # Solve fanci problem with fanpt_params as initial guess.
-        # Take the params given by PyCI and use them as initial params in the FanPT calculation for the next lambda.
-        results = pyci_wfn.optimize(fanpt_params)
-        params = results.x
-
-    assert np.allclose(params[-1], expected)
-
-@pytest.mark.parametrize("filename, nocc, expected", [("he_ccpvqz", 2, -1.4828563704249667), ("be_ccpvdz", 4, -12.956853413604742), ("li2_ccpvdz", 4, -16.710930203005727), ("lih_sto6g", 4, -6.790870514399225), ("h2_631gdp", 2, -0.874693982384949)])
+@pytest.mark.parametrize("filename, nocc, expected", [("he_ccpvqz",  1, -2.8868091056425156),
+                                                      ("be_ccpvdz",  2, -14.600556820761211),
+                                                      ("li2_ccpvdz", 3, -16.862861409549044),
+                                                      ("lih_sto6g",  2, -8.963531095653355),
+                                                      ("h2_631gdp",  1, -1.869682842154122),
+                                                      ("h2o_ccpvdz", 5, -77.96987451399201)])
 def test_fanpt_e_free(filename, nocc, expected):
     nsteps = 10
-    order = 2
+    order = 1
 
     # Define ham0 and ham1
     ham1 = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
@@ -132,76 +46,60 @@ def test_fanpt_e_free(filename, nocc, expected):
     op = pyci.sparse_op(ham0, wfn0)
 
     # solve for the lowest eigenvalue and eigenvector
-    e_hf, e_vecs0 = op.solve(n=1, tol=1.0e-9)
+    e_hf, e_vecs0 = op.solve(n=1, tol=1.0e-8)
 
     # Get params as the solution of the fanci wfn with ham0 (last element will be the energy of the "ideal" system).
     nproj = int(comb(ham1.nbasis, nocc))
-    pyci_wfn = AP1roG(ham1, nocc, nproj=nproj, norm_det=[(0, 1.0)], wfn=None)
+    pyci_wfn = AP1roG(ham1, nocc, nproj=nproj)
 
-    params_guess = np.zeros(pyci_wfn.nparam, dtype=pyci.c_double)
-    params_guess[-1] = e_hf[0]
-    params_guess[:-1] = np.eye(ham1.nbasis, nocc).reshape(-1)[len(params_guess)]
+    params = np.zeros(pyci_wfn.nparam, dtype=pyci.c_double)
+    params[-1] = e_hf[0]
 
-    results = pyci_wfn.optimize(params_guess, use_jac=True)
+    fill = 'excitation'
+    fanpt_results = solve_fanpt(pyci_wfn, ham0, pyci_wfn.ham, params,
+                                fill=fill, energy_active=False, resum=False, ref_sd=0,
+                                final_order=order, lambda_i=0.0, lambda_f=1.0, steps=nsteps,
+                                solver_kwargs={'mode':'lstsq', 'use_jac':True, 'xtol':1.0e-8,
+                                'ftol':1.0e-8, 'gtol':1.0e-5, 'max_nfev':pyci_wfn.nparam, 'verbose':2})
 
-    # Set the initial variables:
-    params = results.x
-    ham0 = ham0
-    ham1 = ham1
-    ref_sd = 0
-    ham_ci_op = None
-    f_pot_ci_op = None
-    ovlp_s = None
-    d_ovlp_s = None
+    assert np.allclose(fanpt_results['energy'], expected)
 
-    # steps = int (number of steps that will be taken along the path)
-    steps = nsteps
+@pytest.mark.parametrize("filename, nocc, expected", [("he_ccpvqz",  1, -2.8868091056425156),
+                                                      ("be_ccpvdz",  2, -14.600556842700215),
+                                                      ("li2_ccpvdz", 3, -16.86286984124269),
+                                                      ("lih_sto6g",  2, -8.96353109432708),
+                                                      ("h2_631gdp",  1, -1.869682842154122),
+                                                      ("h2o_ccpvdz", 5, -77.96987516399848)])
+def test_fanpt_e_param(filename, nocc, expected):
+    nsteps = 10
+    order = 1
 
-    # final_order = int (order up to which we'll solve the fanpt equations)
-    final_order = order
+    # Define ham0 and ham1
+    ham1 = pyci.hamiltonian(datafile("{0:s}.fcidump".format(filename)))
+    ham0 = pyci.hamiltonian(ham1.ecore, ham1.one_mo, reduce_to_fock(ham1.two_mo))
 
-    # inorm = bool (whether intermediate normalization is applied or not)
-    inorm = True
+    # contruct empty fci wave function class instance from # of basis functions and occupation
+    wfn0 = pyci.fullci_wfn(ham0.nbasis, nocc, nocc)
+    wfn0.add_hartreefock_det()
 
-    for l in np.linspace(0.0, 1.0, steps, endpoint=False):
-        fanpt_container = FANPTContainerEFree(
-            fanci_wfn=pyci_wfn,
-            params=params,
-            ham0=ham0,
-            ham1=ham1,
-            l=l,
-            ref_sd=ref_sd,
-            inorm=inorm,
-            ham_ci_op=ham_ci_op,
-            f_pot_ci_op=f_pot_ci_op,
-            ovlp_s=ovlp_s,
-            d_ovlp_s=d_ovlp_s,
-        )
+    # initialize sparse matrix operator (hamiltonian into wave function)
+    op = pyci.sparse_op(ham0, wfn0)
 
-        final_l = l + 1 / steps
-        fanpt_updater = FANPTUpdater(
-            fanpt_container=fanpt_container,
-            final_order=final_order,
-            final_l=final_l,
-            solver=None,
-            resum=False,
-        )
-        new_wfn_params = fanpt_updater.new_wfn_params
-        new_energy = fanpt_updater.new_energy
+    # solve for the lowest eigenvalue and eigenvector
+    e_hf, e_vecs0 = op.solve(n=1, tol=1.0e-8)
 
-        # These params serve as initial guess to solve the FanCI equations for the given lambda.
-        fanpt_params = np.append(new_wfn_params, new_energy)
+    # Get params as the solution of the fanci wfn with ham0 (last element will be the energy of the "ideal" system).
+    nproj = int(comb(ham1.nbasis, nocc))
+    pyci_wfn = AP1roG(ham1, nocc, nproj=nproj)
 
-        # Initialize perturbed Hamiltonian with the current value of lambda using the static method of fanpt_container.
-        ham = fanpt_container.linear_comb_ham(ham1, ham0, final_l, 1 - final_l)
+    params = np.zeros(pyci_wfn.nparam, dtype=pyci.c_double)
+    params[-1] = e_hf[0]
 
-        # Initialize wfn with the perturbed Hamiltonian.
-        pyci_wfn = AP1roG(ham, nocc, nproj=nproj, norm_det=[(0, 1.0)], wfn=None)
+    fill = 'excitation'
+    fanpt_results = solve_fanpt(pyci_wfn, ham0, pyci_wfn.ham, params,
+                                fill=fill, energy_active=True, resum=False, ref_sd=0,
+                                final_order=order, lambda_i=0.0, lambda_f=1.0, steps=nsteps,
+                                solver_kwargs={'mode':'lstsq', 'use_jac':True, 'xtol':1.0e-8,
+                                'ftol':1.0e-8, 'gtol':1.0e-5, 'max_nfev':pyci_wfn.nparam, 'verbose':2})
 
-        # Solve fanci problem with fanpt_params as initial guess.
-        # Take the params given by PyCI and use them as initial params in the FanPT calculation for the next lambda.
-        results = pyci_wfn.optimize(fanpt_params)
-        params = results.x
-
-    assert np.allclose(params[-1], expected)
-
+    assert np.allclose(fanpt_results['energy'], expected)

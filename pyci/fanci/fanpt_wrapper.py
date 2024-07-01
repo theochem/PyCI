@@ -148,18 +148,9 @@ def solve_fanpt(
         results = fanci_wfn.optimize(fanpt_params, **solver_kwargs)
         params = results.x
 
-    # Output for debugging purposes
-    results["energy"] = fanpt_params[-1]
+    results["energy"] = params[-1]
     results["residuals"] = results.fun
-    #output = {
-    #    "x": params,
-    #    "variables": {
-    #        "steps": steps,
-    #        "inorm": inorm,
-    #        "norm_det": norm_det,
-    #        "final_l": final_l,
-    #    },
-    #}
+
     return results
 
 
@@ -172,7 +163,7 @@ def update_fanci_wfn(ham, fanciwfn, norm_det, fill):
         nocc = fanciwfn.wfn.nocc_up
 
     return fanci_class(
-       ham, nocc, fanciwfn.nproj, fanciwfn.wfn
+       ham, nocc, fanciwfn.nproj, fanciwfn.wfn, norm_det=norm_det, fill=fill,
     )
 
 
@@ -190,13 +181,5 @@ def reduce_to_fock(two_int, lambda_val=0):
     indices = np.arange(nspatial)
     fock_two_int[indices[:, None, None], indices[None, :, None], indices[None, None, :], indices[None, :, None]] =  two_int[indices[:, None, None], indices[None, :, None], indices[None, None, :], indices[None, :, None]]
     fock_two_int[indices[:, None, None], indices[None, :, None], indices[None, :, None], indices[None, None, :]] =  two_int[indices[:, None, None], indices[None, :, None], indices[None, :, None], indices[None, None, :]]
-    #fock_two_int[indices[None, :, None], indices[:, None, None], indices[None, None, :], indices[None, :, None]] =  two_int[indices[:, None, None], indices[None, :, None], indices[None, None, :], indices[None, :, None]]
-    #fock_two_int[indices[None, :, None], indices[:, None, None], indices[None, :, None], indices[None, None, :]] =  two_int[indices[:, None, None], indices[None, :, None], indices[None, :, None], indices[None, None, :]]
-
-    #occ_indices = np.arange(nelec // 2)
-    #fock_two_int[indices[:, None, None], occ_indices[None, :, None], indices[None, None, :], occ_indices[None, :, None]] =  two_int[indices[:, None, None], occ_indices[None, :, None], indices[None, None, :], occ_indices[None, :, None]]
-    #fock_two_int[indices[:, None, None], occ_indices[None, :, None], occ_indices[None, :, None], indices[None, None, :]] =  two_int[indices[:, None, None], occ_indices[None, :, None], occ_indices[None, :, None], indices[None, None, :]]
-    #fock_two_int[occ_indices[None, :, None], indices[:, None, None], indices[None, None, :], occ_indices[None, :, None]] =  two_int[indices[:, None, None], occ_indices[None, :, None], indices[None, None, :], occ_indices[None, :, None]]
-    #fock_two_int[occ_indices[None, :, None], indices[:, None, None], occ_indices[None, :, None], indices[None, None, :]] =  two_int[indices[:, None, None], occ_indices[None, :, None], occ_indices[None, :, None], indices[None, None, :]]
 
     return fock_two_int
