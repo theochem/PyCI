@@ -75,7 +75,7 @@ def solve_fanpt(
         norm_det = [(ref_sd, 1.0)]
     else:
         inorm = False
-        norm_det = None
+        norm_det = list()
 
     # Select FANPT method
     if energy_active:
