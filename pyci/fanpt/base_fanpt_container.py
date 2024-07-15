@@ -171,12 +171,12 @@ class FANPTContainer(metaclass=ABCMeta):
         if ham_ci_op:
             self.ham_ci_op = ham_ci_op
         else:
-            self.ham_ci_op = pyci.sparse_op(self.ham, self.fanci_wfn.wfn, self.fanci_wfn.nproj)
+            self.ham_ci_op = pyci.sparse_op(self.ham, self.fanci_wfn.wfn, self.fanci_wfn.nproj, symmetric=False)
         if f_pot_ci_op:
             self.f_pot_ci_op = f_pot_ci_op
         else:
             self.f_pot = FANPTContainer.linear_comb_ham(self.ham1, self.ham0, 1.0, -1.0)
-            self.f_pot_ci_op = pyci.sparse_op(self.f_pot, self.fanci_wfn.wfn, self.fanci_wfn.nproj)
+            self.f_pot_ci_op = pyci.sparse_op(self.f_pot, self.fanci_wfn.wfn, self.fanci_wfn.nproj, symmetric=False)
         if ovlp_s:
             self.ovlp_s = ovlp_s
         else:

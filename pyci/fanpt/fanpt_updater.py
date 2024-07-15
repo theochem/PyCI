@@ -335,7 +335,7 @@ class FANPTUpdater:
             self.fanpt_container.ham1, self.fanpt_container.ham0, self.final_l, 1 - self.final_l
         )
         new_ham_op = pyci.sparse_op(
-            new_ham, self.fanpt_container.fanci_wfn.wfn, self.fanpt_container.nproj
+            new_ham, self.fanpt_container.fanci_wfn.wfn, self.fanpt_container.nproj, symmetric=False
         )
         new_ovlp_s = self.fanpt_container.fanci_wfn.compute_overlap(self.new_wfn_params, "S")
         f = np.empty(self.fanpt_container.nproj, dtype=pyci.c_double)
