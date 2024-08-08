@@ -4,15 +4,10 @@ FanCI base class module.
 """
 
 from abc import ABCMeta, abstractmethod
-
 from collections import OrderedDict
-
 from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
-
 import numpy as np
-
 from scipy.optimize import OptimizeResult, least_squares, root
-
 import pyci
 
 
