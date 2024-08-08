@@ -6,11 +6,12 @@ import pyci
 from .fanci import FanCI
 from ..fanpt import FANPTUpdater, FANPTContainerEParam, FANPTContainerEFree
 
+
 def solve_fanpt(
     fanci_wfn,
     ham0,
     ham1,
-    guess_params,
+    params,
     fill,
     energy_active=True,
     resum=False,
@@ -27,7 +28,7 @@ def solve_fanpt(
     Args:
         fanci_wfn : FanCI class
             FanCI wavefunction.
-        guess_params : np.ndarray
+        params : np.ndarray
             Initial guess for wave function parameters.
         ham0 : pyci.hamiltonian
             PyCI Hamiltonian of the ideal system.
@@ -85,9 +86,7 @@ def solve_fanpt(
 
     if resum:
         if energy_active:
-            raise ValueError(
-                "The energy parameter must be inactive with the resumation option."
-            )
+            raise ValueError("The energy parameter must be inactive with the resumation option.")
         nequation = fanci_wfn.nequation
         nparams = len(fanci_wfn.wfn_params)
         steps = 1
@@ -97,13 +96,11 @@ def solve_fanpt(
             fanci_wfn.remove_constraint(f"<\\psi_{{{ref_sd}}}|\\Psi> - v_{{{ref_sd}}}")
             inorm = False
         else:
-            raise ValueError(
-                "The necesary condition of a determined system of equations is not met."
-            )
+            raise ValueError("The necesary condition of a determined system of equations is not met.")
 
     # Get initial guess for parameters at initial lambda value.
-    results = fanci_wfn.optimize(guess_params, **solver_kwargs)
-    params = results.x
+    numerical_zero = 1e-12
+    params = np.where(params == 0, numerical_zero, params)
 
     # Solve FANPT equations
     for l in np.linspace(lambda_i, lambda_f, steps, endpoint=False):
@@ -119,7 +116,7 @@ def solve_fanpt(
         )
 
         final_l = l + (lambda_f - lambda_i) / steps
-        print(f'Solving FanPT problem at lambda={final_l}')
+        print(f"Solving FanPT problem at lambda={final_l}")
 
         fanpt_updater = FANPTUpdater(
             fanpt_container=fanpt_container,
@@ -133,8 +130,8 @@ def solve_fanpt(
 
         # These params serve as initial guess to solve the fanci equations for the given lambda.
         fanpt_params = np.append(new_wfn_params, new_energy)
-        print('Frobenius Norm of parameters: {}'.format(np.linalg.norm(fanpt_params - params)))
-        print('Energy change: {}'.format(np.linalg.norm(fanpt_params[-1] - params[-1])))
+        print("Frobenius Norm of parameters: {}".format(np.linalg.norm(fanpt_params - params)))
+        print("Energy change: {}".format(np.linalg.norm(fanpt_params[-1] - params[-1])))
 
         # Initialize perturbed Hamiltonian with the current value of lambda using the static method of fanpt_container.
         ham = fanpt_container.linear_comb_ham(ham1, ham0, final_l, 1 - final_l)
@@ -162,7 +159,12 @@ def update_fanci_wfn(ham, fanciwfn, norm_det, fill):
         nocc = fanciwfn.wfn.nocc_up
 
     return fanci_class(
-       ham, nocc, fanciwfn.nproj, fanciwfn.wfn, norm_det=norm_det, fill=fill,
+        ham,
+        nocc,
+        fanciwfn.nproj,
+        fanciwfn.wfn,
+        norm_det=norm_det,
+        fill=fill,
     )
 
 
@@ -178,7 +180,27 @@ def reduce_to_fock(two_int, lambda_val=0):
     fock_two_int = two_int * lambda_val
     nspatial = two_int.shape[0]
     indices = np.arange(nspatial)
-    fock_two_int[indices[:, None, None], indices[None, :, None], indices[None, None, :], indices[None, :, None]] =  two_int[indices[:, None, None], indices[None, :, None], indices[None, None, :], indices[None, :, None]]
-    fock_two_int[indices[:, None, None], indices[None, :, None], indices[None, :, None], indices[None, None, :]] =  two_int[indices[:, None, None], indices[None, :, None], indices[None, :, None], indices[None, None, :]]
+    fock_two_int[
+        indices[:, None, None],
+        indices[None, :, None],
+        indices[None, None, :],
+        indices[None, :, None],
+    ] = two_int[
+        indices[:, None, None],
+        indices[None, :, None],
+        indices[None, None, :],
+        indices[None, :, None],
+    ]
+    fock_two_int[
+        indices[:, None, None],
+        indices[None, :, None],
+        indices[None, :, None],
+        indices[None, None, :],
+    ] = two_int[
+        indices[:, None, None],
+        indices[None, :, None],
+        indices[None, :, None],
+        indices[None, None, :],
+    ]
 
     return fock_two_int
