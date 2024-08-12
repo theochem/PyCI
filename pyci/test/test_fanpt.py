@@ -24,12 +24,18 @@ from pyci.fanci import AP1roG
 from pyci.fanci.fanpt_wrapper import reduce_to_fock, solve_fanpt
 from pyci.fanpt import FANPTUpdater, FANPTContainerEParam, FANPTContainerEFree
 
-@pytest.mark.parametrize("filename, nocc, expected", [("he_ccpvqz",  1, -2.8868091056425156),
-                                                      ("be_ccpvdz",  2, -14.600556820761211),
-                                                      ("li2_ccpvdz", 3, -16.862861409549044),
-                                                      ("lih_sto6g",  2, -8.963531095653355),
-                                                      ("h2_631gdp",  1, -1.869682842154122),
-                                                      ("h2o_ccpvdz", 5, -77.96987451399201)])
+
+@pytest.mark.parametrize(
+    "filename, nocc, expected",
+    [
+        ("he_ccpvqz", 1, -2.8868091056425156),
+        ("be_ccpvdz", 2, -14.600556820761211),
+        ("li2_ccpvdz", 3, -16.862861409549044),
+        ("lih_sto6g", 2, -8.963531095653355),
+        ("h2_631gdp", 1, -1.869682842154122),
+        ("h2o_ccpvdz", 5, -77.96987451399201),
+    ],
+)
 def test_fanpt_e_free(filename, nocc, expected):
     nsteps = 10
     order = 1
@@ -53,23 +59,47 @@ def test_fanpt_e_free(filename, nocc, expected):
     pyci_wfn = AP1roG(ham1, nocc, nproj=nproj)
 
     params = np.zeros(pyci_wfn.nparam, dtype=pyci.c_double)
-    params[-1] = e_hf[0]
+    params[-1] = e_hf[0] - ham1.ecore
 
-    fill = 'excitation'
-    fanpt_results = solve_fanpt(pyci_wfn, ham0, pyci_wfn.ham, params,
-                                fill=fill, energy_active=False, resum=False, ref_sd=0,
-                                final_order=order, lambda_i=0.0, lambda_f=1.0, steps=nsteps,
-                                solver_kwargs={'mode':'lstsq', 'use_jac':True, 'xtol':1.0e-8,
-                                'ftol':1.0e-8, 'gtol':1.0e-5, 'max_nfev':pyci_wfn.nparam, 'verbose':2})
+    fill = "excitation"
+    fanpt_results = solve_fanpt(
+        pyci_wfn,
+        ham0,
+        pyci_wfn.ham,
+        params,
+        fill=fill,
+        energy_active=False,
+        resum=False,
+        ref_sd=0,
+        final_order=order,
+        lambda_i=0.0,
+        lambda_f=1.0,
+        steps=nsteps,
+        solver_kwargs={
+            "mode": "lstsq",
+            "use_jac": True,
+            "xtol": 1.0e-8,
+            "ftol": 1.0e-8,
+            "gtol": 1.0e-5,
+            "max_nfev": pyci_wfn.nparam,
+            "verbose": 2,
+        },
+    )
 
     assert np.allclose(fanpt_results.x[-1], expected)
 
-@pytest.mark.parametrize("filename, nocc, expected", [("he_ccpvqz",  1, -2.8868091056425156),
-                                                      ("be_ccpvdz",  2, -14.600556842700215),
-                                                      ("li2_ccpvdz", 3, -16.86286984124269),
-                                                      ("lih_sto6g",  2, -8.96353109432708),
-                                                      ("h2_631gdp",  1, -1.869682842154122),
-                                                      ("h2o_ccpvdz", 5, -77.96987516399848)])
+
+@pytest.mark.parametrize(
+    "filename, nocc, expected",
+    [
+        ("he_ccpvqz", 1, -2.8868091056425156),
+        ("be_ccpvdz", 2, -14.600556842700215),
+        ("li2_ccpvdz", 3, -16.86286984124269),
+        ("lih_sto6g", 2, -8.96353109432708),
+        ("h2_631gdp", 1, -1.869682842154122),
+        ("h2o_ccpvdz", 5, -77.96987516399848),
+    ],
+)
 def test_fanpt_e_param(filename, nocc, expected):
     nsteps = 10
     order = 1
@@ -93,13 +123,31 @@ def test_fanpt_e_param(filename, nocc, expected):
     pyci_wfn = AP1roG(ham1, nocc, nproj=nproj)
 
     params = np.zeros(pyci_wfn.nparam, dtype=pyci.c_double)
-    params[-1] = e_hf[0]
+    params[-1] = e_hf[0] - ham1.ecore
 
-    fill = 'excitation'
-    fanpt_results = solve_fanpt(pyci_wfn, ham0, pyci_wfn.ham, params,
-                                fill=fill, energy_active=True, resum=False, ref_sd=0,
-                                final_order=order, lambda_i=0.0, lambda_f=1.0, steps=nsteps,
-                                solver_kwargs={'mode':'lstsq', 'use_jac':True, 'xtol':1.0e-8,
-                                'ftol':1.0e-8, 'gtol':1.0e-5, 'max_nfev':pyci_wfn.nparam, 'verbose':2})
+    fill = "excitation"
+    fanpt_results = solve_fanpt(
+        pyci_wfn,
+        ham0,
+        pyci_wfn.ham,
+        params,
+        fill=fill,
+        energy_active=True,
+        resum=False,
+        ref_sd=0,
+        final_order=order,
+        lambda_i=0.0,
+        lambda_f=1.0,
+        steps=nsteps,
+        solver_kwargs={
+            "mode": "lstsq",
+            "use_jac": True,
+            "xtol": 1.0e-8,
+            "ftol": 1.0e-8,
+            "gtol": 1.0e-5,
+            "max_nfev": pyci_wfn.nparam,
+            "verbose": 2,
+        },
+    )
 
     assert np.allclose(fanpt_results.x[-1], expected)
