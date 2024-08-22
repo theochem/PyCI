@@ -799,4 +799,51 @@ public:
     virtual void d_overlap(const size_t, const double *x, double *y);
 };
 
+// Specialize base template class against one of {DOCI,FullCI,GenCI}Wfn
+class PlaceholderObjective : public Objective<FullCIWfn> {
+public:
+    using Objective<FullCIWfn>::nproj;  // # of determinants in P space
+    using Objective<FullCIWfn>::nconn;  // # of determinants in S space
+    using Objective<FullCIWfn>::nparam; // # of FanCI parameters
+    using Objective<FullCIWfn>::ovlp;   // Overlap vector
+    using Objective<FullCIWfn>::d_ovlp; // Overlap gradient matrix
+
+    // Declare variables you want to store to faciliate the computation
+    // of {d_,}overlap here:
+    // std::size_t nrow;
+    // std::size_t ncol;
+    // std::vector<std::size_t> part_list;
+    // ...
+    // ...
+
+public:
+    // Keep in mind the {DOCI,FullCI,GenCI}Wfn class names in
+    // the arguments below depend on the template specialization
+
+    // C++ constructor
+    PlaceholderObjective(const SparseOp &, const FullCIWfn &,
+                         const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
+                         const std::size_t = 0UL, const long * = nullptr, const double * = nullptr);
+
+    // Python constructor
+    PlaceholderObjective(const SparseOp &, const FullCIWfn &,
+                         const pybind11::object, const pybind11::object,
+                         const pybind11::object, const pybind11::object);
+
+    // C++ copy constructor
+    PlaceholderObjective(const PlaceholderObjective &);
+
+    // C++ move constructor
+    PlaceholderObjective(PlaceholderObjective &&) noexcept;
+
+    // Initializer for {d_,}overlap variables
+    void init_overlap(const FullCIWfn &);
+
+    // Overlap function
+    virtual void overlap(const size_t, const double *x, double *y);
+
+    // Overlap gradient function
+    virtual void d_overlap(const size_t, const double *x, double *y);
+};
+
 } // namespace pyci
