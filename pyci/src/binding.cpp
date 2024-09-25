@@ -1083,6 +1083,10 @@ n : int
 
 sparse_op.def("squeeze", &SparseOp::squeeze, "Free any unused memory allocated to this object.");
 
+sparse_op.def("data", &SparseOp::py_data, "Return CSR matrix data vector", py::keep_alive<0, 1>());
+sparse_op.def("indices", &SparseOp::py_indices, "Return CSR matrix indices vector", py::keep_alive<0, 1>());
+sparse_op.def("indptr", &SparseOp::py_indptr, "Return CSR matrix index pointer vector", py::keep_alive<0, 1>());
+
 /*
 Section: Free functions
 */

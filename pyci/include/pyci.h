@@ -672,6 +672,12 @@ public:
     template<class WfnType>
     void py_update(const SQuantOp &, const WfnType &);
 
+    Array<double> py_data() const;
+
+    Array<long> py_indices() const;
+
+    Array<long> py_indptr() const;
+
 private:
     void sort_row(const long);
 

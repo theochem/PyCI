@@ -115,7 +115,7 @@ void SparseOp::solve_ci(const long n, const double *coeffs, const long ncv, cons
                         const double tol, double *evals, double *evecs) const {
     if ((nrow > 1 && n >= nrow) || (nrow == 1 && n > 1)) {
         throw std::invalid_argument("cannot find >=n eigenpairs for sparse operator with n rows");
-    } else if (!symmetric) {
+    } else if (nrow != ncol) {
         throw pybind11::type_error("Can only solve sparse symmetric matrix operators");
     } else if (nrow == 1) {
         *evals = get_element(0, 0) + ecore;
@@ -499,6 +499,18 @@ void SparseOp::add_row(const SQuantOp &ham, const GenCIWfn &wfn, const long idet
     }
     // add pointer to next row's indices
     append<long>(indptr, indices.size());
+}
+
+Array<double> SparseOp::py_data() const {
+    return Array<double>(data.size(), &data[0]);
+}
+
+Array<long> SparseOp::py_indices() const {
+    return Array<long>(indices.size(), &indices[0]);
+}
+
+Array<long> SparseOp::py_indptr() const {
+    return Array<long>(indptr.size(), &indptr[0]);
 }
 
 } // namespace pyci
