@@ -34,7 +34,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-thebe.css?v=4fa983c6" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=87e54e7c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
@@ -471,9 +471,12 @@ document.write(`
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sparse-matrix-operator">Sparse matrix operator</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op"><code class="docutils literal notranslate"><span class="pre">sparse_op</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.data"><code class="docutils literal notranslate"><span class="pre">sparse_op.data()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.dtype"><code class="docutils literal notranslate"><span class="pre">sparse_op.dtype</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.ecore"><code class="docutils literal notranslate"><span class="pre">sparse_op.ecore</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.get_element"><code class="docutils literal notranslate"><span class="pre">sparse_op.get_element()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.indices"><code class="docutils literal notranslate"><span class="pre">sparse_op.indices()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.indptr"><code class="docutils literal notranslate"><span class="pre">sparse_op.indptr()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.matvec"><code class="docutils literal notranslate"><span class="pre">sparse_op.matvec()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.reserve"><code class="docutils literal notranslate"><span class="pre">sparse_op.reserve()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.shape"><code class="docutils literal notranslate"><span class="pre">sparse_op.shape</span></code></a></li>
@@ -1280,6 +1283,12 @@ neither are specified, the whole determinant is returned.</p>
 <dt class="sig sig-object py" id="pyci.sparse_op">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sparse_op</span></span><a class="headerlink" href="#pyci.sparse_op" title="Link to this definition">#</a></dt>
 <dd><p>Sparse matrix operator class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.data">
+<span class="sig-name descname"><span class="pre">data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.data" title="Link to this definition">#</a></dt>
+<dd><p>Return CSR matrix data vector</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="pyci.sparse_op.dtype">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#pyci.sparse_op.dtype" title="Link to this definition">#</a></dt>
@@ -1312,6 +1321,18 @@ neither are specified, the whole determinant is returned.</p>
 <dt class="sig sig-object py" id="pyci.sparse_op.get_element">
 <span class="sig-name descname"><span class="pre">get_element</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.get_element" title="Link to this definition">#</a></dt>
 <dd><p>Return the <span class="math notranslate nohighlight">\(\left(i, j\right)\)</span>-th element of the sparse matrix operator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.indices">
+<span class="sig-name descname"><span class="pre">indices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.indices" title="Link to this definition">#</a></dt>
+<dd><p>Return CSR matrix indices vector</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.indptr">
+<span class="sig-name descname"><span class="pre">indptr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.indptr" title="Link to this definition">#</a></dt>
+<dd><p>Return CSR matrix index pointer vector</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2201,9 +2222,12 @@ or “S” space, so that a more efficient, specialized computation can be done 
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sparse-matrix-operator">Sparse matrix operator</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op"><code class="docutils literal notranslate"><span class="pre">sparse_op</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.data"><code class="docutils literal notranslate"><span class="pre">sparse_op.data()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.dtype"><code class="docutils literal notranslate"><span class="pre">sparse_op.dtype</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.ecore"><code class="docutils literal notranslate"><span class="pre">sparse_op.ecore</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.get_element"><code class="docutils literal notranslate"><span class="pre">sparse_op.get_element()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.indices"><code class="docutils literal notranslate"><span class="pre">sparse_op.indices()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.indptr"><code class="docutils literal notranslate"><span class="pre">sparse_op.indptr()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.matvec"><code class="docutils literal notranslate"><span class="pre">sparse_op.matvec()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.reserve"><code class="docutils literal notranslate"><span class="pre">sparse_op.reserve()</span></code></a></li>
 <li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.shape"><code class="docutils literal notranslate"><span class="pre">sparse_op.shape</span></code></a></li>
