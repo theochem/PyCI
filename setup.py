@@ -61,7 +61,7 @@ extras_require = {
 }
 
 
-packages = ["pyci", "pyci.fanci", "pyci.test", "pyci.fanci.test"]
+packages = ["pyci", "pyci.fanci", "pyci.fanpt", "pyci.test", "pyci.fanci.test"]
 
 
 package_data = {
