@@ -65,6 +65,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -v .
+          pip install pytest
 
       - name: Build Source Distribution
         run: |
