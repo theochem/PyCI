@@ -23,30 +23,16 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-latest, macos-latest]
-        # python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest]
-        python-version: ["3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
-    #   # TODO: Add C++ compliers
-    #   # Fetch CUDA toolkit using Jimver/cuda-toolkit
-    #   - name: Fetch CUDA toolkit
-    #     uses: Jimver/cuda-toolkit@v0.2.18
-    #     id: cuda-toolkit
-    #     with:
-    #       cuda: "12.1.0"
-
-    #   - name: Check nvcc version
-    #     run: nvcc -V
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
-        # with:
-        #   python-version: "3.12"
         with:
           python-version: ${{ matrix.python-version }}
 

@@ -82,7 +82,7 @@ packages = [
 [tool.setuptools.package-data]
 # Non-Python files to include in the package
 "pyci" = [
-    "_pyci.so",        # Compiled C++ extension
+    "_pyci.so",       # Compiled C++ extension
     "include/*.h",    # C++ header files
     "src/*.cpp"       # C++ source files
 ]
