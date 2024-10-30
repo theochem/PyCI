@@ -15,11 +15,11 @@
 
 r"""PyCI module."""
 
-from pyci import secondquant_op, wavefunction, one_spin_wfn, two_spin_wfn
-from pyci import doci_wfn, fullci_wfn, genci_wfn, sparse_op
-from pyci import get_num_threads, set_num_threads, popcnt, ctz
-from pyci import compute_overlap, compute_rdms, compute_transition_rdms
-from pyci import add_hci, compute_enpt2
+from pyci.src import secondquant_op, wavefunction, one_spin_wfn, two_spin_wfn
+from pyci.src import doci_wfn, fullci_wfn, genci_wfn, sparse_op
+from pyci.src import get_num_threads, set_num_threads, popcnt, ctz
+from pyci.src import compute_overlap, compute_rdms, compute_transition_rdms
+from pyci.src import add_hci, compute_enpt2
 
 from pyci.utility import make_senzero_integrals, reduce_senzero_integrals, spinize_rdms
 from pyci.utility import odometer_one_spin, odometer_two_spin
