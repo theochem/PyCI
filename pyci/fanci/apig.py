@@ -9,7 +9,7 @@ import numpy as np
 
 import pyci
 
-from ..pyci import APIGObjective
+from pyci._pyci import APIGObjective
 from .fanci import FanCI
 
 
