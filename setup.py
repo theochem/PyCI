@@ -48,7 +48,8 @@ classifiers = [
     "Environment :: Console",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
-    "Topic :: Science/Engineering :: Molecular Science",
+    # https://pypi.org/classifiers/
+    "Topic :: Scientific/Engineering :: Chemistry",
 ]
 
 
