@@ -68,12 +68,12 @@ jobs:
           python -m pip install build setuptools wheel twine
 
       - name: Build Source Distribution
-        run: >-
+        run: |
           make
           python -m build --sdist
 
       - name: Test package
-        run: >-
+        run: |
           make test
 
       - name: Store the distribution packages
