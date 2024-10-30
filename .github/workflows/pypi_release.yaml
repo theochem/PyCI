@@ -19,9 +19,11 @@ env:
 jobs:
   build:
     name: Build distribution
-    # TODO: support MacOS and Windows
-    runs-on: ubuntu-latest
-    # TODO: add support for Python 3.9, 3.10, 3.11 and 3.12
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
     #   # TODO: Add C++ compliers
@@ -30,27 +32,47 @@ jobs:
     #     uses: Jimver/cuda-toolkit@v0.2.18
     #     id: cuda-toolkit
     #     with:
-    #       cuda: '12.1.0'
+    #       cuda: "12.1.0"
 
     #   - name: Check nvcc version
     #     run: nvcc -V
 
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
+        # with:
+        #   python-version: "3.12"
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make gcc g++ python3-dev
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gcc make
 
       - name: Install development and distributions version
         run: |
           pip install --upgrade pip
           pip install -v .
-          python -m pip install build
+          python -m pip install build setuptools wheel twine
 
       - name: Build Source Distribution
         run: >-
+          make
           python -m build --sdist
+
+      - name: Test package
+        run: >-
+          make test
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
@@ -110,20 +132,20 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: >-
           gh release create
-          '${{ github.ref_name }}'
-          --repo '${{ github.repository }}'
+          "${{ github.ref_name }}"
+          --repo "${{ github.repository }}"
           --notes ""
       - name: Upload artifact signatures to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: >-
           gh release upload
-          '${{ github.ref_name }}' dist/**
-          --repo '${{ github.repository }}'
+          "${{ github.ref_name }}" dist/**
+          --repo "${{ github.repository }}"
 
   publish-to-testpypi:
     name: Publish Python distribution to TestPyPI
-    # if: ${{ github.ref == 'refs/heads/master' && github.repository_owner == 'theochem' }}
+    # if: ${{ github.ref == "refs/heads/master" && github.repository_owner == "theochem" }}
     needs:
       - build
     runs-on: ubuntu-latest
