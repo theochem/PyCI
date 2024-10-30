@@ -87,12 +87,15 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: dist-*
           path: artifacts
+          # https://github.com/actions/upload-artifact/blob/main/docs/MIGRATION.md
+          merge-multiple: true
 
       - name: Move artifacts to dist
         run: |
           mkdir -p dist/
-          find artifacts -name '*.tar.gz' -o -name '*.whl' -exec mv {} dist/ \;
+          find artifacts -type f \( -name '*.tar.gz' -o -name '*.whl' \) -exec mv {} dist/ \;
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         env:
@@ -119,12 +122,14 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: dist-*
           path: artifacts
+          merge-multiple: true
 
       - name: Move artifacts to dist
         run: |
           mkdir -p dist/
-          find artifacts -name '*.tar.gz' -o -name '*.whl' -exec mv {} dist/ \;
+          find artifacts -type f \( -name '*.tar.gz' -o -name '*.whl' \) -exec mv {} dist/ \;
       - name: Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
@@ -171,12 +176,14 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: dist-*
           path: artifacts
+          merge-multiple: true
 
       - name: Move artifacts to dist
         run: |
           mkdir -p dist/
-          find artifacts -name '*.tar.gz' -o -name '*.whl' -exec mv {} dist/ \;
+          find artifacts -type f \( -name '*.tar.gz' -o -name '*.whl' \) -exec mv {} dist/ \;
       - name: Publish distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
