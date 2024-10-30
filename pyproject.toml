@@ -2,13 +2,12 @@
 [build-system]
 # Required packages for building the project
 requires = [
-    "scikit-build-core >= 0.9.10",  # Modern CMake-based build system
-    "cmake>=3.30.0",                  # Required for C++ compilation
+    # "scikit-build-core >= 0.9.10",
     "pytest >= 6.0",                # For running tests
     "setuptools_scm>=8",            # For version management
     "wheel"                         # For binary wheel building
 ]
-build-backend = "scikit_build_core.build"
+# build-backend = "scikit_build_core.build"
 
 [project]
 # Basic project metadata
@@ -98,12 +97,6 @@ sdist.exclude = [
     ".github",
     "tests/data/*.fchk",
     "examples/*.fchk"
-]
-cmake.version = ">=3.30.0"
-cmake.build-type = "Release"
-cmake.args = [
-    "-DLINK_TO_PYTHON=ON",     # Enable Python binding generation
-    "-DDONT_COMPILE_TESTS=ON"  # Skip test compilation during build
 ]
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 
