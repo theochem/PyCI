@@ -65,16 +65,13 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -v .
-          python -m pip install build setuptools wheel twine
+          python -m pip install build setuptools wheel twine pytest
 
       - name: Build Source Distribution
         run: |
           make
-          python -m build --sdist
-
-      - name: Test package
-        run: |
           make test
+          python -m build --sdist
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
