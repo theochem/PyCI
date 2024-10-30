@@ -3,7 +3,6 @@
 # Required packages for building the project
 requires = [
     # "scikit-build-core >= 0.9.10",
-    "pytest >= 6.0",                # For running tests
     "setuptools_scm>=8",            # For version management
     "setuptools>=61.0.0",           # For building the package
     "pytest>=8.0.0",                # For running tests
