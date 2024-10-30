@@ -19,7 +19,7 @@ from itertools import combinations
 
 import numpy as np
 
-from . import pyci
+import pyci._pyci as pyci
 
 
 __all__ = [
