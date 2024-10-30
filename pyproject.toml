@@ -5,7 +5,8 @@ requires = [
     # "scikit-build-core >= 0.9.10",
     "pytest >= 6.0",                # For running tests
     "setuptools_scm>=8",            # For version management
-    "wheel"                         # For binary wheel building
+    "setuptools>=58.0.0",           # For building the package
+    "pytest>=8.0.0",                # For running tests
 ]
 # build-backend = "scikit_build_core.build"
 
