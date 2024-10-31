@@ -46,6 +46,11 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install make mingw
 
+      - name: Install build dependencies (All)
+        run: |
+          # TODO: use requirements.txt later
+          python -m pip install numpy>=1.13 scipy>=1.0.0
+          python -m pip install --upgrade pip setuptools wheel
       # Compile C++ code
       - name: Compile C++ code
         run: make
