@@ -89,8 +89,7 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          # pattern: qc-pyci-*
-          name: qc-pyci-*
+          pattern: qc-pyci-*
           path: dist/
           merge-multiple: true
       - name: Publish distribution to PyPI
@@ -113,8 +112,7 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          # pattern: qc-pyci-*
-          name: qc-pyci-*
+          pattern: qc-pyci-*
           path: dist/
           merge-multiple: true
       - name: Sign the dists with Sigstore
@@ -157,8 +155,7 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          # pattern: qc-pyci-*
-          name: qc-pyci-*
+          pattern: qc-pyci-*
           path: dist/
           merge-multiple: true
       - name: Publish distribution to TestPyPI
