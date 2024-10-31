@@ -11,6 +11,10 @@ on:
       # Trigger on pre-release tags (e.g., v1.0.0-alpha.1)
       - "v[0-9].[0-9].[0-9]*-*"
       - "[0-9].[0-9].[0-9]*-*"
+    # branches:
+    #   # Trigger on master branch
+    #   - master
+    #   - main
 
 env:
   # The name of the package to be published to PyPI and TestPyPI.
@@ -23,22 +27,11 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-latest, macos-latest]
-        # python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest]
-        python-version: ["3.12"]
+        # python-version: ["3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
-    #   # TODO: Add C++ compliers
-    #   # Fetch CUDA toolkit using Jimver/cuda-toolkit
-    #   - name: Fetch CUDA toolkit
-    #     uses: Jimver/cuda-toolkit@v0.2.18
-    #     id: cuda-toolkit
-    #     with:
-    #       cuda: "12.1.0"
-
-    #   - name: Check nvcc version
-    #     run: nvcc -V
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -71,7 +64,7 @@ jobs:
         run: |
           make
           make test
-          python -m build --sdist
+          python -m build --sdist --wheel
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
