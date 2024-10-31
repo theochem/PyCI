@@ -10,7 +10,7 @@ import numpy as np
 
 import pyci
 
-from ..pyci import AP1roGObjective
+from pyci._pyci import AP1roGObjective
 from .fanci import FanCI
 
 

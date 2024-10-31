@@ -26,7 +26,7 @@ using namespace pyci;
 Section: Python C extension.
 */
 
-BEGIN_MODULE(pyci, m)
+BEGIN_MODULE(_pyci, m)
 
 /*
 Section: Initialization

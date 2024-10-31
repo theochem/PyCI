@@ -70,7 +70,7 @@ OBJECTS := $(patsubst %.cpp,%.o,$(wildcard pyci/src/*.cpp))
 # -------------
 
 .PHONY: all
-all: pyci/pyci.so.$(PYCI_VERSION) pyci/pyci.so.$(VERSION_MAJOR) pyci/pyci.so
+all: pyci/_pyci.so.$(PYCI_VERSION) pyci/_pyci.so.$(VERSION_MAJOR) pyci/_pyci.so
 
 .PHONY: test
 test:
@@ -78,7 +78,7 @@ test:
 
 .PHONY: clean
 clean:
-	rm -rf pyci/src/*.o pyci/pyci.so*
+	rm -rf pyci/src/*.o pyci/_pyci.so*
 
 .PHONY: cleandeps
 cleandeps:
@@ -94,13 +94,13 @@ compile_flags.txt:
 pyci/src/%.o: pyci/src/%.cpp pyci/include/pyci.h $(DEPS)
 	$(CXX) $(CFLAGS) $(DEFS) -c $(<) -o $(@)
 
-pyci/pyci.so.$(PYCI_VERSION): $(OBJECTS)
+pyci/_pyci.so.$(PYCI_VERSION): $(OBJECTS)
 	$(CXX) $(CFLAGS) $(DEFS) -shared $(^) -o $(@)
 
-pyci/pyci.so.$(VERSION_MAJOR): pyci/pyci.so.$(PYCI_VERSION)
+pyci/_pyci.so.$(VERSION_MAJOR): pyci/_pyci.so.$(PYCI_VERSION)
 	ln -sf $(notdir $(<)) $(@)
 
-pyci/pyci.so: pyci/pyci.so.$(PYCI_VERSION)
+pyci/_pyci.so: pyci/_pyci.so.$(PYCI_VERSION)
 	ln -sf $(notdir $(<)) $(@)
 
 deps/eigen:

@@ -15,7 +15,8 @@
 
 r"""PyCI Griebel-Knapek CI module."""
 
-from . import pyci
+from pyci.utility import odometer_one_spin, odometer_two_spin
+import pyci._pyci as pyci
 
 
 __all__ = [
@@ -47,8 +48,8 @@ def add_cost(wfn, cost, q_max, t=-0.5):
     """
     # Run odometer algorithm
     if isinstance(wfn, (pyci.doci_wfn, pyci.genci_wfn)):
-        pyci.odometer_one_spin(wfn, cost, q_max=q_max, t=t)
+        odometer_one_spin(wfn, cost, q_max=q_max, t=t)
     elif isinstance(wfn, pyci.fullci_wfn):
-        pyci.odometer_two_spin(wfn, cost, q_max=q_max, t=t)
+        odometer_two_spin(wfn, cost, q_max=q_max, t=t)
     else:
         raise TypeError(f"invalid `wfn` type `{type(wfn)}`; must be `pyci.wavefunction`")

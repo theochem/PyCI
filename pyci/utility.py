@@ -16,7 +16,7 @@
 r"""PyCI utility module."""
 
 import numpy as np
-import pyci
+import pyci._pyci as pyci
 
 __all__ = [
     "make_senzero_integrals",

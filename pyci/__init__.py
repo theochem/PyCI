@@ -15,21 +15,20 @@
 
 r"""PyCI module."""
 
-from .pyci import __version__, c_long, c_ulong, c_double, sparse_op
+from pyci._pyci import __version__, c_long, c_ulong, c_double
+from pyci._pyci import secondquant_op, wavefunction, one_spin_wfn, two_spin_wfn
+from pyci._pyci import doci_wfn, fullci_wfn, genci_wfn, sparse_op
+from pyci._pyci import get_num_threads, set_num_threads, popcnt, ctz
+from pyci._pyci import compute_overlap, compute_rdms, compute_transition_rdms
+from pyci._pyci import add_hci, compute_enpt2
 
-from .pyci import secondquant_op, wavefunction, one_spin_wfn, two_spin_wfn
-from .pyci import doci_wfn, fullci_wfn, genci_wfn, sparse_op
-from .pyci import get_num_threads, set_num_threads, popcnt, ctz
-from .pyci import compute_overlap, compute_rdms, compute_transition_rdms
-from .pyci import add_hci, compute_enpt2
+from pyci.utility import make_senzero_integrals, reduce_senzero_integrals, spinize_rdms
+from pyci.utility import odometer_one_spin, odometer_two_spin
 
-from .utility import make_senzero_integrals, reduce_senzero_integrals, spinize_rdms
-from .utility import odometer_one_spin, odometer_two_spin
-
-from .excitation_ci import add_excitations
-from .seniority_ci import add_seniorities
-from .gkci import add_gkci
-from .cost_ci import add_cost
+from pyci.excitation_ci import add_excitations
+from pyci.seniority_ci import add_seniorities
+from pyci.gkci import add_gkci
+from pyci.cost_ci import add_cost
 
 
 __all__ = [

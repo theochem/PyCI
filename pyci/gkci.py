@@ -18,8 +18,7 @@ r"""PyCI Griebel-Knapek CI module."""
 import numpy as np
 
 from scipy.special import gammaln, polygamma
-import pyci
-
+import pyci._pyci as pyci
 
 
 __all__ = [
