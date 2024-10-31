@@ -89,8 +89,10 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
+          # pattern: qc-pyci-*
           name: qc-pyci-*
           path: dist/
+          merge-multiple: true
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         env:
@@ -111,8 +113,10 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
+          # pattern: qc-pyci-*
           name: qc-pyci-*
           path: dist/
+          merge-multiple: true
       - name: Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
@@ -153,8 +157,10 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
+          # pattern: qc-pyci-*
           name: qc-pyci-*
           path: dist/
+          merge-multiple: true
       - name: Publish distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
