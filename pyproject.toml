@@ -80,6 +80,7 @@ packages = [
 ]
 
 [tool.setuptools.package-data]
+where = ["pyci"]
 # Non-Python files to include in the package
 "pyci" = [
     "_pyci.so",        # Compiled C++ extension
