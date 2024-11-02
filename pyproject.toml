@@ -2,22 +2,21 @@
 [build-system]
 # Required packages for building the project
 requires = [
-    # "scikit-build-core >= 0.9.10",
-    "setuptools_scm>=8",            # For version management
-    "setuptools>=61.0.0",           # For building the package
-    "pytest>=8.0.0",                # For running tests
+    "numpy>=2.0",
+    "scikit-build-core>=0.3.3",
+    "pybind11",
 ]
-# build-backend = "scikit_build_core.build"
-build-backend = "setuptools.build_meta"
+build-backend = "scikit_build_core.build"
 
 [project]
 # Basic project metadata
 name = "qc-PyCI"
+version = "0.6.1"
 description = "PyCI: A flexible quantum chemistry CI library for Python 3."
 authors = [{name = "QC-Devs Community", email = "qcdevs@gmail.com"}]
 license = {file = "LICENSE"}
 readme = "README.md"
-dynamic = ["version"]  # Version managed by setuptools_scm
+# dynamic = ["version"]  # Version managed by setuptools_scm
 
 # Project classification and requirements
 keywords = [
@@ -45,8 +44,8 @@ requires-python = ">=3.9"
 
 # Core dependencies
 dependencies = [
-    "numpy>=1.13",    # Required for numerical operations
-    "scipy>=1.0"      # Required for scientific computations
+    "numpy>=2.0",    # Required for numerical operations
+    "scipy>=1.0"     # Required for scientific computations
 ]
 
 # Optional feature sets
@@ -69,38 +68,54 @@ Source = "https://github.com/theochem/pyci"
 Issues = "https://github.com/theochem/pyci/issues"
 Documentation = "https://pyci.qcdevs.org/"
 
-# Package discovery and data files
-[tool.setuptools]
-# List of packages to include
-packages = [
-    "pyci",
-    "pyci.fanci",
-    "pyci.test",
-    "pyci.fanci.test"
-]
-
-[tool.setuptools.package-data]
-# Non-Python files to include in the package
-"pyci" = [
-    "_pyci.so",        # Compiled C++ extension
-    "include/*.h",    # C++ header files
-    "src/*.cpp"       # C++ source files
-]
-"pyci.test" = [
-    "data/*.fcidump", # Test input files
-    "data/*.npy",     # NumPy data files
-    "data/*.npz"      # Compressed NumPy data files
-]
-
-# Build configuration
 [tool.scikit-build]
-sdist.exclude = [
-    ".github",
-    "tests/data/*.fchk",
-    "examples/*.fchk"
-]
-metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+wheel.expand-macos-universal-tags = true
+minimum-version = "build-system.requires"
 
-# Version management configuration
-[tool.setuptools_scm]
-# Enable setuptools-scm for version management
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+log_cli_level = "INFO"
+filterwarnings = [
+  "error",
+  "ignore::pytest.PytestCacheWarning",
+]
+testpaths = ["{project}/test"]
+
+[tool.cibuildwheel]
+build-frontend = "build[uv]"
+test-command = "pytest {project}/test"
+test-extras = ["test"]
+
+[tool.cibuildwheel.pyodide]
+environment.CFLAGS = "-fexceptions"
+environment.LDFLAGS = "-fexceptions"
+build-frontend = {name = "build", args = ["--exports", "whole_archive"]}
+
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.lint]
+extend-select = [
+  "B",   # flake8-bugbear
+  "I",   # isort
+  "ARG", # flake8-unused-arguments
+  "C4",  # flake8-comprehensions
+  "EM",  # flake8-errmsg
+  "ICN", # flake8-import-conventions
+  "G",   # flake8-logging-format
+  "PGH", # pygrep-hooks
+  "PIE", # flake8-pie
+  "PL",  # pylint
+  "PT",  # flake8-pytest-style
+  "PTH", # flake8-use-pathlib
+  "RET", # flake8-return
+  "RUF", # Ruff-specific
+  "SIM", # flake8-simplify
+  "T20", # flake8-print
+  "UP",  # pyupgrade
+  "YTT", # flake8-2020
+  "EXE", # flake8-executable
+  "NPY", # NumPy-specific rules
+]
