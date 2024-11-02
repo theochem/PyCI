@@ -70,7 +70,7 @@ jobs:
         run: |
           make
           make test
-          python -m build --sdist --wheel
+          python -m build --wheel
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
@@ -98,6 +98,7 @@ jobs:
           pattern: pyci-package-*
           path: dist/
           merge-multiple: true
+      - run: ls -l dist/
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         env:
