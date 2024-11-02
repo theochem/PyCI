@@ -141,7 +141,7 @@ void TwoSpinWfn::copy_det(const long i, ulong *det) const {
 }
 
 Hash TwoSpinWfn::rank_det(const ulong *det) const {
-    return spookyhash(nword2, det);
+    return compute_hash(nword2, det);
 }
 
 long TwoSpinWfn::add_det(const ulong *det) {

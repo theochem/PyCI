@@ -41,7 +41,7 @@
 
 #include <parallel_hashmap/phmap.h>
 
-#include <SpookyV2.h>
+#include <rapidhash.h>
 
 #include <sort_with_arg.h>
 
@@ -118,13 +118,11 @@ inline int Ctz(const unsigned long long t) {
 
 /* Hash function. */
 
-typedef std::pair<ulong, ulong> Hash;
+typedef std::uint64_t Hash;
 
 template<typename T, typename U>
-Hash spookyhash(T length, const U *data) {
-    Hash h(0x23a23cf5033c3c81UL, 0xb3816f6a2c68e530UL);
-    SpookyHash::Hash128(reinterpret_cast<const void *>(data), length * sizeof(U), &h.first, &h.second);
-    return h;
+Hash compute_hash(T length, const U *data) {
+    return rapidhash(reinterpret_cast<const void *>(data), length * sizeof(U));
 }
 
 /* Vector template types. */

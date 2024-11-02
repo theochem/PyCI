@@ -135,7 +135,7 @@ void OneSpinWfn::copy_det(const long i, ulong *det) const {
 }
 
 Hash OneSpinWfn::rank_det(const ulong *det) const {
-    return spookyhash(nword, det);
+    return compute_hash(nword, det);
 }
 
 long OneSpinWfn::add_det(const ulong *det) {
