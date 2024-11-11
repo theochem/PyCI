@@ -10,7 +10,7 @@ __all__ = [
     "AP1roG",
     "DetRatio",
     "pCCDS",
-    "Placeholder",
+    "AP1roGeneralizedSeno",
 ]
 
 
@@ -19,4 +19,4 @@ from .apig import APIG
 from .ap1rog import AP1roG
 from .detratio import DetRatio
 from .pccds import pCCDS
-from .placeholder import Placeholder
+from .ap1rogen import AP1roGeneralizedSeno
