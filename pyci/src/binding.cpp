@@ -1460,18 +1460,18 @@ param_cons : np.ndarray(Np, dtype=pyci.c_double)
     py::arg("op"), py::arg("wfn"), py::arg("idx_det_cons") = py::none(), py::arg("det_cons") = py::none(),
     py::arg("idx_param_cons") = py::none(), py::arg("param_cons") = py::none());
 
-// Declare Python class based on PlaceholderObjective
-py::class_<PlaceholderObjective, Objective<FullCIWfn>> placeholder_objective(m, "PlaceholderObjective");
+// Declare Python class based on AP1roGeneralizedSenoObjective
+py::class_<AP1roGeneralizedSenoObjective, Objective<GenCIWfn>> ap1rogen_objective(m, "AP1roGeneralizedSenoObjective");
 
 // Class documentation
-placeholder_objective.doc() = R"""(
-Placeholder objective class.
+ap1rogen_objective.doc() = R"""(
+AP1roGSDGeneralized_sen-o objective class.
 )""";
 
 // Initializer (keep in mind the Wfn argument should be the right class)
-placeholder_objective.def(py::init<const SparseOp &, const FullCIWfn &, const py::object, const py::object, const py::object, const py::object>(),
+ap1rogen_objective.def(py::init<const SparseOp &, const GenCIWfn &, const py::object, const py::object, const py::object, const py::object>(),
 R"""(
-Initialize the Placeholder objective instance.
+Initialize the AP1roGSDGeneralized_sen-o objective instance.
 
 Parameters
 ----------
