@@ -799,20 +799,22 @@ public:
     virtual void d_overlap(const size_t, const double *x, double *y);
 };
 
-// Specialize base template class against one of {DOCI,FullCI,GenCI}Wfn
-class PlaceholderObjective : public Objective<FullCIWfn> {
+// Specialize base template class for AP1roGSDGeneralized_sen-o against GenCI Wfn
+class AP1roGeneralizedSenoObjective : public Objective<GenCIWfn> {
 public:
-    using Objective<FullCIWfn>::nproj;  // # of determinants in P space
-    using Objective<FullCIWfn>::nconn;  // # of determinants in S space
-    using Objective<FullCIWfn>::nparam; // # of FanCI parameters
-    using Objective<FullCIWfn>::ovlp;   // Overlap vector
-    using Objective<FullCIWfn>::d_ovlp; // Overlap gradient matrix
+    using Objective<GenCIWfn>::nproj;  // # of determinants in P space
+    using Objective<GenCIWfn>::nconn;  // # of determinants in S space
+    using Objective<GenCIWfn>::nparam; // # of FanCI parameters
+    using Objective<GenCIWfn>::ovlp;   // Overlap vector
+    using Objective<GenCIWfn>::d_ovlp; // Overlap gradient matrix
 
     // Declare variables you want to store to faciliate the computation
     // of {d_,}overlap here:
-    // std::size_t nrow;
-    // std::size_t ncol;
-    // std::vector<std::size_t> part_list;
+    std::size_t nrow;
+    std::size_t ncol;
+    std::vector<std::size_t> nexc_list;
+    std::vector<std::size_t> hole_list;
+    std::vector<std::size_t> part_list;
     // ...
     // ...
 
@@ -821,23 +823,23 @@ public:
     // the arguments below depend on the template specialization
 
     // C++ constructor
-    PlaceholderObjective(const SparseOp &, const FullCIWfn &,
+    AP1roGeneralizedSenoObjective(const SparseOp &, const GenCIWfn &,
                          const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
                          const std::size_t = 0UL, const long * = nullptr, const double * = nullptr);
 
     // Python constructor
-    PlaceholderObjective(const SparseOp &, const FullCIWfn &,
+    AP1roGeneralizedSenoObjective(const SparseOp &, const GenCIWfn &,
                          const pybind11::object, const pybind11::object,
                          const pybind11::object, const pybind11::object);
 
     // C++ copy constructor
-    PlaceholderObjective(const PlaceholderObjective &);
+    AP1roGeneralizedSenoObjective(const AP1roGeneralizedSenoObjective &);
 
     // C++ move constructor
-    PlaceholderObjective(PlaceholderObjective &&) noexcept;
+    AP1roGeneralizedSenoObjective(AP1roGeneralizedSenoObjective &&) noexcept;
 
     // Initializer for {d_,}overlap variables
-    void init_overlap(const FullCIWfn &);
+    void init_overlap(const GenCIWfn &);
 
     // Overlap function
     virtual void overlap(const size_t, const double *x, double *y);
