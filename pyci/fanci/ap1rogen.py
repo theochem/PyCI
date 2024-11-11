@@ -1,5 +1,5 @@
 r"""
-FanCI Placeholder module.
+FanCI AP1roGeneralizedseno module for AP1roGSDGeneralized_sen-o wavefunction.
 
 """
 
@@ -9,16 +9,16 @@ import numpy as np
 
 import pyci
 
-from ..pyci import PlaceholderObjective
+from ..pyci import AP1roGeneralizedSenoObjective
 from .fanci import FanCI
 
 
 __all___ = [
-    "Placeholder",
+    "AP1roGeneralizedSeno",
 ]
 
 
-class Placeholder(FanCI):
+class AP1roGeneralizedSeno(FanCI):
     r"""
     DOC
     """
@@ -26,7 +26,8 @@ class Placeholder(FanCI):
     def __init__(
         self,
         ham: pyci.hamiltonian,
-        nocc: int,
+        nocc_up: int,
+        nocc_dn: int,
         nproj: int = None,
         wfn: pyci.fullci_wfn = None,
         **kwargs: Any,
@@ -53,8 +54,52 @@ class Placeholder(FanCI):
         if not isinstance(ham, pyci.hamiltonian):
             raise TypeError(f"Invalid `ham` type `{type(ham)}`; must be `pyci.hamiltonian`")
 
+        nocc = nocc_up + nocc_dn
+        nparam = nocc_up * (ham.nbasis - nocc_up) + 1 #less params considering we added singles as well
+        nproj = nparam if nproj is None else nproj
+
+        if wfn is None:
+            wfn = pyci.doci_wfn(ham.nbasis, nocc_up, nocc_dn)
+            print("\nCreated doci wfn instance for placeholder")
+
+            wfn.add_excited_dets(1) # add pair excited determinants
+
+            print("\nCreating fci wfn")
+            wfn = pyci.fullci_wfn(wfn)
+            pyci.add_excitations(wfn, 1) # add singles
+        elif not isinstance(wfn, pyci.fullci_wfn):
+            raise TypeError(f"Invalid `wfn` type `{type(wfn)}`; must be `pyci.fullci_wfn`")
+        elif wfn.nocc_up != nocc_up or wfn.nocc_dn != nocc_dn:
+            raise ValueError(f"wfn.nocc_{{up, dn}} does not match `nocc_{{up, dn}}={nocc_up, nocc_dn}` parameter")
+
+
         # Initialize base class
+        print("\nInitializing base class")
         FanCI.__init__(self, ham, wfn, nproj, nparam, **kwargs)
+
+        # Assign reference occupations
+        #ref_occs_up = np.arange(nocc_up, dtype=pyci.c_long)
+        #ref_occs_dn = np.arange(nocc_dn, dtype=pyci.c_long)
+ 
+        # Save sub-class-specific attributes
+        #self._ref_occs = [ref_occs_up, ref_occs_dn]
+
+        # Initiazlize C++ extension
+        try:
+            norm_det = kwargs["norm_det"]
+            idx_det_cons = np.asarray([elem[0] for elem in norm_det], dtype=int)
+            det_cons = np.asarray([elem[1] for elem in norm_det], dtype=int)
+        except KeyError:
+            idx_det_cons = None
+            det_cons = None
+         
+        try:
+            norm_param = kwargs["norm_param"]
+            idx_param_cons = np.asarray([elem[0] for elem in norm_param], dtype=int)
+            param_cons = np.asarray([elem[1] for elem in norm_param], dtype=int)
+        except KeyError:
+            idx_param_cons = None
+            param_cons = None
 
         self._cext = PlaceholderObjective(
             self._ci_op, self._wfn,
