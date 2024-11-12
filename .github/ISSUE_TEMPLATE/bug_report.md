@@ -24,7 +24,7 @@ _What actually happened (error messages, unexpected results, etc.)._
 
 ## Versions
 - **Operating System**: _e.g., Windows 10, macOS, Ubuntu 20.04_
-- **Version**: _e.g., 1.2.3_
+- **PyCI Version**: _e.g., 1.2.3_
 - **Dependencies**: _e.g., Python 3.8.5, Node.js 14.x, etc._
 - **Browser (if applicable)**: _e.g., Chrome 92, Firefox 89_
 
