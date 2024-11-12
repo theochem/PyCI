@@ -26,10 +26,9 @@ class AP1roGeneralizedSeno(FanCI):
     def __init__(
         self,
         ham: pyci.hamiltonian,
-        nocc_up: int,
-        nocc_dn: int,
+        nocc: int,
         nproj: int = None,
-        wfn: pyci.fullci_wfn = None,
+        wfn: pyci.genci_wfn = None,
         **kwargs: Any,
     ) -> None:
         r"""
@@ -43,7 +42,7 @@ class AP1roGeneralizedSeno(FanCI):
             Number of occupied orbitals.
         nproj : int, optional
             Number of determinants in projection ("P") space.
-        wfn : pyci.fullci_wfn, optional
+        wfn : pyci.genci_wfn, optional
             If specified, this PyCI wave function defines the projection ("P") space.
         kwargs : Any, optional
             Additional keyword arguments for base FanCI class.
@@ -54,23 +53,27 @@ class AP1roGeneralizedSeno(FanCI):
         if not isinstance(ham, pyci.hamiltonian):
             raise TypeError(f"Invalid `ham` type `{type(ham)}`; must be `pyci.hamiltonian`")
 
-        nocc = nocc_up + nocc_dn
-        nparam = nocc_up * (ham.nbasis - nocc_up) + 1 #less params considering we added singles as well
+        nparam = nocc * (ham.nbasis - nocc) + (2 * nocc) * (2 * (ham.nbasis - nocc)) + 1 #less params considering we added singles as well
         nproj = nparam if nproj is None else nproj
 
         if wfn is None:
-            wfn = pyci.doci_wfn(ham.nbasis, nocc_up, nocc_dn)
-            print("\nCreated doci wfn instance for placeholder")
+            wfn = pyci.genci_wfn(ham.nbasis, nocc, 0)
+            print("\nCreated GenCI wfn instance for AP1roGSDGeneralized_sen-o.")
 
             wfn.add_excited_dets(1) # add pair excited determinants
 
             print("\nCreating fci wfn")
             wfn = pyci.fullci_wfn(wfn)
-            pyci.add_excitations(wfn, 1) # add singles
-        elif not isinstance(wfn, pyci.fullci_wfn):
-            raise TypeError(f"Invalid `wfn` type `{type(wfn)}`; must be `pyci.fullci_wfn`")
-        elif wfn.nocc_up != nocc_up or wfn.nocc_dn != nocc_dn:
-            raise ValueError(f"wfn.nocc_{{up, dn}} does not match `nocc_{{up, dn}}={nocc_up, nocc_dn}` parameter")
+            pyci.add_excitations(wfn, 1)
+
+            print("\nCreating GenCI wfn")
+            wfn = pyci.genci_wfn(wfn)
+            occ_array = wfn.to_occ_array()
+            print("\noccsd_array: ", len(occ_array), "\n", occ_array)
+        elif not isinstance(wfn, pyci.genci_wfn):
+            raise TypeError(f"Invalid `wfn` type `{type(wfn)}`; must be `pyci.genci_wfn`")
+        elif wfn.nocc_up != nocc or wfn.nocc = nocc:
+            raise ValueError(f"wfn.nocc_{{up, dn}} does not match `nocc={nocc}` parameter")
 
 
         # Initialize base class
