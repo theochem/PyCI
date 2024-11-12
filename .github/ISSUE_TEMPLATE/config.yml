@@ -1,0 +1,8 @@
+# Default issue template configuration
+
+# Set the default template for issues when a user doesn't choose a template.
+default:
+  name: "Bug Report"
+  description: "A bug or issue encountered while using the project."
+  labels: "bug"
+
