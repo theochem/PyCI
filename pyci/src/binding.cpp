@@ -925,7 +925,7 @@ nonsingletci_wfn.def(py::init<const std::string &>(), py::arg("filename"));
 nonsingletci_wfn.def(py::init<const long, const long, const long>(), py::arg("nbasis"), py::arg("nocc_up"),
               py::arg("nocc_dn"));
 
-nonsinglet_wfn.def(py::init<const long, const long, const long, const Array<ulong>>(), py::arg("nbasis"),
+nonsingletci_wfn.def(py::init<const long, const long, const long, const Array<ulong>>(), py::arg("nbasis"),
               py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
 nonsingletci_wfn.def(py::init<const long, const long, const long, const Array<long>>(), py::arg("nbasis"),
@@ -992,7 +992,7 @@ py::class_<SparseOp> sparse_op(m, "sparse_op");
 
 sparse_op.doc() = R"""(
 Sparse matrix operator class.
-)""";
+)""");
 
 sparse_op.def_readonly("ecore", &SparseOp::ecore, R"""(
 Constant (or "zero-particle") integral.
