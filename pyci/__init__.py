@@ -45,6 +45,7 @@ __all__ = [
     "doci_wfn",
     "fullci_wfn",
     "genci_wfn",
+    "nonsingletci_wfn",
     "sparse_op",
     "get_num_threads",
     "set_num_threads",

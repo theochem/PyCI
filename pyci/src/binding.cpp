@@ -878,6 +878,113 @@ genci_wfn.def(py::init<const long, const long, const long, const Array<long>>(),
               py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
 /*
+Section: NonSingletCI wave function class
+*/
+
+py::class_<NonSingletCI, GenCIWfn> nonsingletci_wfn(m, "nonsingletci_wfn");
+
+nonsingletci_wfn.doc() = R"""(
+Non-singlet CI wave function base class.
+)""";
+
+nonsingletci_wfn.def(py::init<const DOCIWfn &>(), R"""(
+Initialize a Non-singlet CI wave function.
+
+Parameters
+----------
+wfn : (pyci.doci_wfn | pyci.fullci_wfn | pyci.genci_wfn | pyci.nonsingletci_wfn)
+    Wave function from which to copy data.
+
+or
+
+Parameters
+----------
+filename : TextIO
+    Filename of binary file from which to load wave function.
+
+or
+
+Parameters
+----------
+nbasis : int
+    Number of spatial orbital functions.
+nocc_up : int
+    Number of occupied spin-up orbitals.
+nocc_dn : int
+    Number of occupied spin-down orbitals.
+
+)""",
+              py::arg("wfn"));
+
+nonsingletci_wfn.def(py::init<const FullCIWfn &>(), py::arg("wfn"));
+
+nonsingletci_wfn.def(py::init<const NonSingletCI &>(), py::arg("wfn"));
+
+nonsingletci_wfn.def(py::init<const std::string &>(), py::arg("filename"));
+
+nonsingletci_wfn.def(py::init<const long, const long, const long>(), py::arg("nbasis"), py::arg("nocc_up"),
+              py::arg("nocc_dn"));
+
+nonsinglet_wfn.def(py::init<const long, const long, const long, const Array<ulong>>(), py::arg("nbasis"),
+              py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
+
+nonsingletci_wfn.def(py::init<const long, const long, const long, const Array<long>>(), py::arg("nbasis"),
+              py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
+
+/*
+Section: Sparse CI matrix operator class
+*/
+
+py::class_<SparseOp> sparse_op(m, "sparse_op");
+
+sparse_op.doc() = R"""(
+Sparse matrix operator class.
+)""";
+
+sparse_op.def_readonly("ecore", &SparseOp::ecore, R"""(
+Constant (or "zero-particle") integral.
+
+Returns
+-------
+ecore : float
+    Constant (or "zero-particle") integral.
+
+)""");
+
+sparse_op.def_readonly("symmetric", &SparseOp::symmetric, R"""(
+Whether the sparse matrix operator is symmetric/Hermitian.
+
+Returns
+-------
+symmetric : bool
+    Whether the sparse matrix operator is symmetric/Hermitian.
+
+)""");
+
+sparse_op.def_readonly("size", &SparseOp::size, R"""(
+Number of non-zero matrix elements.
+
+Returns
+-------
+size : int
+    Number of non-zero matrix elements.
+
+)""");
+
+sparse_op.def_readonly("shape", &SparseOp::shape, R"""(
+Shape of the matrix.
+
+Returns
+-------
+nrow : int
+    Number of rows.
+ncol : int
+    Number of columns.
+
+)""");
+
+sparse_op.def_property_readonly("dtype", &SparseOp::dtype, R"""(
+/*
 Section: Sparse CI matrix operator class
 */
 
@@ -1398,6 +1505,25 @@ genci_objective.def("objective", &Objective<GenCIWfn>::py_objective, DOCSTRING_O
     py::arg("op"), py::arg("x"));
 
 genci_objective.def("jacobian", &Objective<GenCIWfn>::py_jacobian, DOCSTRING_JACOBIAN,
+    py::arg("op"), py::arg("x"));
+
+
+py::class_<Objective<NonSingletCI>> nonsingletci_objective(m, "NonSingletCIObjective");
+
+genci_objective.doc() = R"""(
+NonSingletCI-FanCI objective class.
+)""";
+
+nonsingletci_objective.def("overlap", &Objective<NonSingletCI>::py_overlap, DOCSTRING_OVERLAP,
+    py::arg("x"));
+
+nonsingletci_objective.def("d_overlap", &Objective<NonSingletCI>::py_d_overlap, DOCSTRING_D_OVERLAP,
+    py::arg("x"));
+
+nonsingletci_objective.def("objective", &Objective<NonSingletCI>::py_objective, DOCSTRING_OBJECTIVE,
+    py::arg("op"), py::arg("x"));
+
+nonsingletci_objective.def("jacobian", &Objective<NonSingletCI>::py_jacobian, DOCSTRING_JACOBIAN,
     py::arg("op"), py::arg("x"));
 
 py::class_<AP1roGObjective, Objective<DOCIWfn>> ap1rog_objective(m, "AP1roGObjective");
