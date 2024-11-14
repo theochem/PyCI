@@ -1510,7 +1510,7 @@ genci_objective.def("jacobian", &Objective<GenCIWfn>::py_jacobian, DOCSTRING_JAC
 
 py::class_<Objective<NonSingletCI>> nonsingletci_objective(m, "NonSingletCIObjective");
 
-genci_objective.doc() = R"""(
+nonsingletci_objective.doc() = R"""(
 NonSingletCI-FanCI objective class.
 )""";
 
