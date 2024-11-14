@@ -173,6 +173,7 @@ struct TwoSpinWfn;
 struct DOCIWfn;
 struct FullCIWfn;
 struct GenCIWfn;
+struct NonSingletCI;
 struct SparseOp;
 
 /* Number of threads global variable. */
@@ -612,6 +613,47 @@ public:
     GenCIWfn(const long, const long, const long, const Array<long>);
 };
 
+struct NonSingletCI final : public OneSpinWfn {
+public:
+    using Wfn::maxrank_dn;
+    using Wfn::maxrank_up;
+    using Wfn::nbasis;
+    using Wfn::ndet;
+    using Wfn::nocc;
+    using Wfn::nocc_dn;
+    using Wfn::nocc_up;
+    using Wfn::nvir;
+    using Wfn::nvir_dn;
+    using Wfn::nvir_up;
+    using Wfn::nword;
+    using Wfn::nword2;
+
+protected:
+    using Wfn::dets;
+    using Wfn::dict;
+
+public:
+    NonSingletCI(const NonSingletCI &);
+
+    NonSingletCI(NonSingletCI &&) noexcept;
+
+    NonSingletCI(const DOCIWfn &);
+
+    NonSingletCI(const FullCIWfn &);
+
+    NonSingletCI(const std::string &);
+
+    NonSingletCI(const long, const long, const long);
+
+    NonSingletCI(const long, const long, const long, const long, const ulong *);
+
+    NonSingletCI(const long, const long, const long, const long, const long *);
+
+    NonSingletCI(const long, const long, const long, const Array<ulong>);
+
+    NonSingletCI(const long, const long, const long, const Array<long>);
+};
+
 /* Sparse matrix operator class. */
 
 struct SparseOp final {
@@ -637,6 +679,8 @@ public:
     SparseOp(const SQuantOp &, const FullCIWfn &, const long, const long, const bool);
 
     SparseOp(const SQuantOp &, const GenCIWfn &, const long, const long, const bool);
+
+    SparseOp(const SQuantOp &, const NonSingletCI &, const long, const long, const bool);
 
     pybind11::object dtype(void) const;
 
@@ -680,6 +724,8 @@ private:
     void add_row(const SQuantOp &, const FullCIWfn &, const long, ulong *, long *, long *);
 
     void add_row(const SQuantOp &, const GenCIWfn &, const long, ulong *, long *, long *);
+
+    void add_row(const SQuantOp &, const NonSingletCI &, const long, ulong *, long *, long *);
 };
 
 /* FanCI objective classes. */
