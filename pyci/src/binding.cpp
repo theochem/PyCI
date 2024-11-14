@@ -1634,7 +1634,7 @@ Parameters
 op : pyci.sparse_op
     Sparse operator instance with ``nproj`` rows ("P" space) and ``nconn`` columns ("S" space).
 wfn : pyci.doci_wfn
-    DOCI wave function with ``nconn`` determinants.
+    NonSingletCI wave function with ``nconn`` determinants.
     The first ``nproj`` determinants should correspond to the "S" space.
 idx_det_cons : np.ndarray(Nd, dtype=pyci.c_long)
     The indices of the determinants on which constraints should be placed.
