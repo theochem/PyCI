@@ -45,10 +45,12 @@ NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const lo
 
 NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Array<ulong> array)
     : NonSingletCI(nb, nu, nd, array.request().shape[0],
+                   reinterpret_cast<const ulong *>(array.request().ptr)) {
 }
 
 NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Array<long> array)
     : NonSingletCI(nb, nu, nd, array.request().shape[0],
+                   reinterpret_cast<const long *>(array.request().ptr)) {
 }
 
 
