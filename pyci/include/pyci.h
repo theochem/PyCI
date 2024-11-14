@@ -572,7 +572,7 @@ public:
     FullCIWfn(const long, const long, const long, const Array<long>);
 };
 
-struct GenCIWfn final : public OneSpinWfn {
+struct GenCIWfn : public OneSpinWfn {
 public:
     using Wfn::maxrank_dn;
     using Wfn::maxrank_up;
