@@ -613,7 +613,7 @@ public:
     GenCIWfn(const long, const long, const long, const Array<long>);
 };
 
-struct NonSingletCI final : public OneSpinWfn {
+struct NonSingletCI final : public GenCIWfn {
 public:
     using Wfn::maxrank_dn;
     using Wfn::maxrank_up;
