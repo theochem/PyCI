@@ -29,7 +29,8 @@ class AP1roGeneralizedSeno(FanCI):
         ham: pyci.hamiltonian,
         nocc: int,
         nproj: int = None,
-        wfn: pyci.genci_wfn = None,
+        wfn: pyci.nonsingletci_wfn = None,
+        fill: str = 'excitation',
         **kwargs: Any,
     ) -> None:
         r"""
@@ -43,8 +44,9 @@ class AP1roGeneralizedSeno(FanCI):
             Number of occupied orbitals.
         nproj : int, optional
             Number of determinants in projection ("P") space.
-        wfn : pyci.genci_wfn, optional
+        wfn : pyci.nonsingletci_wfn
             If specified, this PyCI wave function defines the projection ("P") space.
+        fill : 
         kwargs : Any, optional
             Additional keyword arguments for base FanCI class.
 
@@ -72,34 +74,34 @@ class AP1roGeneralizedSeno(FanCI):
             for i, j in zip(det_array, occ_array):
                 print(i, j)
 
-            print("\nCreating GenCI wfn")
-            wfn = pyci.genci_wfn(wfn)
+            print("\nCreating NonSingletCI wfn")
+            wfn = pyci.nonsingletci_wfn(wfn)
             print("wfn.nocc, wfn.nocc_up, wfn.nocc_dn: ", wfn.nocc, wfn.nocc_up, wfn.nocc_dn)
             occ_array = wfn.to_occ_array()
             det_array = wfn.to_det_array()
-            print("\nFor GenCI wfn det_array: ", len(det_array), "\n", det_array)
+            print("\nFor NonSingletCI wfn det_array: ", len(det_array), "\n", det_array)
             #for det, occ in zip(det_array, occ_array):
             #    print(det, bin(int(det)), occ)
 
-            # Generate the bitstring
-            bitstring = ((1 << wfn.nocc //2) - 1) << ham.nbasis | (1 << wfn.nocc//2) - 1
-            # Convert to binary string with leading zeros
-            nb = ham.nbasis
-            bit_str = format(bitstring, f'0{2 * nb}b')
-            unocc = [i for i in range(len(bit_str)) if bit_str[nb-i-1] == '0']
-            occ = [i for i in range(len(bit_str)) if bit_str[nb-i-1] == '1']
-            # Adding non-spin-preserving alpha -> beta singles
-            for i in occ:
-               for a in unocc:
-                   exc_str = _excite_det(i, a, int(bit_str,2))
-                   print("i, a, exc_str", i, a, exc_str, format(exc_str, f'0{2*nb}b'))
-                   wfn.add_det(np.array(exc_str, dtype=pyci.c_ulong))
+            ## Generate the bitstring
+            #bitstring = ((1 << wfn.nocc //2) - 1) << ham.nbasis | (1 << wfn.nocc//2) - 1
+            ## Convert to binary string with leading zeros
+            #nb = ham.nbasis
+            #bit_str = format(bitstring, f'0{2 * nb}b')
+            #unocc = [i for i in range(len(bit_str)) if bit_str[nb-i-1] == '0']
+            #occ = [i for i in range(len(bit_str)) if bit_str[nb-i-1] == '1']
+            ## Adding non-spin-preserving alpha -> beta singles
+            #for i in occ:
+            #   for a in unocc:
+            #       exc_str = _excite_det(i, a, int(bit_str,2))
+            #       print("i, a, exc_str", i, a, exc_str, format(exc_str, f'0{2*nb}b'))
+            #       wfn.add_det(np.array(exc_str, dtype=pyci.c_ulong))
+            #       
+            #det_array = wfn.to_det_array()
+            #print("\nFor GenCI wfn det_array after adding Gen_sen-o S:", len(det_array), "\n", det_array)
                    
-            det_array = wfn.to_det_array()
-            print("\nFor GenCI wfn det_array after adding Gen_sen-o S:", len(det_array), "\n", det_array)
-                   
-        elif not isinstance(wfn, pyci.genci_wfn):
-            raise TypeError(f"Invalid `wfn` type `{type(wfn)}`; must be `pyci.genci_wfn`")
+        elif not isinstance(wfn, pyci.nonsingletci_wfn):
+            raise TypeError(f"Invalid `wfn` type `{type(wfn)}`; must be `pyci.nonsingletci_wfn`")
         #elif wfn.nocc_up != nocc or wfn.nocc != nocc:
         elif wfn.nocc != nocc:
             raise ValueError(f"wfn.nocc does not match `nocc={nocc}` parameter")
