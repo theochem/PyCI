@@ -53,6 +53,54 @@ NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Ar
                    reinterpret_cast<const long *>(array.request().ptr)) {
 }
 
+ 
+void NonSingletCI:add_excited_dets(const ulong *rdet, const long e){
+    long i, j, k, no = binomial(nocc_up, e), nv = binomial(nvir_up, e);
+    AlignedVector<ulong> det(nword);
+
+    AlignedVector<long> occs(nocc);
+    AlignedVector<long> occs_up(nocc_up);
+    AlignedVector<long> occs_dn(nocc_dn);
+    AlignedVector<long> occs_pairs(nocc_up);
+
+    AlignedVector<long> virs(nvir);
+    AlignedVector<long> virs_up(nvir_up);
+    AlignedVector<long> virs_dn(nvir_dn);
+    AlignedVector<long> virs_pairs(nocc_up);
+
+    AlignedVector<long> occinds(e + 1);
+    AlignedVector<long> virinds(e + 1);
+
+}
+
+
+void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) {
+    /* GenCIWfn build using FullCIWfn initializes the OneSpinWfn with nbasis * 2, so we are calling it nb2 here*/
+    long i = 0;
+    long nb = nb/2;
+    long nocc_beta = std::min(nocc, nb);
+    long nocc_alpha = std::min(0L, nocc - nb);
+
+    // First, handle beta spins
+    while (nocc_beta >= Size<ulong>()){
+        det[i++] = Max<ulong>();
+        nocc_beta -= Size<ulong>();
+    }
+
+    if (nocc_beta) {
+        det[i] = (1UL << nocc_beta) -1;
+        i++;
+    }
+     
+    // Fill alpha spins (second half)
+    while (nocc_alpha >= Size<ulong>()){
+        det[i++] = Max<ulong>();
+        nocc_alpha -= Size<ulong>();
+    }
+
+    if (nocc_alpha) {
+        det[i] = (1UL << nocc) - 1;
+    }
 
 } //namespace pyci
 
