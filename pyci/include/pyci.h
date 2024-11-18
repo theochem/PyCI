@@ -652,6 +652,8 @@ public:
     NonSingletCI(const long, const long, const long, const Array<ulong>);
 
     NonSingletCI(const long, const long, const long, const Array<long>);
+
+    void fill_hartreefock_det(long, long, ulong *);
 };
 
 /* Sparse matrix operator class. */
