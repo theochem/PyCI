@@ -53,24 +53,139 @@ NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Ar
                    reinterpret_cast<const long *>(array.request().ptr)) {
 }
 
+AlignedVector<std::pairs<long, long>> NonSingletCI::orb_pairs() const {
+    AlignedVector<std::pair<long,long>> pairs;
+    pairs.reserve(nbasis); 
+    for (long i = 0; i < nbasis; ++i) {
+       pairs.emblace_back(i, i + nbasis);
+    }
+    return pairs;
+}
+
  
 void NonSingletCI:add_excited_dets(const ulong *rdet, const long e){
-    long i, j, k, no = binomial(nocc_up, e), nv = binomial(nvir_up, e);
+    //long i, j, k, no = binomial(nocc_up, e), nv = binomial(nvir_up, e);
     AlignedVector<ulong> det(nword);
 
     AlignedVector<long> occs(nocc);
     AlignedVector<long> occs_up(nocc_up);
     AlignedVector<long> occs_dn(nocc_dn);
-    AlignedVector<long> occs_pairs(nocc_up);
+    AlignedVector<std::pair<int,int>> occs_pairs;
 
     AlignedVector<long> virs(nvir);
     AlignedVector<long> virs_up(nvir_up);
     AlignedVector<long> virs_dn(nvir_dn);
-    AlignedVector<long> virs_pairs(nocc_up);
+    AlignedVector<std::pair<int,int>> virs_pairs;
 
     AlignedVector<long> occinds(e + 1);
     AlignedVector<long> virinds(e + 1);
+    fill_occs(nword, rdet, &occs[0]);
+    fill_virs(nword, nbasis, rdet, &virs[0]);
+     
+    
 
+    // Generate list of up & dn indices for ocs & virs
+    for (int i : occs) {
+        if (i < nbasis) occ_up.push_back(i);
+        else occ_dn.push_back(i);
+    }
+    for (int a : virs) {
+        if (a < nbasis) virs_up.push_back(i);
+        else virs_dn.push_back(i);
+    }
+    // Create an unordered set for fast lookup of occupied down-orbitals
+    std::unordered_set<int> occ_dn_set(occ_dn.begin(), occ_dn.end()); 
+    // Generate occ_pairs
+    for (int i : occ_up) {
+        if (occ_dn_set.find(i + nbasis) != occ_dn_set.end()) {
+            occ_pairs.push_back({i, i + nbasis});   
+        }
+    }
+
+    // Create an unordered set for fast looup of virtual orbitals
+    std::unordered_set<int> virs_set(virs.begin(), virs.end());
+    // form virtual pairs
+     for (int a : virs) {
+         if (virs_set.find(a + nbasis) != virs_set.end()) {
+             virs_pairs.push_back({a, a + nbasis});   
+         }
+     }
+
+     // Handle excitation order 1
+     if (n == 1) {
+         for (long occ : occ_up) {
+             for (long vir : vir_up) {
+                 std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
+                 excite_det(occ, vir, &det[0])
+                 add_det(&det[0]) 
+             }
+         }
+         for (long occ : occ_dn) {
+             for (long vir : vir_up) {
+                 std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
+                 excite_det(occ, vir, &det[0])
+                 add_det(&det[0]) 
+             }
+         }
+         return ;
+     }
+
+
+
+    //// Handle excitation order 2 
+    //if (e == 2){
+    //    for (const auto& occ_pair : occ_pairs){
+    //        for (const auto& vir_pair : vir_pairs){
+    //            long o_up = occ_pair.first;
+    //            long o_dn = occ_pair.second;
+    //            long v_up = vir_pair.first;
+    //            long v_dn = vir_pair.second;
+    //         
+    //            std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
+    //            excite_det(o_up, v_up, &det[0])
+    //            excite_det(o_dn, v_dn, &det[0])
+    //            add_det(&det[0]) 
+    //           
+    //        }
+    //    }
+    //}
+    
+    // Handle excitation orders >= 2
+    // Loop over possible values of d (number of pair excitations)
+    for (long d = 0; d <= std::min(e/2, static_cast<long>(occ_pairs.size())); ++d){
+        // Number of single excitations
+        long num_singles = e - 2 * d;
+        
+        // Apply d pair excitations 
+        if (d > 0) {
+            for (long i = 0; i < d; ++i) {
+                const auto& occ_pair = occ_pairs[i];
+                const auto& vir_pair = vir_pairs[i];
+
+                long o_up = occ_pair.first;
+                long o_dn = occ_pair.second;
+                long v_up = vir_pair.first;
+                long v_dn = vir_pair.second;
+
+                std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
+                     
+                excite_det(o_up, v_up, &det[0])
+                excite_det(o_dn, v_dn, &det[0])
+                add_det(&det[0])
+            } 
+        }
+            // Apply num_singles single excitations
+        if (num_singles > 0) {
+            for (long i = 0; i < num_singles; ++i){
+                long occ = (i % 2 == 0) ? occ_up[i % occ_up.size()] : occ_dn[i % occ_dn.size()];
+                for (long vir : virs) {
+                    std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
+                    excite_det(occ, vir, det);
+                }
+            }
+        }
+    }
+    
 }
 
 
@@ -102,6 +217,8 @@ void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) {
         det[i] = (1UL << nocc) - 1;
     }
 
+
+void NonSingletCI::p
 } //namespace pyci
 
 
