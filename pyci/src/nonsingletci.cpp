@@ -210,7 +210,19 @@ void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) {
     }
 
 
-void NonSingletCI::p
+void NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object ref) {
+    AlignedVector<ulong> v_ref;
+    ulong *ptr;
+    if (ref.is(pybind11::none())) {
+        v_ref.resize(nword)
+        ptr = &v_ref[0]
+        fill_hartreefock_det(nbasis,nocc, ptr);
+    } else
+        ptr = reinterpret_cast<ulong *>(ref.cast<Array<ulong>>().request().ptr);
+    long ndet_old = ndet;
+    add_excited_dets(ptr, exc);
+    return ndet - ndet_old;
+}
 } //namespace pyci
 
 
