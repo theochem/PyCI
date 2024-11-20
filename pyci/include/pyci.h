@@ -654,6 +654,10 @@ public:
     NonSingletCI(const long, const long, const long, const Array<long>);
 
     void fill_hartreefock_det(long, long, ulong *);
+
+    void add_excited_dets(const ulong *, const long);
+
+    long py_add_excited_dets(const long, const pybind11::object);
 };
 
 /* Sparse matrix operator class. */
