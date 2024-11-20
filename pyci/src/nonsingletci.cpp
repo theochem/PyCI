@@ -53,14 +53,6 @@ NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Ar
                    reinterpret_cast<const long *>(array.request().ptr)) {
 }
 
-AlignedVector<std::pairs<long, long>> NonSingletCI::orb_pairs() const {
-    AlignedVector<std::pair<long,long>> pairs;
-    pairs.reserve(nbasis); 
-    for (long i = 0; i < nbasis; ++i) {
-       pairs.emblace_back(i, i + nbasis);
-    }
-    return pairs;
-}
 
  
 void NonSingletCI:add_excited_dets(const ulong *rdet, const long e){
