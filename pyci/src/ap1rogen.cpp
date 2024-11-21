@@ -67,9 +67,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {
     // Initialize your class-specific variables here
     // init_Overlap objective for the AP1roGSDspin_sen-o 
-    //nparam = 2 * wfn_.nocc_up * (wfn_.nbasis - wfn_.nocc_up); //paired-doubles + alpha singles
-    //nparam += wfn_.nocc_dn * (wfn_.nbasis - wfn_.nocc_dn); // beta singles
-    nparam = wfn_.nocc_up * (wfn_.nbasis - wfn_.nocc_up);
+    nparam = 2 * wfn_.nocc_up * (wfn_.nbasis - wfn_.nocc_up); //paired-doubles + alpha singles
+    nparam += wfn_.nocc_dn * (wfn_.nbasis - wfn_.nocc_dn); // beta singles
     nrow = wfn_.nocc_up;
     ncol = wfn_.nbasis - wfn_.nocc_up;
 
