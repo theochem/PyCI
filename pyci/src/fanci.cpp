@@ -258,4 +258,6 @@ template class Objective<FullCIWfn>;
 
 template class Objective<GenCIWfn>;
 
+template class Objective<NonSingletCI>;
+
 } // namespace pyci
