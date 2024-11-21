@@ -18,7 +18,7 @@ r"""PyCI module."""
 from .pyci import __version__, c_long, c_ulong, c_double, sparse_op
 
 from .pyci import secondquant_op, wavefunction, one_spin_wfn, two_spin_wfn
-from .pyci import doci_wfn, fullci_wfn, genci_wfn, sparse_op
+from .pyci import doci_wfn, fullci_wfn, genci_wfn, nonsingletci_wfn, sparse_op
 from .pyci import get_num_threads, set_num_threads, popcnt, ctz
 from .pyci import compute_overlap, compute_rdms, compute_transition_rdms
 from .pyci import add_hci, compute_enpt2
