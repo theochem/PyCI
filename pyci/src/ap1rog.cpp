@@ -79,8 +79,11 @@ void AP1roGObjective::init_overlap(const DOCIWfn &wfn_)
         std::size_t h, p, nexc = 0;
         
         std::cout << "idet: " << idet << std::endl;
-        
+        std::cout << "nword: " << nword << std::endl;
+
         for (std::size_t iword = 0; iword != nword; ++iword) {
+            std::cout << "rdet[iword]: " << rdet[iword] << std::endl;
+            std::cout << "det[iword]: " << det[iword] << std::endl;
             word = rdet[iword] ^ det[iword];
             hword = word & rdet[iword];
             pword = word & det[iword];
