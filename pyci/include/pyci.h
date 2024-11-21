@@ -852,13 +852,13 @@ public:
 };
 
 // Specialize base template class for AP1roGSDGeneralized_sen-o against GenCI Wfn
-class AP1roGeneralizedSenoObjective : public Objective<GenCIWfn> {
+class AP1roGeneralizedSenoObjective : public Objective<NonSingletCI> {
 public:
-    using Objective<GenCIWfn>::nproj;  // # of determinants in P space
-    using Objective<GenCIWfn>::nconn;  // # of determinants in S space
-    using Objective<GenCIWfn>::nparam; // # of FanCI parameters
-    using Objective<GenCIWfn>::ovlp;   // Overlap vector
-    using Objective<GenCIWfn>::d_ovlp; // Overlap gradient matrix
+    using Objective<NonSingletCI>::nproj;  // # of determinants in P space
+    using Objective<NonSingletCI>::nconn;  // # of determinants in S space
+    using Objective<NonSingletCI>::nparam; // # of FanCI parameters
+    using Objective<NonSingletCI>::ovlp;   // Overlap vector
+    using Objective<NonSingletCI>::d_ovlp; // Overlap gradient matrix
 
     // Declare variables you want to store to faciliate the computation
     // of {d_,}overlap here:
@@ -875,12 +875,12 @@ public:
     // the arguments below depend on the template specialization
 
     // C++ constructor
-    AP1roGeneralizedSenoObjective(const SparseOp &, const GenCIWfn &,
+    AP1roGeneralizedSenoObjective(const SparseOp &, const NonSingletCI &,
                          const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
                          const std::size_t = 0UL, const long * = nullptr, const double * = nullptr);
 
     // Python constructor
-    AP1roGeneralizedSenoObjective(const SparseOp &, const GenCIWfn &,
+    AP1roGeneralizedSenoObjective(const SparseOp &, const NonSingletCI &,
                          const pybind11::object, const pybind11::object,
                          const pybind11::object, const pybind11::object);
 
@@ -891,7 +891,7 @@ public:
     AP1roGeneralizedSenoObjective(AP1roGeneralizedSenoObjective &&) noexcept;
 
     // Initializer for {d_,}overlap variables
-    void init_overlap(const GenCIWfn &);
+    void init_overlap(const NonSingletCI &);
 
     // Overlap function
     virtual void overlap(const size_t, const double *x, double *y);

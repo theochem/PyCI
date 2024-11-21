@@ -1587,7 +1587,7 @@ param_cons : np.ndarray(Np, dtype=pyci.c_double)
     py::arg("idx_param_cons") = py::none(), py::arg("param_cons") = py::none());
 
 // Declare Python class based on AP1roGeneralizedSenoObjective
-py::class_<AP1roGeneralizedSenoObjective, Objective<GenCIWfn>> ap1rogen_objective(m, "AP1roGeneralizedSenoObjective");
+py::class_<AP1roGeneralizedSenoObjective, Objective<NonSingletCI>> ap1rogen_objective(m, "AP1roGeneralizedSenoObjective");
 
 // Class documentation
 ap1rogen_objective.doc() = R"""(
@@ -1595,7 +1595,7 @@ AP1roGSDGeneralized_sen-o objective class.
 )""";
 
 // Initializer (keep in mind the Wfn argument should be the right class)
-ap1rogen_objective.def(py::init<const SparseOp &, const GenCIWfn &, const py::object, const py::object, const py::object, const py::object>(),
+ap1rogen_objective.def(py::init<const SparseOp &, const NonSingletCI &, const py::object, const py::object, const py::object, const py::object>(),
 R"""(
 Initialize the AP1roGSDGeneralized_sen-o objective instance.
 
