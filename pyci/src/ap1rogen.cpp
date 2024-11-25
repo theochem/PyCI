@@ -65,12 +65,17 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(AP1roGeneralizedSen
 
 void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {
+    std::cout << "Inside init_overlap" << std::endl;
     // Initialize your class-specific variables here
     // init_Overlap objective for the AP1roGSDspin_sen-o 
     nparam = 2 * wfn_.nocc_up * (wfn_.nbasis - wfn_.nocc_up); //paired-doubles + alpha singles
+    std::cout << "nparam (doubles + S_alpha): " << nparam << std::endl;
     nparam += wfn_.nocc_dn * (wfn_.nbasis - wfn_.nocc_dn); // beta singles
+    std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
     nrow = wfn_.nocc_up;
     ncol = wfn_.nbasis - wfn_.nocc_up;
+    std::cout << "nrow: " << nrow << ", ncol: " << ncol << std::endl;
+    std::cout << "nconn: " << nconn << std::endl;
 
     ovlp.resize(wfn_.ndet);
     d_ovlp.resize(wfn_.ndet * nparam);
@@ -85,6 +90,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
     {
         std::vector<ulong> rdet(wfn_.nword);
         fill_hartreefock_det(wfn_.nocc, &rdet[0]);
+        std::cout << "After fill_hartreefock_det rdet:" << rdet << std::endl;
         const ulong *det = wfn_.det_ptr(idet);
         ulong word, hword, pword;
         // Initialize your class-specific variables here
@@ -101,6 +107,11 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
                 part_list[idet * wfn_.nocc_up + nexc] = p + iword * Size<ulong>() - wfn_.nocc_up;
                 hword &= ~(1UL << h);
                 pword &= ~(1UL << p);
+                std::cout << "hword" << hword << std::endl;
+                std::cout << "pword" << pword << std::endl;
+                std::cout << "nexc: " << nexc << std::endl;
+                std::cout << "hole_list: " << hole_list[idet * wfn_.nocc_up + nexc] << std::endl;
+                std::cout << "part_list: " << part_list[idet * wfn_.nocc_up + nexc] << std::endl;
                 ++nexc;
             }
         }
