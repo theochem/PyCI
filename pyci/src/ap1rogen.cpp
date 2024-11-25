@@ -14,7 +14,7 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <pyci.h>
-
+#include <iostream>
 namespace pyci {
 
 // See apig.cpp for reference
@@ -90,7 +90,14 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
     {
         std::vector<ulong> rdet(wfn_.nword);
         fill_hartreefock_det(wfn_.nocc, &rdet[0]);
-        std::cout << "After fill_hartreefock_det rdet:" << rdet << std::endl;
+        std::cout << "After fill_hartreefock_det rdet:" << std::endl;
+        
+        // Print the contents of rdet
+        for (const auto& val : rdet) {
+            std::cout << val << " ";
+        }
+        std::cout << std::endl;
+
         const ulong *det = wfn_.det_ptr(idet);
         ulong word, hword, pword;
         // Initialize your class-specific variables here
