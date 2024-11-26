@@ -687,10 +687,7 @@ def fill_wavefunction(wfn: pyci.wavefunction, nproj: int, fill: str) -> None:
             if len(wfn) >= nproj:
                 print("Breaking filling as len(wfn) >= nproj")
                 break
-                if isinstance(wfn, pyci.nonsingletci_wfn):
-                    wfn.add_excited_dets(det, *connections)
-                else:
-                    pyci.add_excitations(wfn, nexc)
+            pyci.add_excitations(wfn, nexc)
 
     elif fill == "seniority":
         # Fill with determinants in increasing-seniority order
@@ -715,9 +712,6 @@ def fill_wavefunction(wfn: pyci.wavefunction, nproj: int, fill: str) -> None:
     # Fill wfn with S space determinants
     print("\nAdding S space determinants")
     for det in wfn.to_det_array(nproj):
-        if isinstance(wfn, pyci.nonsingletci_wfn):
-            wfn.add_excited_dets(det, *connections, ref=det)
-        else:
-            pyci.add_excitations(wfn, *connections, ref=det)
+        pyci.add_excitations(wfn, *connections, ref=det)
 
     return wfn
