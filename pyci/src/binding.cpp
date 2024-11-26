@@ -931,6 +931,36 @@ nonsingletci_wfn.def(py::init<const long, const long, const long, const Array<ul
 nonsingletci_wfn.def(py::init<const long, const long, const long, const Array<long>>(), py::arg("nbasis"),
               py::arg("nocc_up"), py::arg("nocc_dn"), py::arg("array"));
 
+nonsingletci_wfn.def("fill_hartreefock_det", &NonSingletCI::fill_hartreefock_det, R"""(
+Fill the Hartree-Fock determinant in the given ptr. 
+
+Parameters
+----------
+nb2 : int 
+    Number of basis functions for total number of spin orbitals.
+    Because of the way GenCI handles bit strings, it will be 
+    nonsingletci_wfn.nbasis =  ham.nbasis * 2.
+nocc : int
+    Total number of occupied orbitals.
+det : array
+    Pointer to the array where the Hartree-Fock determinant will be stored. 
+)""",
+              py::arg("nb2"), py::arg("nocc"), py::arg("det"));
+
+nonsingletci_wfn.def("add_excited_dets", &NonSingletCI::py_add_excited_dets, R"""(
+Add excited determinants to the wave function.
+
+Parameters
+----------
+exc : int
+    Excitation order.
+ref : numpy.ndarray, default=None
+    Reference determinant. Default is the Hartree-Fock determinant.
+
+)""",
+              py::arg("exc"), py::arg("ref") = py::none());
+
+
 /*
 Section: Sparse CI matrix operator class
 */
