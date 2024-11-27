@@ -182,31 +182,35 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 
 
 void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) {
-    /* GenCIWfn build using FullCIWfn initializes the OneSpinWfn with nbasis * 2, so we are calling it nb2 here*/
+   /* GenCIWfn build using FullCIWfn initializes the OneSpinWfn with nbasis * 2, so we are calling it nb2 here*/
     long i = 0;
     long nb = nb2/2;
-    long nocc_beta = std::min(nocc, nb);
-    long nocc_alpha = std::min(0L, nocc - nb);
+    // FIXME: The code is assuming nocc is even
+    long nocc_beta = nocc/2; //std::min(nocc, nb);
+    long nocc_alpha = nocc/2; //std::min(0L, nocc - nb);
+    long num_ulongs = (nb2 + Size<ulong>() - 1) / Size<ulong>();
+    det.resize(num_ulongs, 0UL);
 
-    // First, handle beta spins
-    while (nocc_beta >= Size<ulong>()){
-        det[i++] = Max<ulong>();
-        nocc_beta -= Size<ulong>();
-    }
+    std::cout << "Inside nonsingletci/fill_hartreefock_det" << std::endl;
+    std::cout << "nb: " << nb << std::endl;
+    std::cout << "nocc: " << nocc << std::endl;
+    std::cout << "nocc_beta: " << nocc_beta << std::endl;
+    std::cout << "nocc_alpha: " << nocc_alpha << std::endl;
 
-    if (nocc_beta) {
-        det[i] = (1UL << nocc_beta) -1;
-        i++;
+    for (long i = 0; i < nocc_beta; ++i) {
+        long bit_index = nb - nocc_beta + i;
+        det[bit_index / Size<ulong>()] |= 1UL << (bit_index % Size<ulong>());
     }
-     
-    // Fill alpha spins (second half)
-    while (nocc_alpha >= Size<ulong>()){
-        det[i++] = Max<ulong>();
-        nocc_alpha -= Size<ulong>();
+    
+    for (long i = 0; i < nocc_alpha; ++i) {
+        long bit_index = nb2 - nocc_alpha + i;
+        det[bit_index / Size<ulong>()] |= 1UL << (bit_index % Size<ulong>());
     }
-    if (nocc_alpha) {
-        det[i] = (1UL << nocc) - 1;
+    std::cout << "det: ";
+    for (int i = 0; i < num_ulongs; ++i) {
+        std::cout << det[i] << " ";
     }
+    std::cout << std::endl;
 
 }
 
