@@ -198,8 +198,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
             long s = e - 2 * d;
             std::cout << "d: " << d << ", num_singles: " << s << std::endl;
             long num_pairs = occ_pairs.size();
+            std::cout << "num_pairs: " << num_pairs << std::endl;
+            long available_pairs = num_pairs - d;
             //if (s > static_cast<long>(occ_pairs.size()) - d) continue; // Not enough pairs for singles
-            if (s > num_pairs - d) continue; // Not enough pairs for singles
+            if (s > available_pairs) continue; // Not enough pairs for singles
             
             // Generate all combinations of d pairs
             std::vector<std::vector<long>> pair_combinations;
