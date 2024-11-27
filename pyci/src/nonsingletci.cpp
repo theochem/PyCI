@@ -14,6 +14,7 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <pyci.h>
+#include <iostream>
 
 namespace pyci {
 
@@ -187,7 +188,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     for (long d = 0; d <= std::min(e/2, static_cast<long>(occ_pairs.size())); ++d){
         long s = e - 2 * d;
         std::cout << "d: " << d << ", num_singles" << s << std::endl;
-        if (s > occ_pairs.size() - d) continue; // Not enough pairs for singles
+        if (s > static_cast<long>(occ_pairs.size()) - d) continue; // Not enough pairs for singles
         
         // Generate all combinations of d pairs
         std::vector<std::vector<long>> pair_combinations;
@@ -219,10 +220,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
             }
 
             //Exclude used pairs and virtual orbitals
-            std::vector<std::pair<int,int>> remaining_occ_indices;
-            for (long i = 0; i < occ_pairs.size(); ++i) {
+            std::vector<long> remaining_occ_indices;
+            for (std::vector<std::pair<int, int>>::size_type i = 0; i < occ_pairs.size(); ++i) {
                 if (std::find(pair_comb.begin(), pair_comb.end(), i) == pair_comb.end()) {
-                    remaining_occ_indices.push_back(i);
+                    remaining_occ_indices.push_back(static_cast<int>(i));
                 }
             }
 
@@ -261,13 +262,12 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 
 void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) {
    /* GenCIWfn build using FullCIWfn initializes the OneSpinWfn with nbasis * 2, so we are calling it nb2 here*/
-    long i = 0;
     long nb = nb2/2;
     // FIXME: The code is assuming nocc is even
     long nocc_beta = nocc/2; //std::min(nocc, nb);
     long nocc_alpha = nocc/2; //std::min(0L, nocc - nb);
     long num_ulongs = (nb2 + Size<ulong>() - 1) / Size<ulong>();
-    det.resize(num_ulongs, 0UL);
+    
 
     std::cout << "Inside nonsingletci/fill_hartreefock_det" << std::endl;
     std::cout << "nb: " << nb << std::endl;
