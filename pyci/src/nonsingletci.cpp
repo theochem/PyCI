@@ -60,8 +60,8 @@ std::vector<std::vector<long>> generate_combinations(long n, long k) {
     std::vector<std::vector<long>> combinations;
     if (k > n) return combinations;
 
-    std:vector<long> indices(n);
-    std:iota(indices.begin(), indices.end(), 0);
+    std::vector<long> indices(n);
+    std::iota(indices.begin(), indices.end(), 0);
 
     std::vector<bool> mask(n, false);
     std::fill(mask.begin(), mask.begin() + k, true);
@@ -227,7 +227,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
             std::cout << "d: " << d << ", num_singles: " << num_singles << std::endl;
             
             // Not enough pairs for singles
-            if (s > (num_pairs - d)) {
+            if (num_singles > (num_pairs - d)) {
                 std::cout << "Not enough pairs for singles" << std::endl;
                 continue; 
             }
