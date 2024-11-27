@@ -655,6 +655,8 @@ public:
 
     void fill_hartreefock_det(long, long, ulong *);
 
+    std::vector<std::vector<long>> generate_combinations(long, long);
+    
     void add_excited_dets(const ulong *, const long);
 
     long py_add_excited_dets(const long, const pybind11::object);
