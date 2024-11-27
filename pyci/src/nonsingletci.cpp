@@ -56,7 +56,7 @@ NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Ar
 
 
 // Function to generate combinations
-std::vector<std::vector<long>> generate_combinations(long n, long k) {
+std::vector<std::vector<long>> pyci::NonSingletCI::generate_combinations(long n, long k) {
     std::vector<std::vector<long>> combinations;
     if (k > n) return combinations;
 
