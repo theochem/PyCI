@@ -269,7 +269,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     for (const auto& single_comb : single_combinations) {
                         // Do NOT reset det here; use the alredy existed det from pair excitations
                         AlignedVector<ulong> temp_det(nword);
-                        std::memcpy(&temp_det[0], det, sizeof(ulong) * nword);
+                        std::memcpy(&temp_det[0], det.data(), sizeof(ulong) * nword);
                         
                         // Apply single excitations
                         for (long idx : single_comb) { 
