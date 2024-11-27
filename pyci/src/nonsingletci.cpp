@@ -281,7 +281,7 @@ void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) {
     }
     
     for (long i = 0; i < nocc_alpha; ++i) {
-        long bit_index = nb2 - nocc_alpha + i;
+        long bit_index = i;
         det[bit_index / Size<ulong>()] |= 1UL << (bit_index % Size<ulong>());
     }
     std::cout << "det: ";
