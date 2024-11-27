@@ -275,12 +275,16 @@ void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) {
     std::cout << "nocc_beta: " << nocc_beta << std::endl;
     std::cout << "nocc_alpha: " << nocc_alpha << std::endl;
 
+    std::cout << "Filling beta spin orbitals" << std::endl;
     for (long i = 0; i < nocc_beta; ++i) {
         long bit_index = nb - nocc_beta + i;
+        std::cout << "bit_index: " << bit_index << std::endl;
         det[bit_index / Size<ulong>()] |= 1UL << (bit_index % Size<ulong>());
     }
     
+    std::cout << "Filling alpha spin orbitals" << std::endl;
     for (long i = 0; i < nocc_alpha; ++i) {
+        std::cout << "bit_index: " << i << std::endl;:
         long bit_index = i;
         det[bit_index / Size<ulong>()] |= 1UL << (bit_index % Size<ulong>());
     }
