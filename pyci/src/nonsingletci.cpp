@@ -170,7 +170,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     }
     // Handle excitation order 1
     if (e == 1) {
-        std::cout << "Handling excitation order 1" << std::endl;
+        std::cout << "-----Handling excitation order 1-----" << std::endl;
         std::cout << "Determinants of excitation order 1" << std::endl;
         for (long occ : occs) {
             for (long vir : virs) {
@@ -193,11 +193,13 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     // Handle excitation orders >= 2
     if (e >= 2) {
         // Iterate over possible (d,s) pairs: d pair excitations and s single excitations
-        std::cout << "Handling excitation order >= 2" << std::endl;
+        std::cout << "--------Handling excitation order >= 2--------" << std::endl;
         for (long d = 0; d <= std::min(e/2, static_cast<long>(occ_pairs.size())); ++d){
             long s = e - 2 * d;
-            std::cout << "d: " << d << ", num_singles" << s << std::endl;
-            if (s > static_cast<long>(occ_pairs.size()) - d) continue; // Not enough pairs for singles
+            std::cout << "d: " << d << ", num_singles: " << s << std::endl;
+            long num_pairs = occ_pairs.size();
+            //if (s > static_cast<long>(occ_pairs.size()) - d) continue; // Not enough pairs for singles
+            if (s > num_pairs - d) continue; // Not enough pairs for singles
             
             // Generate all combinations of d pairs
             std::vector<std::vector<long>> pair_combinations;
