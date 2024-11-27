@@ -279,18 +279,18 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                             for (long vir : virs) {
                                 if (std::find(used_virs.begin(), used_virs.end(), vir) != used_virs.end()) continue;
                                 excite_det(occ, vir, &temp_det[0]);
-                                }
                             }
-                        }
+                        }                        
                         add_det(&det[0]);
                     }
                 } else {
                     add_det(&det[0]);
                 }
             }
-
         }
-    }    
+
+    }
+        
 }
  
 
@@ -341,7 +341,7 @@ long NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object re
     } else
         ptr = reinterpret_cast<ulong *>(ref.cast<Array<ulong>>().request().ptr);
     long ndet_old = ndet;
-   add_excited_dets(ptr, exc);
+    add_excited_dets(ptr, exc);
     return ndet - ndet_old;
 }
 } //namespace pyci
