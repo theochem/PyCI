@@ -248,6 +248,13 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 
                         used_virs.push_back(vir_pair.first);
                         used_virs.push_back(vir_pair.second);
+                        
+                        std::cout << "Determinant after pair excitation of" << std::endl;
+                        std::cout << "occ_pair: " << occ_pair.first << " " << occ_pair.second << std::endl;
+                        std::cout << "vir_pair: " << vir_pair.first << " " << vir_pair.second << std::endl;
+                        for (int k = 0; k < nword; ++k) {
+                            std::cout << det[k] << " ";
+                        }
                     }
 
                     // Determine remaining occupied indices
@@ -279,11 +286,14 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                             for (long vir : virs) {
                                 if (std::find(used_virs.begin(), used_virs.end(), vir) != used_virs.end()) continue;
                                 excite_det(occ, vir, &temp_det[0]);
+                                std::cout << "Exciting singles from " << occ << " to " << vir << std::endl;
                             }
-                        }                        
+                        }
+                        // Add the fully excited determinant (pair + singles)                        
                         add_det(&det[0]);
                     }
                 } else {
+                    // If num_singles == 0, directly add determinant after pair excitations
                     add_det(&det[0]);
                 }
             }
