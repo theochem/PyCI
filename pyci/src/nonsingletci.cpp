@@ -219,7 +219,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
         // Iterate over possible (d,s) pairs: d pair excitations and s single excitations
         std::cout << "--------Handling excitation order >= 2--------" << std::endl;
         
-        std::vector<std::vector<long>> pair_combinations;
+        std::vector<std::vector<std::vector<long>>> pair_combinations;
         for (long d = 0; d <= std::min(e/2, num_pairs); ++d){
             long num_singles = e - 2 * d;
             pair_combinations.push_back(generate_combinations(num_pairs, d));
