@@ -291,6 +291,11 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         }
                         // Add the fully excited determinant (pair + singles)                        
                         add_det(&det[0]);
+                        // Print determinant after single excitations
+                        std::cout << "Determinant after single excitation" << std::endl;
+                        for (int k = 0; k < nword; ++k) {
+                            std::cout << det[k] << " ";
+                        }
                     }
                 } else {
                     // If num_singles == 0, directly add determinant after pair excitations
