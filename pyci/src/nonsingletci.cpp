@@ -267,7 +267,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 
                 std::vector<long> remaining_virs;
                 for (long i = 0; i < virs.size(); ++i) {
-                    if (std::find(used_virtuals.begin(), used_virtuals.end(), virs[i]) == used_virtuals.end()) {
+                    if (std::find(used_virs.begin(), used_virs.end(), virs[i]) == used_virs.end()) {
                         remaining_virs.push_back(virs[i]);
                     }
                 }
