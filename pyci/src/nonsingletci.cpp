@@ -60,6 +60,9 @@ NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Ar
 std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
     const std::vector<std::pair<int,int>>& pairs, long k) {
     std::vector<std::vector<long>> result;
+    std::cout << "Inside nonsingletci/generate_cartesian_product" << std::endl;
+    std::cout <<   "pairs.size(): " << pairs.size() << std::endl;
+    std::cout << "k: " << k << std::endl;
 
     long num_pairs = pairs.size();
     if (k > num_pairs) return result;
@@ -71,7 +74,7 @@ std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
 
         // For each combination in the current result, 
         // extend it with elements of the pair
-        for (const auto& combination: result) {
+        for (const auto& combination: temp_combinations) {
             if (combination.size() < k){
                 for (auto elem : {pair.first, pair.second}) {
                     auto new_combination = combination;
@@ -83,7 +86,7 @@ std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
         // Move the new combination into the result
         temp_combinations = std::move(new_result);  
         std::cout << "temp_combinations: ";
-        
+    }
     // Filter out combinations that are not of size k
     for (const auto& combination: temp_combinations) {
         if (combination.size() == k) {
@@ -96,6 +99,7 @@ std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
     
     return result;
 }
+
 
 // Function to generate combinations, based on indices
 std::vector<std::vector<long>> NonSingletCI::generate_combinations(long n, long k) {
