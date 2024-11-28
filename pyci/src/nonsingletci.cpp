@@ -233,6 +233,14 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
             // Generate pair combinations
             std::vector<std::vector<std::vector<long>>> pair_combinations;
             pair_combinations.push_back(generate_combinations(num_pairs, d));
+            std::cout << "Generated pair_combinations: " << std::endl;
+            for (const auto& pair_comb : pair_combinations[0]) {
+                std::cout << "(";
+                for (const auto& idx : pair_comb) {
+                    std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
+                }
+                std::cout << ")" << std::endl;
+            }
 
             // Process pair combinations for current d
             for (const auto& pair_comb : pair_combinations[d]) {
@@ -264,6 +272,11 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         remaining_occ_indices.push_back(i);
                     }
                 }
+                std::cout << "Remaining occ_indices: ";
+                for (const auto& idx : remaining_occ_indices) {
+                    std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
+                }
+                std::cout << std::endl;
 
                 std::vector<long> remaining_virs;
                 for (long i = 0; i < virs.size(); ++i) {
@@ -271,7 +284,12 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         remaining_virs.push_back(virs[i]);
                     }
                 }
-            
+                std::cout << "Remaining virs: ";
+                for (const auto& vir : remaining_virs) {
+                    std::cout << vir << " ";
+                }
+                std::cout << std::endl;
+                
                 // Process single combinations for current num_singles
                 auto occ_combinations = generate_combinations(remaining_occ_indices.size(), num_singles);
                 auto vir_combinations = generate_combinations(remaining_virs.size(), num_singles);
