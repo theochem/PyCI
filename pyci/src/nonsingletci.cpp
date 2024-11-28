@@ -72,7 +72,7 @@ std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
         // For each combination in the current result, 
         // extend it with elements of the pair
         for (const auto& combination: result) {
-            if (combination.size() <k){
+            if (combination.size() < k){
                 for (auto elem : {pair.first, pair.second}) {
                     auto new_combination = combination;
                     new_combination.push_back(elem);
@@ -82,7 +82,8 @@ std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
         }
         // Move the new combination into the result
         temp_combinations = std::move(new_result);  
-    }
+        std::cout << "temp_combinations: ";
+        
     // Filter out combinations that are not of size k
     for (const auto& combination: temp_combinations) {
         if (combination.size() == k) {
@@ -90,6 +91,9 @@ std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
         }
     
     }
+    // Debug output to ensure combinations are being generated
+    std::cout << "Generated " << result.size() << " combinations" << std::endl;
+    
     return result;
 }
 
@@ -278,6 +282,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
                 }                
             }
+            std::cout << std::endl;
 
             // Process pair combinations for current d
             for (const auto& pair_comb : pair_combinations[0]) {
@@ -300,6 +305,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     for (int k = 0; k < nword; ++k) {
                         std::cout << det[k] << " ";
                     }
+                    std::cout << std::endl;
                 }
 
                 // // Determine remaining occupied indices
@@ -370,9 +376,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 
                 std::cout << "Generated occ_combinations: " << std::endl;
                 for (const auto& occ_comb : occ_combinations) {
-                    for (const auto& occ_idx : occ_comb) {
-                        std::cout << "(" << occ_pairs[occ_idx].first << ", " << occ_pairs[occ_idx].second << ") ";
+                    for (const auto& elem: occ_comb) {
+                        std::cout << "(" << elem << ") ";
                     }
+                    std::cout << std::endl;
                 }
                 
                 std::cout << "Generated vir_combinations: " << std::endl;
