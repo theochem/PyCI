@@ -289,9 +289,9 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     std::cout << vir << " ";
                 }
                 std::cout << std::endl;
-                
+
                 // Process single combinations for current num_singles
-                auto occ_combinations = generate_combinations(remaining_occ_indices.size(), num_singles);
+                auto occ_combinations = generate_combinations(remaining_occ_indices.size()*2, num_singles);
                 auto vir_combinations = generate_combinations(remaining_virs.size(), num_singles);
                 
                 // Print occ_combinations and vir_combinations for debugging
