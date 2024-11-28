@@ -327,6 +327,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         for (int k = 0; k < nword; ++k) {
                             std::cout << temp_det[k] << " ";
                         }
+                        std::cout << std::endl;
                     }
                     
                 }
@@ -338,6 +339,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     for (int k = 0; k < nword; ++k) {
                         std::cout << det[k] << " ";
                     }
+                    std::cout << std::endl;
                 }
             }
         }
