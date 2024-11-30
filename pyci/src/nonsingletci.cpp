@@ -64,8 +64,8 @@ std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
     std::cout <<   "pairs.size(): " << pairs.size() << std::endl;
     std::cout << "k: " << k << std::endl;
 
-    long num_pairs = pairs.size();
-    if (k > num_pairs) return result;
+    long nocc_pairs = pairs.size();
+    if (k > nocc_pairs) return result;
     std::vector<std::vector<long>> temp_combinations = {{}};
 
     
@@ -260,180 +260,194 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     }
 
     // Handle excitation orders >= 2
-    long num_pairs = occ_pairs.size();
-    std::cout << "num_pairs: " << num_pairs << std::endl;
+    long nocc_pairs = occ_pairs.size();
+    long nvir_pairs = vir_pairs.size();
+    std::cout << "nocc_pairs: " << nocc_pairs << std::endl;
     if (e >= 2) {
         // Iterate over possible (d,s) pairs: d pair excitations and s single excitations
         std::cout << "--------Handling excitation order >= 2--------" << std::endl;
         
-        for (long d = 0; d <= std::min(e/2, num_pairs); ++d){
+        for (long d = 0; d <= std::min(e/2, nocc_pairs); ++d){
             long num_singles = e - 2 * d;
 
             std::cout << "d: " << d << ", num_singles: " << num_singles << std::endl;
             
             // Not enough pairs for singles
-            if (num_singles > (num_pairs - d)) {
+            if (num_singles > (nocc_pairs - d)) {
                 std::cout << "Not enough pairs for singles" << std::endl;
                 continue; 
             }
 
-            // Generate pair combinations
-            std::vector<std::vector<std::vector<long>>> pair_combinations;
-            pair_combinations.push_back(generate_combinations(num_pairs, d));
-            std::cout << "Generated pair_combinations: " << std::endl;
-            for (const auto& pair_comb : pair_combinations[0]) {
-                for (const auto& idx : pair_comb) {
+            // Generate occ pair combinations
+            std::vector<std::vector<std::vector<long>>> opair_combinations;
+            opair_combinations.push_back(generate_combinations(nocc_pairs, d));
+            std::cout << "Generated opair_combinations: " << std::endl;
+            for (const auto& opair_comb : opair_combinations[0]) {
+                for (const auto& idx : opair_comb) {
                     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
                 }                
             }
             std::cout << std::endl;
 
+            std::vector<std::vector<std::vector<long>>> vpair_combinations;
+            vpair_combinations.push_back(generate_combinations(nvir_pairs, d));
+            std::cout << "Generated vpair_combinations: " << std::endl;
+            for (const auto& pair_comb : vpair_combinations[0]) {
+                for (const auto& idx : pair_comb) {
+                    std::cout << "(" << vir_pairs[idx].first << ", " << vir_pairs[idx].second << ") ";
+                }                
+            }
+            std::cout << std::endl;
+
             // Process pair combinations for current d
-            for (const auto& pair_comb : pair_combinations[0]) {
-                std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
-                
-                std::vector<long> used_virs;
-                for (long idx : pair_comb) {
-                    const auto& occ_pair = occ_pairs[idx];
-                    const auto& vir_pair = vir_pairs[idx];
-
-                    excite_det(occ_pair.first, vir_pair.first, &det[0]);
-                    excite_det(occ_pair.second, vir_pair.second, &det[0]);
-
-                    used_virs.push_back(vir_pair.first);
-                    used_virs.push_back(vir_pair.second);
+            for (const auto& opair_comb : opair_combinations[0]) {
+                for (const auto& vpair_comb : vpair_combinations[0]) {
+                    std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
                     
-                    std::cout << "Determinant after pair excitation of" << std::endl;
-                    std::cout << "occ_pair: " << occ_pair.first << " " << occ_pair.second << std::endl;
-                    std::cout << "vir_pair: " << vir_pair.first << " " << vir_pair.second << std::endl;
-                    for (int k = 0; k < nword; ++k) {
-                        std::cout << det[k] << " ";
-                    }
-                    std::cout << std::endl;
-                }
+                    
+                    std::vector<long> used_virs;
+                    for (long idx = 0; idx < d; ++idx) {
+                        const auto& occ_pair = occ_pairs[opair_comb[idx]];
+                        const auto& vir_pair = vir_pairs[vpair_comb[idx]];
 
-                // // Determine remaining occupied indices
-                // std::vector<long> remaining_occ_indices;
-                // for (long i = 0; i < num_pairs; ++i) {
-                //     if (std::find(pair_comb.begin(), pair_comb.end(), i) == pair_comb.end()) {
-                //         remaining_occ_indices.push_back(i);
-                //     }
-                // }
-                // std::cout << "Remaining occ_indices: ";
-                // for (const auto& idx : remaining_occ_indices) {
-                //     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
-                // }
-                // std::cout << std::endl;
+                        excite_det(occ_pair.first, vir_pair.first, &det[0]);
+                        excite_det(occ_pair.second, vir_pair.second, &det[0]);
 
-                // Determine remaining occupied pairs
-                std::vector<std::pair<int,int>> remaining_occ_pairs;
-                for (long i = 0; i < num_pairs; ++i) {
-                    if (std::find(pair_comb.begin(), pair_comb.end(), i) == pair_comb.end()) {
-                        remaining_occ_pairs.push_back(occ_pairs[i]);
-                    }
-                }
-
-                //Print remaining occ_pairs for debugging
-                std::cout << "Remaining occ_pairs: ";
-                for (const auto& occ_pair : remaining_occ_pairs) {
-                    std::cout << "(" << occ_pair.first << ", " << occ_pair.second << ") ";
-                }
-                std::cout << std::endl;
-
-                std::vector<long> remaining_virs;
-                for (long i = 0; i < virs.size(); ++i) {
-                    if (std::find(used_virs.begin(), used_virs.end(), virs[i]) == used_virs.end()) {
-                        remaining_virs.push_back(virs[i]);
-                    }
-                }
-                std::cout << "Remaining virs: ";
-                for (const auto& vir : remaining_virs) {
-                    std::cout << vir << " ";
-                }
-                std::cout << std::endl;
-
-                // Process single combinations for current num_singles
-                auto occ_combinations = generate_cartesian_product(remaining_occ_pairs, num_singles);
-                auto vir_combinations = generate_combinations(remaining_virs.size(), num_singles);
-                
-                // Print occ_combinations and vir_combinations for debugging
-                // std::cout << "Available occ_pairs for singles: ";
-                // for (const auto& idx : remaining_occ_indices) {
-                //     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
-                // }
-                // std::cout << std::endl;
-
-                std::cout << "Available virs for singles: ";
-                for (const auto& vir : remaining_virs) {
-                    std::cout << vir << " ";
-                }
-                std::cout << std::endl;
-
-                // std::cout << "Generated occ_combinations: " << std::endl;
-                // for (const auto& occ_comb : occ_combinations) {
-                //     std::cout << "(";
-                //     for (const auto& occ_idx : occ_comb) {
-                //         std::cout << occ_pairs[remaining_occ_indices[occ_idx]].first << " ";
-                //     }
-                //     std::cout << ")" << std::endl;
-                // }
-
-                std::cout << "Generated occ_combinations: " << std::endl;
-                for (const auto& occ_comb : occ_combinations) {
-                    for (const auto& elem: occ_comb) {
-                        std::cout << "(" << elem << ") ";
-                    }
-                    std::cout << std::endl;
-                }
-                
-                std::cout << "Generated vir_combinations: " << std::endl;
-                for (const auto& vir_comb : vir_combinations) {
-                    std::cout << "(";
-                    for (const auto& vir_idx : vir_comb) {
-                        std::cout << remaining_virs[vir_idx] << " ";
-                    }
-                    std::cout << ")" << std::endl;
-                }
-
-                
-                for (const auto& occ_comb : occ_combinations) {
-                    for (const auto& vir_comb : vir_combinations) {
-                        // Do NOT reset det here; use the alredy existed det from pair excitations
-                        AlignedVector<ulong> temp_det(nword);
-                        std::memcpy(&temp_det[0], det.data(), sizeof(ulong) * nword);
+                        used_virs.push_back(vir_pair.first);
+                        used_virs.push_back(vir_pair.second);
                         
-                        // Apply single excitations
-                        for (long idx = 0; idx < num_singles; ++idx){
-                            long occ = occ_comb[idx];
-                            long vir = remaining_virs[vir_comb[idx]];
-                            excite_det(occ, vir, &temp_det[0]);
-                            std::cout << "Exciting occ: " << occ << " to vir: " << vir << std::endl;
-                        }
-                        add_det(&temp_det[0]);
-                        // Print determinant after single excitations
-                        std::cout << "Determinant for single combination" << std::endl;
+                        std::cout << "Determinant after pair excitation of" << std::endl;
+                        std::cout << "occ_pair: " << occ_pair.first << " " << occ_pair.second << std::endl;
+                        std::cout << "vir_pair: " << vir_pair.first << " " << vir_pair.second << std::endl;
                         for (int k = 0; k < nword; ++k) {
-                            std::cout << temp_det[k] << " ";
+                            std::cout << det[k] << " ";
                         }
                         std::cout << std::endl;
                     }
-                    
-                }
-                if (num_singles == 0){
-                    // If num_singles == 0, directly add determinant after pair excitations
-                    add_det(&det[0]);
-                    // Print determinant after single excitations
-                    std::cout << "Determinant for s=0" << std::endl;
-                    for (int k = 0; k < nword; ++k) {
-                        std::cout << det[k] << " ";
+
+                    // // Determine remaining occupied indices
+                    // std::vector<long> remaining_occ_indices;
+                    // for (long i = 0; i < nocc_pairs; ++i) {
+                    //     if (std::find(opair_comb.begin(), opair_comb.end(), i) == opair_comb.end()) {
+                    //         remaining_occ_indices.push_back(i);
+                    //     }
+                    // }
+                    // std::cout << "Remaining occ_indices: ";
+                    // for (const auto& idx : remaining_occ_indices) {
+                    //     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
+                    // }
+                    // std::cout << std::endl;
+                    if (num_singles > 0) {
+                        // Determine remaining occupied pairs
+                        std::vector<std::pair<int,int>> remaining_occ_pairs;
+                        for (long i = 0; i < nocc_pairs; ++i) {
+                            if (std::find(opair_comb.begin(), opair_comb.end(), i) == opair_comb.end()) {
+                                remaining_occ_pairs.push_back(occ_pairs[i]);
+                            }
+                        }
+
+                        //Print remaining occ_pairs for debugging
+                        std::cout << "Remaining occ_pairs: ";
+                        for (const auto& occ_pair : remaining_occ_pairs) {
+                            std::cout << "(" << occ_pair.first << ", " << occ_pair.second << ") ";
+                        }
+                        std::cout << std::endl;
+
+                        std::vector<long> remaining_virs;
+                        for (long i = 0; i < virs.size(); ++i) {
+                            if (std::find(used_virs.begin(), used_virs.end(), virs[i]) == used_virs.end()) {
+                                remaining_virs.push_back(virs[i]);
+                            }
+                        }
+                        std::cout << "Remaining virs: ";
+                        for (const auto& vir : remaining_virs) {
+                            std::cout << vir << " ";
+                        }
+                        std::cout << std::endl;
+
+                        // Process single combinations for current num_singles
+                        auto occ_combinations = generate_cartesian_product(remaining_occ_pairs, num_singles);
+                        auto vir_combinations = generate_combinations(remaining_virs.size(), num_singles);
+                        
+                        // Print occ_combinations and vir_combinations for debugging
+                        // std::cout << "Available occ_pairs for singles: ";
+                        // for (const auto& idx : remaining_occ_indices) {
+                        //     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
+                        // }
+                        // std::cout << std::endl;
+
+                        std::cout << "Available virs for singles: ";
+                        for (const auto& vir : remaining_virs) {
+                            std::cout << vir << " ";
+                        }
+                        std::cout << std::endl;
+
+                        // std::cout << "Generated occ_combinations: " << std::endl;
+                        // for (const auto& occ_comb : occ_combinations) {
+                        //     std::cout << "(";
+                        //     for (const auto& occ_idx : occ_comb) {
+                        //         std::cout << occ_pairs[remaining_occ_indices[occ_idx]].first << " ";
+                        //     }
+                        //     std::cout << ")" << std::endl;
+                        // }
+
+                        std::cout << "Generated occ_combinations: " << std::endl;
+                        for (const auto& occ_comb : occ_combinations) {
+                            for (const auto& elem: occ_comb) {
+                                std::cout << "(" << elem << ") ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        
+                        std::cout << "Generated vir_combinations: " << std::endl;
+                        for (const auto& vir_comb : vir_combinations) {
+                            std::cout << "(";
+                            for (const auto& vir_idx : vir_comb) {
+                                std::cout << remaining_virs[vir_idx] << " ";
+                            }
+                            std::cout << ")" << std::endl;
+                        }
+
+                        
+                        for (const auto& occ_comb : occ_combinations) {
+                            for (const auto& vir_comb : vir_combinations) {
+                                // Do NOT reset det here; use the alredy existed det from pair excitations
+                                AlignedVector<ulong> temp_det(nword);
+                                std::memcpy(&temp_det[0], det.data(), sizeof(ulong) * nword);
+                                
+                                // Apply single excitations
+                                for (long idx = 0; idx < num_singles; ++idx){
+                                    long occ = occ_comb[idx];
+                                    long vir = remaining_virs[vir_comb[idx]];
+                                    excite_det(occ, vir, &temp_det[0]);
+                                    std::cout << "Exciting occ: " << occ << " to vir: " << vir << std::endl;
+                                }
+                                add_det(&temp_det[0]);
+                                // Print determinant after single excitations
+                                std::cout << "Determinant for single combination" << std::endl;
+                                for (int k = 0; k < nword; ++k) {
+                                    std::cout << temp_det[k] << " ";
+                                }
+                                std::cout << std::endl;
+                            }
+                            
+                        }
+                    }   
+                    else if (num_singles == 0){
+                        // If num_singles == 0, directly add determinant after pair excitations
+                        add_det(&det[0]);
+                        // Print determinant after single excitations
+                        std::cout << "Determinant for s=0" << std::endl;
+                        for (int k = 0; k < nword; ++k) {
+                            std::cout << det[k] << " ";
+                        }
+                        std::cout << std::endl;
                     }
-                    std::cout << std::endl;
-                }
+                }    
             }
         }
 
     }
-        
 }
  
 
@@ -492,23 +506,23 @@ long NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object re
 
 
 // //    // Generate all combinations of d pairs
-//             std::vector<std::vector<long>> pair_combinations;
+//             std::vector<std::vector<long>> opair_combinations;
 //             std::vector<long> pair_indices(occ_pairs.size());
 //             std::iota(pair_indices.begin(), pair_indices.end(), 0);
             
 //             do {
 //                 std::vector<long> combination(pair_indices.begin(), pair_indices.begin() + d);
-//                 pair_combinations.push_back(combination);
+//                 opair_combinations.push_back(combination);
 //             } while (std::next_permutation(pair_indices.begin(), pair_indices.end()));
             
 //             // Process each combination of d pairs
-//             for (const auto& pair_comb: pair_combinations) {
+//             for (const auto& opair_comb: opair_combinations) {
 //                 std::vector<std::pair<int,int>> used_occ_pairs;
 //                 std::vector<long> used_virtuals;
 
 //                 // Apply pair excitations
 //                 std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
-//                 for (long idx : pair_comb) {
+//                 for (long idx : opair_comb) {
 //                     const auto& occ_pair = occ_pairs[idx];
 //                     const auto& vir_pair = vir_pairs[idx];
 
@@ -523,7 +537,7 @@ long NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object re
 //                 //Exclude used pairs and virtual orbitals
 //                 std::vector<long> remaining_occ_indices;
 //                 for (std::vector<std::pair<int, int>>::size_type i = 0; i < occ_pairs.size(); ++i) {
-//                     if (std::find(pair_comb.begin(), pair_comb.end(), i) == pair_comb.end()) {
+//                     if (std::find(opair_comb.begin(), opair_comb.end(), i) == opair_comb.end()) {
 //                         remaining_occ_indices.push_back(static_cast<int>(i));
 //                     }
 //                 }
