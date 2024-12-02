@@ -613,6 +613,13 @@ public:
     GenCIWfn(const long, const long, const long, const Array<long>);
 };
 
+// Define structure to store det and excitation details
+struct DetExcParamIndx {
+    AlignedVector<ulong> det;
+    std::vector<long> pair_inds;
+    std::vector<long> single_inds;
+};
+
 struct NonSingletCI final : public GenCIWfn {
 public:
     using Wfn::maxrank_dn;
@@ -631,6 +638,10 @@ public:
 protected:
     using Wfn::dets;
     using Wfn::dict;
+    std::vector<DetExcParamIndx> det_exc_param_indx;
+
+private:
+    bool is_hf_det; 
 
 public:
     NonSingletCI(const NonSingletCI &);

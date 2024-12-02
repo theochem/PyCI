@@ -492,8 +492,11 @@ long NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object re
         v_ref.resize(nword);
         ptr = &v_ref[0];
         fill_hartreefock_det(nbasis,nocc, ptr);
+
+        is_hf_det = true;
     } else
         ptr = reinterpret_cast<ulong *>(ref.cast<Array<ulong>>().request().ptr);
+        is_hf_det = false;
     long ndet_old = ndet;
     add_excited_dets(ptr, exc);
     return ndet - ndet_old;
