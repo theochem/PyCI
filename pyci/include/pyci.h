@@ -670,7 +670,7 @@ public:
 
     std::vector<std::vector<long>> generate_combinations(long, long);
 
-    std::vector<std::vector<long>> generate_cartesian_product(const std::vector<std::pair<int, int>>&, long);
+    std::vector<std::vector<long>> generate_cartesian_product(const AlignedVector<std::pair<int, int>>&, long);
 
     void fill_hartreefock_det(long, long, ulong *);
 

@@ -59,7 +59,7 @@ NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Ar
 // In our case: this function is used to generate all possible combinations of
 // occupied orbitals to excite from for singles given pair of occupied orbitals in ref det
 std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
-    const std::vector<std::pair<int,int>>& pairs, long k) {
+    const AlignedVector<std::pair<int,int>>& pairs, long k) {
     std::vector<std::vector<long>> result;
     std::cout << "Inside nonsingletci/generate_cartesian_product" << std::endl;
     std::cout <<   "pairs.size(): " << pairs.size() << std::endl;
