@@ -59,13 +59,13 @@ NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Ar
 // In our case: this function is used to generate all possible combinations of
 // occupied orbitals to excite from for singles given pair of occupied orbitals in ref det
 std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
-    const AlignedVector<std::pair<int,int>>& pairs, long k) {
+    const AlignedVector<std::pair<int,int>>& pairs, std::size_t k) {
     std::vector<std::vector<long>> result;
     std::cout << "Inside nonsingletci/generate_cartesian_product" << std::endl;
     std::cout <<   "pairs.size(): " << pairs.size() << std::endl;
     std::cout << "k: " << k << std::endl;
 
-    long nocc_pairs = pairs.size();
+    std::size_t nocc_pairs = pairs.size();
     if (k > nocc_pairs) return result;
     std::vector<std::vector<long>> temp_combinations = {{}};
 
@@ -103,7 +103,7 @@ std::vector<std::vector<long>> NonSingletCI::generate_cartesian_product(
 
 
 // Function to generate combinations, based on indices
-std::vector<std::vector<long>> NonSingletCI::generate_combinations(long n, long k) {
+std::vector<std::vector<long>> NonSingletCI::generate_combinations(std::size_t n, std::size_t k) {
     std::vector<std::vector<long>> combinations;
 
     if (k > n) return combinations;
@@ -116,7 +116,7 @@ std::vector<std::vector<long>> NonSingletCI::generate_combinations(long n, long 
 
     do {
         std::vector<long> combination;
-        for (long i = 0; i < n; ++i) {
+        for (std::size_t i = 0; i < n; ++i) {
             if (mask[i]) combination.push_back(indices[i]);
         }
         combinations.push_back(combination);
@@ -225,38 +225,40 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
             for (long vir : virs) {
                 std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
                 excite_det(occ, vir, &det[0]);
-                add_det(&det[0]); 
-                // Print determinant after excite_det loop
+                add_det(&det[0]);
                 
+                // Structure to store determinant and indices of params 
+                //corresponding to the pair-excitations & single-excitations
+                if (is_hf_det) {
+                    DetExcParamIndx container;
+                    container.det.resize(nword);
+                    std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
+                    container.pair_inds.clear();
+                    container.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
+                    det_exc_param_indx.push_back(container);
+                } 
+                std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
                 for (int k = 0; k < nword; ++k) {
                     std::cout << det[k] << " ";
                 }
                 std::cout << std::endl;
-
-                // Structure to store determinant and indices of params 
-                //corresponding to the pair-excitations & single-excitations
-                if (is_hf_det) {
-                    DetExcParamIndx det_exc_param;
-                    std::memcpy(&det_exc_param.det[0], &det[0], sizeof(ulong) * nword);
-                    det_exc_param.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
-                } 
-            std::cout << std::endl;
             }
+            std::cout << std::endl;
         }
         std::cout << std::endl; 
         return ;
     }
 
     // Handle excitation orders >= 2
-    long nocc_pairs = occ_pairs.size();
-    long nvir_pairs = vir_pairs.size();
+    std::size_t nocc_pairs = occ_pairs.size();
+    std::size_t nvir_pairs = vir_pairs.size();
     std::cout << "nocc_pairs: " << nocc_pairs << std::endl;
     if (e >= 2) {
         // Iterate over possible (d,s) pairs: d pair excitations and s single excitations
         std::cout << "--------Handling excitation order >= 2--------" << std::endl;
         
-        for (long d = 0; d <= std::min(e/2, nocc_pairs); ++d){
-            long num_singles = e - 2 * d;
+        for (std::size_t d = 0; d <= std::min(static_cast<std::size_t>(e/2), nocc_pairs); ++d){
+            std::size_t num_singles = e - 2 * d;
 
             std::cout << "d: " << d << ", num_singles: " << num_singles << std::endl;
             
@@ -296,10 +298,8 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
                     DetExcParamIndx det_exc;
                     
-                    
-                    
                     std::vector<long> used_virs;
-                    for (long idx = 0; idx < d; ++idx) {
+                    for (std::size_t idx = 0; idx < d; ++idx) {
                         const auto& occ_pair = occ_pairs[opair_comb[idx]];
                         const auto& vir_pair = vir_pairs[vpair_comb[idx]];
 
@@ -326,7 +326,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     if (num_singles > 0) {
                         // Determine remaining occupied pairs
                         AlignedVector<std::pair<int,int>> remaining_occ_pairs;
-                        for (long i = 0; i < nocc_pairs; ++i) {
+                        for (std::size_t i = 0; i < nocc_pairs; ++i) {
                             if (std::find(opair_comb.begin(), opair_comb.end(), i) == opair_comb.end()) {
                                 remaining_occ_pairs.push_back(occ_pairs[i]);
                             }
@@ -335,7 +335,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 
 
                         AlignedVector<long> remaining_virs;
-                        for (long i = 0; i < virs.size(); ++i) {
+                        for (std::size_t i = 0; i < virs.size(); ++i) {
                             if (std::find(used_virs.begin(), used_virs.end(), virs[i]) == used_virs.end()) {
                                 remaining_virs.push_back(virs[i]);
                             }
@@ -372,7 +372,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                 std::memcpy(&temp_det[0], det.data(), sizeof(ulong) * nword);
                                 
                                 // Apply single excitations
-                                for (long idx = 0; idx < num_singles; ++idx){
+                                for (std::size_t idx = 0; idx < num_singles; ++idx){
                                     long occ = occ_comb[idx];
                                     long vir = remaining_virs[vir_comb[idx]];
                                     excite_det(occ, vir, &temp_det[0]);

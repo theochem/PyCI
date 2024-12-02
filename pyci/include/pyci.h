@@ -668,9 +668,9 @@ public:
 
     NonSingletCI(const long, const long, const long, const Array<long>);
 
-    std::vector<std::vector<long>> generate_combinations(long, long);
+    std::vector<std::vector<long>> generate_combinations(std::size_t, std::size_t);
 
-    std::vector<std::vector<long>> generate_cartesian_product(const AlignedVector<std::pair<int, int>>&, long);
+    std::vector<std::vector<long>> generate_cartesian_product(const AlignedVector<std::pair<int, int>>&, std::size_t);
 
     void fill_hartreefock_det(long, long, ulong *);
 
