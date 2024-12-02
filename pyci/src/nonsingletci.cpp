@@ -268,7 +268,11 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 
             // Generate occ pair combinations
             std::vector<std::vector<std::vector<long>>> opair_combinations;
-            opair_combinations.push_back(generate_combinations(nocc_pairs, d));
+            std::vector<std::vector<std::vector<long>>> vpair_combinations;
+            opair_combinations.push_back(generate_combinations(nocc_pairs, d));            
+            vpair_combinations.push_back(generate_combinations(nvir_pairs, d));
+
+
             std::cout << "Generated opair_combinations: " << std::endl;
             for (const auto& opair_comb : opair_combinations[0]) {
                 for (const auto& idx : opair_comb) {
@@ -277,8 +281,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
             }
             std::cout << std::endl;
 
-            std::vector<std::vector<std::vector<long>>> vpair_combinations;
-            vpair_combinations.push_back(generate_combinations(nvir_pairs, d));
+            
             std::cout << "Generated vpair_combinations: " << std::endl;
             for (const auto& pair_comb : vpair_combinations[0]) {
                 for (const auto& idx : pair_comb) {
@@ -291,9 +294,8 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
             for (const auto& opair_comb : opair_combinations[0]) {
                 for (const auto& vpair_comb : vpair_combinations[0]) {
                     std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
-                    if (is_hf_det) {
-                        DetExcParamIndx det_exc;
-                    }
+                    DetExcParamIndx det_exc;
+                    
                     
                     
                     std::vector<long> used_virs;
@@ -386,6 +388,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                     std::cout << temp_det[k] << " ";
                                 }
                                 std::cout << std::endl;
+                                if (is_hf_det) {
+                                    std::memcpy(&det_exc.det[0], &temp_det[0], sizeof(ulong) * nword);
+                                    det_exc_param_indx.push_back(det_exc);
+                                }
                             }
                             
                         }
@@ -399,7 +405,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                             std::cout << det[k] << " ";
                         }
                         std::cout << std::endl;
-                         
+                        if (is_hf_det) {
+                            std::memcpy(&det_exc.det[0], &det[0], sizeof(ulong) * nword);
+                            det_exc_param_indx.push_back(det_exc);
+                        } 
                     }
                 }    
             }
