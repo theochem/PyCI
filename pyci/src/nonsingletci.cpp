@@ -305,21 +305,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         std::cout << std::endl;
                     }
 
-                    // // Determine remaining occupied indices
-                    // std::vector<long> remaining_occ_indices;
-                    // for (long i = 0; i < nocc_pairs; ++i) {
-                    //     if (std::find(opair_comb.begin(), opair_comb.end(), i) == opair_comb.end()) {
-                    //         remaining_occ_indices.push_back(i);
-                    //     }
-                    // }
-                    // std::cout << "Remaining occ_indices: ";
-                    // for (const auto& idx : remaining_occ_indices) {
-                    //     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
-                    // }
-                    // std::cout << std::endl;
+   
                     if (num_singles > 0) {
                         // Determine remaining occupied pairs
-                        std::vector<std::pair<int,int>> remaining_occ_pairs;
+                        AlignedVector<std::pair<int,int>> remaining_occ_pairs;
                         for (long i = 0; i < nocc_pairs; ++i) {
                             if (std::find(opair_comb.begin(), opair_comb.end(), i) == opair_comb.end()) {
                                 remaining_occ_pairs.push_back(occ_pairs[i]);
@@ -328,7 +317,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         print_pairs("remaining_occ_pairs", remaining_occ_pairs);
 
 
-                        std::vector<long> remaining_virs;
+                        AlignedVector<long> remaining_virs;
                         for (long i = 0; i < virs.size(); ++i) {
                             if (std::find(used_virs.begin(), used_virs.end(), virs[i]) == used_virs.end()) {
                                 remaining_virs.push_back(virs[i]);
@@ -576,3 +565,17 @@ long NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object re
                         //     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
                         // }
                         // std::cout << std::endl;
+
+
+                                         // // Determine remaining occupied indices
+                    // std::vector<long> remaining_occ_indices;
+                    // for (long i = 0; i < nocc_pairs; ++i) {
+                    //     if (std::find(opair_comb.begin(), opair_comb.end(), i) == opair_comb.end()) {
+                    //         remaining_occ_indices.push_back(i);
+                    //     }
+                    // }
+                    // std::cout << "Remaining occ_indices: ";
+                    // for (const auto& idx : remaining_occ_indices) {
+                    //     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
+                    // }
+                    // std::cout << std::endl;
