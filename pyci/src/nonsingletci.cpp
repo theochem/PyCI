@@ -54,6 +54,7 @@ NonSingletCI::NonSingletCI(const long nb, const long nu, const long nd, const Ar
                    reinterpret_cast<const long *>(array.request().ptr)) {
 }
 
+
 // Function to generate cartesian product from a vector of pairs
 // In our case: this function is used to generate all possible combinations of
 // occupied orbitals to excite from for singles given pair of occupied orbitals in ref det
@@ -130,13 +131,14 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     AlignedVector<ulong> det(nword);
 
     AlignedVector<long> occs(nocc);
-    AlignedVector<long> occs_up(occs.size());
-    AlignedVector<long> occs_dn(occs.size());
-    AlignedVector<std::pair<int,int>> occ_pairs;
-
     AlignedVector<long> virs(nbasis - nocc);
-    AlignedVector<long> virs_up(virs.size());
-    AlignedVector<long> virs_dn(virs.size());
+    AlignedVector<long> occs_up, occs_dn, virs_up, virs_dn;
+    occs_up.reserve(occs.size());
+    occs_dn.reserve(occs.size());
+    virs_up.reserve(occs.size());
+    virs_dn.reserve(occs.size());
+
+    AlignedVector<std::pair<int,int>> occ_pairs;
     AlignedVector<std::pair<int,int>> vir_pairs;
 
     AlignedVector<long> occinds(e + 1);
@@ -144,7 +146,20 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     fill_occs(nword, rdet, &occs[0]);
     fill_virs(nword, nbasis, rdet, &virs[0]);
 
-    int up_idx = 0, dn_idx = 0;
+    for (int i : occs) {
+        (i < nbasis / 2 ? occs_up : occs_dn).push_back(i);
+    }
+
+    for (int a : virs) {
+        (a < nbasis / 2 ? virs_up : virs_dn).push_back(a);
+    }
+
+    // Efficient resizing
+    occs_up.shrink_to_fit();
+    occs_dn.shrink_to_fit();
+    virs_up.shrink_to_fit();
+    virs_dn.shrink_to_fit();
+
     std::cout << "nocc_up: " << nocc_up << ", nvir_up: " << nvir_up << std::endl;
     std::cout << "nocc: " << nocc << ", nvir: " << nvir << std::endl;
     std::cout << "e: " << e << std::endl;
@@ -161,15 +176,6 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     }
     std::cout << std::endl;   
 
-    // Generate list of up & dn indices for ocs & virs
-    for (int i : occs) {
-        if (i < nbasis/2) occs_up[up_idx++] = i;
-        else occs_dn[dn_idx++] = i;
-    }
-    
-    // Resize vectors to actual size
-    occs_up.resize(up_idx);
-    occs_dn.resize(dn_idx);
 
     std::cout << "occs_up: ";
     for (const auto& elem : occs_up) {
@@ -183,15 +189,6 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     }
     std::cout << std::endl;
     
-    up_idx = 0;
-    dn_idx = 0;
-    for (int a : virs) {
-        if (a < nbasis/2) virs_up[up_idx++] = a;
-        else virs_dn[dn_idx++] = a;
-    }
-    // Resize vectors to actual size
-    virs_up.resize(up_idx);
-    virs_dn.resize(dn_idx);
 
     std::cout << "virs_up: ";
     for (const auto& elem : virs_up) {
