@@ -125,6 +125,22 @@ std::vector<std::vector<long>> NonSingletCI::generate_combinations(long n, long 
     return combinations;
 }
 
+template <typename T>
+void NonSingletCI::print_vector(const std::string& name, const AlignedVector<T>& vec) {
+    std::cout << name << ": ";
+    for (const auto& elem : vec) {
+        std::cout << elem << " ";
+    }
+    std::cout << std::endl;
+}
+void NonSingletCI::print_pairs(const std::string& label, const AlignedVector<std::pair<int, int>>& pairs) {
+    std::cout << label << ": ";
+    for (const auto& elem : pairs) {
+        std::cout << elem.first << " " << elem.second << " ";
+    }
+    std::cout << std::endl;
+}
+
 void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     std::cout << "Inside nonsingletci/add_excited_dets" << std::endl;
     //long i, j, k, no = binomial(nocc_up, e), nv = binomial(nvirs_up, e);
@@ -140,6 +156,8 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 
     AlignedVector<std::pair<int,int>> occ_pairs;
     AlignedVector<std::pair<int,int>> vir_pairs;
+    occ_pairs.reserve(occs_up.size());
+    vir_pairs.reserve(virs.size());
 
     AlignedVector<long> occinds(e + 1);
     AlignedVector<long> virinds(e + 1);
@@ -164,67 +182,32 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     std::cout << "nocc: " << nocc << ", nvir: " << nvir << std::endl;
     std::cout << "e: " << e << std::endl;
     std::cout << "rdet: " << *rdet << std::endl;
-    std::cout << "occs: "; 
-    for (const auto& elem : occs) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "virs: ";
-    for (const auto& elem : virs) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl;   
-
-
-    std::cout << "occs_up: ";
-    for (const auto& elem : occs_up) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "occs_dn: ";
-    for (const auto& elem : occs_dn) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl;
-    
-
-    std::cout << "virs_up: ";
-    for (const auto& elem : virs_up) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "virs_dn: ";
-    for (const auto& elem : virs_dn) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl;
+    print_vector("occs", occs);
+    print_vector("virs", virs);
+    print_vector("occs_up", occs_up);
+    print_vector("occs_dn", occs_dn);
+    print_vector("virs_up", virs_up);
+    print_vector("virs_dn", virs_dn);
 
     // Create an unordered set for fast lookup of occupied down-orbitals
     std::unordered_set<int> occ_dn_set(occs_dn.begin(), occs_dn.end()); 
-    // Generate occ_pairs
+    std::unordered_set<int> virs_set(virs.begin(), virs.end());
+
+    // Generate occ_pairs and vir_pairs
     for (int i : occs_up) {
         if (occ_dn_set.find(i + nbasis/2) != occ_dn_set.end()) {
             occ_pairs.push_back({i, i + nbasis/2});   
         }
     }
-    std::cout << "occ_pairs: ";
-    for (const auto& elem : occ_pairs) {
-        std::cout << elem.first << " " << elem.second << std::endl;
-    }
-    // Create an unordered set for fast looup of virtual orbitals
-    std::unordered_set<int> virs_set(virs.begin(), virs.end());
-    // form virtual pairs
+
     for (int a : virs) {
         if (virs_set.find(a + nbasis/2) != virs_set.end()) {
             vir_pairs.push_back({a, a + nbasis/2});   
         }
     }
-    std::cout << "vir_pairs: ";
-    for (const auto& elem : vir_pairs) {
-        std::cout << elem.first << " " << elem.second << std::endl;
-    }
+    
+    print_pairs("occ_pairs", occ_pairs);
+    print_pairs("vir_pairs", vir_pairs);
     
 
     // Handle excitation order 0
@@ -342,13 +325,8 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                 remaining_occ_pairs.push_back(occ_pairs[i]);
                             }
                         }
+                        print_pairs("remaining_occ_pairs", remaining_occ_pairs);
 
-                        //Print remaining occ_pairs for debugging
-                        std::cout << "Remaining occ_pairs: ";
-                        for (const auto& occ_pair : remaining_occ_pairs) {
-                            std::cout << "(" << occ_pair.first << ", " << occ_pair.second << ") ";
-                        }
-                        std::cout << std::endl;
 
                         std::vector<long> remaining_virs;
                         for (long i = 0; i < virs.size(); ++i) {
@@ -356,37 +334,12 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                 remaining_virs.push_back(virs[i]);
                             }
                         }
-                        std::cout << "Remaining virs: ";
-                        for (const auto& vir : remaining_virs) {
-                            std::cout << vir << " ";
-                        }
-                        std::cout << std::endl;
+                        print_vector("remaining_virs", remaining_virs);
+
 
                         // Process single combinations for current num_singles
                         auto occ_combinations = generate_cartesian_product(remaining_occ_pairs, num_singles);
                         auto vir_combinations = generate_combinations(remaining_virs.size(), num_singles);
-                        
-                        // Print occ_combinations and vir_combinations for debugging
-                        // std::cout << "Available occ_pairs for singles: ";
-                        // for (const auto& idx : remaining_occ_indices) {
-                        //     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
-                        // }
-                        // std::cout << std::endl;
-
-                        std::cout << "Available virs for singles: ";
-                        for (const auto& vir : remaining_virs) {
-                            std::cout << vir << " ";
-                        }
-                        std::cout << std::endl;
-
-                        // std::cout << "Generated occ_combinations: " << std::endl;
-                        // for (const auto& occ_comb : occ_combinations) {
-                        //     std::cout << "(";
-                        //     for (const auto& occ_idx : occ_comb) {
-                        //         std::cout << occ_pairs[remaining_occ_indices[occ_idx]].first << " ";
-                        //     }
-                        //     std::cout << ")" << std::endl;
-                        // }
 
                         std::cout << "Generated occ_combinations: " << std::endl;
                         for (const auto& occ_comb : occ_combinations) {
@@ -494,9 +447,10 @@ long NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object re
         fill_hartreefock_det(nbasis,nocc, ptr);
 
         is_hf_det = true;
-    } else
+    } else {
         ptr = reinterpret_cast<ulong *>(ref.cast<Array<ulong>>().request().ptr);
         is_hf_det = false;
+    }
     long ndet_old = ndet;
     add_excited_dets(ptr, exc);
     return ndet - ndet_old;
@@ -568,3 +522,57 @@ long NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object re
 //                     add_det(&det[0]);
 //                 }
 //             }
+
+//    for (const auto& elem : occs) {
+    //     std::cout << elem << " ";
+    // }
+    // std::cout << std::endl;
+
+    // std::cout << "virs: ";
+    // for (const auto& elem : virs) {
+    //     std::cout << elem << " ";
+    // }
+    // std::cout << std::endl;   
+
+
+    // std::cout << "occs_up: ";
+    // for (const auto& elem : occs_up) {
+    //     std::cout << elem << " ";
+    // }
+    // std::cout << std::endl;
+
+    // std::cout << "occs_dn: ";
+    // for (const auto& elem : occs_dn) {
+    //     std::cout << elem << " ";
+    // }
+    // std::cout << std::endl;
+    
+
+    // std::cout << "virs_up: ";
+    // for (const auto& elem : virs_up) {
+    //     std::cout << elem << " ";
+    // }
+    // std::cout << std::endl;
+    // std::cout << "virs_dn: ";
+    // for (const auto& elem : virs_dn) {
+    //     std::cout << elem << " ";
+    // }
+    // std::cout << std::endl;
+
+
+
+                        // std::cout << "Generated occ_combinations: " << std::endl;
+                        // for (const auto& occ_comb : occ_combinations) {
+                        //     std::cout << "(";
+                        //     for (const auto& occ_idx : occ_comb) {
+                        //         std::cout << occ_pairs[remaining_occ_indices[occ_idx]].first << " ";
+                        //     }
+                        //     std::cout << ")" << std::endl;
+                        // }
+                                                
+                        // Print occ_combinations and vir_combinations for debugging
+                        // std::cout << "Available occ_pairs for singles: ";
+                        // for (const auto& idx : remaining_occ_indices) {
+                        //     std::cout << "(" << occ_pairs[idx].first << ", " << occ_pairs[idx].second << ") ";
+                        // }
+                        // std::cout << std::endl;
