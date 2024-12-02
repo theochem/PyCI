@@ -232,8 +232,16 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     std::cout << det[k] << " ";
                 }
                 std::cout << std::endl;
-            }
+
+                // Structure to store determinant and indices of params 
+                //corresponding to the pair-excitations & single-excitations
+                if (is_hf_det) {
+                    DetExcParamIndx det_exc_param;
+                    std::memcpy(&det_exc_param.det[0], &det[0], sizeof(ulong) * nword);
+                    det_exc_param.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
+                } 
             std::cout << std::endl;
+            }
         }
         std::cout << std::endl; 
         return ;
@@ -283,6 +291,9 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
             for (const auto& opair_comb : opair_combinations[0]) {
                 for (const auto& vpair_comb : vpair_combinations[0]) {
                     std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
+                    if (is_hf_det) {
+                        DetExcParamIndx det_exc;
+                    }
                     
                     
                     std::vector<long> used_virs;
@@ -303,6 +314,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                             std::cout << det[k] << " ";
                         }
                         std::cout << std::endl;
+                        if (is_hf_det){
+                            det_exc.pair_inds.push_back(nvir_up * occ_pair.first + vir_pair.first);
+                        }
+
                     }
 
    
@@ -360,6 +375,9 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                     long vir = remaining_virs[vir_comb[idx]];
                                     excite_det(occ, vir, &temp_det[0]);
                                     std::cout << "Exciting occ: " << occ << " to vir: " << vir << std::endl;
+                                    if (is_hf_det) {
+                                        det_exc.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
+                                    }
                                 }
                                 add_det(&temp_det[0]);
                                 // Print determinant after single excitations
@@ -381,13 +399,15 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                             std::cout << det[k] << " ";
                         }
                         std::cout << std::endl;
+                         
                     }
                 }    
             }
         }
-
+        return ;
     }
 }
+
  
 
 
