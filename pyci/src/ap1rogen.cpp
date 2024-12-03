@@ -14,7 +14,7 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <pyci.h>
-#include <unorderd_map>
+#include <unordered_map>
 #include <iostream>
 namespace pyci {
 
