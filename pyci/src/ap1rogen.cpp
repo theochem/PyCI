@@ -64,6 +64,19 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(AP1roGeneralizedSen
     return;
 }
 
+void AP1roGeneralizedSenoObjective::generate_combinations(const std::vector<T>& elems, int k, std::vector<std::vector<T>>& result) {
+    std::vector<bool> mask(elems.size());
+    std::fill(mask.end() - k, mask.end() + k, true);
+    do {
+        std::vector<T> combination;
+        for (std::size_t i = 0; i < elems.size(); ++i) {
+            if (mask[i]) combination.push_back(elems[i]);
+        }
+        result.push_back(combination);
+    } while (std::next_permutation(mask.begin(), mask.end()));
+}
+
+
 void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {
     std::cout << "Inside init_overlap" << std::endl;
