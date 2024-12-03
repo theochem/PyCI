@@ -257,6 +257,23 @@ void AP1roGeneralizedSenoObjective::overlap(const size_t ndet, const double *x, 
     }
 }
 
+
+double AP1roGeneralizedSenoObjective::compute_derivative(
+    const std::vector<std::size_t>& excitation_inds, 
+    const double* x,
+    std::size_t num_excitations,
+    std::size_t excitation_idx) {
+
+    double derivative = 0.0;
+
+    std::vector<double> modified_x(x, x + wfn_.nparam);
+    modified_x[excitation_inds[excitation_idx]] = 1.0;
+    derivative = permanent_calculation(excitation_inds, modified_x.data());
+
+    return derivative;
+}
+
+
 void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x, double *y)
 {
     // x == parameters p_j

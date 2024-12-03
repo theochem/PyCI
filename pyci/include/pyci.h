@@ -955,6 +955,10 @@ public:
     // Helper function for d_overlap
     double compute_derivative(const std::vector<long>& excitation_indices, const double*, std::size_t );
 
+    double AP1roGeneralizedSenoObjective::compute_derivative(
+    const std::vector<std::size_t>& excitation_indices,
+    const double*, std::size_t, std::size_t );
+
     // Overlap gradient function
     // virtual void d_overlap(const NonSingletCI &, const size_t, const double *x, double *y);
     virtual void d_overlap(const size_t, const double *x, double *y);
