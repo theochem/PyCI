@@ -14,6 +14,7 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <pyci.h>
+#include <unorderd_map>
 #include <iostream>
 namespace pyci {
 
@@ -72,57 +73,109 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
     std::cout << "nparam (doubles): " << nparam << std::endl;
     nparam += wfn_.nocc * (2* wfn_.nbasis - wfn_.nocc); // beta singles
     std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
-    nrow = wfn_.nocc_up;
-    ncol = wfn_.nbasis - wfn_.nocc_up;
-    std::cout << "nrow: " << nrow << ", ncol: " << ncol << std::endl;
-    std::cout << "nconn: " << nconn << std::endl;
+    // nrow = wfn_.nocc_up;
+    // ncol = wfn_.nbasis - wfn_.nocc_up;
+    // std::cout << "nrow: " << nrow << ", ncol: " << ncol << std::endl;
+    // std::cout << "nconn: " << nconn << std::endl;
 
     ovlp.resize(wfn_.ndet);
     d_ovlp.resize(wfn_.ndet * nparam);
 
-    nexc_list.resize(nconn);
-    hole_list.resize(wfn_.nocc * nconn); //list of all holes 
-    part_list.resize(wfn_.nocc * nconn); //list of all particles
+    // nexc_list.resize(nconn);
+    // hole_list.resize(wfn_.nocc * nconn); //list of all holes 
+    // part_list.resize(wfn_.nocc * nconn); //list of all particles
 
     std::size_t nword = (ulong)wfn_.nword;
+
+    std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
+
+    // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
+    for (const auto& exc_info : wfn_.det_exc_param_indx) {
+        det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
+    }
 
     for (std::size_t idet = 0; idet != nconn; ++idet)
     {
         std::vector<ulong> rdet(wfn_.nword);
-        fill_hartreefock_det(wfn_.nocc, &rdet[0]);
+        wfn_.fill_hartreefock_det(wfn_.nocc, &rdet[0]);
+
         std::cout << "After fill_hartreefock_det rdet:" << std::endl;
-        
-        // Print the contents of rdet
-        for (const auto& val : rdet) {
-            std::cout << val << " ";
-        }
-        std::cout << std::endl;
+        print_vector("rdet", rdet);
 
         const ulong *det = wfn_.det_ptr(idet);
-        ulong word, hword, pword;
-        // Initialize your class-specific variables here
-        std::size_t h, p, nexc = 0;
-        for (std::size_t iword = 0; iword != nword; ++iword)
-        {
-            word = rdet[iword] ^ det[iword]; //str for excitation
-            hword = word & rdet[iword]; //str for hole
-            pword = word & det[iword]; //str for particle
-            while(hword){
-                h = Ctz(hword);
-                p = Ctz(pword);
-                hole_list[idet * wfn_.nocc_up + nexc] = h + iword * Size<ulong>();
-                part_list[idet * wfn_.nocc_up + nexc] = p + iword * Size<ulong>() - wfn_.nocc_up;
-                hword &= ~(1UL << h);
-                pword &= ~(1UL << p);
-                std::cout << "hword" << hword << std::endl;
-                std::cout << "pword" << pword << std::endl;
-                std::cout << "nexc: " << nexc << std::endl;
-                std::cout << "hole_list: " << hole_list[idet * wfn_.nocc_up + nexc] << std::endl;
-                std::cout << "part_list: " << part_list[idet * wfn_.nocc_up + nexc] << std::endl;
-                ++nexc;
+
+        std::vector<ulong> det_vector(det, det + nword);
+        auto it = det_map.find(det_vector);
+        if (it != det_map.end()) {
+            std::cout << "Found det in det_map" << std::endl;
+            std::cout << "Det: " << det_vector << std::endl;
+            std::cout << "DetExcParamIndx: " << it->second << std::endl;
+        } else {
+            std::cout << "Det not found in det_map" << std::endl;
+            DetExcParamIndx exc_info;
+            ulong word, hword, pword;
+            std::size_t h, p, nexc = 0;
+
+            std::vector<std::size_t> holes;
+            std::vector<std::size_t> particles;
+
+            // Collect holes and particles
+            for (std::size_t iword = 0; iword != nword; ++iword)
+            {
+                word = rdet[iword] ^ det[iword]; //str for excitation
+                hword = word & rdet[iword]; //str for hole
+                pword = word & det[iword]; //str for particle
+                while(hword){
+                    h = Ctz(hword);
+                    p = Ctz(pword);
+                    // hole_list[idet * wfn_.nocc_up + nexc] = h + iword * Size<ulong>();
+                    // part_list[idet * wfn_.nocc_up + nexc] = p + iword * Size<ulong>() - wfn_.nocc_up;
+                    
+                    std::size_t hole_idx = h + iword * Size<ulong>();
+                    std::size_t part_idx = p + iword * Size<ulong>() - wfn_.nocc_up;
+                    
+                    holes.push_back(hole_idx);
+                    particles.push_back(part_idx);
+
+                    hword &= ~(1UL << h);
+                    pword &= ~(1UL << p);
+                    std::cout << "hword" << hword << std::endl;
+                    std::cout << "pword" << pword << std::endl;
+                    std::cout << "nexc: " << nexc << std::endl;
+                    std::cout << "hole_list: " << hole_idx << std::endl;
+                    std::cout << "part_list: " << part_idx << std::endl;
+                    ++nexc;
+                }
             }
+            nexc_list[idet] = nexc;
+
+            std::vector<std::pair<std::size_t, std::size_t>> occ_pairs;
+            for (std::size_t hole in holes) {
+                std::size_t conjugate = hole + wfn_.nbasis / 2;
+                if(std::find(holes.begin(), holes.end(), conjugate) != holes.end()) {
+                    occ_pairs.push_back(std::make_pair(hole, conjugate));
+                    // exc_info.pair_inds.push_back(wfn_.nvir_up * hole);
+                }
+            }
+
+            std::vector<std::size_t, std::size_t> vir_pairs;
+            for (std::size_t part in particles) {
+                std::size_t conjugate = part + wfn_.nbasis / 2;
+                if(std::find(particles.begin(), particles.end(), conjugate) != particles.end()) {
+                    vir_pairs.push_back(std::make_pair(part, conjugate));
+                    // exc_info.pair_inds.push_back(wfn_.nvir_up * part);
+                }
+            }
+
+            for (const auto& pair : occ_pairs) {
+               for (const auto& vir_pair : vir_pairs) {
+                   exc_info.pair_inds.push_back(wfn_.nvir_up * pair.first + vir_pair.first);
+                   exc_info.pair_inds.push_back(wfn_.nvir_up * pair.second + vir_pair.second);
+               }
+            }
+
+            
         }
-        nexc_list[idet] = nexc;
     }
 }
 
