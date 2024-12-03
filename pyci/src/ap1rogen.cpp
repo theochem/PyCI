@@ -275,66 +275,62 @@ double AP1roGeneralizedSenoObjective::compute_derivative(
 }
 
 
-void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x, double *y)
-{
-    // x == parameters p_j
-    // y == unwrapped overlap objective ∂σ_i/∂p_j
-
-    std::size_t m, n, i, j, k, c;
-    std::size_t *hlist, *plist;
-    double rowsum, rowsumprod, out;
-
-    for (std::size_t idet = 0; idet != ndet; ++idet){
-        for (std::size_t iparam = 0; iparam != nparam; ++iparam){
-            hlist = &hole_list[idet * nrow];
-            plist = &part_list[idet * nrow];
+void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x, double *y){
+    // Loop over each determinant
+    for (std::size_t idet = 0; idet != ndet; ++idet)
+    {
+        // Retrieve the corresponding determinant
+        const ulong* det = wfn_.det_ptr(idet);
+        std::vector<ulong> det_vector(det, det + wfn_.nword);
+        
+        // Find corresponding DetExcParamIndx for the current determinant
+        auto it = det_map.find(det_vector);
+        
+        // Ensure we have the excitation parameters for this determinant
+        if (it != det_map.end()) {
+            const DetExcParamIndx& exc_info = it->second;
             
-            m = nexc_list[idet];
-            if (m == 0){
-                y[ndet * iparam + idet] = 0;
-                continue;
+            // Loop over each parameter (paired and single excitations)
+            std::size_t param_index = 0;
+
+            // Derivative for paired excitations
+            for (std::size_t i = 0; i < exc_info.pair_inds.size(); ++i) {
+                // Get the excitation index for the pair
+                const std::size_t excitation_idx = exc_info.pair_inds[i];
+
+                // Compute the derivative of the permanent with respect to this excitation
+                double derivative = compute_derivative(exc_info.pair_inds, x, exc_info.pair_inds.size(), excitation_idx);
+                
+                // Store the result in the output vector d_ovlp (size ndet * nparam)
+                y[idet * nparam + param_index] = derivative;
+
+                ++param_index;
             }
 
-            std::vector<std::size_t> rows;
-            std::vector<std::size_t> cols;
-            for (i = 0; i < m; ++i){
-                if (hlist[i] != iparam / ncol){
-                    rows.push_back(hlist[i]);
-                }
-                if (plist[i] != iparam % ncol){
-                    cols.push_back(plist[i]);
-                }
-            }
-            m = rows.size();
-            n = cols.size();
-            if (m == 0 && n == 0) {
-                y[ndet * iparam + idet] = 1;
-                continue;
-            } else if (m == nexc_list[idet] || n == nexc_list[idet] || m != n) {
-                y[ndet * iparam + idet] = 0;
-                continue;
-            }
-            out = 0;
+            // Derivative for single excitations
+            for (std::size_t i = 0; i < exc_info.single_inds.size(); ++i) {
+                // Get the excitation index for the single
+                const std::size_t excitation_idx = exc_info.single_inds[i];
 
-            c = 1UL << m;
-            for (k = 0; k < c; ++k){
-                rowsumprod = 1.0;
-                for (i = 0; i < m; ++i){
-                    rowsum = 1.0;
-                    for (j = 0; j < m; ++j){
-                        if (k & (1UL << j)){
-                            rowsum *= x[ncol * hlist[j] + plist[i]];
-                        }
-                    }
-                    rowsumprod *= rowsum;
-                }
-                out += rowsumprod * (1 - ((__builtin_popcountll(k) & 1) << 1));
-            }
-            y[ndet * iparam + idet] = out * ((m % 2 == 1) ? -1 : 1);
+                // Compute the derivative of the permanent with respect to this excitation
+                double derivative = compute_derivative(exc_info.single_inds, x, exc_info.single_inds.size(), excitation_idx);
 
+                // Store the result in the output vector d_ovlp (size ndet * nparam)
+                y[idet * nparam + param_index] = derivative;
+
+                ++param_index;
+            }
+        }
+        else {
+            std::cout << "Determinant " << idet << " not found in det_map" << std::endl;
+            // Set all derivatives to zero if determinant is not found
+            for (std::size_t i = 0; i < nparam; ++i) {
+                y[idet * nparam + i] = 0.0;
+            }
         }
     }
 }
+
 
 } // namespace pyci
 
