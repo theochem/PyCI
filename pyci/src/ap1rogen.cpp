@@ -218,6 +218,33 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
     }
 }
 
+
+double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<std::pair<std::size_t, std::size_t>>&
+                        excitation_inds, const double* x) {
+    std::size_t num_excitations = excitation_inds.size();
+    if (num_excitations == 0) return 1.0;
+    
+    double permanent = 0.0;
+    std::size_t subset_count = 1UL << num_excitations;
+
+    for (std::size_t subset = 0; subset < subset_count; ++subset) {
+        double rowsumprod = 1.0;
+
+        for (std::size_t  i = 0; j < num_excitations; ++j) {
+            double rowsum = 0.0;
+            for (std::size_t j = 0; j < num_excitations; ++j) {
+                if (subset & (1UL << j)) {
+                    rowsum += x[excitation_inds[j]];
+                }
+            }
+            rowsumprod *= rowsum;
+        }
+        permanent += rowsumprod * (1 - ((__builtin_popcount(subset) & 1) << 1));
+    }
+    permanent *= ((num_excitations % 2 == 1) ? -1 : 1);
+    return permanent;
+}
+
 void AP1roGeneralizedSenoObjective::overlap(const size_t ndet, const double *x, double *y)
 {
     // x == parameters p_j
