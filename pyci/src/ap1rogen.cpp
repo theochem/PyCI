@@ -64,7 +64,8 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(AP1roGeneralizedSen
     return;
 }
 
-void AP1roGeneralizedSenoObjective::generate_combinations(const std::vector<T>& elems, int k, std::vector<std::vector<T>>& result) {
+template <typename T>
+void AP1roGeneralizedSenoObjective<T>::generate_combinations(const std::vector<T>& elems, int k, std::vector<std::vector<T>>& result) {
     std::vector<bool> mask(elems.size());
     std::fill(mask.end() - k, mask.end() + k, true);
     do {
