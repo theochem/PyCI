@@ -301,6 +301,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
             // Process pair combinations for current d
             for (const auto& opair_comb : opair_combinations[0]) {
                 for (const auto& vpair_comb : vpair_combinations[0]) {
+                    if (opair_comb.empty() || vpair_comb.empty()) {
+                        std::cout << "Error: Empty combination detected" << std::endl;
+                        // continue;
+                    }
                     std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
                     DetExcParamIndx det_exc;
                     
