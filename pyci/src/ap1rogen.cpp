@@ -85,8 +85,8 @@ std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partiti
 }
 
 void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::size_t>& holes,
-    const std::vector<std::size_t>& particles, int excitation_order, std::vector<std::size_t>& pair_inds,
-    std::vector<std::size_t>& single_inds, size_t nocc, size_t nvir_up, size_t nvir) {
+    const std::vector<std::size_t>& particles, int excitation_order, std::vector<long>& pair_inds,
+    std::vector<long>& single_inds, long nocc, long nvir_up, long nvir) {
     int max_pairs = holes.size() / 2;
     auto partitions = generate_partitions(excitation_order, max_pairs);
 
@@ -125,7 +125,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
     }
 }
 
-void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
+void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
 {
     std::cout << "Inside init_overlap" << std::endl;
     // Initialize your class-specific variables here
@@ -149,10 +149,10 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
     for (std::size_t idet = 0; idet != nconn; ++idet)
     {
         std::vector<ulong> rdet(wfn_.nword);
-        wfn_.fill_hartreefock_det(wfn_.nocc, &rdet[0]);
+        wfn_.fill_hartreefock_det(wfn_.nbasis, wfn_.nocc, &rdet[0]);
 
         std::cout << "After fill_hartreefock_det rdet:" << std::endl;
-        print_vector("rdet", rdet);
+        //print_vector("rdet", rdet);
 
         const ulong *det = wfn_.det_ptr(idet);
 
@@ -160,8 +160,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
         auto it = det_map.find(det_vector);
         if (it != det_map.end()) {
             std::cout << "Found det in det_map" << std::endl;
-            std::cout << "Det: " << det_vector << std::endl;
-            std::cout << "DetExcParamIndx: " << it->second << std::endl;
+            // std::cout << "Det: " << det_vector << std::endl;
+            // std::cout << "DetExcParamIndx: " << it->second << std::endl;
         } else {
             std::cout << "Det not found in det_map" << std::endl;
             DetExcParamIndx exc_info;
@@ -199,15 +199,14 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
             }
             nexc_list[idet] = nexc;
 
-            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, wfn_.nvir_up);
+            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, wfn_.nvir_up, wfn_.nvir);
             wfn_.det_exc_param_indx.push_back(exc_info);
         }
     }
 }
 
 
-double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<std::pair<std::size_t, std::size_t>>&
-                        excitation_inds, const double* x) {
+double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long>& excitation_inds, const double* x) {
     std::size_t num_excitations = excitation_inds.size();
     if (num_excitations == 0) return 1.0;
     
@@ -217,7 +216,7 @@ double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<st
     for (std::size_t subset = 0; subset < subset_count; ++subset) {
         double rowsumprod = 1.0;
 
-        for (std::size_t  i = 0; j < num_excitations; ++j) {
+        for (std::size_t  j = 0; j < num_excitations; ++j) {
             double rowsum = 0.0;
             for (std::size_t j = 0; j < num_excitations; ++j) {
                 if (subset & (1UL << j)) {
@@ -232,41 +231,47 @@ double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<st
     return permanent;
 }
 
-void AP1roGeneralizedSenoObjective::overlap(const size_t ndet, const double *x, double *y) {
-    for (std::size_t idet = 0; idet != ndet; ++idet) {
+void AP1roGeneralizedSenoObjective::overlap(const NonSingletCI &wfn_, const double *x, double *y) {
+    for (long idet = 0; idet != wfn_.ndet; ++idet) {
         
         //Retrieve the DetExcParamIndx object from the hash map
         const ulong* det = wfn_.det_ptr(idet);
         std::vector<ulong> det_vector(det, det + wfn_.nword);
 
         // Find corresponding DetExcParamIndx for the current determinant
+        std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
+        // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
+        for (const auto& exc_info : wfn_.det_exc_param_indx) {
+            det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
+        }
+
         auto it = det_map.find(det_vector);
 
-        // Access the excitation parameter indices
-        const decltype(it->second)& exc_info = it->second;
+        if (it != det_map.end()) {
+            // Access the excitation parameter indices
+            const DetExcParamIndx& exc_info = it->second;
 
-        double pair_permanent = permanent_calculation(exc_info.pair_inds, x, exc_info.pair_inds.size());
-        double single_permanent = permanent_calculation(exc_info.single_inds, x, exc_info.single_inds.size());
+            double pair_permanent = permanent_calculation(exc_info.pair_inds, x);
+            double single_permanent = permanent_calculation(exc_info.single_inds, x);
 
-        y[idet] = pair_permanent * single_permanent;
-    } else {
-        std::cout << "Det" << det_vector << " not found in det_map" << std::endl;
-        y[idet] = 0.0;
+            y[idet] = pair_permanent * single_permanent;
+        } else {
+            // std::cout << "Det" << det_vector << " not found in det_map" << std::endl;
+            y[idet] = 0.0;
 
-    }
+        }
     }
 }
 
 
 double AP1roGeneralizedSenoObjective::compute_derivative(
-    const std::vector<std::size_t>& excitation_inds, 
+    const std::vector<long>& excitation_inds, 
     const double* x,
-    std::size_t num_excitations,
     std::size_t excitation_idx) {
 
     double derivative = 0.0;
 
-    std::vector<double> modified_x(x, x + wfn_.nparam);
+    std::vector<double> modified_x(x, x + nparam);
     modified_x[excitation_inds[excitation_idx]] = 1.0;
     derivative = permanent_calculation(excitation_inds, modified_x.data());
 
@@ -274,13 +279,21 @@ double AP1roGeneralizedSenoObjective::compute_derivative(
 }
 
 
-void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x, double *y){
+void AP1roGeneralizedSenoObjective::d_overlap(const NonSingletCI &wfn_, const size_t ndet, const double *x, double *y){
     // Loop over each determinant
     for (std::size_t idet = 0; idet != ndet; ++idet)
     {
         // Retrieve the corresponding determinant
         const ulong* det = wfn_.det_ptr(idet);
         std::vector<ulong> det_vector(det, det + wfn_.nword);
+
+
+        // Find corresponding DetExcParamIndx for the current determinant
+        std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
+        // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
+        for (const auto& exc_info : wfn_.det_exc_param_indx) {
+            det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
+        }
         
         // Find corresponding DetExcParamIndx for the current determinant
         auto it = det_map.find(det_vector);
@@ -298,7 +311,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 const std::size_t excitation_idx = exc_info.pair_inds[i];
 
                 // Compute the derivative of the permanent with respect to this excitation
-                double derivative = compute_derivative(exc_info.pair_inds, x, exc_info.pair_inds.size(), excitation_idx);
+                double derivative = compute_derivative(exc_info.pair_inds, x, excitation_idx);
                 
                 // Store the result in the output vector d_ovlp (size ndet * nparam)
                 y[idet * nparam + param_index] = derivative;
@@ -312,7 +325,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 const std::size_t excitation_idx = exc_info.single_inds[i];
 
                 // Compute the derivative of the permanent with respect to this excitation
-                double derivative = compute_derivative(exc_info.single_inds, x, exc_info.single_inds.size(), excitation_idx);
+                double derivative = compute_derivative(exc_info.single_inds, x, excitation_idx);
 
                 // Store the result in the output vector d_ovlp (size ndet * nparam)
                 y[idet * nparam + param_index] = derivative;
