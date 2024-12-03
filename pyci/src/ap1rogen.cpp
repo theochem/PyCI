@@ -49,8 +49,7 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(const SparseOp &op_
 // Copy Constructor
 // obj is the constant reference to another object to be copied
 AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(const AP1roGeneralizedSenoObjective &obj)
-: Objective<NonSingletCI>::Objective(obj), nrow(obj.nrow), ncol(obj.ncol),
-  nexc_list(obj.nexc_list), hole_list(obj.hole_list), part_list(obj.part_list)
+: Objective<NonSingletCI>::Objective(obj), nexc_list(obj.nexc_list) 
 {
     return;
 }
@@ -58,14 +57,13 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(const AP1roGenerali
 // Move constructor
 // obj is the rvalue reference to another object to be moved
 AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(AP1roGeneralizedSenoObjective &&obj) noexcept
-: Objective<NonSingletCI>::Objective(obj), nrow(std::exchange(obj.nrow, 0)), ncol(std::exchange(obj.ncol, 0)),
-  nexc_list(std::move(obj.nexc_list)), hole_list(std::move(obj.hole_list)), part_list(std::move(obj.part_list))
+: Objective<NonSingletCI>::Objective(obj), nexc_list(std::move(obj.nexc_list))
 {
     return;
 }
 
 template <typename T>
-void AP1roGeneralizedSenoObjective<T>::generate_combinations(const std::vector<T>& elems, int k, std::vector<std::vector<T>>& result) {
+void AP1roGeneralizedSenoObjective::generate_combinations(const std::vector<T>& elems, int k, std::vector<std::vector<T>>& result) {
     std::vector<bool> mask(elems.size());
     std::fill(mask.end() - k, mask.end() + k, true);
     do {
@@ -77,20 +75,20 @@ void AP1roGeneralizedSenoObjective<T>::generate_combinations(const std::vector<T
     } while (std::next_permutation(mask.begin(), mask.end()));
 }
 
-std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_paritions(int e, int max_pairs) {
+std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partitions(int e, int max_pairs) {
     std::vector<std::pair<int, int>> partitions;
     for (int p = 0; p <= std::min(e / 2 , max_pairs); ++p) {
         int s = e - 2 * p;
-        partitions.emblace_back(p, s);
+        partitions.emplace_back(p, s);
     }
     return partitions;
 }
 
 void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::size_t>& holes,
     const std::vector<std::size_t>& particles, int excitation_order, std::vector<std::size_t>& pair_inds,
-    std::vector<std::size_t>& single_inds) {
+    std::vector<std::size_t>& single_inds, size_t nocc, size_t nvir_up, size_t nvir) {
     int max_pairs = holes.size() / 2;
-    auto paritions = generate_partitions(excitation_order, max_pairs);
+    auto partitions = generate_partitions(excitation_order, max_pairs);
 
     for (const auto& [num_pairs, num_singles] : partitions) {
         // Step 2: Generate combinations of pairs and singles
@@ -112,7 +110,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         for (const auto& hole_pair : hole_pairs) {
             for (const auto& part_pair : part_pairs) {
                 // Check constraints
-                pair_inds.push_back(wfn_.nvir_up * hole_pair[0] + part_pair[0]);
+                pair_inds.push_back(nvir_up * hole_pair[0] + part_pair[0]);
                 //pair_inds.push_back(wfn_.nvir_up * hole_pair[1] + part_pair[1]);
             }
         }
@@ -120,11 +118,12 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         for (const auto& hole_single : hole_singles) {
             for (const auto& part_single : part_singles) {
                 // Check constraints
-                single_inds.push_back(wfn_.nvir_up * wfn_.nocc / 2 + hole_single[0] * wfn_.nvir + part_single[0]);
+                single_inds.push_back(nvir_up * nocc / 2 + hole_single[0] * nvir + part_single[0]);
             }
         }
     
     }
+}
 
 void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {
@@ -200,7 +199,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
             }
             nexc_list[idet] = nexc;
 
-            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds);
+            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, wfn_.nvir_up);
             wfn_.det_exc_param_indx.push_back(exc_info);
         }
     }
