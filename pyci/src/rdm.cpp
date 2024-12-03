@@ -850,10 +850,14 @@ void compute_transition_rdms(const GenCIWfn &wfn1, const GenCIWfn &wfn2, const d
 pybind11::tuple py_compute_rdms_doci(const DOCIWfn &wfn, const Array<double> coeffs) {
     Array<double> d0({wfn.nbasis, wfn.nbasis});
     Array<double> d2({wfn.nbasis, wfn.nbasis});
+    Array<double> d3({wfn.nbasis, wfn.nbasis, wfn.nbasis});
+    Array<double> d4({wfn.nbasis, wfn.nbasis, wfn.nbasis});
     compute_rdms(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
                  reinterpret_cast<double *>(d0.request().ptr),
-                 reinterpret_cast<double *>(d2.request().ptr));
-    return pybind11::make_tuple(d0, d2);
+                 reinterpret_cast<double *>(d2.request().ptr),
+                 reinterpret_cast<double *>(d3.request().ptr),
+                 reinterpret_cast<double *>(d4.request().ptr));
+    return pybind11::make_tuple(d0, d2, d3, d4);
 }
 
 pybind11::tuple py_compute_rdms_fullci(const FullCIWfn &wfn, const Array<double> coeffs) {
