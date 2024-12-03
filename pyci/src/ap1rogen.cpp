@@ -85,6 +85,46 @@ std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_paritio
     return partitions;
 }
 
+void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::size_t>& holes,
+    const std::vector<std::size_t>& particles, int excitation_order, std::vector<std::size_t>& pair_inds,
+    std::vector<std::size_t>& single_inds) {
+    int max_pairs = holes.size() / 2;
+    auto paritions = generate_partitions(excitation_order, max_pairs);
+
+    for (const auto& [num_pairs, num_singles] : partitions) {
+        // Step 2: Generate combinations of pairs and singles
+        std::vector<std::vector<std::size_t>> hole_pairs, hole_singles;
+        std::vector<std::vector<std::size_t>> part_pairs, part_singles;
+
+        generate_combinations(holes, 2, hole_pairs);
+        generate_combinations(holes, 1, hole_singles);
+        generate_combinations(particles, 2, part_pairs);
+        generate_combinations(particles, 1, part_singles);
+
+        // Limit the number of pairs and singles to the requested partition
+        hole_pairs.resize(std::min(hole_pairs.size(), static_cast<std::size_t>(num_pairs)));
+        hole_singles.resize(std::min(hole_singles.size(), static_cast<std::size_t>(num_singles)));
+        part_pairs.resize(std::min(part_pairs.size(), static_cast<std::size_t>(num_pairs)));
+        part_singles.resize(std::min(part_singles.size(), static_cast<std::size_t>(num_singles)));
+    
+        // Match pairs and singles
+        for (const auto& hole_pair : hole_pairs) {
+            for (const auto& part_pair : part_pairs) {
+                // Check constraints
+                pair_inds.push_back(wfn_.nvir_up * hole_pair[0] + part_pair[0]);
+                //pair_inds.push_back(wfn_.nvir_up * hole_pair[1] + part_pair[1]);
+            }
+        }
+
+        for (const auto& hole_single : hole_singles) {
+            for (const auto& part_single : part_singles) {
+                // Check constraints
+                single_inds.push_back(wfn_.nvir_up * wfn_.nocc / 2 + hole_single[0] * wfn_.nvir + part_single[0]);
+            }
+        }
+    
+    }
+
 void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {
     std::cout << "Inside init_overlap" << std::endl;
@@ -170,30 +210,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
             }
             nexc_list[idet] = nexc;
 
-            std::vector<std::pair<std::size_t, std::size_t>> occ_pairs;
-            for (std::size_t hole in holes) {
-                std::size_t conjugate = hole + wfn_.nbasis / 2;
-                if(std::find(holes.begin(), holes.end(), conjugate) != holes.end()) {
-                    occ_pairs.push_back(std::make_pair(hole, conjugate));
-                    // exc_info.pair_inds.push_back(wfn_.nvir_up * hole);
-                }
-            }
-
-            std::vector<std::size_t, std::size_t> vir_pairs;
-            for (std::size_t part in particles) {
-                std::size_t conjugate = part + wfn_.nbasis / 2;
-                if(std::find(particles.begin(), particles.end(), conjugate) != particles.end()) {
-                    vir_pairs.push_back(std::make_pair(part, conjugate));
-                    // exc_info.pair_inds.push_back(wfn_.nvir_up * part);
-                }
-            }
-
-            for (const auto& pair : occ_pairs) {
-               for (const auto& vir_pair : vir_pairs) {
-                   exc_info.pair_inds.push_back(wfn_.nvir_up * pair.first + vir_pair.first);
-                   exc_info.pair_inds.push_back(wfn_.nvir_up * pair.second + vir_pair.second);
-               }
-            }
+            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds);
+            wfn_.det_exc_param_indx.push_back(exc_info);
 
             
         }
@@ -304,3 +322,30 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
 }
 
 } // namespace pyci
+
+
+
+// std::vector<std::pair<std::size_t, std::size_t>> occ_pairs;
+//             for (std::size_t hole in holes) {
+//                 std::size_t conjugate = hole + wfn_.nbasis / 2;
+//                 if(std::find(holes.begin(), holes.end(), conjugate) != holes.end()) {
+//                     occ_pairs.push_back(std::make_pair(hole, conjugate));
+//                     // exc_info.pair_inds.push_back(wfn_.nvir_up * hole);
+//                 }
+//             }
+
+//             std::vector<std::size_t, std::size_t> vir_pairs;
+//             for (std::size_t part in particles) {
+//                 std::size_t conjugate = part + wfn_.nbasis / 2;
+//                 if(std::find(particles.begin(), particles.end(), conjugate) != particles.end()) {
+//                     vir_pairs.push_back(std::make_pair(part, conjugate));
+//                     // exc_info.pair_inds.push_back(wfn_.nvir_up * part);
+//                 }
+//             }
+
+//             for (const auto& pair : occ_pairs) {
+//                for (const auto& vir_pair : vir_pairs) {
+//                    exc_info.pair_inds.push_back(wfn_.nvir_up * pair.first + vir_pair.first);
+//                    exc_info.pair_inds.push_back(wfn_.nvir_up * pair.second + vir_pair.second);
+//                }
+//             }

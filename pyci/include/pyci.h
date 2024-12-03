@@ -937,6 +937,11 @@ public:
     // Generate partitions
     std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_paritions(int , int);
 
+    // Generate excitations
+    void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::size_t>& ,
+                            const std::vector<std::size_t>& , int , std::vector<std::size_t>& ,
+                            std::vector<std::size_t>& );
+
     // Initializer for {d_,}overlap variables
     void init_overlap(const NonSingletCI &);
 
