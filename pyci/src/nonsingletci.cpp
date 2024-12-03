@@ -219,9 +219,15 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     }
     // Handle excitation order 1
     if (e == 1) {
+        // Flatten occ_pairs into a single-dimensional array
+        std::vector<long> flattened_occs;
+        for (const auto& pair : occ_pairs) {
+            flattened_occs.push_back(pair.first);
+            flattened_occs.push_back(pair.second);
+        }
         std::cout << "-----Handling excitation order 1-----" << std::endl;
         std::cout << "Determinants of excitation order 1" << std::endl;
-        for (long occ : occs) {
+        for (long occ : flattened_occs) {
             for (long vir : virs) {
                 std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
                 excite_det(occ, vir, &det[0]);
@@ -268,7 +274,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                 continue; 
             }
 
-            // Generate occ pair combinations
+            // Generate occ pair and vir pair combinations
             std::vector<std::vector<std::vector<long>>> opair_combinations;
             std::vector<std::vector<std::vector<long>>> vpair_combinations;
             opair_combinations.push_back(generate_combinations(nocc_pairs, d));            
