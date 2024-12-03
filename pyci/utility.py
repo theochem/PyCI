@@ -92,7 +92,7 @@ def reduce_senzero_integrals(h, v, w, nocc):
     return rv, rw
 
 
-def spinize_rdms(d1, d2):
+def spinize_rdms(d1, d2, d3=None, d4=None):
     r"""
     Convert the DOCI matrices or FullCI RDM spin-blocks to full, generalized RDMs.
 
@@ -102,19 +102,24 @@ def spinize_rdms(d1, d2):
         :math:`D_0` matrix or FullCI 1-RDM spin-blocks.
     d2 : numpy.ndarray
         :math:`D_2` matrix or FullCI 2-RDM spin-blocks.
-
+    d3 : numpy.ndarray
+        :math `D_3` matrix for 3-RDM spin-blocks    
+    d4 : numpy.ndarray
+        :math `D_4` matrix for 3-RDM spin-blocks
     Returns
     -------
     rdm1 : numpy.ndarray
         Generalized one-particle RDM.
     rdm2 : numpy.ndarray
         Generalized two-particle RDM.
-
+    rdm3 : numpy.ndarray
+        Generalized three-particle RDM.
     """
     nbasis = d1.shape[1]
     nspin = nbasis * 2
     rdm1 = np.zeros((nspin, nspin), dtype=np.double)
     rdm2 = np.zeros((nspin, nspin, nspin, nspin), dtype=np.double)
+    rdm3 = np.zeros((nspin, nspin, nspin, nspin,nspin,nspin), dtype=np.double)
     aa = rdm1[:nbasis, :nbasis]
     bb = rdm1[nbasis:, nbasis:]
     aaaa = rdm2[:nbasis, :nbasis, :nbasis, :nbasis]
@@ -123,6 +128,10 @@ def spinize_rdms(d1, d2):
     baba = rdm2[nbasis:, :nbasis, nbasis:, :nbasis]
     abba = rdm2[:nbasis, nbasis:, nbasis:, :nbasis]
     baab = rdm2[nbasis:, :nbasis, :nbasis, nbasis:]
+    aaaaaa= rdm3[:nbasis,:nbasis,:nbasis,:nbasis,:nbasis,:nbasis]
+    bbbbbb= rdm3[nbasis:,nbasis:,nbasis:,nbasis:,nbasis:,nbasis:]
+    bbabba= rdm3[nbasis:,nbasis:,:nbasis,nbasis:,nbasis:,:nbasis]
+    aabaab= rdm3[:nbasis,:nbasis,nbasis:,:nbasis,:nbasis,nbasis:]
     if d1.ndim == 2:
         # DOCI matrices
         for p in range(nbasis):
@@ -135,9 +144,29 @@ def spinize_rdms(d1, d2):
                 bbbb[p, q, p, q] += d2[p, q]
                 abab[p, q, p, q] += d2[p, q]
                 baba[p, q, p, q] += d2[p, q]
+                bbabba[p, q, q, p, q, q] += 2.0*d2[p, q]
+                aabaab[p, q, q, p, q, q] += 2.0*d2[p, q]
+                for r in range(nbasis):               
+                    bbabba[p, q, q, p, r, r] += 2.0*d4[p, q, r]
+                    aabaab[p, q, q, p, r, r] += 2.0*d4[p, q, r] 
+                    aaaaaa[p, q, r, p, q, r] += d3[p, q, r]
+                    bbbbbb[p, q, r, p, q, r] += d3[p, q, r]
+                    bbabba[p, q, r, p, q, r] += d3[p, q, r]
+                    aabaab[p, q, r, p, q, r] += d3[p, q, r]
         rdm2 -= np.transpose(rdm2, axes=(1, 0, 2, 3))
         rdm2 -= np.transpose(rdm2, axes=(0, 1, 3, 2))
         rdm2 *= 0.5
+        rdm3 += np.einsum('ijklmn -> ijknlm',rdm3)+\
+            np.einsum('ijklmn -> ijkmnl',rdm3) 
+        rdm3*=1
+        rdm3-=np.einsum('ijklmn -> ijkmln',rdm3)
+        rdm3 +=np.einsum('ijklmn -> kijlmn',rdm3)+\
+                np.einsum('ijklmn -> jkilmn',rdm3) 
+        aaaaaa *=1/3
+        bbbbbb *=1/3
+        rdm3-=np.einsum('ijklmn -> jiklmn',rdm3)
+        rdm3 *= 0.5
+        return rdm1, rdm2, rdm3
     else:
         # FullCI RDM spin-blocks
         aa += d1[0]  # +aa
@@ -148,7 +177,7 @@ def spinize_rdms(d1, d2):
         baba += np.swapaxes(np.swapaxes(d2[2], 0, 1), 2, 3)  # +abab
         abba -= np.swapaxes(d2[2], 2, 3)  # -abab
         baab -= np.swapaxes(d2[2], 0, 1)  # -abab
-    return rdm1, rdm2
+        return rdm1, rdm2
 
 
 def odometer_one_spin(wfn, cost, t, qmax):
