@@ -17,7 +17,7 @@
 
 namespace pyci {
 
-void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2) {
+void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2, double *d3, double *d4) {
     // prepare working vectors
     AlignedVector<ulong> v_det(wfn.nword);
     AlignedVector<long> v_occs(wfn.nocc_up);
@@ -30,8 +30,14 @@ void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *
         d0[j] = 0;
         d2[j++] = 0;
     }
+    i=wfn.nbasis * wfn.nbasis * wfn.nbasis;
+    j = 0;
+    while (j < i) {
+        d3[j]=0;
+        d4[j++]=0;
+    }
     // iterate over determinants
-    for (long idet = 0, jdet, k, l; idet < wfn.ndet; ++idet) {
+    for (long idet = 0, jdet, mdet, k, l, m, n; idet < wfn.ndet; ++idet) {
         double val1, val2;
         // fill working vectors
         wfn.copy_det(idet, det);
@@ -46,6 +52,41 @@ void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *
                 l = occs[j];
                 d2[wfn.nbasis * k + l] += val1;
                 d2[wfn.nbasis * l + k] += val1;
+                for (m= j + 1; m < wfn.nocc_up; ++m){
+                    n=occs[m];
+                    d3[(wfn.nbasis*wfn.nbasis)*k + wfn.nbasis*l + n]+=val1;
+                    d3[(wfn.nbasis*wfn.nbasis)*k + wfn.nbasis*n + l]+=val1;
+                    d3[(wfn.nbasis*wfn.nbasis)*l + wfn.nbasis*k + n]+=val1;
+                    d3[(wfn.nbasis*wfn.nbasis)*l + wfn.nbasis*n + k]+=val1;
+                    d3[(wfn.nbasis*wfn.nbasis)*n + wfn.nbasis*k + l]+=val1;
+                    d3[(wfn.nbasis*wfn.nbasis)*n + wfn.nbasis*l + k]+=val1;    
+                }
+                // pair excitation elements 3rdm j>i
+                for (m = 0; m < wfn.nvir_up; ++m) {
+                    n = virs[m];
+                    excite_det(l, n, det);
+                    mdet = wfn.index_det(det);
+                    excite_det(n, l, det);
+                    // check if excited determinant is in wfn
+                    if (mdet > idet) {
+                        val2 = coeffs[mdet] * coeffs[idet];
+                        d4[(wfn.nbasis*wfn.nbasis)*k + wfn.nbasis*l + n]+=val2;
+                        d4[(wfn.nbasis*wfn.nbasis)*k + wfn.nbasis*n + l]+=val2;
+                    }
+                } //pair excitation elements 3rdm i>j
+                for (m = 0; m < wfn.nvir_up; ++m) {
+                    n = virs[m];
+                    excite_det(k, n, det);
+                    mdet = wfn.index_det(det);
+                    excite_det(n, k, det);
+                    // check if excited determinant is in wfn
+                    if (mdet > idet) {
+                        val2 = coeffs[mdet] * coeffs[idet];
+                        d4[(wfn.nbasis*wfn.nbasis)*l + wfn.nbasis*k + n]+=val2;
+                        d4[(wfn.nbasis*wfn.nbasis)*l + wfn.nbasis*n + k]+=val2;
+                    }
+                }
+
             }
             // pair excitation elements
             for (j = 0; j < wfn.nvir_up; ++j) {
