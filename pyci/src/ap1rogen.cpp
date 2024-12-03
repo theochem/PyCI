@@ -76,6 +76,14 @@ void AP1roGeneralizedSenoObjective::generate_combinations(const std::vector<T>& 
     } while (std::next_permutation(mask.begin(), mask.end()));
 }
 
+std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_paritions(int e, int max_pairs) {
+    std::vector<std::pair<int, int>> partitions;
+    for (int p = 0; p <= std::min(e / 2 , max_pairs); ++p) {
+        int s = e - 2 * p;
+        partitions.emblace_back(p, s);
+    }
+    return partitions;
+}
 
 void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {

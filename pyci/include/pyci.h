@@ -934,6 +934,9 @@ public:
                             const std::vector<std::size_t>& , int , std::vector<long>& ,
                             std::vector<long>&, long, const NonSingletCI &);
 
+    // Generate partitions
+    std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_paritions(int , int);
+
     // Initializer for {d_,}overlap variables
     void init_overlap(const NonSingletCI &);
 
