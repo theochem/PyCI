@@ -70,6 +70,14 @@ SparseOp::SparseOp(const SQuantOp &ham, const GenCIWfn &wfn, const long rows, co
     update<GenCIWfn>(ham, wfn, nrow, ncol, 0);
 }
 
+SparseOp::SparseOp(const SQuantOp &ham, const NonSingletCI &wfn, const long rows, const long cols,
+                   const bool symm)
+    : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
+      ecore(ham.ecore), symmetric(symm) {
+    append<long>(indptr, 0);
+    update<NonSingletCI>(ham, wfn, nrow, ncol, 0);
+}
+
 pybind11::object SparseOp::dtype(void) const {
     return pybind11::dtype::of<double>();
 }
