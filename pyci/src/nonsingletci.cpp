@@ -232,18 +232,22 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                 std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
                 excite_det(occ, vir, &det[0]);
                 add_det(&det[0]);
-                DetExcParamIndx container;
+                
                 // Structure to store determinant and indices of params 
                 //corresponding to the pair-excitations & single-excitations
                 if (is_hf_det) {
-                    
-                    container.det.resize(nword);
+                    DetExcParamIndx container;    
+                    // container.DetExcParamIndx container;
+                    // det.resize(nword);
                     std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
-                    //container.pair_inds.clear();
+                    container.pair_inds.clear();
                     container.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
                     std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
                     std::cout << "ndet" << ndet << std::endl;
-                    //det_exc_param_indx[ndet] = container;
+                    if (det_exc_param_indx.size() < ndet) {
+                        det_exc_param_indx.resize(ndet);
+                    }
+                    det_exc_param_indx[ndet-1] = container;
                 } 
                 std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
                 for (int k = 0; k < nword; ++k) {
@@ -402,7 +406,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                 std::cout << std::endl;
                                 if (is_hf_det) {
                                     std::memcpy(&det_exc.det[0], &temp_det[0], sizeof(ulong) * nword);
-                                    det_exc_param_indx[ndet] = det_exc;
+                                    if (det_exc_param_indx.size() < ndet) {
+                                        det_exc_param_indx.resize(ndet);
+                                    }
+                                    det_exc_param_indx[ndet-1] = det_exc;
                                 }
                             }
                             
@@ -419,7 +426,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         std::cout << std::endl;
                         if (is_hf_det) {
                             std::memcpy(&det_exc.det[0], &det[0], sizeof(ulong) * nword);
-                            det_exc_param_indx[ndet] = det_exc;
+                            if (det_exc_param_indx.size() < ndet) {
+                                det_exc_param_indx.resize(ndet);
+                            }
+                            det_exc_param_indx[ndet-1] = det_exc;
                         } 
                     }
                 }    
@@ -432,7 +442,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
  
 
 
-void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) {
+void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) const {
    /* GenCIWfn build using FullCIWfn initializes the OneSpinWfn with nbasis * 2, so we are calling it nb2 here*/
     long nb = nb2/2;
     // FIXME: The code is assuming nocc is even
