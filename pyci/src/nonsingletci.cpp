@@ -239,7 +239,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     DetExcParamIndx container;
                     container.det.resize(nword);
                     std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
-                    container.pair_inds.clear();
+                    //container.pair_inds.clear();
                     container.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
                     det_exc_param_indx[ndet] = container;
                 } 
