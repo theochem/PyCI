@@ -49,7 +49,7 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(const SparseOp &op_
 // Copy Constructor
 // obj is the constant reference to another object to be copied
 AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(const AP1roGeneralizedSenoObjective &obj)
-: Objective<NonSingletCI>::Objective(obj), nexc_list(obj.nexc_list) 
+: Objective<NonSingletCI>::Objective(obj), nexc_list(obj.nexc_list), det_exc_param_indx(obj.det_exc_param_indx)
 {
     return;
 }
@@ -57,7 +57,7 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(const AP1roGenerali
 // Move constructor
 // obj is the rvalue reference to another object to be moved
 AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(AP1roGeneralizedSenoObjective &&obj) noexcept
-: Objective<NonSingletCI>::Objective(obj), nexc_list(std::move(obj.nexc_list))
+: Objective<NonSingletCI>::Objective(obj), nexc_list(std::move(obj.nexc_list)), det_exc_param_indx(std::move(obj.det_exc_param_indx))
 {
     return;
 }
@@ -125,7 +125,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
     }
 }
 
-void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
+void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {
     std::cout << "Inside init_overlap" << std::endl;
     // Initialize your class-specific variables here
@@ -139,22 +139,24 @@ void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
     // d_ovlp.resize(wfn_.ndet * nparam);
 
     std::size_t nword = (ulong)wfn_.nword;
-    std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
+    long nb = wfn_.nbasis;
+    long nocc = wfn_.nocc;
+    // std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
 
     // Populate the hash map (assume det_exc_param_indx is iterable)
-    for (const auto& exc_info : det_exc_param_indx) {
-        det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
-    }
+    // for (const auto& exc_info : det_exc_param_indx) {
+    //     det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
+    // }
 
     for (std::size_t idet = 0; idet != nconn; ++idet)
     {
-        std::vector<ulong> rdet(wfn_.nword);
-        wfn_.fill_hartreefock_det(wfn_.nbasis, wfn_.nocc, &rdet[0]);
+        std::vector<ulong> rdet(nword);
+        wfn_.fill_hartreefock_det(nb, nocc, &rdet[0]);
 
         std::cout << "After fill_hartreefock_det rdet:" << std::endl;
         //print_vector("rdet", rdet);
 
-        // const ulong *det = det_ptr(idet);
+        const ulong *det = wfn_.det_ptr(idet);
 
         // std::vector<ulong> det_vector(det, det + nword);
         // auto it = det_map.find(det_vector);
@@ -202,7 +204,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
             nexc_list[idet] = nexc;
 
             generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, wfn_.nvir_up, wfn_.nvir);
-            det_exc_param_indx.push_back(exc_info);
+            det_exc_param_indx[idet] = exc_info;
         }
     }
 }
@@ -236,7 +238,7 @@ double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<lo
 // void AP1roGeneralizedSenoObjective::overlap(const NonSingletCI &wfn_, const double *x, double *y) {
 void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
 
-    for (long idet = 0; idet != ndet; ++idet) {
+    for (std::size_t idet = 0; idet != ndet; ++idet) {
         
         //Retrieve the DetExcParamIndx object from the hash map
         // const ulong* det = det_ptr(idet);
@@ -253,7 +255,7 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
 
         if (idet < det_exc_param_indx.size()) {
             // Access the excitation parameter indices
-            const DetExcParamIndx& exc_info = it->second;
+            const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
 
             double pair_permanent = permanent_calculation(exc_info.pair_inds, x);
             double single_permanent = permanent_calculation(exc_info.single_inds, x);
@@ -305,7 +307,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
         
         // Ensure we have the excitation parameters for this determinant
         if (idet < det_exc_param_indx.size()) {
-            const DetExcParamIndx& exc_info = it->second;
+            const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
             
             // Loop over each parameter (paired and single excitations)
             std::size_t param_index = 0;
