@@ -241,7 +241,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
                     container.pair_inds.clear();
                     container.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
-                    det_exc_param_indx.push_back(container);
+                    det_exc_param_indx[ndet] = container;
                 } 
                 std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
                 for (int k = 0; k < nword; ++k) {
@@ -400,7 +400,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                 std::cout << std::endl;
                                 if (is_hf_det) {
                                     std::memcpy(&det_exc.det[0], &temp_det[0], sizeof(ulong) * nword);
-                                    det_exc_param_indx.push_back(det_exc);
+                                    det_exc_param_indx[ndet] = det_exc;
                                 }
                             }
                             
@@ -417,7 +417,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         std::cout << std::endl;
                         if (is_hf_det) {
                             std::memcpy(&det_exc.det[0], &det[0], sizeof(ulong) * nword);
-                            det_exc_param_indx.push_back(det_exc);
+                            det_exc_param_indx[ndet] = det_exc;
                         } 
                     }
                 }    
