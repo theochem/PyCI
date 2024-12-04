@@ -943,7 +943,7 @@ public:
                             std::vector<std::size_t>&, std::size_t, std::size_t, std::size_t );
 
     // Initializer for {d_,}overlap variables
-    void init_overlap(NonSingletCI &);
+    void init_overlap(const NonSingletCI &);
 
     // Permanent calculation: Ryser's Algorithm
     double permanent_calculation(const std::vector<long>&, const double* );
