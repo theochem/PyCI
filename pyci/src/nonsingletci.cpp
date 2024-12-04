@@ -237,8 +237,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                 //corresponding to the pair-excitations & single-excitations
                 if (is_hf_det) {
                     DetExcParamIndx container;    
-                    // container.DetExcParamIndx container;
-                    // det.resize(nword);
+                    container.det.resize(nword);
                     std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
                     container.pair_inds.clear();
                     container.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
@@ -311,10 +310,11 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         std::cout << "Error: Empty combination detected" << std::endl;
                         // continue;
                     }
+
                     std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
+                    std::vector<long> used_virs;
                     DetExcParamIndx det_exc;
                     
-                    std::vector<long> used_virs;
                     for (std::size_t idx = 0; idx < d; ++idx) {
                         const auto& occ_pair = occ_pairs[opair_comb[idx]];
                         const auto& vir_pair = vir_pairs[vpair_comb[idx]];
@@ -405,6 +405,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                 }
                                 std::cout << std::endl;
                                 if (is_hf_det) {
+                                    det_exc.det.resize(nword);
                                     std::memcpy(&det_exc.det[0], &temp_det[0], sizeof(ulong) * nword);
                                     if (det_exc_param_indx.size() < ndet) {
                                         det_exc_param_indx.resize(ndet);
@@ -425,6 +426,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         }
                         std::cout << std::endl;
                         if (is_hf_det) {
+                            det_exc.det.resize(nword);
                             std::memcpy(&det_exc.det[0], &det[0], sizeof(ulong) * nword);
                             if (det_exc_param_indx.size() < ndet) {
                                 det_exc_param_indx.resize(ndet);
