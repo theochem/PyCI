@@ -141,8 +141,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
     std::size_t nword = (ulong)wfn_.nword;
     std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
 
-    // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
-    for (const auto& exc_info : wfn_.det_exc_param_indx) {
+    // Populate the hash map (assume det_exc_param_indx is iterable)
+    for (const auto& exc_info : det_exc_param_indx) {
         det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
     }
 
@@ -154,7 +154,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
         std::cout << "After fill_hartreefock_det rdet:" << std::endl;
         //print_vector("rdet", rdet);
 
-        const ulong *det = wfn_.det_ptr(idet);
+        // const ulong *det = det_ptr(idet);
 
         // std::vector<ulong> det_vector(det, det + nword);
         // auto it = det_map.find(det_vector);
@@ -162,7 +162,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
         //     std::cout << "Found det in det_map" << std::endl;
         //     // std::cout << "Det: " << det_vector << std::endl;
         //     // std::cout << "DetExcParamIndx: " << it->second << std::endl;
-        if (idet < wfn_.det_exc_param_indx.size()) {
+        if (idet < det_exc_param_indx.size()) {
             std::cout << "Det found in det_map" << std::endl; 
         } else {
             std::cout << "Det not found in det_map" << std::endl;
@@ -202,7 +202,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
             nexc_list[idet] = nexc;
 
             generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, wfn_.nvir_up, wfn_.nvir);
-            wfn_.det_exc_param_indx.push_back(exc_info);
+            det_exc_param_indx.push_back(exc_info);
         }
     }
 }
@@ -233,23 +233,25 @@ double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<lo
     return permanent;
 }
 
-void AP1roGeneralizedSenoObjective::overlap(const NonSingletCI &wfn_, const double *x, double *y) {
-    for (long idet = 0; idet != wfn_.ndet; ++idet) {
+// void AP1roGeneralizedSenoObjective::overlap(const NonSingletCI &wfn_, const double *x, double *y) {
+void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
+
+    for (long idet = 0; idet != ndet; ++idet) {
         
         //Retrieve the DetExcParamIndx object from the hash map
-        const ulong* det = wfn_.det_ptr(idet);
+        // const ulong* det = det_ptr(idet);
 
         // // std::vector<ulong> det_vector(det, det + wfn_.nword);
         // // Find corresponding DetExcParamIndx for the current determinant
         // std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
-        // // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
-        // for (const auto& exc_info : wfn_.det_exc_param_indx) {
+        // // Populate the hash map (assume det_exc_param_indx is iterable)
+        // for (const auto& exc_info : det_exc_param_indx) {
         //     det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
         // }
 
         // auto it = det_map.find(det_vector);
 
-        if (idet < wfn_.det_exc_param_indx.size()) {
+        if (idet < det_exc_param_indx.size()) {
             // Access the excitation parameter indices
             const DetExcParamIndx& exc_info = it->second;
 
@@ -281,18 +283,20 @@ double AP1roGeneralizedSenoObjective::compute_derivative(
 }
 
 
-void AP1roGeneralizedSenoObjective::d_overlap(const NonSingletCI &wfn_, const size_t ndet, const double *x, double *y){
+// void AP1roGeneralizedSenoObjective::d_overlap(const NonSingletCI &wfn_, const size_t ndet, const double *x, double *y){
+void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x, double *y){
+
     // Loop over each determinant
     for (std::size_t idet = 0; idet != ndet; ++idet)
     {
         // Retrieve the corresponding determinant
-        const ulong* det = wfn_.det_ptr(idet);
+        // const ulong* det = det_ptr(idet);
 
         // std::vector<ulong> det_vector(det, det + wfn_.nword);
         // Find corresponding DetExcParamIndx for the current determinant
         // std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
-        // // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
-        // for (const auto& exc_info : wfn_.det_exc_param_indx) {
+        // // Populate the hash map (assume det_exc_param_indx is iterable)
+        // for (const auto& exc_info : det_exc_param_indx) {
         //     det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
         // }
         
@@ -300,7 +304,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const NonSingletCI &wfn_, const si
         // auto it = det_map.find(det_vector);
         
         // Ensure we have the excitation parameters for this determinant
-        if (idet < wfn_.det_exc_param_indx.size()) {
+        if (idet < det_exc_param_indx.size()) {
             const DetExcParamIndx& exc_info = it->second;
             
             // Loop over each parameter (paired and single excitations)
