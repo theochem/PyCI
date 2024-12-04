@@ -672,7 +672,7 @@ public:
 
     std::vector<std::vector<long>> generate_cartesian_product(const AlignedVector<std::pair<int, int>>&, std::size_t);
 
-    void fill_hartreefock_det(long, long, ulong *);
+    void fill_hartreefock_det(long, long, ulong *) const;
 
     void add_excited_dets(const ulong *, const long);
 
