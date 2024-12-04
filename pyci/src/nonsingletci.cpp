@@ -232,16 +232,18 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                 std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
                 excite_det(occ, vir, &det[0]);
                 add_det(&det[0]);
-                
+                DetExcParamIndx container;
                 // Structure to store determinant and indices of params 
                 //corresponding to the pair-excitations & single-excitations
                 if (is_hf_det) {
-                    DetExcParamIndx container;
+                    
                     container.det.resize(nword);
                     std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
                     //container.pair_inds.clear();
                     container.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
-                    det_exc_param_indx[ndet] = container;
+                    std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
+                    std::cout << "ndet" << ndet << std::endl;
+                    //det_exc_param_indx[ndet] = container;
                 } 
                 std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
                 for (int k = 0; k < nword; ++k) {
