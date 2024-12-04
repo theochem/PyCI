@@ -165,9 +165,12 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
         //     // std::cout << "Det: " << det_vector << std::endl;
         //     // std::cout << "DetExcParamIndx: " << it->second << std::endl;
         if (idet < det_exc_param_indx.size()) {
-            std::cout << "Det found in det_map" << std::endl; 
+            std::cout << "idet: " << idet <<  " found in det_map" << std::endl; 
         } else {
-            std::cout << "Det not found in det_map" << std::endl;
+            for (std::size_t k = 0; k < nword; ++k) {
+                std::cout << det[k] << " ";
+            }
+            std::cout << "iDet: " << idet << " not found in det_map" << std::endl;
             DetExcParamIndx exc_info;
             ulong word, hword, pword;
             std::size_t h, p, nexc = 0;
@@ -193,8 +196,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 
                     hword &= ~(1UL << h);
                     pword &= ~(1UL << p);
-                    std::cout << "hword" << hword << std::endl;
-                    std::cout << "pword" << pword << std::endl;
+                    std::cout << "hword: " << hword << std::endl;
+                    std::cout << "pword: " << pword << std::endl;
                     std::cout << "nexc: " << nexc << std::endl;
                     std::cout << "hole_list: " << hole_idx << std::endl;
                     std::cout << "part_list: " << part_idx << std::endl;
