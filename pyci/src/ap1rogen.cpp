@@ -135,8 +135,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
     nparam += wfn_.nocc * (2* wfn_.nbasis - wfn_.nocc); // beta singles
     std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
 
-    ovlp.resize(wfn_.ndet);
-    d_ovlp.resize(wfn_.ndet * nparam);
+    // ovlp.resize(wfn_.ndet);
+    // d_ovlp.resize(wfn_.ndet * nparam);
 
     std::size_t nword = (ulong)wfn_.nword;
     std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
@@ -156,12 +156,14 @@ void AP1roGeneralizedSenoObjective::init_overlap(NonSingletCI &wfn_)
 
         const ulong *det = wfn_.det_ptr(idet);
 
-        std::vector<ulong> det_vector(det, det + nword);
-        auto it = det_map.find(det_vector);
-        if (it != det_map.end()) {
-            std::cout << "Found det in det_map" << std::endl;
-            // std::cout << "Det: " << det_vector << std::endl;
-            // std::cout << "DetExcParamIndx: " << it->second << std::endl;
+        // std::vector<ulong> det_vector(det, det + nword);
+        // auto it = det_map.find(det_vector);
+        // if (it != det_map.end()) {
+        //     std::cout << "Found det in det_map" << std::endl;
+        //     // std::cout << "Det: " << det_vector << std::endl;
+        //     // std::cout << "DetExcParamIndx: " << it->second << std::endl;
+        if (idet < wfn_.det_exc_param_indx.size()) {
+            std::cout << "Det found in det_map" << std::endl; 
         } else {
             std::cout << "Det not found in det_map" << std::endl;
             DetExcParamIndx exc_info;
@@ -236,18 +238,18 @@ void AP1roGeneralizedSenoObjective::overlap(const NonSingletCI &wfn_, const doub
         
         //Retrieve the DetExcParamIndx object from the hash map
         const ulong* det = wfn_.det_ptr(idet);
-        std::vector<ulong> det_vector(det, det + wfn_.nword);
 
-        // Find corresponding DetExcParamIndx for the current determinant
-        std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
-        // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
-        for (const auto& exc_info : wfn_.det_exc_param_indx) {
-            det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
-        }
+        // // std::vector<ulong> det_vector(det, det + wfn_.nword);
+        // // Find corresponding DetExcParamIndx for the current determinant
+        // std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
+        // // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
+        // for (const auto& exc_info : wfn_.det_exc_param_indx) {
+        //     det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
+        // }
 
-        auto it = det_map.find(det_vector);
+        // auto it = det_map.find(det_vector);
 
-        if (it != det_map.end()) {
+        if (idet < wfn_.det_exc_param_indx.size()) {
             // Access the excitation parameter indices
             const DetExcParamIndx& exc_info = it->second;
 
@@ -285,21 +287,20 @@ void AP1roGeneralizedSenoObjective::d_overlap(const NonSingletCI &wfn_, const si
     {
         // Retrieve the corresponding determinant
         const ulong* det = wfn_.det_ptr(idet);
-        std::vector<ulong> det_vector(det, det + wfn_.nword);
 
-
+        // std::vector<ulong> det_vector(det, det + wfn_.nword);
         // Find corresponding DetExcParamIndx for the current determinant
-        std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
-        // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
-        for (const auto& exc_info : wfn_.det_exc_param_indx) {
-            det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
-        }
+        // std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
+        // // Populate the hash map (assume wfn_.det_exc_param_indx is iterable)
+        // for (const auto& exc_info : wfn_.det_exc_param_indx) {
+        //     det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
+        // }
         
         // Find corresponding DetExcParamIndx for the current determinant
-        auto it = det_map.find(det_vector);
+        // auto it = det_map.find(det_vector);
         
         // Ensure we have the excitation parameters for this determinant
-        if (it != det_map.end()) {
+        if (idet < wfn_.det_exc_param_indx.size()) {
             const DetExcParamIndx& exc_info = it->second;
             
             // Loop over each parameter (paired and single excitations)
