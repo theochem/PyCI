@@ -620,6 +620,13 @@ struct DetExcParamIndx {
     std::vector<long> single_inds;
 };
 
+// Inline utility function for resizing DetExcParamIndx Object
+inline void ensure_struct_size(std::vector<DetExcParamIndx>& vec, const long size) {
+    if (vec.size() < static_cast<std::vector<DetExcParamIndx>::size_type>(size)) {
+        vec.resize(size);
+    }
+}
+
 struct NonSingletCI final : public GenCIWfn {
 public:
     using Wfn::maxrank_dn;

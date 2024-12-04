@@ -243,9 +243,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     container.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
                     std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
                     std::cout << "ndet" << ndet << std::endl;
-                    if (det_exc_param_indx.size() < ndet) {
-                        det_exc_param_indx.resize(ndet);
-                    }
+                    ensure_struct_size(det_exc_param_indx, ndet);
                     det_exc_param_indx[ndet-1] = container;
                 } 
                 std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
@@ -407,9 +405,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                 if (is_hf_det) {
                                     det_exc.det.resize(nword);
                                     std::memcpy(&det_exc.det[0], &temp_det[0], sizeof(ulong) * nword);
-                                    if (det_exc_param_indx.size() < ndet) {
-                                        det_exc_param_indx.resize(ndet);
-                                    }
+                                    ensure_struct_size(det_exc_param_indx, ndet);
                                     det_exc_param_indx[ndet-1] = det_exc;
                                 }
                             }
@@ -428,9 +424,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         if (is_hf_det) {
                             det_exc.det.resize(nword);
                             std::memcpy(&det_exc.det[0], &det[0], sizeof(ulong) * nword);
-                            if (det_exc_param_indx.size() < ndet) {
-                                det_exc_param_indx.resize(ndet);
-                            }
+                            ensure_struct_size(det_exc_param_indx, ndet);
                             det_exc_param_indx[ndet-1] = det_exc;
                         } 
                     }
