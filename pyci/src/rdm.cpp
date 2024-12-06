@@ -909,7 +909,7 @@ pybind11::tuple py_compute_rdms_34_doci(const DOCIWfn &wfn, const Array<double> 
     Array<double> d2({wfn.nbasis, wfn.nbasis});
     Array<double> d3({wfn.nbasis, wfn.nbasis, wfn.nbasis});
     Array<double> d4({wfn.nbasis, wfn.nbasis, wfn.nbasis});
-    compute_rdms(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
+    compute_rdms_34(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
                  reinterpret_cast<double *>(d0.request().ptr),
                  reinterpret_cast<double *>(d2.request().ptr),
                  reinterpret_cast<double *>(d3.request().ptr),
