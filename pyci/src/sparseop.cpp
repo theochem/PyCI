@@ -14,7 +14,7 @@
  * along with PyCI. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <pyci.h>
-
+#include <iostream>
 namespace pyci {
 
 namespace {
@@ -67,16 +67,17 @@ SparseOp::SparseOp(const SQuantOp &ham, const GenCIWfn &wfn, const long rows, co
     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
       ecore(ham.ecore), symmetric(symm) {
     append<long>(indptr, 0);
+    std::cout << "Inside SparseOp constructor" << std::endl;
     update<GenCIWfn>(ham, wfn, nrow, ncol, 0);
 }
 
-SparseOp::SparseOp(const SQuantOp &ham, const NonSingletCI &wfn, const long rows, const long cols,
-                   const bool symm)
-    : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
-      ecore(ham.ecore), symmetric(symm) {
-    append<long>(indptr, 0);
-    update<NonSingletCI>(ham, wfn, nrow, ncol, 0);
-}
+// SparseOp::SparseOp(const SQuantOp &ham, const NonSingletCI &wfn, const long rows, const long cols,
+//                    const bool symm)
+//     : nrow((rows > -1) ? rows : wfn.ndet), ncol((cols > -1) ? cols : wfn.ndet), size(0),
+//       ecore(ham.ecore), symmetric(symm) {
+//     append<long>(indptr, 0);
+//     update<NonSingletCI>(ham, wfn, nrow, ncol, 0);
+// }
 
 pybind11::object SparseOp::dtype(void) const {
     return pybind11::dtype::of<double>();
@@ -200,12 +201,14 @@ void SparseOp::update(const SQuantOp &ham, const WfnType &wfn, const long rows, 
     shape = pybind11::make_tuple(pybind11::cast(rows), pybind11::cast(cols));
     nrow = rows;
     ncol = cols;
+    std::cout << "nrow: " << nrow << std::endl;
     indptr.reserve(nrow + 1);
     for (long idet = startrow; idet < rows; ++idet) {
         add_row(ham, wfn, idet, &det[0], &occs[0], &virs[0]);
         sort_row(idet);
     }
     size = indices.size();
+    std::cout << "size: " << size << std::endl;
 }
 
 void SparseOp::reserve(const long n) {
@@ -407,7 +410,7 @@ void SparseOp::add_row(const SQuantOp &ham, const FullCIWfn &wfn, const long ide
                 koffset = ioffset + n2 * kk;
                 // loop over spin-down virtual indices
                 for (l = j + 1; l < wfn.nvir_dn; ++l) {
-                    ll = virs_dn[l];
+                 ;   ll = virs_dn[l];
                     // 0-2 excitation elements
                     excite_det(kk, ll, det_dn);
                     jdet = wfn.index_det(det_up);
@@ -508,5 +511,402 @@ void SparseOp::add_row(const SQuantOp &ham, const GenCIWfn &wfn, const long idet
     // add pointer to next row's indices
     append<long>(indptr, indices.size());
 }
+
+
+void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long idet, ulong *det_up,
+                       long *occs_up, long *virs) {
+    long i, j, k, l, ii, jj, kk, ll, jdet, jmin = symmetric ? idet : Max<long>();
+    long ioffset, koffset, sign_up;
+    long nbasis = wfn.nbasis / 2;
+    long n1 = nbasis; // Check if nbasis or nbasis * 2!
+    long n2 = n1 * n1;
+    long n3 = n1 * n2;
+    double val1, val2 = 0.0;
+    const ulong *rdet_up = wfn.det_ptr(idet);
+    const ulong *rdet_dn = rdet_up + nbasis;
+    ulong *det_dn = det_up + nbasis;
+    long *occs_dn = occs_up + wfn.nocc / 2; // Assuming nocc is even; closed shell system
+    std::memcpy(det_up, rdet_up, sizeof(ulong) * wfn.nword); // !Check nword or nword2 
+
+    fill_occs(wfn.nword, rdet_up, occs_up);
+    fill_occs(wfn.nword, rdet_dn, occs_dn);
+    fill_virs(wfn.nword, wfn.nbasis, rdet_up, virs);
+    
+    long nocc_up = __builtin_popcount(*det_up & ((1 << nbasis / 2) - 1));
+    long nocc_dn = wfn.nocc - nocc_up;  // std:popcount(det_up>> wfn.nbasis / 2);
+    long nvir_up = nbasis - nocc_up;
+    long nvir_dn = nbasis - nocc_dn;
+    long *virs_up = virs;
+    long *virs_dn = nullptr;
+    for (long i = 0; i < wfn.nvir; ++i) {
+        if (virs[i] >= nbasis) {
+            virs_dn = &virs[i];
+            break;
+        }
+    }
+
+    // loop over spin-up occupied indices
+    for (i = 0; i < nocc_up; ++i) {
+        ii = occs_up[i];
+        ioffset = n3 * ii;
+        // compute part of diagonal matrix element
+        val2 += ham.one_mo[(n1 + 1) * ii];
+        for (k = i + 1; k < nocc_up; ++k) {
+            kk = occs_up[k];
+            koffset = ioffset + n2 * kk;
+            val2 += ham.two_mo[koffset + n1 * ii + kk] - ham.two_mo[koffset + n1 * kk + ii];
+        }
+        for (k = 0; k < nocc_dn; ++k) {
+            kk = occs_dn[k];
+            val2 += ham.two_mo[ioffset + n2 * kk + n1 * ii + kk];
+        }
+        // loop over spin-up virtual indices
+        for (j = 0; j < nvir_up; ++j) {
+            jj = virs_up[j];
+            // alpha -> alpha excitation elements
+            excite_det(ii, jj, det_up);
+            sign_up = phase_single_det(wfn.nword, ii, jj, rdet_up);
+            jdet = wfn.index_det(det_up);
+            // check if 1-0 excited determinant is in wfn
+            if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                // compute 1-0 matrix element
+                val1 = ham.one_mo[n1 * ii + jj];
+                for (k = 0; k < nocc_up; ++k) {
+                    kk = occs_up[k];
+                    koffset = ioffset + n2 * kk;
+                    val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
+                }
+                for (k = 0; k < nocc_dn; ++k) {
+                    kk = occs_dn[k];
+                    val1 += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
+                }
+                // add 1-0 matrix element
+                append<double>(data, sign_up * val1);
+                append<long>(indices, jdet);
+            }
+            // loop over spin-down occupied indices
+            for (k = 0; k < nocc_dn; ++k) {
+                kk = occs_dn[k];
+                koffset = ioffset + n2 * kk;
+                // loop over spin-up virtual indices
+                for (l = 0; l < nvir_up; ++l) {
+                    ll = virs_up[l];
+                    // beta -> alpha excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if 1-1 excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 1-1 matrix element
+                        append<double>(data, sign_up *
+                                                 phase_single_det(wfn.nword, kk, ll, rdet_up) *
+                                                 ham.two_mo[koffset + n1 * jj + ll]); 
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up); 
+                }
+                // loop over spin-down virtual indices
+                for (l = 0; l < nvir_dn; ++l) {
+                    ll = virs_dn[l];
+                    // 1-1 excitation elements
+                    excite_det(kk, ll, det_dn);
+                    jdet = wfn.index_det(det_up);
+                    // check if 1-1 excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 1-1 matrix element
+                        append<double>(data, sign_up *
+                                                 phase_single_det(wfn.nword, kk, ll, rdet_dn) *
+                                                 ham.two_mo[koffset + n1 * jj + ll]); 
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_dn); 
+                }
+            }
+            // loop over spin-up occupied indices
+            for (k = i + 1; k < nocc_up; ++k) {
+                kk = occs_up[k];
+                koffset = ioffset + n2 * kk;
+                // loop over spin-up virtual indices
+                for (l = j + 1; l < nvir_up; ++l) {
+                    ll = virs_up[l];
+                    // alpha -> alpha excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if the excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 2-0 matrix element
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up);
+                }
+                // loop over spin-dn virtual indices
+                for (l = j + 1; l < nvir_dn; ++l) {
+                    ll = virs_dn[l];
+                    // alpha -> beta excitation elements
+                    excite_det(kk, ll, det_dn);
+                    jdet = wfn.index_det(det_up);
+                    // check if the excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 2-0 matrix element
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_dn);
+                }
+            }
+            excite_det(jj, ii, det_up);
+        }
+
+        // loop over spin-dn virtual indices
+        for (j = 0; j < nvir_dn; ++j) {
+            jj = virs_dn[j];
+            // alpha -> beta excitation elements
+            excite_det(ii, jj, det_up);
+            sign_up = phase_single_det(wfn.nword, ii, jj, rdet_up);
+            jdet = wfn.index_det(det_up);
+            // check if the excited determinant is in wfn
+            if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                // compute the matrix element
+                val1 = ham.one_mo[n1 * ii + jj];
+                for (k = 0; k < nocc_up; ++k) {
+                    kk = occs_up[k];
+                    koffset = ioffset + n2 * kk;
+                    val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
+                }
+                for (k = 0; k < nocc_dn; ++k) {
+                    kk = occs_dn[k];
+                    val1 += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
+                }
+                // add the matrix element
+                append<double>(data, sign_up * val1);
+                append<long>(indices, jdet);
+            }
+            // loop over spin-down occupied indices
+            for (k = 0; k < nocc_dn; ++k) {
+                kk = occs_dn[k];
+                koffset = ioffset + n2 * kk;
+                // loop over spin-up virtual indices
+                for (l = 0; l < nvir_up; ++l) {
+                    ll = virs_up[l];
+                    // beta -> alpha excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if 1-1 excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 1-1 matrix element
+                        append<double>(data, sign_up *
+                                                 phase_single_det(wfn.nword, kk, ll, rdet_up) *
+                                                 ham.two_mo[koffset + n1 * jj + ll]); 
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up); 
+                }
+                // loop over spin-down virtual indices
+                for (l = 0; l < nvir_dn; ++l) {
+                    ll = virs_dn[l];
+                    // 1-1 excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if 1-1 excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 1-1 matrix element
+                        append<double>(data, sign_up *
+                                                 phase_single_det(wfn.nword, kk, ll, rdet_up) *
+                                                 ham.two_mo[koffset + n1 * jj + ll]); 
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up); 
+                }
+            }
+            // loop over spin-up occupied indices
+            for (k = i + 1; k < nocc_up; ++k) {
+                kk = occs_up[k];
+                koffset = ioffset + n2 * kk;
+                // loop over spin-up virtual indices
+                for (l = j + 1; l < nvir_up; ++l) {
+                    ll = virs_up[l];
+                    // alpha -> alpha excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if the excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 2-0 matrix element
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up);
+                }
+                // loop over spin-dn virtual indices
+                for (l = j + 1; l < nvir_dn; ++l) {
+                    ll = virs_dn[l];
+                    // alpha -> beta excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if the excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 2-0 matrix element
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up);
+                }
+            }
+            excite_det(jj, ii, det_up);
+        }
+    }
+    // loop over spin-down occupied indices
+    for (i = 0; i < nocc_dn; ++i) {
+        ii = occs_dn[i];
+        ioffset = n3 * ii;
+        // compute part of diagonal matrix element
+        val2 += ham.one_mo[(n1 + 1) * ii];
+        for (k = i + 1; k < nocc_dn; ++k) {
+            kk = occs_dn[k];
+            koffset = ioffset + n2 * kk;
+            val2 += ham.two_mo[koffset + n1 * ii + kk] - ham.two_mo[koffset + n1 * kk + ii];
+        }
+        // loop over spin-up virtual indices
+        for (j = 0; j < nvir_up; ++j) {
+            jj = virs_up[j];
+            // beta -> alpha excitation elements
+            excite_det(ii, jj, det_up);
+            jdet = wfn.index_det(det_up);
+            // check if the excited determinant is in wfn
+            if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                // compute the matrix element
+                val1 = ham.one_mo[n1 * ii + jj];
+                for (k = 0; k < nocc_up; ++k) {
+                    kk = occs_up[k];
+                    val1 += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
+                }
+                for (k = 0; k < nocc_dn; ++k) {
+                    kk = occs_dn[k];
+                    koffset = ioffset + n2 * kk;
+                    val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
+                }
+                // add the matrix element
+                append<double>(data, phase_single_det(wfn.nword, ii, jj, rdet_up) * val1);
+                append<long>(indices, jdet);
+            }
+            // loop over spin-down occupied indices
+            for (k = i + 1; k < nocc_dn; ++k) {
+                kk = occs_dn[k];
+                koffset = ioffset + n2 * kk;
+                // loop over spin-up virtual indices
+                for (l = j + 1; l < nvir_up; ++l) {
+                    ll = virs_up[l];
+                    // beta -> alpha excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 0-2 matrix element
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up);
+                }
+                // loop over spin-down virtual indices
+                for (l = j + 1; l < nvir_dn; ++l) {
+                    ll = virs_dn[l];
+                    // beta -> beta excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 0-2 matrix element
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up);
+                }
+            }
+            excite_det(jj, ii, det_up);
+        }
+        // loop over spin-down virtual indices
+        for (j = 0; j < nvir_dn; ++j) {
+            jj = virs_dn[j];
+            // beta -> beta excitation elements
+            excite_det(ii, jj, det_up);
+            jdet = wfn.index_det(det_up);
+            // check if 0-1 excited determinant is in wfn
+            if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                // compute 0-1 matrix element
+                val1 = ham.one_mo[n1 * ii + jj];
+                for (k = 0; k < nocc_up; ++k) {
+                    kk = occs_up[k];
+                    val1 += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
+                }
+                for (k = 0; k < nocc_dn; ++k) {
+                    kk = occs_dn[k];
+                    koffset = ioffset + n2 * kk;
+                    val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
+                }
+                // add 0-1 matrix element
+                append<double>(data, phase_single_det(wfn.nword, ii, jj, rdet_up) * val1);
+                append<long>(indices, jdet);
+            }
+            // loop over spin-down occupied indices
+            for (k = i + 1; k < nocc_dn; ++k) {
+                kk = occs_dn[k];
+                koffset = ioffset + n2 * kk;
+                // loop over spin-up virtual indices
+                for (l = j + 1; l < nvir_up; ++l) {
+                    ll = virs_up[l];
+                    // beta -> alpha excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 0-2 matrix element
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up);
+                }
+                // loop over spin-down virtual indices
+                for (l = j + 1; l < nvir_dn; ++l) {
+                    ll = virs_dn[l];
+                    // beta -> beta excitation elements
+                    excite_det(kk, ll, det_up);
+                    jdet = wfn.index_det(det_up);
+                    // check if excited determinant is in wfn
+                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                        // add 0-2 matrix element
+                        append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
+                                                 (ham.two_mo[koffset + n1 * jj + ll] -
+                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                        append<long>(indices, jdet);
+                    }
+                    excite_det(ll, kk, det_up);
+                }
+            }
+            excite_det(jj, ii, det_up);
+        }
+    }
+    // add diagonal element to matrix
+    if (idet < ncol) {
+        append<double>(data, val2);
+        append<long>(indices, idet);
+    }
+    // add pointer to next row's indices
+    append<long>(indptr, indices.size());
+}
+
+
 
 } // namespace pyci
