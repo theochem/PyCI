@@ -17,7 +17,55 @@
 
 namespace pyci {
 
-void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2, double *d3, double *d4) {
+void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2) {
+    // prepare working vectors
+    AlignedVector<ulong> v_det(wfn.nword);
+    AlignedVector<long> v_occs(wfn.nocc_up);
+    AlignedVector<long> v_virs(wfn.nvir_up);
+    ulong *det = &v_det[0];
+    long *occs = &v_occs[0], *virs = &v_virs[0];
+    // fill rdms with zeros
+    long i = wfn.nbasis * wfn.nbasis, j = 0;
+    while (j < i) {
+        d0[j] = 0;
+        d2[j++] = 0;
+    }
+    // iterate over determinants
+    for (long idet = 0, jdet, k, l; idet < wfn.ndet; ++idet) {
+        double val1, val2;
+        // fill working vectors
+        wfn.copy_det(idet, det);
+        fill_occs(wfn.nword, det, occs);
+        fill_virs(wfn.nword, wfn.nbasis, det, virs);
+        // diagonal elements
+        val1 = coeffs[idet] * coeffs[idet];
+        for (i = 0; i < wfn.nocc_up; ++i) {
+            k = occs[i];
+            d0[k * (wfn.nbasis + 1)] += val1;
+            for (j = i + 1; j < wfn.nocc_up; ++j) {
+                l = occs[j];
+                d2[wfn.nbasis * k + l] += val1;
+                d2[wfn.nbasis * l + k] += val1;
+            }
+            // pair excitation elements
+            for (j = 0; j < wfn.nvir_up; ++j) {
+                l = virs[j];
+                excite_det(k, l, det);
+                jdet = wfn.index_det(det);
+                excite_det(l, k, det);
+                // check if excited determinant is in wfn
+                if (jdet > idet) {
+                    val2 = coeffs[idet] * coeffs[jdet];
+                    d0[wfn.nbasis * k + l] += val2;
+                    d0[wfn.nbasis * l + k] += val2;
+                }
+            }
+        }
+    }
+}
+
+
+void compute_rdms_34(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2, double *d3, double *d4) {
     // prepare working vectors
     AlignedVector<ulong> v_det(wfn.nword);
     AlignedVector<long> v_occs(wfn.nocc_up);
@@ -848,6 +896,15 @@ void compute_transition_rdms(const GenCIWfn &wfn1, const GenCIWfn &wfn2, const d
 }
 
 pybind11::tuple py_compute_rdms_doci(const DOCIWfn &wfn, const Array<double> coeffs) {
+    Array<double> d0({wfn.nbasis, wfn.nbasis});
+    Array<double> d2({wfn.nbasis, wfn.nbasis});
+    compute_rdms(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
+                 reinterpret_cast<double *>(d0.request().ptr),
+                 reinterpret_cast<double *>(d2.request().ptr));
+    return pybind11::make_tuple(d0, d2);
+}
+
+pybind11::tuple py_compute_rdms_34_doci(const DOCIWfn &wfn, const Array<double> coeffs) {
     Array<double> d0({wfn.nbasis, wfn.nbasis});
     Array<double> d2({wfn.nbasis, wfn.nbasis});
     Array<double> d3({wfn.nbasis, wfn.nbasis, wfn.nbasis});
