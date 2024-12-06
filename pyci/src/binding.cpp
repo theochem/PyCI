@@ -1103,6 +1103,9 @@ sparse_op.def(py::init<const SQuantOp &, const FullCIWfn &, const long, const lo
 sparse_op.def(py::init<const SQuantOp &, const GenCIWfn &, const long, const long, const bool>(),
               py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
               py::arg("symmetric") = true);
+sparse_op.def(py::init<const SQuantOp &, const NonSingletCI &, const long, const long, const bool>(),
+              py::arg("ham"), py::arg("wfn"), py::arg("nrow") = -1, py::arg("ncol") = -1,
+              py::arg("symmetric") = true);
 
 sparse_op.def("update", &SparseOp::py_update<DOCIWfn>, R"""(
 Update a sparse matrix operator for the HCI algorithm.
@@ -1126,6 +1129,8 @@ be re-initialized from the wave function object.
 sparse_op.def("update", &SparseOp::py_update<FullCIWfn>, py::arg("ham"), py::arg("wfn"));
 
 sparse_op.def("update", &SparseOp::py_update<GenCIWfn>, py::arg("ham"), py::arg("wfn"));
+
+sparse_op.def("update", &SparseOp::py_update<NonSingletCI>, py::arg("ham"), py::arg("wfn"));
 
 sparse_op.def("__call__", &SparseOp::py_matvec, R"""(
 Compute the matrix vector product of the sparse matrix operator with vector ``x``.
