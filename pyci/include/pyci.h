@@ -712,7 +712,7 @@ public:
 
     SparseOp(const SQuantOp &, const GenCIWfn &, const long, const long, const bool);
 
-    SparseOp(const SQuantOp &, const NonSingletCI &, const long, const long, const bool);
+    SparseOp(const SQuantOp &, const NonSingletCI &, const long, const long, const bool, const std::string);
 
     pybind11::object dtype(void) const;
 
@@ -733,6 +733,8 @@ public:
 
     template<class WfnType>
     void update(const SQuantOp &, const WfnType &, const long, const long, const long);
+
+    void update(const SQuantOp &, const NonSingletCI &, const long , const long, const long);
 
     void reserve(const long);
 
