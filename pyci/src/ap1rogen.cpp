@@ -79,7 +79,9 @@ std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partiti
     std::vector<std::pair<int, int>> partitions;
     for (int p = 0; p <= std::min(e / 2 , max_pairs); ++p) {
         int s = e - 2 * p;
-        partitions.emplace_back(p, s);
+        if (s <= max_pairs) {
+            partitions.emplace_back(p, s);
+        }
     }
     return partitions;
 }
@@ -87,11 +89,30 @@ std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partiti
 void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::size_t>& holes,
     const std::vector<std::size_t>& particles, int excitation_order, std::vector<long>& pair_inds,
     std::vector<long>& single_inds, long nocc, long nvir_up, long nvir) {
+    std::cout << "\nInside generate_excitations" << std::endl;
+    std::cout << "holes:" ;
+    for (const auto& hole : holes) {
+        std::cout << hole << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "particles:" ;
+    for (const auto& particle : particles) {
+        std::cout << particle << " ";
+    }
+    std::cout << std::endl;
     int max_pairs = holes.size() / 2;
     auto partitions = generate_partitions(excitation_order, max_pairs);
+    std::cout << "Generated partitions" << std::endl;
+    
+    std::cout << "Partitions: " << std::endl;
+    for (const auto& [num_pairs, num_singles] : partitions) {
+        std::cout << num_pairs << " " << num_singles << std::endl;
+    }
 
     for (const auto& [num_pairs, num_singles] : partitions) {
         // Step 2: Generate combinations of pairs and singles
+        std::cout << "Generating combinations of pairs and singles" << std::endl;
+        std::cout << "num_pairs: " << num_pairs << ", num_singles: " << num_singles << std::endl;
         std::vector<std::vector<std::size_t>> hole_pairs, hole_singles;
         std::vector<std::vector<std::size_t>> part_pairs, part_singles;
 
@@ -99,6 +120,15 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         generate_combinations(holes, 1, hole_singles);
         generate_combinations(particles, 2, part_pairs);
         generate_combinations(particles, 1, part_singles);
+
+        // std::cout << "Generated hole_pairs: " << std::endl; 
+        // for (const auto& hole_pair : hole_pairs) {
+        //     for (const auto& elem: hole_pair) {
+        //         std::cout << elem << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+
 
         // Limit the number of pairs and singles to the requested partition
         hole_pairs.resize(std::min(hole_pairs.size(), static_cast<std::size_t>(num_pairs)));
@@ -109,6 +139,8 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         // Match pairs and singles
         for (const auto& hole_pair : hole_pairs) {
             for (const auto& part_pair : part_pairs) {
+                std::cout << "hole_pair: " << hole_pair[0] << " " << hole_pair[1] << std::endl;
+                std::cout << "part_pair: " << part_pair[0] << " " << part_pair[1] << std::endl;
                 // Check constraints
                 pair_inds.push_back(nvir_up * hole_pair[0] + part_pair[0]);
                 //pair_inds.push_back(wfn_.nvir_up * hole_pair[1] + part_pair[1]);
@@ -118,6 +150,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         for (const auto& hole_single : hole_singles) {
             for (const auto& part_single : part_singles) {
                 // Check constraints
+                std::cout << "h: " << hole_single[0] << ", p: " << part_single[0] << std::endl;
                 single_inds.push_back(nvir_up * nocc / 2 + hole_single[0] * nvir + part_single[0]);
             }
         }
@@ -130,10 +163,18 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
     std::cout << "Inside init_overlap" << std::endl;
     // Initialize your class-specific variables here
     // init_Overlap objective for the AP1roGSDspin_sen-o 
-    nparam = wfn_.nocc_up * (wfn_.nbasis - wfn_.nocc_up); //paired-doubles
+    std::cout << "wfn_.nocc_up: " << wfn_.nocc_up << "wfn_.nvir_up" << wfn_.nvir_up << std::endl;
+    std::cout << "wfn_.nocc: " << wfn_.nocc << "wfn_.nvir" << wfn_.nvir << std::endl;
+    long nocc_up = wfn_.nocc / 2; 
+    long nbasis = wfn_.nbasis / 2;
+    long nvir_up = nbasis - nocc_up;
+
+    nparam = nocc_up * (nbasis - nocc_up); //paired-doubles
     std::cout << "nparam (doubles): " << nparam << std::endl;
-    nparam += wfn_.nocc * (2* wfn_.nbasis - wfn_.nocc); // beta singles
+    nparam += wfn_.nocc * (2* nbasis - wfn_.nocc); // beta singles
     std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
+    det_exc_param_indx = wfn_.det_exc_param_indx;
+    std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
 
     // ovlp.resize(wfn_.ndet);
     // d_ovlp.resize(wfn_.ndet * nparam);
@@ -150,11 +191,15 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 
     for (std::size_t idet = 0; idet != nconn; ++idet)
     {
-        std::vector<ulong> rdet(nword);
+        AlignedVector<ulong> rdet(nword);
         wfn_.fill_hartreefock_det(nb, nocc, &rdet[0]);
 
-        std::cout << "After fill_hartreefock_det rdet:" << std::endl;
-        //print_vector("rdet", rdet);
+        // std::cout << "After fill_hartreefock_det rdet:" ;
+        // for (std::size_t k = 0; k < nword; ++k) {
+        //         std::cout << rdet[k] << " ";
+        // }
+        // std::cout << std::endl;
+        //wfn_.print_vector("rdet", rdet);
 
         const ulong *det = wfn_.det_ptr(idet);
 
@@ -164,14 +209,29 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
         //     std::cout << "Found det in det_map" << std::endl;
         //     // std::cout << "Det: " << det_vector << std::endl;
         //     // std::cout << "DetExcParamIndx: " << it->second << std::endl;
-        if (idet < det_exc_param_indx.size()) {
-            std::cout << "idet: " << idet <<  " found in det_map" << std::endl; 
-        } else {
+        // std::cout << "from storage: " << det_exc_param_indx[idet].det << std::endl;
+        ensure_struct_size(det_exc_param_indx, idet+1);
+
+        if (!det_exc_param_indx[idet].det.empty()) {
+            std::cout << "\nidet: " << idet <<  " found in det_map" << std::endl; 
+            std::cout << "Det from wfn: ";
             for (std::size_t k = 0; k < nword; ++k) {
                 std::cout << det[k] << " ";
             }
-            std::cout << "iDet: " << idet << " not found in det_map" << std::endl;
-            DetExcParamIndx exc_info;
+            std::cout << std::endl;
+            std::cout << "det_exc_param_indx[idet].det: ";
+            for (std::size_t k = 0; k < nword; ++k) {
+                std::cout << det_exc_param_indx[idet].det[k] << " ";
+            }
+            std::cout << std::endl;
+            
+        } else {
+            std::cout << "\nDet: " ;
+            for (std::size_t k = 0; k < nword; ++k) {
+                std::cout << det[k] << " ";
+            }
+            std::cout << ", at iDet: " << idet << ", not found in det_exc_param_indx" << std::endl;
+            
             ulong word, hword, pword;
             std::size_t h, p, nexc = 0;
 
@@ -184,29 +244,38 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
                 word = rdet[iword] ^ det[iword]; //str for excitation
                 hword = word & rdet[iword]; //str for hole
                 pword = word & det[iword]; //str for particle
+                std::cout << "word: " << word << std::endl;
+                std::cout << "hword: " << hword << std::endl;
+                std::cout << "pword: " << pword << std::endl;
                 while(hword){
                     h = Ctz(hword);
                     p = Ctz(pword);
                     
                     std::size_t hole_idx = h + iword * Size<ulong>();
-                    std::size_t part_idx = p + iword * Size<ulong>() - wfn_.nocc_up;
+                    std::size_t part_idx = p + iword * Size<ulong>(); // - nocc_up;
                     
                     holes.push_back(hole_idx);
                     particles.push_back(part_idx);
 
                     hword &= ~(1UL << h);
                     pword &= ~(1UL << p);
-                    std::cout << "hword: " << hword << std::endl;
-                    std::cout << "pword: " << pword << std::endl;
-                    std::cout << "nexc: " << nexc << std::endl;
-                    std::cout << "hole_list: " << hole_idx << std::endl;
-                    std::cout << "part_list: " << part_idx << std::endl;
+                    // std::cout << "word: " << word << std::endl;
+                    // std::cout << "hword: " << hword << std::endl;
+                    // std::cout << "pword: " << pword << std::endl;
+                    // std::cout << "h: " << h << ", hole_idx: " << hole_idx << std::endl;
+                    // std::cout << "p: " << p << ", part_idx: " << part_idx << std::endl;
                     ++nexc;
                 }
             }
-            nexc_list[idet] = nexc;
-
-            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, wfn_.nvir_up, wfn_.nvir);
+            //nexc_list[idet] = nexc;
+            std::cout << "nexc: " << nexc << std::endl;
+            DetExcParamIndx exc_info;
+            exc_info.det.resize(nword);
+            std::memcpy(&exc_info.det[0], &det[0], sizeof(ulong) * nword);
+            // std::cout << "\nCopied det" << std::endl;
+            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, nvir_up, wfn_.nvir);
+            std::cout << "Generated excitations" << std::endl;
+            std::cout << "size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
             det_exc_param_indx[idet] = exc_info;
         }
     }
