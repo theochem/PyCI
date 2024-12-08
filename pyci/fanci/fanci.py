@@ -200,7 +200,7 @@ class FanCI(metaclass=ABCMeta):
         wfn = fill_wavefunction(wfn, nproj, fill)
 
         # Compute CI matrix operator with nproj rows and len(wfn) columns
-        ci_op = pyci.sparse_op(ham, wfn, nrow=nproj, ncol=len(wfn), symmetric=False)
+        ci_op = pyci.sparse_op(ham, wfn, nrow=nproj, ncol=len(wfn), symmetric=False, wfntype="nonsingletci")
 
         # Compute arrays of occupations
         sspace = wfn.to_occ_array()
