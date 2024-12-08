@@ -1130,7 +1130,7 @@ sparse_op.def("update", &SparseOp::py_update<FullCIWfn>, py::arg("ham"), py::arg
 
 sparse_op.def("update", &SparseOp::py_update<GenCIWfn>, py::arg("ham"), py::arg("wfn"));
 
-sparse_op.def("update", &SparseOp::py_update<NonSingletCI>, py::arg("ham"), py::arg("wfn"));
+sparse_op.def("update", &SparseOp::py_update<NonSingletCI>, py::arg("ham"), py::arg("wfn")); //, py::arg("rows"));
 
 sparse_op.def("__call__", &SparseOp::py_matvec, R"""(
 Compute the matrix vector product of the sparse matrix operator with vector ``x``.

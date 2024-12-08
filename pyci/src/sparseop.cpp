@@ -78,6 +78,7 @@ SparseOp::SparseOp(const SQuantOp &ham, const NonSingletCI &wfn, const long rows
       ecore(ham.ecore), symmetric(symm) {
     append<long>(indptr, 0);
     std::cout << "Inside SparseOp NonSingletCI constructor" << std::endl;
+    std::cout << "nrow: " << nrow << ", ncol: " << ncol << std::endl;
     update<NonSingletCI>(ham, wfn, nrow, ncol, 0);
 }
 
@@ -194,7 +195,8 @@ template void SparseOp::py_update(const SQuantOp &, const FullCIWfn &);
 
 template void SparseOp::py_update(const SQuantOp &, const GenCIWfn &);
 
-template void SparseOp::py_update(const SQuantOp &, const NonSingletCI &);
+template void SparseOp::py_update(const SQuantOp &ham, const NonSingletCI &wfn);
+// {    update<NonSingletCI>(ham, wfn, wfn.ndet, wfn.ndet, nrow);}
 
 template<class WfnType>
 void SparseOp::update(const SQuantOp &ham, const WfnType &wfn, const long rows, const long cols,
@@ -223,14 +225,6 @@ void SparseOp::update(const SQuantOp &ham, const WfnType &wfn, const long rows, 
 void SparseOp::update(const SQuantOp &ham, const NonSingletCI &wfn, const long rows, const long cols,
                       const long startrow) {
     std::cout << "Inside NonsingletCI SparseOp update" << std::endl;
-    // std::cout << "Type of WfnType: " << typeid(WfnType).name() << std::endl;
-    // if (is_same<WfnType,NonSingletCI>::value) {
-    //     long nword = wfn.nword;
-    //     long nvir = wfn.nbasis - wfn.nocc;
-    // } else {
-    //     long nword = wfn.nword2;
-    //     long nvir = wfn.nvir;
-    // }
     AlignedVector<ulong> det(wfn.nword);
     AlignedVector<long> occs(wfn.nocc);
     AlignedVector<long> virs(wfn.nbasis - wfn.nocc);

@@ -731,10 +731,10 @@ public:
     void solve_ci(const long, const double *, const long, const long, const double, double *,
                   double *) const;
 
+    void update(const SQuantOp &, const NonSingletCI &, const long , const long, const long);
+    
     template<class WfnType>
     void update(const SQuantOp &, const WfnType &, const long, const long, const long);
-
-    void update(const SQuantOp &, const NonSingletCI &, const long , const long, const long);
 
     void reserve(const long);
 
@@ -749,6 +749,9 @@ public:
 
     template<class WfnType>
     void py_update(const SQuantOp &, const WfnType &);
+
+    void py_update(const SQuantOp &, const NonSingletCI &); //, const long, const long, const long);
+
 
 private:
     void sort_row(const long);
