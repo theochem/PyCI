@@ -684,6 +684,16 @@ public:
     void add_excited_dets(const ulong *, const long);
 
     long py_add_excited_dets(const long, const pybind11::object);
+
+    long calc_sindex(const long occ, const long vir);
+
+    long calc_pindex(const long occ, const long vir);
+    
+    template <typename T>
+    void print_vector(const std::string&, const AlignedVector<T>& );
+
+    void print_pairs(const std::string&, const AlignedVector<std::pair<int, int>>&);
+
 };
 
 /* Sparse matrix operator class. */

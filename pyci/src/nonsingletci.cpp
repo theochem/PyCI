@@ -141,9 +141,43 @@ void NonSingletCI::print_pairs(const std::string& label, const AlignedVector<std
     std::cout << std::endl;
 }
 
+long NonSingletCI::calc_sindex(const long occ, const long vir){
+    long o = 0;
+    long v = 0;
+    if (vir < nbasis / 2) {
+        v = vir - nocc / 2;
+    } else {
+        v = vir - nocc;
+    }                  
+    if (occ > nbasis / 2) {
+        o = occ - nbasis / 2;
+    }
+    long idx = nocc / 2 * (nbasis - nocc) / 2 +  o * v + v;
+    return idx;
+}
+
+long NonSingletCI::calc_pindex(const long occ, const long vir){
+    long o = 0;
+    long v = 0;
+    if (vir < nbasis / 2) {
+        v = vir - nocc / 2;
+    } else {
+        v = vir - nocc;
+    }                  
+    if (occ > nbasis / 2) {
+        o = occ - nbasis / 2;
+    }
+    long idx = (nbasis / 2 - nocc / 2) * o + v;
+    return idx;
+}
+
 void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
     std::cout << "Inside nonsingletci/add_excited_dets" << std::endl;
     //long i, j, k, no = binomial(nocc_up, e), nv = binomial(nvirs_up, e);
+    std::cout << "nocc: " << nocc << ", nvir: " << nvir << std::endl;
+    std::cout << "nocc_up: " << nocc_up << ", nvir_up: " << nvir_up << std::endl;
+    std::cout << "nocc_dn: " << nocc_dn << ", nvir_dn: " << nvir_dn << std::endl;
+    std::cout << "nbasis: " << nbasis << std::endl;
     AlignedVector<ulong> det(nword);
 
     AlignedVector<long> occs(nocc);
@@ -215,6 +249,17 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
         std::cout << "Handling excitation order 0" << std::endl;
         std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
         add_det(&det[0]);
+        if (is_hf_det) {
+            DetExcParamIndx container;    
+            container.det.resize(nword);
+            std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
+            container.pair_inds.clear();
+            container.single_inds.clear();
+            ensure_struct_size(det_exc_param_indx, ndet);
+            det_exc_param_indx[ndet-1] = container;
+            std::cout << "Added HF det for e=0" << std::endl;
+            std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+        } 
         return ;
     }
     // Handle excitation order 1
@@ -240,11 +285,14 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                     container.det.resize(nword);
                     std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
                     container.pair_inds.clear();
-                    container.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
+                    long sidx = calc_sindex(occ, vir);
+                    std::cout << "ndet: " << ndet << " S_index: " << (sidx) << std::endl;
+                    container.single_inds.push_back(sidx);
                     std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
                     std::cout << "ndet" << ndet << std::endl;
                     ensure_struct_size(det_exc_param_indx, ndet);
                     det_exc_param_indx[ndet-1] = container;
+                    std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
                 } 
                 std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
                 for (int k = 0; k < nword; ++k) {
@@ -331,7 +379,9 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         }
                         std::cout << std::endl;
                         if (is_hf_det){
-                            det_exc.pair_inds.push_back(nvir_up * occ_pair.first + vir_pair.first);
+                            long pidx = calc_pindex(occ_pair.first, vir_pair.first);
+                            std::cout << "Pair index: " << pidx << std::endl;
+                            det_exc.pair_inds.push_back(pidx);
                         }
 
                     }
@@ -392,7 +442,8 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                     excite_det(occ, vir, &temp_det[0]);
                                     std::cout << "Exciting occ: " << occ << " to vir: " << vir << std::endl;
                                     if (is_hf_det) {
-                                        det_exc.single_inds.push_back(nocc / 2 * nvir_up + nvir * occ + vir);
+                                        long sidx = calc_sindex(occ, vir);
+                                        det_exc.single_inds.push_back(sidx);
                                     }
                                 }
                                 add_det(&temp_det[0]);
@@ -407,6 +458,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                     std::memcpy(&det_exc.det[0], &temp_det[0], sizeof(ulong) * nword);
                                     ensure_struct_size(det_exc_param_indx, ndet);
                                     det_exc_param_indx[ndet-1] = det_exc;
+                                    std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
                                 }
                             }
                             
@@ -426,6 +478,7 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                             std::memcpy(&det_exc.det[0], &det[0], sizeof(ulong) * nword);
                             ensure_struct_size(det_exc_param_indx, ndet);
                             det_exc_param_indx[ndet-1] = det_exc;
+                            std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
                         } 
                     }
                 }    
@@ -447,30 +500,30 @@ void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) const {
     long num_ulongs = (nb2 + Size<ulong>() - 1) / Size<ulong>();
     
 
-    std::cout << "Inside nonsingletci/fill_hartreefock_det" << std::endl;
-    std::cout << "nb: " << nb << std::endl;
-    std::cout << "nocc: " << nocc << std::endl;
-    std::cout << "nocc_beta: " << nocc_beta << std::endl;
-    std::cout << "nocc_alpha: " << nocc_alpha << std::endl;
+    // std::cout << "Inside nonsingletci/fill_hartreefock_det" << std::endl;
+    // std::cout << "nb: " << nb << std::endl;
+    // std::cout << "nocc: " << nocc << std::endl;
+    // std::cout << "nocc_beta: " << nocc_beta << std::endl;
+    // std::cout << "nocc_alpha: " << nocc_alpha << std::endl;
 
-    std::cout << "Filling beta spin orbitals" << std::endl;
+    // std::cout << "Filling beta spin orbitals" << std::endl;
     for (long i = 0; i < nocc_beta; ++i) {
         long bit_index = nb + i;
-        std::cout << "bit_index: " << bit_index << std::endl;
+        // std::cout << "bit_index: " << bit_index << std::endl;
         det[bit_index / Size<ulong>()] |= 1UL << (bit_index % Size<ulong>());
     }
     
-    std::cout << "Filling alpha spin orbitals" << std::endl;
+    // std::cout << "Filling alpha spin orbitals" << std::endl;
     for (long i = 0; i < nocc_alpha; ++i) {
-        std::cout << "bit_index: " << i << std::endl;
+        // std::cout << "bit_index: " << i << std::endl;
         long bit_index = i;
         det[bit_index / Size<ulong>()] |= 1UL << (bit_index % Size<ulong>());
     }
-    std::cout << "det: ";
-    for (int i = 0; i < num_ulongs; ++i) {
-        std::cout << det[i] << " ";
-    }
-    std::cout << std::endl;
+    // std::cout << "det: ";
+    // for (int i = 0; i < num_ulongs; ++i) {
+    //     std::cout << det[i] << " ";
+    // }
+    // std::cout << std::endl;
 
 }
 
