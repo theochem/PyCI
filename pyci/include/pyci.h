@@ -641,15 +641,11 @@ public:
     using Wfn::nvir_up;
     using Wfn::nword;
     using Wfn::nword2;
+    std::vector<DetExcParamIndx> det_exc_param_indx;
 
 protected:
     using Wfn::dets;
     using Wfn::dict;
-    std::vector<DetExcParamIndx> det_exc_param_indx;
-
-    template <typename T>
-    void print_vector(const std::string&, const AlignedVector<T>& );
-    void print_pairs(const std::string&, const AlignedVector<std::pair<int, int>>&);
 
 private:
     bool is_hf_det; 
