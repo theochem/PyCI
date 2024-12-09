@@ -388,7 +388,7 @@ double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<lo
 
 // void AP1roGeneralizedSenoObjective::overlap(const NonSingletCI &wfn_, const double *x, double *y) {
 void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
-
+    std::cout << "\nInside overlap" << std::endl;
     for (std::size_t idet = 0; idet != ndet; ++idet) {
         
         //Retrieve the DetExcParamIndx object from the hash map
@@ -403,17 +403,33 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
         // }
 
         // auto it = det_map.find(det_vector);
-
+        std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
         if (idet < det_exc_param_indx.size()) {
+            std::cout << "idet" <<  idet << " found in storage" << std::endl;
+
             // Access the excitation parameter indices
             const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
 
             double pair_permanent = permanent_calculation(exc_info.pair_inds, x);
             double single_permanent = permanent_calculation(exc_info.single_inds, x);
-
-            y[idet] = pair_permanent * single_permanent;
+            std::cout << "exc_info.pair_inds: ";
+            for (const auto& pid : exc_info.pair_inds) {
+                std::cout << pid << " " << x[pid] << " ";
+            }
+            std::cout << "\nexc_info.single_inds: ";
+            for (const auto& sid : exc_info.single_inds) {
+                std::cout << sid << " ";
+            }
+            std::cout << "pair_permanent: " << pair_permanent << std::endl;
+            std::cout << "single_permanent: " << single_permanent << std::endl;
+            if (y != nullptr && idet < ndet) {
+                y[idet] = pair_permanent * single_permanent;
+            } else {
+                std::cerr << "y is nullptr or idet is out of bounds" << std::endl;
+            }
+            std::cout << "y[" << idet << "]: " << y[idet] << std::endl;
         } else {
-            // std::cout << "Det" << det_vector << " not found in det_map" << std::endl;
+            std::cout << "idet" <<  idet << " not found in storage" << std::endl;
             y[idet] = 0.0;
 
         }
