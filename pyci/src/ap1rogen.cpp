@@ -81,15 +81,23 @@ void AP1roGeneralizedSenoObjective::generate_combinations(const std::vector<T>& 
     } while (std::next_permutation(mask.begin(), mask.end()));
 }
 
-std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partitions(int e, int max_pairs) {
+std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partitions(int e, int max_opairs, bool nvir_pairs) {
     std::vector<std::pair<int, int>> partitions;
-    for (int p = 0; p <= std::min(e / 2 , max_pairs); ++p) {
+    for (int p = 0; p <= std::min(e / 2 , max_opairs); ++p) {
         int s = e - 2 * p;
-        std::cout << "p, s: " << p << " " << s << std::endl;
-        if (max_pairs > 0 && s <= max_pairs) {
-            partitions.emplace_back(p, s);
-        } else if (max_pairs == 0) {
+        // std::cout << "p, s: " << p << " " << s << std::endl;
+        if (max_opairs > 0 && nvir_pairs && p) {
+            if (e % 2 !=0) { // if e is odd
+                partitions.emplace_back(p, s); 
+            }
+            else if (e %2 == 0 && s <= (max_opairs - p)) {
+                partitions.emplace_back(p, s);
+            }
+        } else if (max_opairs == 0) {
+            // if (e % 2 ==0 && s <= max_opairs) {
             partitions.emplace_back(0, s);
+            // } else if 
+        
         }
     }
     return partitions;
@@ -142,8 +150,14 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
     }
     std::cout << std::endl;
     int max_pairs = occ_pairs.size();
+    bool nvir_pairs = false;
+    if (max_pairs == vir_pairs.size()) {
+        nvir_pairs = true;
+        std::cout << "nvir_pairs: " << nvir_pairs << std::endl;
+    }
+    
     std::cout << "exci order: " << excitation_order << ", max_pairs: " << max_pairs << std::endl;
-    auto partitions = generate_partitions(excitation_order, max_pairs);
+    auto partitions = generate_partitions(excitation_order, max_pairs, nvir_pairs);
     std::cout << "Generated partitions" << std::endl;
     
     std::cout << "Partitions: " << std::endl;
@@ -160,16 +174,16 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
 
         generate_combinations(holes, 2, hole_pairs, nbasis);
         generate_combinations(particles, 2, part_pairs, nbasis);
-        generate_combinations(holes, 1, hole_singles, nbasis);
-        generate_combinations(particles, 1, part_singles, nbasis);
+
 
 
         // Iterate over all unique combintaions of pairs and singles
         std::vector<std::size_t> used_holes, used_parts;
         for (const auto& hpair_comb : hole_pairs) {
             for (const auto& ppair_comb : part_pairs){
-                if (used_holes.empty() || std::none_of(hpair_comb.begin(), hpair_comb.end(),
-                        [&](std::size_t h) { return std::find(used_holes.begin(), used_holes.end(), h) != used_holes.end(); })) {
+                // if (used_holes.empty() || std::none_of(hpair_comb.begin(), hpair_comb.end(),
+                //         [&](std::size_t h) { return std::find(used_holes.begin(), used_holes.end(), h) != used_holes.end(); })) {
+                if (!hpair_comb.empty() || !ppair_comb.empty()) {
                     long pindx = wfn_.calc_pindex(hpair_comb[0], ppair_comb[0]);
                     std::cout << "Pair index: " << pindx << std::endl;
                     std::cout << "hpair_comb: " << hpair_comb[0] << " " << hpair_comb[1] << std::endl;
@@ -177,25 +191,47 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
                     pair_inds.push_back(pindx);
                     used_holes.insert(used_holes.end(), hpair_comb.begin(), hpair_comb.end());
                     used_parts.insert(used_parts.end(), ppair_comb.begin(), ppair_comb.end());
+                } else {
+                    pair_inds.clear();
                 }
             }
         }
 
         // Now handle single excitations
-        if (num_singles > 0) {
+        if (num_singles  > 0) {
+            // Filter holes and particles to exclude used ones
+            std::vector<std::size_t> remaining_holes, remaining_particles;
+
+            // Exclude used holes
+            std::copy_if(holes.begin(), holes.end(), std::back_inserter(remaining_holes),
+                        [&](std::size_t h) { return std::find(used_holes.begin(), used_holes.end(), h) == used_holes.end(); });
+
+            // Exclude used particles
+            std::copy_if(particles.begin(), particles.end(), std::back_inserter(remaining_particles),
+                        [&](std::size_t p) { return std::find(used_parts.begin(), used_parts.end(), p) == used_parts.end(); });
+
+            generate_combinations(remaining_holes, 1, hole_singles, nbasis);
+            generate_combinations(remaining_particles, 1, part_singles, nbasis);
+
             for (const auto& hsingle_comb : hole_singles) {
                 for (const auto& psingle_comb : part_singles) {
                     // if (used_holes.empty() || std::none_of(hsingle_comb.begin(), hsingle_comb.end(),
                     //         [&](std::size_t h) { return std::find(used_holes.begin(), used_holes.end(), h) != used_holes.end(); })) {
+                    // Ensure the selected single excitations do not reuse already used indices
+                    if (std::find(used_holes.begin(), used_holes.end(), hsingle_comb[0]) == used_holes.end() &&
+                        std::find(used_parts.begin(), used_parts.end(), psingle_comb[0]) == used_parts.end()) {
                     long sindx = wfn_.calc_sindex(hsingle_comb[0], psingle_comb[0]);
                     single_inds.push_back(sindx);
                     std::cout << "Single index: " << sindx << std::endl;
                     std::cout << "h: " << hsingle_comb[0] <<  "p: " << psingle_comb[0] << std::endl;
                         // used_holes.push_back(hsingle_comb[0]);
                         // used_parts.push_back(psingle_comb[0]);
-                    // }
+                    }
                 }
             }
+        }
+        else {
+            single_inds.clear();
         }
     
     }
