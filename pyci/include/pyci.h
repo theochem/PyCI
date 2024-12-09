@@ -935,10 +935,10 @@ public:
                             std::vector<long>&, long, const NonSingletCI &);
 
     // Generate partitions
-    std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_paritions(int , int);
+    std::vector<std::pair<int, int>> generate_paritions(int , int);
 
     // Generate excitations
-    void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::size_t>& ,
+    void generate_excitations(const std::vector<std::size_t>& ,
                             const std::vector<std::size_t>& , int , std::vector<std::size_t>& ,
                             std::vector<std::size_t>&, std::size_t, std::size_t, std::size_t );
 
@@ -954,10 +954,6 @@ public:
 
     // Helper function for d_overlap
     double compute_derivative(const std::vector<long>& excitation_indices, const double*, std::size_t );
-
-    double AP1roGeneralizedSenoObjective::compute_derivative(
-    const std::vector<std::size_t>& excitation_indices,
-    const double*, std::size_t, std::size_t );
 
     // Overlap gradient function
     // virtual void d_overlap(const NonSingletCI &, const size_t, const double *x, double *y);
