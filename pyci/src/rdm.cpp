@@ -64,6 +64,95 @@ void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *
     }
 }
 
+
+void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2, double *d3, double *d4) {
+    // prepare working vectors
+    AlignedVector<ulong> v_det(wfn.nword);
+    AlignedVector<long> v_occs(wfn.nocc_up);
+    AlignedVector<long> v_virs(wfn.nvir_up);
+    ulong *det = &v_det[0];
+    long *occs = &v_occs[0], *virs = &v_virs[0];
+    // fill rdms with zeros
+    long i = wfn.nbasis * wfn.nbasis, j = 0;
+    while (j < i) {
+        d0[j] = 0;
+        d2[j++] = 0;
+    }
+    i = wfn.nbasis * wfn.nbasis * wfn.nbasis;
+    j = 0;
+    while (j < i) {
+        d3[j]=0;
+        d4[j++]=0;
+    }
+    // iterate over determinants
+    for (long idet = 0, jdet, mdet, k, l, m, n; idet < wfn.ndet; ++idet) {
+        double val1, val2;
+        // fill working vectors
+        wfn.copy_det(idet, det);
+        fill_occs(wfn.nword, det, occs);
+        fill_virs(wfn.nword, wfn.nbasis, det, virs);
+        // diagonal elements
+        val1 = coeffs[idet] * coeffs[idet];
+        for (i = 0; i < wfn.nocc_up; ++i) {
+            k = occs[i];
+            d0[k * (wfn.nbasis + 1)] += val1;
+            for (j = i + 1; j < wfn.nocc_up; ++j) {
+                l = occs[j];
+                d2[wfn.nbasis * k + l] += val1;
+                d2[wfn.nbasis * l + k] += val1;
+                for (m= j + 1; m < wfn.nocc_up; ++m){
+                    n = occs[m];
+                    d3[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * l + n] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * n + l] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * k + n] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * n + k] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * n + wfn.nbasis * k + l] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * n + wfn.nbasis * l + k] += val1;    
+                }
+                // pair excitation elements 3rdm j>i
+                for (m = 0; m < wfn.nvir_up; ++m) {
+                    n = virs[m];
+                    excite_det(l, n, det);
+                    mdet = wfn.index_det(det);
+                    excite_det(n, l, det);
+                    // check if excited determinant is in wfn
+                    if (mdet > idet) {
+                        val2 = coeffs[mdet] * coeffs[idet];
+                        d4[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * l + n] += val2;
+                        d4[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * n + l] += val2;
+                    }
+                } //pair excitation elements 3rdm i > j
+                for (m = 0; m < wfn.nvir_up; ++m) {
+                    n = virs[m];
+                    excite_det(k, n, det);
+                    mdet = wfn.index_det(det);
+                    excite_det(n, k, det);
+                    // check if excited determinant is in wfn
+                    if (mdet > idet) {
+                        val2 = coeffs[mdet] * coeffs[idet];
+                        d4[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * k + n] += val2;
+                        d4[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * n + k] += val2;
+                    }
+                }
+
+            }
+            // pair excitation elements
+            for (j = 0; j < wfn.nvir_up; ++j) {
+                l = virs[j];
+                excite_det(k, l, det);
+                jdet = wfn.index_det(det);
+                excite_det(l, k, det);
+                // check if excited determinant is in wfn
+                if (jdet > idet) {
+                    val2 = coeffs[idet] * coeffs[jdet];
+                    d0[wfn.nbasis * k + l] += val2;
+                    d0[wfn.nbasis * l + k] += val2;
+                }
+            }
+        }
+    }
+}
+
 void compute_rdms(const FullCIWfn &wfn, const double *coeffs, double *rdm1, double *rdm2) {
     long n1 = wfn.nbasis;
     long n2 = wfn.nbasis * wfn.nbasis;
@@ -813,6 +902,19 @@ pybind11::tuple py_compute_rdms_doci(const DOCIWfn &wfn, const Array<double> coe
                  reinterpret_cast<double *>(d0.request().ptr),
                  reinterpret_cast<double *>(d2.request().ptr));
     return pybind11::make_tuple(d0, d2);
+}
+
+pybind11::tuple py_compute_rdms_1234_doci(const DOCIWfn &wfn, const Array<double> coeffs) {
+    Array<double> d0({wfn.nbasis, wfn.nbasis});
+    Array<double> d2({wfn.nbasis, wfn.nbasis});
+    Array<double> d3({wfn.nbasis, wfn.nbasis, wfn.nbasis});
+    Array<double> d4({wfn.nbasis, wfn.nbasis, wfn.nbasis});
+    compute_rdms_1234(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
+                 reinterpret_cast<double *>(d0.request().ptr),
+                 reinterpret_cast<double *>(d2.request().ptr),
+                 reinterpret_cast<double *>(d3.request().ptr),
+                 reinterpret_cast<double *>(d4.request().ptr));
+    return pybind11::make_tuple(d0, d2, d3, d4);
 }
 
 pybind11::tuple py_compute_rdms_fullci(const FullCIWfn &wfn, const Array<double> coeffs) {
