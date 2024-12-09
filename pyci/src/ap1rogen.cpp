@@ -63,7 +63,7 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(AP1roGeneralizedSen
 }
 
 template <typename T>
-void AP1roGeneralizedSenoObjective::generate_combinations(const std::vector<T>& elems, int k, std::vector<std::vector<T>>& result) {
+void AP1roGeneralizedSenoObjective::generate_combinations(const std::vector<T>& elems, int k, std::vector<std::vector<T>>& result, long nbasis) {
     std::vector<bool> mask(elems.size());
     std::fill(mask.end() - k, mask.end() + k, true);
     do {
@@ -71,7 +71,13 @@ void AP1roGeneralizedSenoObjective::generate_combinations(const std::vector<T>& 
         for (std::size_t i = 0; i < elems.size(); ++i) {
             if (mask[i]) combination.push_back(elems[i]);
         }
-        result.push_back(combination);
+        if (k == 2) {
+            if (combination.size() == 2 && (combination[1] - combination[0] == static_cast<unsigned long> (nbasis))) {
+                result.push_back(combination);
+            }
+        } else {
+            result.push_back(combination);
+        }
     } while (std::next_permutation(mask.begin(), mask.end()));
 }
 
@@ -88,7 +94,36 @@ std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partiti
 
 void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::size_t>& holes,
     const std::vector<std::size_t>& particles, int excitation_order, std::vector<long>& pair_inds,
-    std::vector<long>& single_inds, long nocc, long nvir_up, long nvir) {
+    std::vector<long>& single_inds, long nocc, long nvir_up, long nvir, long nbasis) {
+    std::cout << "Inside generate_excitations" << std::endl;
+    AlignedVector<std::pair<int,int>> occ_pairs, vir_pairs;
+    AlignedVector<long> occs_up, occs_dn, virs_up, virs_dn, temp_occs;
+    for (int i : holes) {
+        (i < nbasis ? occs_up : occs_dn).push_back(i);
+    }
+    for (int a : particles) {
+        (a < nbasis ? virs_up : virs_dn).push_back(a);
+    }
+    std::cout << "up dn set created\n";
+    // Create an unordered set for fast lookup of occupied down-orbitals
+    std::unordered_set<int> occ_dn_set(occs_dn.begin(), occs_dn.end()); 
+    std::unordered_set<int> virs_set(particles.begin(), particles.end());    
+    // Generate occ_pairs and vir_pairs
+    for (long i : occs_up) {
+        if (occ_dn_set.find(i + nbasis) != occ_dn_set.end()) {
+            occ_pairs.push_back({i, i + nbasis});   
+            temp_occs.push_back(i);
+            temp_occs.push_back(i + nbasis);
+        }
+    }
+    std::cout << "occ_pairs created\n";
+    for (long a : particles) {
+        if (virs_set.find(a + nbasis) != virs_set.end()) {
+            vir_pairs.push_back({a, a + nbasis});   
+        }
+    }
+    std::cout << "vir_pairs created\n";
+        
     std::cout << "\nInside generate_excitations" << std::endl;
     std::cout << "holes:" ;
     for (const auto& hole : holes) {
@@ -100,7 +135,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         std::cout << particle << " ";
     }
     std::cout << std::endl;
-    int max_pairs = holes.size() / 2;
+    int max_pairs = occ_pairs.size() / 2;
     auto partitions = generate_partitions(excitation_order, max_pairs);
     std::cout << "Generated partitions" << std::endl;
     
@@ -116,10 +151,10 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         std::vector<std::vector<std::size_t>> hole_pairs, hole_singles;
         std::vector<std::vector<std::size_t>> part_pairs, part_singles;
 
-        generate_combinations(holes, 2, hole_pairs);
-        generate_combinations(holes, 1, hole_singles);
-        generate_combinations(particles, 2, part_pairs);
-        generate_combinations(particles, 1, part_singles);
+        generate_combinations(holes, 2, hole_pairs, nbasis);
+        generate_combinations(holes, 1, hole_singles, nbasis);
+        generate_combinations(particles, 2, part_pairs, nbasis);
+        generate_combinations(particles, 1, part_singles, nbasis);
 
         // std::cout << "Generated hole_pairs: " << std::endl; 
         // for (const auto& hole_pair : hole_pairs) {
@@ -273,7 +308,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
             exc_info.det.resize(nword);
             std::memcpy(&exc_info.det[0], &det[0], sizeof(ulong) * nword);
             // std::cout << "\nCopied det" << std::endl;
-            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, nvir_up, wfn_.nvir);
+            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, nvir_up, wfn_.nvir, nbasis);
             std::cout << "Generated excitations" << std::endl;
             std::cout << "size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
             det_exc_param_indx[idet] = exc_info;
