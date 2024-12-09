@@ -1246,7 +1246,7 @@ For Generalized CI wave functions, ``rdm1`` and ``rdm2`` are the full 1-RDM and 
 )""",
       py::arg("wfn"), py::arg("coeffs"));
 
-m.def("compute_rdms_34", &py_compute_rdms_34_doci, R"""(
+m.def("compute_rdms_1234", &py_compute_rdms_1234_doci, R"""(
 Compute the one-, two-, three-, and four-particle(not implemented yet) reduced density matrices (RDMs) of a wave function.
 
 Parameters

@@ -141,7 +141,7 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
         ("h6_sto_3g", pyci.doci_wfn, (3, 3), -5.877285606582455),
     ],
 )
-def test_compute_rdms_34(filename, wfn_type, occs, energy):
+def test_compute_rdms_1234(filename, wfn_type, occs, energy):
     ham = pyci.secondquant_op(datafile("{0:s}.fcidump".format(filename)))
     wfn = wfn_type(ham.nbasis, *occs)
     wfn.add_all_dets()
@@ -149,7 +149,7 @@ def test_compute_rdms_34(filename, wfn_type, occs, energy):
     es, cs = op.solve(n=1, tol=1.0e-6)
     if not isinstance(wfn, pyci.doci_wfn):
         raise TypeError('Wfn must be DOCI')
-    d0, d2, d3, d4= pyci.compute_rdms_34(wfn, cs[0])
+    d0, d2, d3, d4= pyci.compute_rdms_1234(wfn, cs[0])
     npt.assert_allclose(np.trace(d0), wfn.nocc_up, rtol=0, atol=1.0e-9)
     npt.assert_allclose(np.sum(d2), wfn.nocc_up * (wfn.nocc_up - 1), rtol=0, atol=1.0e-9)
     k0, k2 = pyci.reduce_senzero_integrals(ham.h, ham.v, ham.w, wfn.nocc_up)
@@ -157,7 +157,7 @@ def test_compute_rdms_34(filename, wfn_type, occs, energy):
     energy += np.einsum("ij,ij", k0, d0)
     energy += np.einsum("ij,ij", k2, d2)
     npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
-    rdm1, rdm2, rdm3 = pyci.spinize_rdms_34(d0, d2, d3 ,d4)
+    rdm1, rdm2, rdm3 = pyci.spinize_rdms_1234(d0, d2, d3 ,d4)
     assert np.all(np.abs(rdm1 - rdm1.T) < 1e-5)
     # # Test RDM2 is antisymmetric
     # for i in range(0, wfn.nbasis * 2):
@@ -173,7 +173,7 @@ def test_compute_rdms_34(filename, wfn_type, occs, energy):
 
     # # Test RDM3 is antisymmetric
     # "Testing that non Antiysmmetric parts are all zeros."
-    for i in range(0, wfn.nbasis  * 2):
+    for i in range(0, wfn.nbasis * 2):
         assert np.all(np.abs(rdm3[i, i, i, :, :, :]) < 1e-5)
         assert np.all(np.abs(rdm3[:, :, :,  i, i, i]) < 1e-5)
         assert np.all(np.abs(rdm3[i, i, :, :, :, :]) < 1e-5)
@@ -181,46 +181,46 @@ def test_compute_rdms_34(filename, wfn_type, occs, energy):
         assert np.all(np.abs(rdm3[i, :, i, :, :, :]) < 1e-5)
         assert np.all(np.abs(rdm3[:, :, :,  i, :, i]) < 1e-5)
     #TEST COMPLETE 3RDM AND BLOCKS TRACES 
-    aabaab=rdm3[:ham.nbasis,:ham.nbasis,ham.nbasis:,:ham.nbasis,:ham.nbasis,ham.nbasis:]
-    bbabba=rdm3[ham.nbasis:,ham.nbasis:,:ham.nbasis,ham.nbasis:,ham.nbasis:,:ham.nbasis]
-    aaaaaa=rdm3[:ham.nbasis,:ham.nbasis,:ham.nbasis,:ham.nbasis,:ham.nbasis,:ham.nbasis]
-    bbbbbb=rdm3[ham.nbasis:,ham.nbasis:,ham.nbasis:,ham.nbasis:,ham.nbasis:,ham.nbasis:]
-    npt.assert_allclose(np.einsum('ijkijk -> ',rdm3),(wfn.nocc_up*2)*(wfn.nocc_up*2-1)*(wfn.nocc_up*2-2) ,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('ijkijk -> ',aaaaaa),(wfn.nocc_up)*(wfn.nocc_up-1)*(wfn.nocc_up-2) ,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('ijkijk -> ',aabaab),(wfn.nocc_up)*(wfn.nocc_dn)*(wfn.nocc_up-1) ,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('ijkijk -> ',bbbbbb),(wfn.nocc_dn)*(wfn.nocc_dn-1)*(wfn.nocc_dn-2) ,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('ijkijk -> ',bbabba),(wfn.nocc_up)*(wfn.nocc_dn)*(wfn.nocc_dn-1) ,rtol=0, atol=1.0e-9)
+    aabaab=rdm3[:ham.nbasis, :ham.nbasis, ham.nbasis:, :ham.nbasis, :ham.nbasis, ham.nbasis:]
+    bbabba=rdm3[ham.nbasis:, ham.nbasis:, :ham.nbasis, ham.nbasis:, ham.nbasis:, :ham.nbasis]
+    aaaaaa=rdm3[:ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis]
+    bbbbbb=rdm3[ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:]
+    npt.assert_allclose(np.einsum('ijkijk -> ', rdm3),(wfn.nocc_up * 2)*(wfn.nocc_up * 2 - 1) * (wfn.nocc_up * 2 - 2) ,rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijkijk -> ', aaaaaa),(wfn.nocc_up) * (wfn.nocc_up - 1) * (wfn.nocc_up - 2) , rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijkijk -> ', aabaab),(wfn.nocc_up) * (wfn.nocc_dn) * (wfn.nocc_up - 1) , rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijkijk -> ', bbbbbb),(wfn.nocc_dn) * (wfn.nocc_dn - 1) * (wfn.nocc_dn - 2) , rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijkijk -> ', bbabba),(wfn.nocc_up) * (wfn.nocc_dn) * (wfn.nocc_dn - 1) , rtol=0, atol=1.0e-9)
     #TEST TRACING OVER TWO INDICES IN 3RDM REDUCES TO 2RDM
     d2_block_aaaa = rdm2[:ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis]
     d2_block_bbbb = rdm2[ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:]
     d2_block_abab = rdm2[:ham.nbasis, ham.nbasis:, :ham.nbasis, ham.nbasis:]
     d2_block_baba = rdm2[ham.nbasis:, :ham.nbasis, ham.nbasis:, :ham.nbasis]
     # All-alpha block
-    fac=(1.0/(wfn.nocc_up-2.0)) 
-    npt.assert_allclose(np.einsum('ijmklm->ijkl ',aaaaaa)*fac,d2_block_aaaa,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('imjkml->ijkl ',aaaaaa)*fac,d2_block_aaaa,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('mijmkl->ijkl ',aaaaaa)*fac,d2_block_aaaa,rtol=0, atol=1.0e-9)
+    fac=(1.0 / (wfn.nocc_up - 2.0)) 
+    npt.assert_allclose(np.einsum('ijmklm->ijkl ', aaaaaa) * fac,d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('imjkml->ijkl ', aaaaaa) * fac,d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('mijmkl->ijkl ', aaaaaa) * fac,d2_block_aaaa, rtol=0, atol=1.0e-9)
 
-    fac=(1.0/(wfn.nocc_up)) 
-    npt.assert_allclose(np.einsum('ijmklm->ijkl ',aabaab)*fac,d2_block_aaaa,rtol=0, atol=1.0e-9)
+    fac=(1.0 / (wfn.nocc_up)) 
+    npt.assert_allclose(np.einsum('ijmklm->ijkl ', aabaab) * fac,d2_block_aaaa, rtol=0, atol=1.0e-9)
 
-    # All-beta block
-    fac=(1.0/(wfn.nocc_dn-2.0)) 
-    npt.assert_allclose(np.einsum('ijmklm->ijkl ',bbbbbb)*fac,d2_block_bbbb,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('imjkml->ijkl ',bbbbbb)*fac,d2_block_bbbb,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('mijmkl->ijkl ',bbbbbb)*fac,d2_block_bbbb,rtol=0, atol=1.0e-9)
+    # All-beta block 
+    fac=(1.0 / (wfn.nocc_dn - 2.0)) 
+    npt.assert_allclose(np.einsum('ijmklm->ijkl ', bbbbbb) * fac,d2_block_bbbb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('imjkml->ijkl ', bbbbbb) * fac,d2_block_bbbb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('mijmkl->ijkl ', bbbbbb) * fac,d2_block_bbbb, rtol=0, atol=1.0e-9)
 
-    fac=(1.0/(wfn.nocc_dn)) 
-    npt.assert_allclose(np.einsum('ijmklm->ijkl ',bbabba)*fac,d2_block_bbbb,rtol=0, atol=1.0e-9)
+    fac=(1.0 / (wfn.nocc_dn)) 
+    npt.assert_allclose(np.einsum('ijmklm->ijkl ', bbabba) * fac,d2_block_bbbb, rtol=0, atol=1.0e-9)
 
     #Mixed-spin blocks
-    fac=(1.0/(wfn.nocc_up-1.0))
-    npt.assert_allclose(np.einsum('mijmkl->ijkl ',aabaab)*fac,d2_block_abab,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('imjkml->ijkl ',aabaab)*fac,d2_block_abab,rtol=0, atol=1.0e-9)
+    fac=(1.0 / (wfn.nocc_up - 1.0))
+    npt.assert_allclose(np.einsum('mijmkl->ijkl ', aabaab) * fac,d2_block_abab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('imjkml->ijkl ', aabaab) * fac,d2_block_abab, rtol=0, atol=1.0e-9)
 
-    fac=(1.0/(wfn.nocc_dn-1.0))
-    npt.assert_allclose(np.einsum('mijmkl->ijkl ',bbabba)*fac,d2_block_baba,rtol=0, atol=1.0e-9)
-    npt.assert_allclose(np.einsum('imjkml->ijkl ',bbabba)*fac,d2_block_baba,rtol=0, atol=1.0e-9)
+    fac=(1.0 / (wfn.nocc_dn - 1.0))
+    npt.assert_allclose(np.einsum('mijmkl->ijkl ', bbabba) * fac,d2_block_baba, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('imjkml->ijkl ', bbabba) * fac,d2_block_baba, rtol=0, atol=1.0e-9)
 
 
 @pytest.mark.parametrize(

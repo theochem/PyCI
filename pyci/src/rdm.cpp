@@ -65,7 +65,7 @@ void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *
 }
 
 
-void compute_rdms_34(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2, double *d3, double *d4) {
+void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2, double *d3, double *d4) {
     // prepare working vectors
     AlignedVector<ulong> v_det(wfn.nword);
     AlignedVector<long> v_occs(wfn.nocc_up);
@@ -78,7 +78,7 @@ void compute_rdms_34(const DOCIWfn &wfn, const double *coeffs, double *d0, doubl
         d0[j] = 0;
         d2[j++] = 0;
     }
-    i=wfn.nbasis * wfn.nbasis * wfn.nbasis;
+    i = wfn.nbasis * wfn.nbasis * wfn.nbasis;
     j = 0;
     while (j < i) {
         d3[j]=0;
@@ -101,13 +101,13 @@ void compute_rdms_34(const DOCIWfn &wfn, const double *coeffs, double *d0, doubl
                 d2[wfn.nbasis * k + l] += val1;
                 d2[wfn.nbasis * l + k] += val1;
                 for (m= j + 1; m < wfn.nocc_up; ++m){
-                    n=occs[m];
-                    d3[(wfn.nbasis*wfn.nbasis)*k + wfn.nbasis*l + n]+=val1;
-                    d3[(wfn.nbasis*wfn.nbasis)*k + wfn.nbasis*n + l]+=val1;
-                    d3[(wfn.nbasis*wfn.nbasis)*l + wfn.nbasis*k + n]+=val1;
-                    d3[(wfn.nbasis*wfn.nbasis)*l + wfn.nbasis*n + k]+=val1;
-                    d3[(wfn.nbasis*wfn.nbasis)*n + wfn.nbasis*k + l]+=val1;
-                    d3[(wfn.nbasis*wfn.nbasis)*n + wfn.nbasis*l + k]+=val1;    
+                    n = occs[m];
+                    d3[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * l + n] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * n + l] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * k + n] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * n + k] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * n + wfn.nbasis * k + l] += val1;
+                    d3[(wfn.nbasis * wfn.nbasis) * n + wfn.nbasis * l + k] += val1;    
                 }
                 // pair excitation elements 3rdm j>i
                 for (m = 0; m < wfn.nvir_up; ++m) {
@@ -118,10 +118,10 @@ void compute_rdms_34(const DOCIWfn &wfn, const double *coeffs, double *d0, doubl
                     // check if excited determinant is in wfn
                     if (mdet > idet) {
                         val2 = coeffs[mdet] * coeffs[idet];
-                        d4[(wfn.nbasis*wfn.nbasis)*k + wfn.nbasis*l + n]+=val2;
-                        d4[(wfn.nbasis*wfn.nbasis)*k + wfn.nbasis*n + l]+=val2;
+                        d4[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * l + n] += val2;
+                        d4[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * n + l] += val2;
                     }
-                } //pair excitation elements 3rdm i>j
+                } //pair excitation elements 3rdm i > j
                 for (m = 0; m < wfn.nvir_up; ++m) {
                     n = virs[m];
                     excite_det(k, n, det);
@@ -130,8 +130,8 @@ void compute_rdms_34(const DOCIWfn &wfn, const double *coeffs, double *d0, doubl
                     // check if excited determinant is in wfn
                     if (mdet > idet) {
                         val2 = coeffs[mdet] * coeffs[idet];
-                        d4[(wfn.nbasis*wfn.nbasis)*l + wfn.nbasis*k + n]+=val2;
-                        d4[(wfn.nbasis*wfn.nbasis)*l + wfn.nbasis*n + k]+=val2;
+                        d4[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * k + n] += val2;
+                        d4[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * n + k] += val2;
                     }
                 }
 
@@ -904,12 +904,12 @@ pybind11::tuple py_compute_rdms_doci(const DOCIWfn &wfn, const Array<double> coe
     return pybind11::make_tuple(d0, d2);
 }
 
-pybind11::tuple py_compute_rdms_34_doci(const DOCIWfn &wfn, const Array<double> coeffs) {
+pybind11::tuple py_compute_rdms_1234_doci(const DOCIWfn &wfn, const Array<double> coeffs) {
     Array<double> d0({wfn.nbasis, wfn.nbasis});
     Array<double> d2({wfn.nbasis, wfn.nbasis});
     Array<double> d3({wfn.nbasis, wfn.nbasis, wfn.nbasis});
     Array<double> d4({wfn.nbasis, wfn.nbasis, wfn.nbasis});
-    compute_rdms_34(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
+    compute_rdms_1234(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
                  reinterpret_cast<double *>(d0.request().ptr),
                  reinterpret_cast<double *>(d2.request().ptr),
                  reinterpret_cast<double *>(d3.request().ptr),
