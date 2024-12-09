@@ -141,7 +141,7 @@ void NonSingletCI::print_pairs(const std::string& label, const AlignedVector<std
     std::cout << std::endl;
 }
 
-long NonSingletCI::calc_sindex(const long occ, const long vir){
+long NonSingletCI::calc_sindex(const long occ, const long vir) const {
     long o = 0;
     long v = 0;
     if (vir < nbasis / 2) {
@@ -156,7 +156,7 @@ long NonSingletCI::calc_sindex(const long occ, const long vir){
     return idx;
 }
 
-long NonSingletCI::calc_pindex(const long occ, const long vir){
+long NonSingletCI::calc_pindex(const long occ, const long vir) const {
     long o = 0;
     long v = 0;
     if (vir < nbasis / 2) {

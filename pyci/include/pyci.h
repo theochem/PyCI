@@ -681,9 +681,9 @@ public:
 
     long py_add_excited_dets(const long, const pybind11::object);
 
-    long calc_sindex(const long occ, const long vir);
+    long calc_sindex(const long occ, const long vir) const;
 
-    long calc_pindex(const long occ, const long vir);
+    long calc_pindex(const long occ, const long vir) const;
     
     template <typename T>
     void print_vector(const std::string&, const AlignedVector<T>& );
@@ -896,17 +896,13 @@ public:
     using Objective<NonSingletCI>::nparam; // # of FanCI parameters
     using Objective<NonSingletCI>::ovlp;   // Overlap vector
     using Objective<NonSingletCI>::d_ovlp; // Overlap gradient matrix
+    
 
     // Declare variables you want to store to faciliate the computation
     // of {d_,}overlap here:
-    std::size_t nrow;
-    std::size_t ncol;
     std::vector<std::size_t> nexc_list;
-    std::vector<std::size_t> hole_list;
-    std::vector<std::size_t> part_list;
-    // ...
-    // ...
-
+    std::vector<DetExcParamIndx> det_exc_param_indx; // Det and excitation details
+    
 public:
     // Keep in mind the {DOCI,FullCI,GenCI}Wfn class names in
     // the arguments below depend on the template specialization
@@ -927,13 +923,33 @@ public:
     // C++ move constructor
     AP1roGeneralizedSenoObjective(AP1roGeneralizedSenoObjective &&) noexcept;
 
+    // Generate combinations of pairs and singles
+    template <typename T>
+    void generate_combinations(const std::vector<T>&, int , std::vector<std::vector<T>>&, long );
+
+    // Generate partitions
+    std::vector<std::pair<int, int>> generate_partitions(int , int);
+
+    // Generate excitations
+    void generate_excitations(const std::vector<std::size_t>& ,
+                            const std::vector<std::size_t>& , int , std::vector<long>& ,
+                            std::vector<long>&, long, const NonSingletCI &);
+
     // Initializer for {d_,}overlap variables
     void init_overlap(const NonSingletCI &);
 
+    // Permanent calculation: Ryser's Algorithm
+    double permanent_calculation(const std::vector<long>&, const double* );
+
     // Overlap function
-    virtual void overlap(const size_t, const double *x, double *y);
+    // virtual void overlap(const NonSingletCI &, const double *x, double *y);
+    virtual void overlap(const std::size_t, const double *x, double *y);
+
+    // Helper function for d_overlap
+    double compute_derivative(const std::vector<long>& excitation_indices, const double*, std::size_t );
 
     // Overlap gradient function
+    // virtual void d_overlap(const NonSingletCI &, const size_t, const double *x, double *y);
     virtual void d_overlap(const size_t, const double *x, double *y);
 };
 
