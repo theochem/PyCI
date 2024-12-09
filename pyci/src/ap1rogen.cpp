@@ -94,7 +94,7 @@ std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partiti
 
 void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::size_t>& holes,
     const std::vector<std::size_t>& particles, int excitation_order, std::vector<long>& pair_inds,
-    std::vector<long>& single_inds, long nocc, long nvir_up, long nvir, long nbasis) {
+    std::vector<long>& single_inds, long nbasis, const NonSingletCI &wfn_) {
     std::cout << "Inside generate_excitations" << std::endl;
     AlignedVector<std::pair<int,int>> occ_pairs, vir_pairs;
     AlignedVector<long> occs_up, occs_dn, virs_up, virs_dn, temp_occs;
@@ -152,8 +152,8 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         std::vector<std::vector<std::size_t>> part_pairs, part_singles;
 
         generate_combinations(holes, 2, hole_pairs, nbasis);
-        generate_combinations(holes, 1, hole_singles, nbasis);
         generate_combinations(particles, 2, part_pairs, nbasis);
+        generate_combinations(holes, 1, hole_singles, nbasis);
         generate_combinations(particles, 1, part_singles, nbasis);
 
         // std::cout << "Generated hole_pairs: " << std::endl; 
@@ -164,29 +164,55 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         //     std::cout << std::endl;
         // }
 
-
         // Limit the number of pairs and singles to the requested partition
-        hole_pairs.resize(std::min(hole_pairs.size(), static_cast<std::size_t>(num_pairs)));
-        hole_singles.resize(std::min(hole_singles.size(), static_cast<std::size_t>(num_singles)));
-        part_pairs.resize(std::min(part_pairs.size(), static_cast<std::size_t>(num_pairs)));
-        part_singles.resize(std::min(part_singles.size(), static_cast<std::size_t>(num_singles)));
-    
+        // hole_pairs.resize(std::min(hole_pairs.size(), static_cast<std::size_t>(num_pairs)));
+        // hole_singles.resize(std::min(hole_singles.size(), static_cast<std::size_t>(num_singles)));
+        // part_pairs.resize(std::min(part_pairs.size(), static_cast<std::size_t>(num_pairs)));
+        // part_singles.resize(std::min(part_singles.size(), static_cast<std::size_t>(num_singles)));
+
         // Match pairs and singles
-        for (const auto& hole_pair : hole_pairs) {
-            for (const auto& part_pair : part_pairs) {
-                std::cout << "hole_pair: " << hole_pair[0] << " " << hole_pair[1] << std::endl;
-                std::cout << "part_pair: " << part_pair[0] << " " << part_pair[1] << std::endl;
-                // Check constraints
-                pair_inds.push_back(nvir_up * hole_pair[0] + part_pair[0]);
-                //pair_inds.push_back(wfn_.nvir_up * hole_pair[1] + part_pair[1]);
+        // for (const auto& hole_pair : hole_pairs) {
+        //     for (const auto& part_pair : part_pairs) {
+        //         std::cout << "hole_pair: " << hole_pair[0] << " " << hole_pair[1] << std::endl;
+        //         std::cout << "part_pair: " << part_pair[0] << " " << part_pair[1] << std::endl;
+        //         // Check constraints
+        //         pair_inds.push_back(nvir_up * hole_pair[0] + part_pair[0]);
+        //         //pair_inds.push_back(wfn_.nvir_up * hole_pair[1] + part_pair[1]);
+        //     }
+        // }
+
+        // for (const auto& hole_single : hole_singles) {
+        //     for (const auto& part_single : part_singles) {
+        //         // Check constraints
+        //         std::cout << "h: " << hole_single[0] << ", p: " << part_single[0] << std::endl;
+        //         single_inds.push_back(nvir_up * nocc / 2 + hole_single[0] * nvir + part_single[0]);
+        //     }
+        // }
+
+        // Iterate over all unique combintaions of pairs and singles
+        std::vector<std::size_t> used_holes, used_parts;
+        for (const auto& hpair_comb : hole_pairs) {
+            for (const auto& ppair_comb : part_pairs){
+                if (used_holes.empty() || std::none_of(hpair_comb.begin(), hpair_comb.end(),
+                        [&](std::size_t h) { return std::find(used_holes.begin(), used_holes.end(), h) != used_holes.end(); })) {
+                    long pindx = wfn_.calc_pindex(hpair_comb[0], ppair_comb[0]);
+                    pair_inds.push_back(pindx);
+                    used_holes.insert(used_holes.end(), hpair_comb.begin(), hpair_comb.end());
+                    used_parts.insert(used_parts.end(), ppair_comb.begin(), ppair_comb.end());
+                }
             }
         }
 
-        for (const auto& hole_single : hole_singles) {
-            for (const auto& part_single : part_singles) {
-                // Check constraints
-                std::cout << "h: " << hole_single[0] << ", p: " << part_single[0] << std::endl;
-                single_inds.push_back(nvir_up * nocc / 2 + hole_single[0] * nvir + part_single[0]);
+        // Now handle single excitations
+        for (const auto& hsingle_comb : hole_singles) {
+            for (const auto& psingle_comb : part_singles) {
+                if (used_holes.empty() || std::none_of(hsingle_comb.begin(), hsingle_comb.end(),
+                        [&](std::size_t h) { return std::find(used_holes.begin(), used_holes.end(), h) != used_holes.end(); })) {
+                    long sindx = wfn_.calc_sindex(hsingle_comb[0], psingle_comb[0]);
+                    single_inds.push_back(sindx);
+                    used_holes.push_back(hsingle_comb[0]);
+                    used_parts.push_back(psingle_comb[0]);
+                }
             }
         }
     
@@ -202,7 +228,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
     std::cout << "wfn_.nocc: " << wfn_.nocc << "wfn_.nvir" << wfn_.nvir << std::endl;
     long nocc_up = wfn_.nocc / 2; 
     long nbasis = wfn_.nbasis / 2;
-    long nvir_up = nbasis - nocc_up;
+    // long nvir_up = nbasis - nocc_up;
 
     nparam = nocc_up * (nbasis - nocc_up); //paired-doubles
     std::cout << "nparam (doubles): " << nparam << std::endl;
@@ -308,7 +334,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
             exc_info.det.resize(nword);
             std::memcpy(&exc_info.det[0], &det[0], sizeof(ulong) * nword);
             // std::cout << "\nCopied det" << std::endl;
-            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, wfn_.nocc, nvir_up, wfn_.nvir, nbasis);
+            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, nbasis, wfn_);
             std::cout << "Generated excitations" << std::endl;
             std::cout << "size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
             det_exc_param_indx[idet] = exc_info;
