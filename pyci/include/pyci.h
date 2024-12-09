@@ -927,20 +927,12 @@ public:
     void generate_combinations(const std::vector<T>&, int , std::vector<std::vector<T>>&, long );
 
     // Generate partitions
-    std::vector<std::pair<int, int>> generate_partitions(int , int);
+    std::vector<std::pair<int, int>> generate_partitions(int , int, bool);
 
     // Generate excitations
     void generate_excitations(const std::vector<std::size_t>& ,
                             const std::vector<std::size_t>& , int , std::vector<long>& ,
                             std::vector<long>&, long, const NonSingletCI &);
-
-    // Generate partitions
-    std::vector<std::pair<int, int>> generate_paritions(int , int);
-
-    // Generate excitations
-    void generate_excitations(const std::vector<std::size_t>& ,
-                            const std::vector<std::size_t>& , int , std::vector<std::size_t>& ,
-                            std::vector<std::size_t>&, std::size_t, std::size_t, std::size_t );
 
     // Initializer for {d_,}overlap variables
     void init_overlap(const NonSingletCI &);
