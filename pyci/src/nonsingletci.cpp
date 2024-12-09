@@ -142,17 +142,24 @@ void NonSingletCI::print_pairs(const std::string& label, const AlignedVector<std
 }
 
 long NonSingletCI::calc_sindex(const long occ, const long vir) const {
-    long o = 0;
-    long v = 0;
-    if (vir < nbasis / 2) {
+    long o, v;
+    long nb = nbasis / 2;
+    if (vir < nb) {
         v = vir - nocc / 2;
     } else {
         v = vir - nocc;
     }                  
-    if (occ > nbasis / 2) {
-        o = occ - nbasis / 2;
+    if (occ >= nb) {
+        o = occ - (nb - nocc / 2);
+    } else{
+        o = occ;
     }
-    long idx = nocc / 2 * (nbasis - nocc) / 2 +  o * v + v;
+    // std::cout << "\nocc: " << occ << ", vir: " << vir << std::endl;
+    // std::cout << "o: " << o << ", v: " << v << std::endl;
+    // std::cout << "nocc: " << nocc << ", nb: " << nb << std::endl;
+
+    long idx = nocc / 2 * (nbasis - nocc) / 2 +  o * (nbasis - nocc) + v;
+    // std::cout << "idx: " << idx << std::endl;
     return idx;
 }
 
@@ -164,7 +171,7 @@ long NonSingletCI::calc_pindex(const long occ, const long vir) const {
     } else {
         v = vir - nocc;
     }                  
-    if (occ > nbasis / 2) {
+    if (occ >= nbasis / 2) {
         o = occ - nbasis / 2;
     }
     long idx = (nbasis / 2 - nocc / 2) * o + v;
