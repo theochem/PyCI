@@ -199,8 +199,12 @@ class FanCI(metaclass=ABCMeta):
         # Generate determinant spaces
         wfn = fill_wavefunction(wfn, nproj, fill)
 
+        print("type", type(wfn))
         # Compute CI matrix operator with nproj rows and len(wfn) columns
-        ci_op = pyci.sparse_op(ham, wfn, nrow=nproj, ncol=len(wfn), symmetric=False, wfntype="nonsingletci")
+        if type(wfn).__name__ == "nonsingletci_wfn":
+            ci_op = pyci.sparse_op(ham, wfn, nrow=nproj, ncol=len(wfn), symmetric=False, wfntype="nonsingletci")
+        else:
+            ci_op = pyci.sparse_op(ham, wfn, nrow=nproj, ncol=len(wfn), symmetric=False)
 
         # Compute arrays of occupations
         sspace = wfn.to_occ_array()
