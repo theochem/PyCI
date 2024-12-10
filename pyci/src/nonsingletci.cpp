@@ -256,17 +256,17 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
         std::cout << "Handling excitation order 0" << std::endl;
         std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
         add_det(&det[0]);
-        if (is_hf_det) {
-            DetExcParamIndx container;    
-            container.det.resize(nword);
-            std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
-            container.pair_inds.clear();
-            container.single_inds.clear();
-            ensure_struct_size(det_exc_param_indx, ndet);
-            det_exc_param_indx[ndet-1] = container;
-            std::cout << "Added HF det for e=0" << std::endl;
-            std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
-        } 
+        // if (is_hf_det) {
+        //     DetExcParamIndx container;    
+        //     container.det.resize(nword);
+        //     std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
+        //     container.pair_inds.clear();
+        //     container.single_inds.clear();
+        //     ensure_struct_size(det_exc_param_indx, ndet);
+        //     det_exc_param_indx[ndet-1] = container;
+        //     std::cout << "Added HF det for e=0" << std::endl;
+        //     std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+        // } 
         return ;
     }
     // Handle excitation order 1
@@ -287,20 +287,20 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                 
                 // Structure to store determinant and indices of params 
                 //corresponding to the pair-excitations & single-excitations
-                if (is_hf_det) {
-                    DetExcParamIndx container;    
-                    container.det.resize(nword);
-                    std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
-                    container.pair_inds.clear();
-                    long sidx = calc_sindex(occ, vir);
-                    std::cout << "ndet: " << ndet << " S_index: " << (sidx) << std::endl;
-                    container.single_inds.push_back(sidx);
-                    std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
-                    std::cout << "ndet" << ndet << std::endl;
-                    ensure_struct_size(det_exc_param_indx, ndet);
-                    det_exc_param_indx[ndet-1] = container;
-                    std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
-                } 
+                // if (is_hf_det) {
+                //     DetExcParamIndx container;    
+                //     container.det.resize(nword);
+                //     std::memcpy(&container.det[0], &det[0], sizeof(ulong) * nword);
+                //     container.pair_inds.clear();
+                //     long sidx = calc_sindex(occ, vir);
+                //     std::cout << "ndet: " << ndet << " S_index: " << (sidx) << std::endl;
+                //     container.single_inds.push_back(sidx);
+                //     std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
+                //     std::cout << "ndet" << ndet << std::endl;
+                //     ensure_struct_size(det_exc_param_indx, ndet);
+                //     det_exc_param_indx[ndet-1] = container;
+                //     std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+                // } 
                 std::cout << "Determinant after excitation of " << occ << " " << vir << std::endl;
                 for (int k = 0; k < nword; ++k) {
                     std::cout << det[k] << " ";
@@ -385,11 +385,11 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                             std::cout << det[k] << " ";
                         }
                         std::cout << std::endl;
-                        if (is_hf_det){
-                            long pidx = calc_pindex(occ_pair.first, vir_pair.first);
-                            std::cout << "Pair index: " << pidx << std::endl;
-                            det_exc.pair_inds.push_back(pidx);
-                        }
+                        // if (is_hf_det){
+                        //     long pidx = calc_pindex(occ_pair.first, vir_pair.first);
+                        //     std::cout << "Pair index: " << pidx << std::endl;
+                        //     det_exc.pair_inds.push_back(pidx);
+                        // }
 
                     }
 
@@ -448,10 +448,10 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                     long vir = remaining_virs[vir_comb[idx]];
                                     excite_det(occ, vir, &temp_det[0]);
                                     std::cout << "Exciting occ: " << occ << " to vir: " << vir << std::endl;
-                                    if (is_hf_det) {
-                                        long sidx = calc_sindex(occ, vir);
-                                        det_exc.single_inds.push_back(sidx);
-                                    }
+                                    // if (is_hf_det) {
+                                    //     long sidx = calc_sindex(occ, vir);
+                                    //     det_exc.single_inds.push_back(sidx);
+                                    // }
                                 }
                                 add_det(&temp_det[0]);
                                 // Print determinant after single excitations
@@ -460,13 +460,13 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                                     std::cout << temp_det[k] << " ";
                                 }
                                 std::cout << std::endl;
-                                if (is_hf_det) {
-                                    det_exc.det.resize(nword);
-                                    std::memcpy(&det_exc.det[0], &temp_det[0], sizeof(ulong) * nword);
-                                    ensure_struct_size(det_exc_param_indx, ndet);
-                                    det_exc_param_indx[ndet-1] = det_exc;
-                                    std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
-                                }
+                                // if (is_hf_det) {
+                                //     det_exc.det.resize(nword);
+                                //     std::memcpy(&det_exc.det[0], &temp_det[0], sizeof(ulong) * nword);
+                                //     ensure_struct_size(det_exc_param_indx, ndet);
+                                //     det_exc_param_indx[ndet-1] = det_exc;
+                                //     std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+                                // }
                             }
                             
                         }
@@ -480,13 +480,13 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                             std::cout << det[k] << " ";
                         }
                         std::cout << std::endl;
-                        if (is_hf_det) {
-                            det_exc.det.resize(nword);
-                            std::memcpy(&det_exc.det[0], &det[0], sizeof(ulong) * nword);
-                            ensure_struct_size(det_exc_param_indx, ndet);
-                            det_exc_param_indx[ndet-1] = det_exc;
-                            std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
-                        } 
+                        // if (is_hf_det) {
+                        //     det_exc.det.resize(nword);
+                        //     std::memcpy(&det_exc.det[0], &det[0], sizeof(ulong) * nword);
+                        //     ensure_struct_size(det_exc_param_indx, ndet);
+                        //     det_exc_param_indx[ndet-1] = det_exc;
+                        //     std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+                        // } 
                     }
                 }    
             }
@@ -542,10 +542,10 @@ long NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object re
         ptr = &v_ref[0];
         fill_hartreefock_det(nbasis,nocc, ptr);
 
-        is_hf_det = true;
+        // is_hf_det = true;
     } else {
         ptr = reinterpret_cast<ulong *>(ref.cast<Array<ulong>>().request().ptr);
-        is_hf_det = false;
+        // is_hf_det = false;
     }
     long ndet_old = ndet;
     add_excited_dets(ptr, exc);

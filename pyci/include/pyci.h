@@ -641,14 +641,13 @@ public:
     using Wfn::nvir_up;
     using Wfn::nword;
     using Wfn::nword2;
-    std::vector<DetExcParamIndx> det_exc_param_indx;
 
 protected:
     using Wfn::dets;
     using Wfn::dict;
 
 private:
-    bool is_hf_det; 
+    // bool is_hf_det; 
 
 public:
     NonSingletCI(const NonSingletCI &);
