@@ -235,7 +235,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
             }
         }
         else {
-            single_inds.clear();
+            single_inds.push_back(-1);    //.clear()
         }
     
     }
@@ -261,6 +261,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 
     ovlp.resize(wfn_.ndet);
     d_ovlp.resize(wfn_.ndet * nparam);
+    std::cout << "Size of d_ovlp: " << d_ovlp.size() << std::endl;
 
     std::size_t nword = (ulong)wfn_.nword;
     long nb = wfn_.nbasis;
@@ -506,6 +507,7 @@ double AP1roGeneralizedSenoObjective::compute_derivative(
 // void AP1roGeneralizedSenoObjective::d_overlap(const NonSingletCI &wfn_, const size_t ndet, const double *x, double *y){
 void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x, double *y){
     std::cout << "Computing d_overlap" << std::endl;
+    // std::cout << "Size of d_ovlp: " << y.size() << std::endl;
     // Loop over each determinant
     for (std::size_t idet = 0; idet != ndet; ++idet)
     {
@@ -520,8 +522,31 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
 
             for (std::size_t i = 0; i < nparam; ++i) {
                 std::cout << "computing deriv for i: " << i << std::endl;
-                double d_pair = compute_derivative(exc_info.pair_inds, x, i);
-                double d_single = compute_derivative(exc_info.single_inds, x, i);
+                double d_pair = 0.0;
+                double d_single = 0.0;
+
+                if (exc_info.pair_inds.empty()) {
+                    std::cerr << "Error: pair_inds() returned a null pointer." << std::endl;
+                } else if (exc_info.pair_inds[0] == -1) {                    
+                    d_pair = 0.0;
+                } else {
+                    std::cout << "exc_info.pair_inds: ";
+                    for (const auto& sid : exc_info.pair_inds) {
+                        std::cout << sid << " ";
+                    }
+                    d_pair = compute_derivative(exc_info.pair_inds, x, i);
+                }
+                if (exc_info.single_inds.empty()) {
+                    std::cerr << "Error: single_inds() returned a null pointer." << std::endl;
+                } else if (exc_info.single_inds[0] == -1) {                    
+                    d_single = 0.0;
+                } else {
+                    std::cout << "exc_info.single_inds: ";
+                    for (const auto& sid : exc_info.single_inds) {
+                        std::cout << sid << " ";
+                    }
+                    d_single = compute_derivative(exc_info.single_inds, x, i);
+                }
                 std::cout << "d index:" << idet * nparam + i << std::endl;
                 y[idet * nparam + i] = d_pair * single_permanent + pair_permanent * d_single;
             }
