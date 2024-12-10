@@ -428,6 +428,8 @@ double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<lo
 // void AP1roGeneralizedSenoObjective::overlap(const NonSingletCI &wfn_, const double *x, double *y) {
 void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
     std::cout << "\nInside overlap" << std::endl;
+    p_permanent.resize(ndet);
+    s_permanent.resize(ndet);
     for (std::size_t idet = 0; idet != ndet; ++idet) {
         
         std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
@@ -439,9 +441,12 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
             double pair_permanent = permanent_calculation(exc_info.pair_inds, x);
             double single_permanent = permanent_calculation(exc_info.single_inds, x);
 
-            std::cout << "exc_info.pair_inds: ";
+            p_permanent[idet] = pair_permanent;
+            s_permanent[idet] = single_permanent;
+
+            std::cout << "exc_info.pair_inds, x[idx]: ";
             for (const auto& pid : exc_info.pair_inds) {
-                std::cout << pid << " " << x[pid] << " ";
+                std::cout << pid << ", " << x[pid] << " ";
             }
             std::cout << "\nexc_info.single_inds: ";
             for (const auto& sid : exc_info.single_inds) {
@@ -458,6 +463,8 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
         } else {
             std::cout << "idet" <<  idet << " not found in storage" << std::endl;
             y[idet] = 0.0;
+            s_permanent[idet] = 0.0;
+            p_permanent[idet] = 0.0;
 
         }
     }
@@ -467,16 +474,33 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
 double AP1roGeneralizedSenoObjective::compute_derivative(
     const std::vector<long>& excitation_inds, 
     const double* x,
-    std::size_t excitation_idx) {
+    std::size_t iparam) {
 
-    double derivative = 0.0;
+    // double derivative = 0.0;
 
-    std::vector<double> modified_x(x, x + nparam);
-    modified_x[excitation_inds[excitation_idx]] = 1.0;
-    derivative = permanent_calculation(excitation_inds, modified_x.data());
+    // std::vector<double> modified_x(x, x + nparam);
+    // modified_x[excitation_inds[excitation_idx]] = 1.0;
+    // derivative = permanent_calculation(excitation_inds, modified_x.data());
 
-    return derivative;
+    // return derivative;
+
+    // check if iparam is within excitation_inds
+    auto it = std::find(excitation_inds.begin(), excitation_inds.end(), iparam);
+    if (it == excitation_inds.end()) {
+        return 0.0;
+    }
+
+    // Create a reduced excitation_inds excluding iparam
+    std::vector<long> reduced_inds = excitation_inds;
+    reduced_inds.erase(it);
+
+    double reduced_permanent = permanent_calculation(reduced_inds, x);
+
+    return reduced_permanent;
 }
+
+
+
 
 
 // void AP1roGeneralizedSenoObjective::d_overlap(const NonSingletCI &wfn_, const size_t ndet, const double *x, double *y){
@@ -489,37 +513,49 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
         // Ensure we have the excitation parameters for this determinant
         if (idet < det_exc_param_indx.size()) {
             const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
-            
+            double pair_permanent = p_permanent[idet];
+            double single_permanent = s_permanent[idet];
+            std::cout << "pair_permanent: " << pair_permanent << std::endl;
+            std::cout << "single_permanent: " << single_permanent << std::endl;
+
+            for (std::size_t i = 0; i < nparam; ++i) {
+                std::cout << "computing deriv for i: " << i << std::endl;
+                double d_pair = compute_derivative(exc_info.pair_inds, x, i);
+                double d_single = compute_derivative(exc_info.single_inds, x, i);
+                std::cout << "d index:" << idet * nparam + i << std::endl;
+                y[idet * nparam + i] = d_pair * single_permanent + pair_permanent * d_single;
+            }
+
             // Loop over each parameter (paired and single excitations)
-            std::size_t param_index = 0;
+            // std::size_t param_index = 0;
 
             // Derivative for paired excitations
-            for (std::size_t i = 0; i < exc_info.pair_inds.size(); ++i) {
-                // Get the excitation index for the pair
-                const std::size_t excitation_idx = exc_info.pair_inds[i];
+            // for (std::size_t i = 0; i < exc_info.pair_inds.size(); ++i) {
+            //     // Get the excitation index for the pair
+            //     const std::size_t excitation_idx = exc_info.pair_inds[i];
 
-                // Compute the derivative of the permanent with respect to this excitation
-                double derivative = compute_derivative(exc_info.pair_inds, x, excitation_idx);
+            //     // Compute the derivative of the permanent with respect to this excitation
+            //     double derivative = compute_derivative(exc_info.pair_inds, x, excitation_idx);
                 
-                // Store the result in the output vector d_ovlp (size ndet * nparam)
-                y[idet * nparam + param_index] = derivative;
+            //     // Store the result in the output vector d_ovlp (size ndet * nparam)
+            //     y[idet * nparam + param_index] = derivative;
 
-                ++param_index;
-            }
+            //     ++param_index;
+            // }
 
             // Derivative for single excitations
-            for (std::size_t i = 0; i < exc_info.single_inds.size(); ++i) {
-                // Get the excitation index for the single
-                const std::size_t excitation_idx = exc_info.single_inds[i];
+            // for (std::size_t i = 0; i < exc_info.single_inds.size(); ++i) {
+            //     // Get the excitation index for the single
+            //     const std::size_t excitation_idx = exc_info.single_inds[i];
 
-                // Compute the derivative of the permanent with respect to this excitation
-                double derivative = compute_derivative(exc_info.single_inds, x, excitation_idx);
+            //     // Compute the derivative of the permanent with respect to this excitation
+            //     double derivative = compute_derivative(exc_info.single_inds, x, excitation_idx);
 
-                // Store the result in the output vector d_ovlp (size ndet * nparam)
-                y[idet * nparam + param_index] = derivative;
+            //     // Store the result in the output vector d_ovlp (size ndet * nparam)
+            //     y[idet * nparam + param_index] *= derivative;
 
-                ++param_index;
-            }
+            //     ++param_index;
+            // }
         }
         else {
             std::cout << "Determinant " << idet << " not found in det_map" << std::endl;
