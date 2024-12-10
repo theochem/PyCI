@@ -164,15 +164,17 @@ long NonSingletCI::calc_sindex(const long occ, const long vir) const {
 }
 
 long NonSingletCI::calc_pindex(const long occ, const long vir) const {
-    long o = 0;
-    long v = 0;
+    long o, v;
+    // Assuming that only alpha orbitals are provided in the input
     if (vir < nbasis / 2) {
         v = vir - nocc / 2;
     } else {
         v = vir - nocc;
     }                  
     if (occ >= nbasis / 2) {
-        o = occ - nbasis / 2;
+        o = occ - (nbasis / 2 - nocc / 2);
+    } else {
+        o = occ;
     }
     long idx = (nbasis / 2 - nocc / 2) * o + v;
     return idx;
