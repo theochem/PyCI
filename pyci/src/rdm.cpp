@@ -65,7 +65,7 @@ void compute_rdms(const DOCIWfn &wfn, const double *coeffs, double *d0, double *
 }
 
 
-void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2, double *d3, double *d4) {
+void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, double *d2, double *d3, double *d4, double *d5, double *d6, double *d7) {
     // prepare working vectors
     AlignedVector<ulong> v_det(wfn.nword);
     AlignedVector<long> v_occs(wfn.nocc_up);
@@ -84,8 +84,15 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
         d3[j]=0;
         d4[j++]=0;
     }
+    i = wfn.nbasis * wfn.nbasis * wfn.nbasis * wfn.nbasis;
+    j = 0;
+    while (j < i) {
+        d5[j]=0;
+        d6[j]=0
+        d7[j++]=0;
+    }
     // iterate over determinants
-    for (long idet = 0, jdet, mdet, k, l, m, n; idet < wfn.ndet; ++idet) {
+    for (long idet = 0, jdet, mdet, k, l, m, n, p, q; idet < wfn.ndet; ++idet) {
         double val1, val2;
         // fill working vectors
         wfn.copy_det(idet, det);
@@ -107,7 +114,84 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
                     d3[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * k + n] += val1;
                     d3[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * n + k] += val1;
                     d3[(wfn.nbasis * wfn.nbasis) * n + wfn.nbasis * k + l] += val1;
-                    d3[(wfn.nbasis * wfn.nbasis) * n + wfn.nbasis * l + k] += val1;    
+                    d3[(wfn.nbasis * wfn.nbasis) * n + wfn.nbasis * l + k] += val1; 
+                    for (p= m + 1; p < wfn.nocc_up; ++p){
+                        q= occs[p];
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * n + q] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * q + n] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * l + q] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * q + l] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * l + n] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * n + l] += val1;
+                        
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * n + q] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * q + n] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * k + q] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * q + k] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * k + n] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * n + k] += val1;
+
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * k + q] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * q + k] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * l + q] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * q + l] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * l + k] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * k + l] += val1;
+
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * n + k] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * k + n] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * l + k] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * k + l] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * l + n] += val1;
+                        d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * n + l] += val1;
+
+                    }
+                    //pair excitation elements 4rdm  i,j >m
+                    for (p= 0; p < wfn.nvir_up; ++p){
+                        q = virs[p];
+                        excite_det(n, q, det);
+                        pdet = wfn.index_det(det);
+                        excite_det(q, n, det);
+                        // check if excited determinant is in wfn
+                        if (pdet > idet) {
+                            val2 = coeffs[pdet] * coeffs[idet];
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * n + q] += val2;
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * q + n] += val2;
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * n + q] += val2;
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * q + n] += val2;
+                    }
+                    }
+                    //pair excitation elements 4rdm  m >j  
+                    for (p= 0; p < wfn.nvir_up; ++p){
+                        q = virs[p];
+                        excite_det(l, q, det);
+                        pdet = wfn.index_det(det);
+                        excite_det(q, l, det);
+                        // check if excited determinant is in wfn
+                        if (pdet > idet) {
+                            val2 = coeffs[pdet] * coeffs[idet];
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * l + q] += val2;
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * q + l] += val2;
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * l + q] += val2;
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * q + l] += val2;
+                    }
+                    }
+                    //pair excitation elements 4rdm  m >i  
+                    for (p= 0; p < wfn.nvir_up; ++p){
+                        q = virs[p];
+                        excite_det(k, q, det);
+                        pdet = wfn.index_det(det);
+                        excite_det(q, k, det);
+                        // check if excited determinant is in wfn
+                        if (pdet > idet) {
+                            val2 = coeffs[pdet] * coeffs[idet];
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * k + q] += val2;
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * q + k] += val2;
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * k + q] += val2;
+                            d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * q + k] += val2;
+                    }
+                    }
+
                 }
                 // pair excitation elements 3rdm j>i
                 for (m = 0; m < wfn.nvir_up; ++m) {
@@ -132,6 +216,35 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
                         val2 = coeffs[mdet] * coeffs[idet];
                         d4[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * k + n] += val2;
                         d4[(wfn.nbasis * wfn.nbasis) * l + wfn.nbasis * n + k] += val2;
+                    }
+                }
+                    //double-pair excitation elements 4rdm
+                for (m = 0; m < wfn.nvir_up; ++m) {
+                    n = virs[m];
+                    for (p= m + 1; p < wfn.nvir_up; ++p){
+                        q = virs[p];
+
+                        excite_det(l, q, det);
+                        pdet = wfn.index_det(det);
+                        excite_det(q, l, det);
+
+                        excite_det(k, n, det);
+                        mdet = wfn.index_det(det);
+                        excite_det(n, k, det);
+                        // check if excited determinants are the same and if it is in wfn
+                        if ((mdet==pdet) && (mdet> idet)) {
+                            val2 = coeffs[mdet] * coeffs[idet];
+                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * n + q] += val2;
+                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * q + n] += val2;
+                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * q + n] += val2;
+                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * n + q] += val2;
+                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * k + l] += val2;
+                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * l + k] += val2;
+                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * l + k] += val2;
+                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * k + n] += val2;
+
+
+                        }
                     }
                 }
 
