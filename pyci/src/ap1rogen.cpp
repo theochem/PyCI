@@ -190,11 +190,10 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
                     std::cout << "Pair index: " << pindx << std::endl;
                     std::cout << "hpair_comb: " << hpair_comb[0] << " " << hpair_comb[1] << std::endl;
                     std::cout << "ppair_comb: " << ppair_comb[0] << " " << ppair_comb[1] << std::endl;
+                    pair_inds.clear();
                     pair_inds.push_back(pindx);
                     used_holes.insert(used_holes.end(), hpair_comb.begin(), hpair_comb.end());
                     used_parts.insert(used_parts.end(), ppair_comb.begin(), ppair_comb.end());
-                } else {
-                    pair_inds.clear();
                 }
             }
         }
@@ -224,18 +223,16 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
                     // Ensure the selected single excitations do not reuse already used indices
                     if (std::find(used_holes.begin(), used_holes.end(), hsingle_comb[0]) == used_holes.end() &&
                         std::find(used_parts.begin(), used_parts.end(), psingle_comb[0]) == used_parts.end()) {
-                    long sindx = wfn_.calc_sindex(hsingle_comb[0], psingle_comb[0]);
-                    single_inds.push_back(sindx);
-                    std::cout << "Single index: " << sindx << std::endl;
-                    std::cout << "h: " << hsingle_comb[0] <<  ", p: " << psingle_comb[0] << std::endl;
+                        long sindx = wfn_.calc_sindex(hsingle_comb[0], psingle_comb[0]);
+                        single_inds.clear();
+                        single_inds.push_back(sindx);
+                        std::cout << "Single index: " << sindx << std::endl;
+                        std::cout << "h: " << hsingle_comb[0] <<  ", p: " << psingle_comb[0] << std::endl;
                         // used_holes.push_back(hsingle_comb[0]);
                         // used_parts.push_back(psingle_comb[0]);
                     }
                 }
             }
-        }
-        else {
-            single_inds.push_back(-1);    //.clear()
         }
     
     }
@@ -256,7 +253,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
     std::cout << "nparam (doubles): " << nparam << std::endl;
     nparam += wfn_.nocc * (2* nbasis - wfn_.nocc); // beta singles
     std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
-    det_exc_param_indx = wfn_.det_exc_param_indx;
+    // det_exc_param_indx = wfn_.det_exc_param_indx;
     std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
 
     ovlp.resize(wfn_.ndet);
@@ -266,121 +263,86 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
     std::size_t nword = (ulong)wfn_.nword;
     long nb = wfn_.nbasis;
     long nocc = wfn_.nocc;
-    // std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
-
-    // Populate the hash map (assume det_exc_param_indx is iterable)
-    // for (const auto& exc_info : det_exc_param_indx) {
-    //     det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
-    // }
 
     for (std::size_t idet = 0; idet != nconn; ++idet)
     {
         AlignedVector<ulong> rdet(nword);
         wfn_.fill_hartreefock_det(nb, nocc, &rdet[0]);
-
-        // std::cout << "After fill_hartreefock_det rdet:" ;
-        // for (std::size_t k = 0; k < nword; ++k) {
-        //         std::cout << rdet[k] << " ";
-        // }
-        // std::cout << std::endl;
-        //wfn_.print_vector("rdet", rdet);
-
         const ulong *det = wfn_.det_ptr(idet);
-
-        // std::vector<ulong> det_vector(det, det + nword);
-        // auto it = det_map.find(det_vector);
-        // if (it != det_map.end()) {
-        //     std::cout << "Found det in det_map" << std::endl;
-        //     // std::cout << "Det: " << det_vector << std::endl;
-        //     // std::cout << "DetExcParamIndx: " << it->second << std::endl;
-        // std::cout << "from storage: " << det_exc_param_indx[idet].det << std::endl;
         ensure_struct_size(det_exc_param_indx, idet+1);
 
-        if (!det_exc_param_indx[idet].det.empty()) {
-            std::cout << "\nidet: " << idet <<  " found in det_map" << std::endl; 
-            std::cout << "Det from wfn: ";
-            for (std::size_t k = 0; k < nword; ++k) {
-                std::cout << det[k] << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "det_exc_param_indx[idet].det: ";
-            for (std::size_t k = 0; k < nword; ++k) {
-                std::cout << det_exc_param_indx[idet].det[k] << " ";
-            }
-            std::cout << std::endl;
-            
-        } else {
-            std::cout << "\nDet: " ;
-            for (std::size_t k = 0; k < nword; ++k) {
-                std::cout << det[k] << " ";
-            }
-            std::cout << ", at iDet: " << idet << ", not found in det_exc_param_indx" << std::endl;
-            
-            ulong word, hword, pword;
-            std::size_t h, p, nexc = 0;
-
-            std::vector<std::size_t> holes;
-            std::vector<std::size_t> particles;
-
-            // Collect holes and particles
-            for (std::size_t iword = 0; iword != nword; ++iword)
-            {
-                word = rdet[iword] ^ det[iword]; //str for excitation
-                hword = word & rdet[iword]; //str for hole
-                pword = word & det[iword]; //str for particle
-                std::cout << "word: " << word << std::endl;
-                std::cout << "hword: " << hword << std::endl;
-                std::cout << "pword: " << pword << std::endl;
-                while(hword){
-                    h = Ctz(hword);
-                    p = Ctz(pword);
-                    
-                    std::size_t hole_idx = h + iword * Size<ulong>();
-                    std::size_t part_idx = p + iword * Size<ulong>(); // - nocc_up;
-                    
-                    holes.push_back(hole_idx);
-                    particles.push_back(part_idx);
-
-                    hword &= ~(1UL << h);
-                    pword &= ~(1UL << p);
-                    // std::cout << "word: " << word << std::endl;
-                    // std::cout << "hword: " << hword << std::endl;
-                    // std::cout << "pword: " << pword << std::endl;
-                    // std::cout << "h: " << h << ", hole_idx: " << hole_idx << std::endl;
-                    // std::cout << "p: " << p << ", part_idx: " << part_idx << std::endl;
-                    ++nexc;
-                }
-            }
-            //nexc_list[idet] = nexc;
-            std::cout << "nexc: " << nexc << std::endl;
-            DetExcParamIndx exc_info;
-            exc_info.det.resize(nword);
-            std::memcpy(&exc_info.det[0], &det[0], sizeof(ulong) * nword);
-            // std::cout << "\nCopied det" << std::endl;
-            generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, nbasis, wfn_);
-            std::cout << "Generated excitations" << std::endl;
-            std::cout << "size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
-            std::sort(exc_info.pair_inds.begin(), exc_info.pair_inds.end());
-            std::sort(exc_info.single_inds.begin(), exc_info.single_inds.end());
-            if (idet == 41) {
-                std::cout << "Det: ";
-                for (std::size_t k = 0; k < nword; ++k) {
-                    std::cout << det[k] << " ";
-                }
-                std::cout << std::endl;
-                std::cout << "exc_info.pair_inds: ";
-                for (const auto& pid : exc_info.pair_inds) {
-                    std::cout << pid << " ";
-                }
-                std::cout << std::endl;
-                std::cout << "exc_info.single_inds: ";
-                for (const auto& sid : exc_info.single_inds) {
-                    std::cout << sid << " ";
-                }
-                std::cout << std::endl;
-            }
-            det_exc_param_indx[idet] = exc_info;
+        std::cout << "\nDet: " ;
+        for (std::size_t k = 0; k < nword; ++k) {
+            std::cout << det[k] << " ";
         }
+        std::cout << ", at iDet: " << idet << ", not found in det_exc_param_indx" << std::endl;
+        
+        ulong word, hword, pword;
+        std::size_t h, p, nexc = 0;
+
+        std::vector<std::size_t> holes;
+        std::vector<std::size_t> particles;
+
+        // Collect holes and particles
+        for (std::size_t iword = 0; iword != nword; ++iword)
+        {
+            word = rdet[iword] ^ det[iword]; //str for excitation
+            hword = word & rdet[iword]; //str for hole
+            pword = word & det[iword]; //str for particle
+            std::cout << "word: " << word << std::endl;
+            std::cout << "hword: " << hword << std::endl;
+            std::cout << "pword: " << pword << std::endl;
+            while(hword){
+                h = Ctz(hword);
+                p = Ctz(pword);
+                
+                std::size_t hole_idx = h + iword * Size<ulong>();
+                std::size_t part_idx = p + iword * Size<ulong>(); // - nocc_up;
+                
+                holes.push_back(hole_idx);
+                particles.push_back(part_idx);
+
+                hword &= ~(1UL << h);
+                pword &= ~(1UL << p);
+                // std::cout << "word: " << word << std::endl;
+                // std::cout << "hword: " << hword << std::endl;
+                // std::cout << "pword: " << pword << std::endl;
+                // std::cout << "h: " << h << ", hole_idx: " << hole_idx << std::endl;
+                // std::cout << "p: " << p << ", part_idx: " << part_idx << std::endl;
+                ++nexc;
+            }
+        }
+        //nexc_list[idet] = nexc;
+        std::cout << "nexc: " << nexc << std::endl;
+        DetExcParamIndx exc_info;
+        exc_info.det.resize(nword);
+        exc_info.pair_inds[0] = -1;
+        exc_info.single_inds[0] = -1;
+        std::memcpy(&exc_info.det[0], &det[0], sizeof(ulong) * nword);
+        // std::cout << "\nCopied det" << std::endl;
+        generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, nbasis, wfn_);
+        std::cout << "Generated excitations" << std::endl;
+        std::cout << "size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+        std::sort(exc_info.pair_inds.begin(), exc_info.pair_inds.end());
+        std::sort(exc_info.single_inds.begin(), exc_info.single_inds.end());
+        if (idet == 41) {
+            std::cout << "Det: ";
+            for (std::size_t k = 0; k < nword; ++k) {
+                std::cout << det[k] << " ";
+            }
+            std::cout << std::endl;
+            std::cout << "exc_info.pair_inds: ";
+            for (const auto& pid : exc_info.pair_inds) {
+                std::cout << pid << " ";
+            }
+            std::cout << std::endl;
+            std::cout << "exc_info.single_inds: ";
+            for (const auto& sid : exc_info.single_inds) {
+                std::cout << sid << " ";
+            }
+            std::cout << std::endl;
+        }
+        det_exc_param_indx[idet] = exc_info;
     }
 }
 
