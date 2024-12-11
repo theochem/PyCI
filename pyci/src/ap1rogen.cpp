@@ -339,8 +339,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
         exc_info.det.resize(nword);
         exc_info.pair_inds.resize(1);
         exc_info.single_inds.resize(1);
-        exc_info.pair_inds[0] = default_value;
-        exc_info.single_inds[0] = default_value;
+        exc_info.pair_inds[0] = -1.0;
+        exc_info.single_inds[0] = -1.0;
         std::cout << "Assigned first elem as -1 to both pair_inds and single_inds" << std::endl;
         std::memcpy(&exc_info.det[0], &det[0], sizeof(ulong) * nword);
         // std::cout << "\nCopied det" << std::endl;
@@ -426,12 +426,12 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
             // Access the excitation parameter indices
             const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
             double pair_permanent, single_permanent;
-            if (exc_info.pair_inds[0] == default_value) {
+            if (exc_info.pair_inds[0] == -1.0) {
                 pair_permanent = 0.0;
             } else {
                 pair_permanent = permanent_calculation(exc_info.pair_inds, x);
             }
-            if (exc_info.single_inds[0] == default_value) {
+            if (exc_info.single_inds[0] == -1.0) {
                 single_permanent = 0.0;
             } else {
                 single_permanent = permanent_calculation(exc_info.single_inds, x);
@@ -508,6 +508,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
 
         // Ensure we have the excitation parameters for this determinant
         if (idet < det_exc_param_indx.size()) {
+         
             std::cout << "size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
 
             DetExcParamIndx& exc_info = det_exc_param_indx[idet];
@@ -527,7 +528,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                         std::cout << exc_info.single_inds[i] << " ";
                 }
                 std::cout << "\n";
-                if (exc_info.single_inds[0] != default_value) {                                    
+                if (exc_info.single_inds[0] != -1.0) {                                    
                     std::cout << "exc_info.single_inds: ";
                     for (const auto sid : exc_info.single_inds) {
                         std::cout << sid << " ";
@@ -537,7 +538,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                     std::cout << "calling done\n";
                 }
                 std::cout << "\nd_single: " << d_single <<  "\n" ;
-                if (exc_info.pair_inds[0] != default_value) {
+                if (exc_info.pair_inds[0] != -1.0) {
                     std::cout << "exc_info.pair_inds: ";
                     for (const auto sid : exc_info.pair_inds) {
                         std::cout << sid << " ";
