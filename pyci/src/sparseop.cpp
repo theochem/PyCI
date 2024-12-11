@@ -711,8 +711,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                         // add 2-0 matrix element
                         append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn) *
-                                                 (ham.two_mo[koffset + n1 * jj + ll] -
-                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                                                ham.two_mo[koffset + n1 * jj + ll]);
                         append<long>(indices, jdet);
                     }
                     excite_det(ll, kk, det_dn);
@@ -735,11 +734,12 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                 for (k = 0; k < nocc_up; ++k) {
                     kk = occs_up[k];
                     koffset = ioffset + n2 * kk;
-                    val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
+                    val1 += ham.two_mo[koffset + n1 * jj + kk];
                 }
                 for (k = 0; k < nocc_dn; ++k) {
                     kk = occs_dn[k];
-                    val1 += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
+                    koffset = ioffset + n2 * kk;
+                    val1 += ham.two_mo[koffset + n1 * jj + kk]  - ham.two_mo[koffset + n1 * kk + jj]; 
                 }
                 // add the matrix element
                 append<double>(data, sign_up * val1);
@@ -845,12 +845,13 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                 val1 = ham.one_mo[n1 * ii + jj];
                 for (k = 0; k < nocc_up; ++k) {
                     kk = occs_up[k];
-                    val1 += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
+                    koffset = ioffset + n2 * kk
+                    val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
                 }
                 for (k = 0; k < nocc_dn; ++k) {
                     kk = occs_dn[k];
                     koffset = ioffset + n2 * kk;
-                    val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
+                    val1 += ham.two_mo[koffset + n1 * jj + kk];
                 }
                 // add the matrix element
                 append<double>(data, phase_single_det(wfn.nword, ii, jj, rdet_up) * val1);
@@ -886,8 +887,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                         // add 0-2 matrix element
                         append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
-                                                 (ham.two_mo[koffset + n1 * jj + ll] -
-                                                  ham.two_mo[koffset + n1 * ll + jj]));
+                                                ham.two_mo[koffset + n1 * jj + ll] );
                         append<long>(indices, jdet);
                     }
                     excite_det(ll, kk, det_up);
