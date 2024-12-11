@@ -903,6 +903,7 @@ public:
     std::vector<DetExcParamIndx> det_exc_param_indx; // Det and excitation details
     std::vector<double> s_permanent;
     std::vector<double> p_permanent;
+    double default_value;
     
 public:
     // Keep in mind the {DOCI,FullCI,GenCI}Wfn class names in
