@@ -565,9 +565,9 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
     std::memcpy(det_up, rdet_up, sizeof(ulong) * wfn.nword); // !Check nword or nword2 
 
     fill_occs(wfn.nword, rdet_up, occs);
-    fill_virs(wfn.nword, nbasis, rdet_up, virs);
+    fill_virs(wfn.nword, wfn.nbasis, rdet_up, virs);
     
-    long nocc_up = __builtin_popcount(*det_up & ((1 << nbasis / 2) - 1));
+    long nocc_up = __builtin_popcount(*det_up & ((1 << nbasis) - 1));
     long nocc_dn = wfn.nocc - nocc_up;  // std:popcount(det_up>> wfn.nbasis / 2);
     long nvir_up = nbasis - nocc_up;
     long nvir_dn = nbasis - nocc_dn;
