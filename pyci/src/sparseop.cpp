@@ -571,6 +571,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
     long nocc_dn = wfn.nocc - nocc_up;  // std:popcount(det_up>> wfn.nbasis / 2);
     long nvir_up = nbasis - nocc_up;
     long nvir_dn = nbasis - nocc_dn;
+    long nvir = nvir_up + nvir_dn;
     std::cout << "nocc_up: " << nocc_up << ", nocc_dn: " << nocc_dn << std::endl;
     std::cout << "nvir_up: " << nvir_up << ", nvir_dn: " << nvir_dn << std::endl;
     std::cout << "Occs: " ;
@@ -579,13 +580,13 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
     }
     std::cout << std::endl;
     std::cout << "Virs: " ;
-    for (i = 0; i < (nvir_up + nvir_dn); ++i) {
+    for (i = 0; i < (nvir); ++i) {
         std::cout << virs[i] << " ";
     }
     std::cout << std::endl;
     long *virs_up = virs;
     long *virs_dn = nullptr;
-    for (long i = 0; i < wfn.nvir; ++i) {
+    for (long i = 0; i < nvir; ++i) {
         if (virs[i] >= nbasis) {
             virs_dn = &virs[i];
             break;
@@ -611,6 +612,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             kk = occs_up[k];
             koffset = ioffset + n2 * kk;
             val2 += ham.two_mo[koffset + n1 * ii + kk] - ham.two_mo[koffset + n1 * kk + ii];
+            std::cout << "ii, kk: " << ii << ", " << kk << std::endl;
         }
         for (k = 0; k < nocc_dn; ++k) {
             kk = occs_dn[k];
