@@ -256,7 +256,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
 
 void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {
-    default_value = std::numeric_limits<double>::quiet_NaN();
+    // default_value = std::numeric_limits<double>::quiet_NaN();
     std::cout << "Inside init_overlap" << std::endl;
     // Initialize your class-specific variables here
     // init_Overlap objective for the AP1roGSDspin_sen-o 
@@ -372,13 +372,12 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 }
 
 
-PermanentResult AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long>& excitation_inds, const double* x) {
+bool AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long>& excitation_inds, const double* x, double& permanent) {
     // Ryser's Algorithm
     std::size_t n = static_cast<std::size_t>(std::sqrt(excitation_inds.size()));
-    if (n == 0) return 1.0;
-    if (n == 1) return x[excitation_inds[0]];
+    if (n == 0) {permanent = 1.0; return true;}
+    if (n == 1) {permanent = x[excitation_inds[0]]; return true;}
 
-    double permanent = 0.0;
     std::size_t subset_count = 1UL << n; // 2^n subsets
 
     for (std::size_t subset = 0; subset < subset_count; ++subset) {
@@ -392,14 +391,14 @@ PermanentResult AP1roGeneralizedSenoObjective::permanent_calculation(const std::
                 }
             }
             if (std::isnan(rowsum) || std::isinf(rowsum)) {
-                return {std::nullopt, "Error: rowsum is invalid (NaN or Inf) at subset " +
-                                          std::to_string(subset) + ", row " + std::to_string(i)};
+                std::cerr << "Error: rowsum is invalid (NaN or Inf) at subset " << subset << std::endl;
+                return false;    
             }
             rowsumprod *= rowsum;
         }
         if (std::isnan(rowsumprod) || std::isinf(rowsumprod)) {
-            return {std::nullopt, "Error: rowsumprod is invalid (NaN or Inf) at subset " +
-                                      std::to_string(subset)};
+            std::cerr << "Error: rowsumprod is invalid (NaN or Inf) at subset " << subset << std::endl;
+            return false;
         }
 
         // multiply by the parity of the subset
@@ -409,9 +408,10 @@ PermanentResult AP1roGeneralizedSenoObjective::permanent_calculation(const std::
     permanent *= ((n % 2 == 1) ? -1 : 1);
     
     if (std::isnan(permanent) || std::isinf(permanent)) {
-        return {std::nullopt, "Error: permanent is invalid (NaN or Inf)"};
+        std::cerr << "Error: permanent is invalid (NaN or Inf)" << std::endl;
+        return false;
     }
-    return permanent;
+    return true;
 }
 
 void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
@@ -431,19 +431,16 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
             double single_permanent = 1.0;
 
             if (exc_info.pair_inds[0] != -1) {
-                pair_permanent = *pair_result.value;
-            } else {
-                std::cerr << "Error in pair_permanent: " << pair_result.error_message << std::endl;
-                pair_permanent = 0.0; // Default to 0 or another appropriate fallback
+                if (!permanent_calculation(exc_info.pair_inds, x, pair_permanent)) {
+                    std::cerr << "Error calculating pair_permanent for idet" << idet << std::endl;
+                    pair_permanent = 0.0; // Default to 0 or another appropriate fallback
+                }
             }
 
             if (exc_info.single_inds[0] != -1) {
-                auto single_result = permanent_calculation(exc_info.single_inds, x);
-                if (single_result.value) {
-                    single_permanent = *single_result.value;
-                } else {
-                    std::cerr << "Error in single_permanent: " << single_result.error_message << std::endl;
-                    single_permanent = 0.0; // Default to 0 or another appropriate fallback
+                if (!permanent_calculation(exc_info.single_inds, x, single_permanent)) {
+                    std::cerr << "Error calculating single_permanent for idet " << idet << std::endl;
+                    single_permanent = 0.0; // Default value on error
                 }
             }
 
@@ -478,9 +475,9 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
 }
 
 
-double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>& excitation_inds, 
+bool AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>& excitation_inds, 
             const double* x,
-            std::size_t iparam) {
+            std::size_t iparam, double& reduced_permanent) {
 
     // double derivative = 0.0;
 
@@ -492,19 +489,18 @@ double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>
 
     // check if iparam is within excitation_inds
     auto it = std::find(excitation_inds.begin(), excitation_inds.end(), iparam);
-    if (it == excitation_inds.end()) {
-        return 0.0;
-    }
-    if (excitation_inds[0] == -1) {
-        return 0.0;
-    }
+    if (it == excitation_inds.end()) reduced_permanent = 0.0;
+    if (excitation_inds[0] == -1) reduced_permanent = 1.0;
+    
     // Create a reduced excitation_inds excluding iparam
     std::vector<long> reduced_inds = excitation_inds;
     reduced_inds.erase(it);
 
-    double reduced_permanent = permanent_calculation(reduced_inds, x);
+    if (permanent_calculation(reduced_inds, x, reduced_permanent)) {
+        return reduced_permanent;
+    }
 
-    return reduced_permanent;
+    return false;
 }
 
 
@@ -533,7 +529,8 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
             for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
                 std::cout << "computing deriv of idet: " << idet << " wrt iparam: " << iparam << std::endl;
                 std::cout << "nparam: " << nparam << std::endl;
-                double d_pair, d_single;
+                double dpair = 0.0;
+                double dsingle = 0.0;
                 std::cout << "Size(pair_inds): " << exc_info.pair_inds.size() << std::endl;
                 std::cout << "Size(single_inds): " << exc_info.single_inds.size() << std::endl;
                 // for (std::size_t i = 0; i < exc_info.pair_inds.size(); ++i) {
@@ -541,8 +538,8 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 //         std::cout << exc_info.single_inds[i] << " ";
                 // }
                 // std::cout << "\nSize of x: " << &x.size() << std::endl; 
-                d_pair = compute_derivative(exc_info.pair_inds, x, iparam);
-                d_single = compute_derivative(exc_info.single_inds, x, iparam);
+                compute_derivative(exc_info.pair_inds, x, iparam, dpair);
+                compute_derivative(exc_info.single_inds, x, iparam, dsingle);
 
 
                 // std::size_t idx = 0;
@@ -562,42 +559,11 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 //     d_single = compute_derivative(exc_info.single_inds, x, iparam);
                 //     std::cout << "calling done\n";
                 // }
-                std::cout << "\nd_single: " << d_single <<  "\n" ;
+                std::cout << "\ndsingle: " << dsingle <<  "\n" ;
                 std::cout << "\nderiv index:" << idet * nparam + iparam << std::endl;
-                y[idet * nparam + iparam] = d_pair * single_permanent + pair_permanent * d_single;
+                y[idet * nparam + iparam] = dpair * single_permanent + pair_permanent * dsingle;
             }
-
-            // Loop over each parameter (paired and single excitations)
-            // std::size_t param_index = 0;
-
-            // Derivative for paired excitations
-            // for (std::size_t i = 0; i < exc_info.pair_inds.size(); ++i) {
-            //     // Get the excitation index for the pair
-            //     const std::size_t excitation_idx = exc_info.pair_inds[i];
-
-            //     // Compute the derivative of the permanent with respect to this excitation
-            //     double derivative = compute_derivative(exc_info.pair_inds, x, excitation_idx);
-                
-            //     // Store the result in the output vector d_ovlp (size ndet * nparam)
-            //     y[idet * nparam + param_index] = derivative;
-
-            //     ++param_index;
-            // }
-
-            // Derivative for single excitations
-            // for (std::size_t i = 0; i < exc_info.single_inds.size(); ++i) {
-            //     // Get the excitation index for the single
-            //     const std::size_t excitation_idx = exc_info.single_inds[i];
-
-            //     // Compute the derivative of the permanent with respect to this excitation
-            //     double derivative = compute_derivative(exc_info.single_inds, x, excitation_idx);
-
-            //     // Store the result in the output vector d_ovlp (size ndet * nparam)
-            //     y[idet * nparam + param_index] *= derivative;
-
-            //     ++param_index;
-            // }
-        }
+}
         else {
             std::cout << "Determinant " << idet << " not found in det_map" << std::endl;
             // Set all derivatives to zero if determinant is not found

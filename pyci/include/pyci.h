@@ -888,21 +888,6 @@ public:
 };
 
 
-
-struct PermanentResult {
-    std::optional<double> value;
-    std::string error_message;
-
-    // Constructor for successful result
-    PermanentResult(double val)
-        : value(val), error_message("") {}
-
-    // Constructor for error result
-    PermanentResult(const std::string& error)
-        : value(std::nullopt), error_message(error) {}
-
-
-};
 // Specialize base template class for AP1roGSDGeneralized_sen-o against GenCI Wfn
 class AP1roGeneralizedSenoObjective : public Objective<NonSingletCI> {
 public:
@@ -955,14 +940,14 @@ public:
     void init_overlap(const NonSingletCI &);
 
     // Permanent calculation: Ryser's Algorithm
-    PermanentResult permanent_calculation(const std::vector<long>&, const double* );
+    bool permanent_calculation(const std::vector<long>&, const double*, double&);
 
     // Overlap function
     // virtual void overlap(const NonSingletCI &, const double *x, double *y);
     virtual void overlap(const std::size_t, const double *x, double *y);
 
     // Helper function for d_overlap
-    double compute_derivative(const std::vector<long>& excitation_indices, const double*, std::size_t );
+    bool compute_derivative(const std::vector<long>& excitation_indices, const double*, std::size_t, double& );
 
     // Overlap gradient function
     // virtual void d_overlap(const NonSingletCI &, const size_t, const double *x, double *y);
