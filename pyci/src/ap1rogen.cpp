@@ -152,7 +152,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         std::cout << particle << " ";
     }
     std::cout << std::endl;
-    int max_pairs = occ_pairs.size();
+    std::vector<std::pair<int,int>>s::size_type max_pairs = occ_pairs.size();
     bool nvir_pairs = false;
     if (max_pairs == vir_pairs.size()) {
         nvir_pairs = true;
