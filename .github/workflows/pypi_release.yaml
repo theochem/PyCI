@@ -157,10 +157,15 @@ jobs:
           pattern: qc-pyci*
           path: dist/
           merge-multiple: true
-      - name: List and uncompress the files in dist directory
+      - name: List the files in dist directory
         run: |
           ls -l dist/
-          tar -xvf dist/*.tar.gz -C dist/
+      - name: Uncompress the files in dist directory with for loop
+        run: |
+          for file in dist/*.tar.gz; do tar -xvf $file -C dist/; done
+      - name: List the files in dist directory after uncompressing
+        run: |
+          ls -l dist/
       - name: Publish distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
