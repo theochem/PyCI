@@ -164,11 +164,13 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
     std::cout << "Generated partitions" << std::endl;
     
     std::cout << "Partitions: " << std::endl;
-    for (const auto& [num_pairs, num_singles] : partitions) {
-        std::cout << num_pairs << " " << num_singles << std::endl;
+    for (const auto& pair : partitions) {
+        std::cout << "num_pairs: " << pair.first << ", num_singles: " << pair.second << std::endl;
     }
 
-    for (const auto& [num_pairs, num_singles] : partitions) {
+    for (const auto& pair : partitions) {
+        const auto& num_pairs = pair.first;
+        const auto& num_singles = pair.second; 
         // Step 2: Generate combinations of pairs and singles
         std::cout << "Generating combinations of pairs and singles" << std::endl;
         std::cout << "num_pairs: " << num_pairs << ", num_singles: " << num_singles << std::endl;
