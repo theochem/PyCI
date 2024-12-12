@@ -618,7 +618,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             kk = occs_dn[k];
             val2 += ham.two_mo[ioffset + n2 * kk + n1 * ii + kk];
         }
-        // loop over spin-up virtual indices
+        // first excitation: alpha -> alpha 
         for (j = 0; j < nvir_up; ++j) {
             jj = virs_up[j];
             // alpha -> alpha excitation elements
@@ -648,7 +648,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             for (k = 0; k < nocc_dn; ++k) {
                 kk = occs_dn[k];
                 koffset = ioffset + n2 * kk;
-                // loop over spin-up virtual indices
+                // second excitation: beta -> alpha
                 for (l = 0; l < nvir_up; ++l) {
                     ll = virs_up[l];
                     // beta -> alpha excitation elements
@@ -664,7 +664,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     }
                     excite_det(ll, kk, det_up); 
                 }
-                // loop over spin-down virtual indices
+                // second excitation: beta -> beta
                 for (l = 0; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // 1-1 excitation elements
@@ -685,7 +685,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             for (k = i + 1; k < nocc_up; ++k) {
                 kk = occs_up[k];
                 koffset = ioffset + n2 * kk;
-                // loop over spin-up virtual indices
+                // // second excitation: alpha -> alpha
                 for (l = j + 1; l < nvir_up; ++l) {
                     ll = virs_up[l];
                     // alpha -> alpha excitation elements
@@ -701,7 +701,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     }
                     excite_det(ll, kk, det_up);
                 }
-                // loop over spin-dn virtual indices
+                // second excitation: alpha -> beta
                 for (l = j + 1; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // alpha -> beta excitation elements
@@ -720,10 +720,9 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             excite_det(jj, ii, det_up);
         }
 
-        // loop over spin-dn virtual indices
+        // first excitation: alpha -> beta
         for (j = 0; j < nvir_dn; ++j) {
             jj = virs_dn[j];
-            // alpha -> beta excitation elements
             excite_det(ii, jj, det_up);
             sign_up = phase_single_det(wfn.nword, ii, jj, rdet_up);
             jdet = wfn.index_det(det_up);
@@ -749,7 +748,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             for (k = 0; k < nocc_dn; ++k) {
                 kk = occs_dn[k];
                 koffset = ioffset + n2 * kk;
-                // loop over spin-up virtual indices
+                // second excitaiton: beta -> alpha
                 for (l = 0; l < nvir_up; ++l) {
                     ll = virs_up[l];
                     // beta -> alpha excitation elements
@@ -765,7 +764,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     }
                     excite_det(ll, kk, det_up); 
                 }
-                // loop over spin-down virtual indices
+                // sedond excitation: beta -> beta
                 for (l = 0; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // 1-1 excitation elements
@@ -782,27 +781,10 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     excite_det(ll, kk, det_up); 
                 }
             }
-            // loop over spin-up occupied indices
+            // second excitation: alpha -> beta
             for (k = i + 1; k < nocc_up; ++k) {
                 kk = occs_up[k];
                 koffset = ioffset + n2 * kk;
-                // loop over spin-up virtual indices
-                // for (l = j + 1; l < nvir_up; ++l) {
-                //     ll = virs_up[l];
-                //     // alpha -> alpha excitation elements
-                //     excite_det(kk, ll, det_up);
-                //     jdet = wfn.index_det(det_up);
-                //     // check if the excited determinant is in wfn
-                //     if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
-                //         // add 2-0 matrix element
-                //         append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
-                //                                  (ham.two_mo[koffset + n1 * jj + ll] -
-                //                                   ham.two_mo[koffset + n1 * ll + jj]));
-                //         append<long>(indices, jdet);
-                //     }
-                //     excite_det(ll, kk, det_up);
-                // }
-                // loop over spin-dn virtual indices
                 for (l = j + 1; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // alpha -> beta excitation elements
@@ -833,10 +815,9 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             koffset = ioffset + n2 * kk;
             val2 += ham.two_mo[koffset + n1 * ii + kk] - ham.two_mo[koffset + n1 * kk + ii];
         }
-        // loop over spin-up virtual indices
+        // first excitation: beta -> alpha
         for (j = 0; j < nvir_up; ++j) {
             jj = virs_up[j];
-            // beta -> alpha excitation elements
             excite_det(ii, jj, det_up);
             jdet = wfn.index_det(det_up);
             // check if the excited determinant is in wfn
@@ -845,26 +826,24 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                 val1 = ham.one_mo[n1 * ii + jj];
                 for (k = 0; k < nocc_up; ++k) {
                     kk = occs_up[k];
-                    koffset = ioffset + n2 * kk
+                    koffset = ioffset + n2 * kk;
                     val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
                 }
                 for (k = 0; k < nocc_dn; ++k) {
                     kk = occs_dn[k];
-                    koffset = ioffset + n2 * kk;
-                    val1 += ham.two_mo[koffset + n1 * jj + kk];
+                    val1 += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
                 }
                 // add the matrix element
                 append<double>(data, phase_single_det(wfn.nword, ii, jj, rdet_up) * val1);
                 append<long>(indices, jdet);
             }
-            // loop over spin-down occupied indices
+            // 
             for (k = i + 1; k < nocc_dn; ++k) {
                 kk = occs_dn[k];
                 koffset = ioffset + n2 * kk;
-                // loop over spin-up virtual indices
+                // second excitation: beta -> alpha
                 for (l = j + 1; l < nvir_up; ++l) {
                     ll = virs_up[l];
-                    // beta -> alpha excitation elements
                     excite_det(kk, ll, det_up);
                     jdet = wfn.index_det(det_up);
                     // check if excited determinant is in wfn
@@ -877,7 +856,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     }
                     excite_det(ll, kk, det_up);
                 }
-                // loop over spin-down virtual indices
+                // seond excitation: beta -> beta
                 for (l = j + 1; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // beta -> beta excitation elements
@@ -895,10 +874,9 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             }
             excite_det(jj, ii, det_up);
         }
-        // loop over spin-down virtual indices
+        // first excitation: beta -> beta
         for (j = 0; j < nvir_dn; ++j) {
             jj = virs_dn[j];
-            // beta -> beta excitation elements
             excite_det(ii, jj, det_up);
             jdet = wfn.index_det(det_up);
             // check if 0-1 excited determinant is in wfn
@@ -918,27 +896,11 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                 append<double>(data, phase_single_det(wfn.nword, ii, jj, rdet_up) * val1);
                 append<long>(indices, jdet);
             }
-            // loop over spin-down occupied indices
+            // second excitation: beta -> beta
             for (k = i + 1; k < nocc_dn; ++k) {
                 kk = occs_dn[k];
                 koffset = ioffset + n2 * kk;
-                // loop over spin-up virtual indices
-                // for (l = j + 1; l < nvir_up; ++l) {
-                //     ll = virs_up[l];
-                //     // beta -> alpha excitation elements
-                //     excite_det(kk, ll, det_up);
-                //     jdet = wfn.index_det(det_up);
-                //     // check if excited determinant is in wfn
-                //     if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
-                //         // add 0-2 matrix element
-                //         append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
-                //                                  (ham.two_mo[koffset + n1 * jj + ll] -
-                //                                   ham.two_mo[koffset + n1 * ll + jj]));
-                //         append<long>(indices, jdet);
-                //     }
-                //     excite_det(ll, kk, det_up);
-                // }
-                // loop over spin-down virtual indices
+ 
                 for (l = j + 1; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // beta -> beta excitation elements
