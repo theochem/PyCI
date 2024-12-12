@@ -667,7 +667,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     excite_det(ll, kk, det_up);
                 }
                 // second excitation: alpha -> beta
-                for (l = j + 1; l < nvir_dn; ++l) {
+                for (l = 0; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // alpha -> beta excitation elements
                     excite_det(kk, ll, det_dn);
@@ -687,7 +687,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                 kk = occs_dn[k];
                 koffset = ioffset + n2 * kk;
                 // second excitation: beta -> alpha
-                for (l = 0; l < nvir_up; ++l) {
+                for (l = j+1; l < nvir_up; ++l) {
                     ll = virs_up[l];
                     excite_det(kk, ll, det_up);
                     jdet = wfn.index_det(det_up);
@@ -769,7 +769,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     excite_det(ll, kk, det_up); 
                 }
                 // sedond excitation: beta -> beta
-                for (l = 0; l < nvir_dn; ++l) {
+                for (l = j+1; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
                     excite_det(kk, ll, det_up);
                     jdet = wfn.index_det(det_up);
