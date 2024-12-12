@@ -86,7 +86,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           # name: python-package-distributions
-          name: pyci-${{ matrix.os }}-*-${{ github.ref_name }}
+          # pyci-${{ matrix.os }}-py${{ matrix.python-version }}-${{ github.ref_name }}
+          pattern: pyci-*-*-*
           path: dist/
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -109,7 +110,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           # name: python-package-distributions
-          name: pyci-${{ matrix.os }}-*-${{ github.ref_name }}
+          # name: pyci-${{ matrix.os }}-*-${{ github.ref_name }}
+          pattern: pyci-*-*-*
           path: dist/
       - name: Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
@@ -152,7 +154,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           # name: python-package-distributions
-          name: pyci-${{ matrix.os }}-*-${{ github.ref_name }}
+          pattern: pyci-*-*-*
           path: dist/
       - name: Publish distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
