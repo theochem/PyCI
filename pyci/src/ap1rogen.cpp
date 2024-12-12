@@ -15,6 +15,7 @@
 
 #include <pyci.h>
 #include <limits>
+#include <cmath>
 #include <iostream>
 
 namespace pyci {
@@ -371,43 +372,44 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 }
 
 
-double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long>& excitation_inds, const double* x) {
-    std::size_t num_excitations = excitation_inds.size();
-    if (num_excitations == 0) {
-        return 1.0;
-    } else if (num_excitations == 1) {
-        return x[excitation_inds[0]];
-    }
-    
+PermanentResult AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long>& excitation_inds, const double* x) {
+    // Ryser's Algorithm
+    std::size_t n = static_cast<std::size_t>(std::sqrt(excitation_inds.size()));
+    if (n == 0) return 1.0;
+    if (n == 1) return x[excitation_inds[0]];
+
     double permanent = 0.0;
-    std::size_t subset_count = 1UL << num_excitations;
+    std::size_t subset_count = 1UL << n; // 2^n subsets
 
     for (std::size_t subset = 0; subset < subset_count; ++subset) {
         double rowsumprod = 1.0;
 
-        for (std::size_t  j = 0; j < num_excitations; ++j) {
+        for (std::size_t  i = 0; i < n; ++i) {
             double rowsum = 0.0;
-            for (std::size_t j = 0; j < num_excitations; ++j) {
+            for (std::size_t j = 0; j < n; ++j) {
                 if (subset & (1UL << j)) {
-                    rowsum += x[excitation_inds[j]];
+                    rowsum += x[excitation_inds[i * n + j]];
                 }
             }
             if (std::isnan(rowsum) || std::isinf(rowsum)) {
-                std::cerr << "Error: rowsum is NaN or inf at subset " << subset << ", excitation " << j << std::endl;
-                return std::numeric_limits<double>::quiet_NaN();
+                return {std::nullopt, "Error: rowsum is invalid (NaN or Inf) at subset " +
+                                          std::to_string(subset) + ", row " + std::to_string(i)};
             }
             rowsumprod *= rowsum;
         }
         if (std::isnan(rowsumprod) || std::isinf(rowsumprod)) {
-            std::cerr << "Error: rowsumprod is NaN or inf at subset " << subset << std::endl;
-            return std::numeric_limits<double>::quiet_NaN();
+            return {std::nullopt, "Error: rowsumprod is invalid (NaN or Inf) at subset " +
+                                      std::to_string(subset)};
         }
+
+        // multiply by the parity of the subset
         permanent += rowsumprod * (1 - ((__builtin_popcount(subset) & 1) << 1));
     }
-    permanent *= ((num_excitations % 2 == 1) ? -1 : 1);
+    // If n (matrix size) is odd, multiply by -1
+    permanent *= ((n % 2 == 1) ? -1 : 1);
+    
     if (std::isnan(permanent) || std::isinf(permanent)) {
-        std::cerr << "Error: permanent is NaN or inf" << std::endl;
-        return std::numeric_limits<double>::quiet_NaN();
+        return {std::nullopt, "Error: permanent is invalid (NaN or Inf)"};
     }
     return permanent;
 }
@@ -416,25 +418,35 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
     std::cout << "\nInside overlap" << std::endl;
     p_permanent.resize(ndet);
     s_permanent.resize(ndet);
+
     for (std::size_t idet = 0; idet != ndet; ++idet) {
-        
         std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+    
         if (idet < det_exc_param_indx.size()) {
             std::cout << "idet: " <<  idet << " found in storage" << std::endl;
 
             // Access the excitation parameter indices
             const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
-            double pair_permanent, single_permanent;
-            if (exc_info.pair_inds[0] == -1) {
-                pair_permanent = 1.0;
+            double pair_permanent = 1.0;
+            double single_permanent = 1.0;
+
+            if (exc_info.pair_inds[0] != -1) {
+                pair_permanent = *pair_result.value;
             } else {
-                pair_permanent = permanent_calculation(exc_info.pair_inds, x);
+                std::cerr << "Error in pair_permanent: " << pair_result.error_message << std::endl;
+                pair_permanent = 0.0; // Default to 0 or another appropriate fallback
             }
-            if (exc_info.single_inds[0] == -1) {
-                single_permanent = 1.0;
-            } else {
-                single_permanent = permanent_calculation(exc_info.single_inds, x);
+
+            if (exc_info.single_inds[0] != -1) {
+                auto single_result = permanent_calculation(exc_info.single_inds, x);
+                if (single_result.value) {
+                    single_permanent = *single_result.value;
+                } else {
+                    std::cerr << "Error in single_permanent: " << single_result.error_message << std::endl;
+                    single_permanent = 0.0; // Default to 0 or another appropriate fallback
+                }
             }
+
             p_permanent[idet] = pair_permanent;
             s_permanent[idet] = single_permanent;
 
@@ -448,6 +460,7 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
             }
             std::cout << "\npair_permanent: " << pair_permanent << std::endl;
             std::cout << "single_permanent: " << single_permanent << std::endl;
+
             if (y != nullptr && idet < ndet) {
                 y[idet] = pair_permanent * single_permanent;
             } else {

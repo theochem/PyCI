@@ -887,6 +887,22 @@ public:
     virtual void d_overlap(const size_t, const double *x, double *y);
 };
 
+
+
+struct PermanentResult {
+    std::optional<double> value;
+    std::string error_message;
+
+    // Constructor for successful result
+    PermanentResult(double val)
+        : value(val), error_message("") {}
+
+    // Constructor for error result
+    PermanentResult(const std::string& error)
+        : value(std::nullopt), error_message(error) {}
+
+
+};
 // Specialize base template class for AP1roGSDGeneralized_sen-o against GenCI Wfn
 class AP1roGeneralizedSenoObjective : public Objective<NonSingletCI> {
 public:
@@ -897,13 +913,11 @@ public:
     using Objective<NonSingletCI>::d_ovlp; // Overlap gradient matrix
     
 
-    // Declare variables you want to store to faciliate the computation
-    // of {d_,}overlap here:
-    std::vector<std::size_t> nexc_list;
+    // double default_value;
     std::vector<DetExcParamIndx> det_exc_param_indx; // Det and excitation details
+    std::vector<std::size_t> nexc_list;
     std::vector<double> s_permanent;
     std::vector<double> p_permanent;
-    double default_value;
     
 public:
     // Keep in mind the {DOCI,FullCI,GenCI}Wfn class names in
@@ -941,7 +955,7 @@ public:
     void init_overlap(const NonSingletCI &);
 
     // Permanent calculation: Ryser's Algorithm
-    double permanent_calculation(const std::vector<long>&, const double* );
+    PermanentResult permanent_calculation(const std::vector<long>&, const double* );
 
     // Overlap function
     // virtual void overlap(const NonSingletCI &, const double *x, double *y);
