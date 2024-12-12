@@ -22,8 +22,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # os: [ubuntu-latest, macos-latest]
-        # python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
@@ -34,8 +32,6 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v5
-        # with:
-        #   python-version: "3.12"
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -70,7 +66,6 @@ jobs:
 
   publish-to-pypi:
     name: Publish Python distribution to PyPI
-    # only publish to PyPI on tag pushes
     if: startsWith(github.ref, 'refs/tags/')
     needs:
       - build
@@ -85,12 +80,14 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          # name: python-package-distributions
-          # ${{ PYPI_NAME }}-${{ matrix.os }}-py${{ matrix.python-version }}-${{ github.ref_name }}
           pattern: qc-pyci*
           path: dist/
-      - name: List the files in dist directory
-        run: ls -l dist/
+          merge-multiple: true
+      - name: List and uncompress the files in dist directory
+        run: |
+        ls -l dist/
+        tar -xvf dist/*.tar.gz -C dist/
+
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         env:
@@ -111,10 +108,13 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          # name: python-package-distributions
-          # name: ${{ PYPI_NAME }}-${{ matrix.os }}-*-${{ github.ref_name }}
           pattern: qc-pyci*
           path: dist/
+          merge-multiple: true
+      - name: List and uncompress the files in dist directory
+        run: |
+        ls -l dist/
+        tar -xvf dist/*.tar.gz -C dist/
       - name: Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
@@ -139,7 +139,6 @@ jobs:
 
   publish-to-testpypi:
     name: Publish Python distribution to TestPyPI
-    # if: ${{ github.ref == "refs/heads/master" && github.repository_owner == "theochem" }}
     needs:
       - build
     runs-on: ubuntu-latest
@@ -155,9 +154,13 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          # name: python-package-distributions
           pattern: qc-pyci*
           path: dist/
+          merge-multiple: true
+      - name: List and uncompress the files in dist directory
+        run: |
+        ls -l dist/
+        tar -xvf dist/*.tar.gz -C dist/
       - name: Publish distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
