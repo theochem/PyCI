@@ -51,7 +51,7 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(const SparseOp &op_
 // Copy Constructor
 // obj is the constant reference to another object to be copied
 AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(const AP1roGeneralizedSenoObjective &obj)
-: Objective<NonSingletCI>::Objective(obj), nexc_list(obj.nexc_list), det_exc_param_indx(obj.det_exc_param_indx)
+: Objective<NonSingletCI>::Objective(obj), det_exc_param_indx(obj.det_exc_param_indx), nexc_list(obj.nexc_list)
 {
     return;
 }
@@ -59,7 +59,7 @@ AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(const AP1roGenerali
 // Move constructor
 // obj is the rvalue reference to another object to be moved
 AP1roGeneralizedSenoObjective::AP1roGeneralizedSenoObjective(AP1roGeneralizedSenoObjective &&obj) noexcept
-: Objective<NonSingletCI>::Objective(obj), nexc_list(std::move(obj.nexc_list))
+: Objective<NonSingletCI>::Objective(obj), det_exc_param_indx(obj.det_exc_param_indx), nexc_list(std::move(obj.nexc_list))
 {
     return;
 }
@@ -152,7 +152,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         std::cout << particle << " ";
     }
     std::cout << std::endl;
-    std::vector<std::pair<int,int>>s::size_type max_pairs = occ_pairs.size();
+    std::vector<std::pair<int,int>>::size_type max_pairs = occ_pairs.size();
     bool nvir_pairs = false;
     if (max_pairs == vir_pairs.size()) {
         nvir_pairs = true;
