@@ -162,7 +162,7 @@ jobs:
           ls -l dist/
       - name: Uncompress the files in dist directory with for loop
         run: |
-          for file in dist/*.tar.gz; do tar -xvf $file -C dist/; done
+            for file in dist/*.zip; do unzip -d dist/ $file; done
       - name: List the files in dist directory after uncompressing
         run: |
           ls -l dist/
