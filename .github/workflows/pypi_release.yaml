@@ -65,7 +65,7 @@ jobs:
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
         with:
-            name: ${{ PYPI_NAME }}-${{ matrix.os }}-py${{ matrix.python-version }}-${{ github.ref_name }}
+            name: qc-pyci-${{ matrix.os }}-py${{ matrix.python-version }}-${{ github.ref_name }}
             path: dist/
 
   publish-to-pypi:
@@ -87,7 +87,7 @@ jobs:
         with:
           # name: python-package-distributions
           # ${{ PYPI_NAME }}-${{ matrix.os }}-py${{ matrix.python-version }}-${{ github.ref_name }}
-          pattern: ${{ PYPI_NAME }}*
+          pattern: qc-pyci*
           path: dist/
       - name: List the files in dist directory
         run: ls -l dist/
@@ -113,7 +113,7 @@ jobs:
         with:
           # name: python-package-distributions
           # name: ${{ PYPI_NAME }}-${{ matrix.os }}-*-${{ github.ref_name }}
-          pattern: ${{ PYPI_NAME }}*
+          pattern: qc-pyci*
           path: dist/
       - name: Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
@@ -156,7 +156,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           # name: python-package-distributions
-          pattern: ${{ PYPI_NAME }}*
+          pattern: qc-pyci*
           path: dist/
       - name: Publish distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
