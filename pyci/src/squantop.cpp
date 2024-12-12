@@ -112,7 +112,7 @@ SQuantOp::SQuantOp(const std::string &filename) {
     h = reinterpret_cast<double *>(h_array.request().ptr);
     v = reinterpret_cast<double *>(v_array.request().ptr);
     w = reinterpret_cast<double *>(w_array.request().ptr);
-    std::cout << "size of h: " << h_array.request().size << std::endl;
+    std::cout << "size of h: file" << h_array.request().size << std::endl;
     long n1, n2, n3;
     n1 = nbasis;
     n2 = n1 * n1;

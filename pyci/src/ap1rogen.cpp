@@ -339,8 +339,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
         exc_info.det.resize(nword);
         exc_info.pair_inds.resize(1);
         exc_info.single_inds.resize(1);
-        exc_info.pair_inds[0] = -1.0;
-        exc_info.single_inds[0] = -1.0;
+        exc_info.pair_inds[0] = -1;
+        exc_info.single_inds[0] = -1;
         std::cout << "Assigned first elem as -1 to both pair_inds and single_inds" << std::endl;
         std::memcpy(&exc_info.det[0], &det[0], sizeof(ulong) * nword);
         // std::cout << "\nCopied det" << std::endl;
@@ -412,7 +412,6 @@ double AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<lo
     return permanent;
 }
 
-// void AP1roGeneralizedSenoObjective::overlap(const NonSingletCI &wfn_, const double *x, double *y) {
 void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
     std::cout << "\nInside overlap" << std::endl;
     p_permanent.resize(ndet);
@@ -426,13 +425,13 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
             // Access the excitation parameter indices
             const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
             double pair_permanent, single_permanent;
-            if (exc_info.pair_inds[0] == -1.0) {
-                pair_permanent = 0.0;
+            if (exc_info.pair_inds[0] == -1) {
+                pair_permanent = 1.0;
             } else {
                 pair_permanent = permanent_calculation(exc_info.pair_inds, x);
             }
-            if (exc_info.single_inds[0] == -1.0) {
-                single_permanent = 0.0;
+            if (exc_info.single_inds[0] == -1) {
+                single_permanent = 1.0;
             } else {
                 single_permanent = permanent_calculation(exc_info.single_inds, x);
             }
@@ -466,10 +465,9 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
 }
 
 
-double AP1roGeneralizedSenoObjective::compute_derivative(
-    const std::vector<long>& excitation_inds, 
-    const double* x,
-    std::size_t iparam) {
+double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>& excitation_inds, 
+            const double* x,
+            std::size_t iparam) {
 
     // double derivative = 0.0;
 
@@ -484,7 +482,9 @@ double AP1roGeneralizedSenoObjective::compute_derivative(
     if (it == excitation_inds.end()) {
         return 0.0;
     }
-
+    if (excitation_inds[0] == -1) {
+        return 0.0;
+    }
     // Create a reduced excitation_inds excluding iparam
     std::vector<long> reduced_inds = excitation_inds;
     reduced_inds.erase(it);
@@ -511,41 +511,45 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
          
             std::cout << "size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
 
-            DetExcParamIndx& exc_info = det_exc_param_indx[idet];
+            const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
             double pair_permanent = p_permanent[idet];
             double single_permanent = s_permanent[idet];
             std::cout << "pair_permanent: " << pair_permanent << std::endl;
             std::cout << "single_permanent: " << single_permanent << std::endl;
 
             for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
-                std::cout << "computing deriv for i: " << iparam << std::endl;
-                double d_pair = 0.0;
-                double d_single = 0.0;
+                std::cout << "computing deriv of idet: " << idet << " wrt iparam: " << iparam << std::endl;
+                std::cout << "nparam: " << nparam << std::endl;
+                double d_pair, d_single;
                 std::cout << "Size(pair_inds): " << exc_info.pair_inds.size() << std::endl;
                 std::cout << "Size(single_inds): " << exc_info.single_inds.size() << std::endl;
-                for (std::size_t i = 0; i < exc_info.pair_inds.size(); ++i) {
-                        std::cout << exc_info.pair_inds[i] << " ";
-                        std::cout << exc_info.single_inds[i] << " ";
-                }
-                std::cout << "\n";
-                if (exc_info.single_inds[0] != -1.0) {                                    
-                    std::cout << "exc_info.single_inds: ";
-                    for (const auto sid : exc_info.single_inds) {
-                        std::cout << sid << " ";
-                    }
-                    std::cout << "\nCalling compute deriv for single_inds\n";
-                    d_single = compute_derivative(exc_info.single_inds, x, iparam);
-                    std::cout << "calling done\n";
-                }
+                // for (std::size_t i = 0; i < exc_info.pair_inds.size(); ++i) {
+                //         std::cout << exc_info.pair_inds[i] << " ";
+                //         std::cout << exc_info.single_inds[i] << " ";
+                // }
+                // std::cout << "\nSize of x: " << &x.size() << std::endl; 
+                d_pair = compute_derivative(exc_info.pair_inds, x, iparam);
+                d_single = compute_derivative(exc_info.single_inds, x, iparam);
+
+
+                // std::size_t idx = 0;
+                // if (exc_info.pair_inds[idx] != -1) {
+                //     std::cout << "exc_info.pair_inds: ";
+                //     for (const auto pid : exc_info.pair_inds) {
+                //         std::cout << pid << " ";
+                //     }
+                //     d_pair = compute_derivative(exc_info.pair_inds, x, iparam);
+                // }
+                // if (exc_info.single_inds[idx] != -1) {                                    
+                //     std::cout << "exc_info.single_inds: ";
+                //     for (const auto sid : exc_info.single_inds) {
+                //         std::cout << sid << " ";
+                //     }
+                //     std::cout << "\nCalling compute deriv for single_inds\n";
+                //     d_single = compute_derivative(exc_info.single_inds, x, iparam);
+                //     std::cout << "calling done\n";
+                // }
                 std::cout << "\nd_single: " << d_single <<  "\n" ;
-                if (exc_info.pair_inds[0] != -1.0) {
-                    std::cout << "exc_info.pair_inds: ";
-                    for (const auto sid : exc_info.pair_inds) {
-                        std::cout << sid << " ";
-                    }
-                    d_pair = compute_derivative(exc_info.pair_inds, x, iparam);
-                }
-                
                 std::cout << "\nderiv index:" << idet * nparam + iparam << std::endl;
                 y[idet * nparam + iparam] = d_pair * single_permanent + pair_permanent * d_single;
             }
