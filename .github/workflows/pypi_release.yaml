@@ -57,10 +57,12 @@ jobs:
           make
           make test
           python -m build --sdist --wheel
-          for file in dist/*; do \
+          cd dist
+          for file in *; do \
             mv "$file" "${file%.tar.gz}-py${{ matrix.python-version }}.tar.gz"; \
             mv "$file" "${file%.whl}-py${{ matrix.python-version }}.whl"; \
           done
+          cd ..
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
