@@ -197,7 +197,9 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
                         std::cout << "Pair index: " << pindx << std::endl;
                         std::cout << "hpair_comb: " << hpair_comb[0] << " " << hpair_comb[1] << std::endl;
                         std::cout << "ppair_comb: " << ppair_comb[0] << " " << ppair_comb[1] << std::endl;
-                        pair_inds.clear();
+                        if (pair_inds[0] == -1) {
+                            pair_inds.clear();
+                        }
                         pair_inds.push_back(pindx);
                         used_holes.insert(used_holes.end(), hpair_comb.begin(), hpair_comb.end());
                         used_parts.insert(used_parts.end(), ppair_comb.begin(), ppair_comb.end());
@@ -233,7 +235,9 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
                     if (std::find(used_holes.begin(), used_holes.end(), hsingle_comb[0]) == used_holes.end() &&
                         std::find(used_parts.begin(), used_parts.end(), psingle_comb[0]) == used_parts.end()) {
                         long sindx = wfn_.calc_sindex(hsingle_comb[0], psingle_comb[0]);
-                        single_inds.clear();
+                        if (single_inds[0] == -1) {
+                            single_inds.clear();
+                        }
                         single_inds.push_back(sindx);
                         std::cout << "Single index: " << sindx << std::endl;
                         std::cout << "h: " << hsingle_comb[0] <<  ", p: " << psingle_comb[0] << std::endl;
@@ -270,8 +274,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 
     nparam = nocc_up * (nbasis - nocc_up); //paired-doubles
     std::cout << "nparam (doubles): " << nparam << std::endl;
-    nparam += wfn_.nocc * (2* nbasis - wfn_.nocc); // beta singles
-    std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
+    // nparam += wfn_.nocc * (2* nbasis - wfn_.nocc); // beta singles
+    // std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
 
     
 
@@ -369,6 +373,12 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
             }
             std::cout << std::endl;
         }
+        // if (exc_info.pair_inds.empty()) {
+        //     exc_info.pair_inds[0] = -1;
+        // }
+        // if (exc_info.single_inds.empty()) {
+        //     exc_info.single_inds[0] = -1;
+        // }
         det_exc_param_indx[idet] = exc_info;
     }
 }
@@ -379,24 +389,28 @@ bool AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long
     std::size_t n = static_cast<std::size_t>(std::sqrt(excitation_inds.size()));
     if (n == 0) {permanent = 1.0; return true;}
     if (n == 1) {permanent = x[excitation_inds[0]]; return true;}
-
+    permanent = 0.0;
     std::size_t subset_count = 1UL << n; // 2^n subsets
-
+    // std::cout << "\npermanent: " << permanent << std::endl;
     for (std::size_t subset = 0; subset < subset_count; ++subset) {
         double rowsumprod = 1.0;
 
         for (std::size_t  i = 0; i < n; ++i) {
             double rowsum = 0.0;
             for (std::size_t j = 0; j < n; ++j) {
+                // std::cout << "\ni: " << i << ", j: " << j << ", rowsum: " << rowsum << std::endl;
                 if (subset & (1UL << j)) {
                     rowsum += x[excitation_inds[i * n + j]];
+                    // std::cout << "x[" << excitation_inds[i * n + j] << "]: " << x[excitation_inds[i * n + j]] << std::endl;
                 }
+                // std::cout << "updated rowsum: " << rowsum << std::endl;
             }
             if (std::isnan(rowsum) || std::isinf(rowsum)) {
                 std::cerr << "Error: rowsum is invalid (NaN or Inf) at subset " << subset << std::endl;
                 return false;    
             }
             rowsumprod *= rowsum;
+            // std::cout << "rowsumprod: " << rowsumprod << std::endl;
         }
         if (std::isnan(rowsumprod) || std::isinf(rowsumprod)) {
             std::cerr << "Error: rowsumprod is invalid (NaN or Inf) at subset " << subset << std::endl;
@@ -404,10 +418,13 @@ bool AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long
         }
 
         // multiply by the parity of the subset
+        // std::cout << "parity: " << ((__builtin_popcount(subset) & 1) << 1) << std::endl;
         permanent += rowsumprod * (1 - ((__builtin_popcount(subset) & 1) << 1));
+        // std::cout << "permanent: " << permanent << std::endl;
     }
     // If n (matrix size) is odd, multiply by -1
     permanent *= ((n % 2 == 1) ? -1 : 1);
+    // std::cout << "permanent: " << permanent << std::endl;
     
     if (std::isnan(permanent) || std::isinf(permanent)) {
         std::cerr << "Error: permanent is invalid (NaN or Inf)" << std::endl;
@@ -420,29 +437,43 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
     std::cout << "\nInside overlap" << std::endl;
     p_permanent.resize(ndet);
     s_permanent.resize(ndet);
-
+    std::cout << "Input params: ";
+    for (std::size_t i = 0; i < nparam; ++i) {
+        std::cout << x[i] << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "Ovlp: " ;
+    for (std::size_t i = 0; i < ndet; ++i) {
+        std::cout << y[i] << " ";
+    }
+    std::cout << std::endl;
     for (std::size_t idet = 0; idet != ndet; ++idet) {
-        std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+        // std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
     
         if (idet < det_exc_param_indx.size()) {
-            std::cout << "idet: " <<  idet << " found in storage" << std::endl;
+            std::cout << "\n\nidet: " <<  idet << " found in storage" << std::endl;
 
             // Access the excitation parameter indices
             const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
             double pair_permanent = 1.0;
             double single_permanent = 1.0;
+            // std::cout << "Pair indices: ";
+            // for (const auto& pid : exc_info.pair_inds) {
+            //     std::cout << pid << " ";
+            // }
+            // std::cout << std::endl;
 
             if (exc_info.pair_inds[0] != -1) {
                 if (!permanent_calculation(exc_info.pair_inds, x, pair_permanent)) {
                     std::cerr << "Error calculating pair_permanent for idet" << idet << std::endl;
-                    pair_permanent = 0.0; // Default to 0 or another appropriate fallback
+                    // pair_permanent = 0.0; // Default to 0 or another appropriate fallback
                 }
             }
 
             if (exc_info.single_inds[0] != -1) {
                 if (!permanent_calculation(exc_info.single_inds, x, single_permanent)) {
                     std::cerr << "Error calculating single_permanent for idet " << idet << std::endl;
-                    single_permanent = 0.0; // Default value on error
+                    // single_permanent = 0.0; // Default value on error
                 }
             }
 
