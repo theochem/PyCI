@@ -69,10 +69,10 @@ jobs:
         # env:
         #   CIBW_SOME_OPTION: value
         #    ...
-        with:
-          # package-dir: .
-          # output-dir: wheelhouse
-          # config-file: "{package}/pyproject.toml"
+        # with:
+        #   package-dir: .
+        #   output-dir: wheelhouse
+        #   config-file: "{package}/pyproject.toml"
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
