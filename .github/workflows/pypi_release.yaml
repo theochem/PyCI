@@ -22,31 +22,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # os: [ubuntu-latest, macos-latest]
-        # python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest]
-        python-version: ["3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
-    #   # TODO: Add C++ compliers
-    #   # Fetch CUDA toolkit using Jimver/cuda-toolkit
-    #   - name: Fetch CUDA toolkit
-    #     uses: Jimver/cuda-toolkit@v0.2.18
-    #     id: cuda-toolkit
-    #     with:
-    #       cuda: "12.1.0"
-
-    #   - name: Check nvcc version
-    #     run: nvcc -V
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
-        # with:
-        #   python-version: "3.12"
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -71,17 +56,28 @@ jobs:
         run: |
           make
           make test
-          python -m build --sdist
-
+          python -m build --sdist --wheel
+          cd dist
+          # numpy-2.2.0-pp310-pypy310_pp73-macosx_14_0_x86_64.whl
+            for file in *.whl; do \
+            newname=$(echo "$file" | sed -E 's/-py3-none-any//'); \
+            mv "$file" "${newname%.whl}-${{ matrix.os }}-py${{ matrix.python-version }}.whl"; \
+            if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then \
+              mv "${newname%.whl}-${{ matrix.os }}-py${{ matrix.python-version }}.whl" "${newname%.whl}-manylinux_x86_64.whl"; \
+            fi; \
+            done
+          cd ..
+      - name: List the files in dist directory
+        run: |
+          ls -l dist/
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
         with:
-          name: python-package-distributions
+          name: qc-pyci-${{ matrix.os }}-py${{ matrix.python-version }}-${{ github.ref_name }}
           path: dist/
 
   publish-to-pypi:
     name: Publish Python distribution to PyPI
-    # only publish to PyPI on tag pushes
     if: startsWith(github.ref, 'refs/tags/')
     needs:
       - build
@@ -96,8 +92,19 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
+          pattern: qc-pyci*
           path: dist/
+          merge-multiple: true
+      - name: List the files in dist directory
+        run: |
+          ls -l dist/
+      # - name: Uncompress the files in dist directory with for loop
+      #   run: |
+      #       for file in dist/*.zip; do unzip -d dist/ $file; done
+      # - name: List the files in dist directory after uncompressing
+      #   run: |
+      #     ls -l dist/
+
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         env:
@@ -118,8 +125,18 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
+          pattern: qc-pyci*
           path: dist/
+          merge-multiple: true
+      - name: List the files in dist directory
+        run: |
+          ls -l dist/
+      # - name: Uncompress the files in dist directory with for loop
+      #   run: |
+      #       for file in dist/*.zip; do unzip -d dist/ $file; done
+      # - name: List the files in dist directory after uncompressing
+      #   run: |
+      #     ls -l dist/
       - name: Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
@@ -144,7 +161,6 @@ jobs:
 
   publish-to-testpypi:
     name: Publish Python distribution to TestPyPI
-    # if: ${{ github.ref == "refs/heads/master" && github.repository_owner == "theochem" }}
     needs:
       - build
     runs-on: ubuntu-latest
@@ -160,8 +176,18 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
+          pattern: qc-pyci*
           path: dist/
+          merge-multiple: true
+      - name: List the files in dist directory
+        run: |
+          ls -l dist/
+      # - name: Uncompress the files in dist directory with for loop
+      #   run: |
+      #       for file in dist/*.zip; do unzip -d dist/ $file; done
+      # - name: List the files in dist directory after uncompressing
+      #   run: |
+      #     ls -l dist/
       - name: Publish distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
