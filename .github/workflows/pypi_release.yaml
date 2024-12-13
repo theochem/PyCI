@@ -57,16 +57,16 @@ jobs:
           make
           make test
           python -m build --sdist --wheel
-          cd dist
-          # numpy-2.2.0-pp310-pypy310_pp73-macosx_14_0_x86_64.whl
-            for file in *.whl; do \
-            newname=$(echo "$file" | sed -E 's/-py3-none-any//'); \
-            mv "$file" "${newname%.whl}-${{ matrix.os }}-py${{ matrix.python-version }}.whl"; \
-            if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then \
-              mv "${newname%.whl}-${{ matrix.os }}-py${{ matrix.python-version }}.whl" "${newname%.whl}-manylinux1_x86_64.whl"; \
-            fi; \
-            done
-          cd ..
+          # cd dist
+          # # numpy-2.2.0-pp310-pypy310_pp73-macosx_14_0_x86_64.whl
+          #   for file in *.whl; do \
+          #   newname=$(echo "$file" | sed -E 's/-py3-none-any//'); \
+          #   mv "$file" "${newname%.whl}-${{ matrix.os }}-py${{ matrix.python-version }}.whl"; \
+          #   if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then \
+          #     mv "${newname%.whl}-${{ matrix.os }}-py${{ matrix.python-version }}.whl" "${newname%.whl}-manylinux1_x86_64.whl"; \
+          #   fi; \
+          #   done
+          # cd ..
       - name: List the files in dist directory
         run: |
           ls -l dist/
