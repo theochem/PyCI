@@ -85,9 +85,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install development and distributions version
+        run: |
+          pip install --upgrade pip
+          pip install -v .
+          pip install pytest build
 
-      - name: Build sdist
-        run: python -m build --sdist
+      - name: Build Source Distribution
+        run: |
+          make
+          make test
+          python -m build --sdist
 
       - uses: actions/upload-artifact@v4
         with:
