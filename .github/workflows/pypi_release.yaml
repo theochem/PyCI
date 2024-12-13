@@ -22,62 +22,77 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # os: [ubuntu-latest, macos-latest]
+        # os: [ubuntu-latest, windows-latest, macos-13, macos-14]
         # python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest]
         python-version: ["3.12"]
 
     steps:
-    #   # TODO: Add C++ compliers
-    #   # Fetch CUDA toolkit using Jimver/cuda-toolkit
-    #   - name: Fetch CUDA toolkit
-    #     uses: Jimver/cuda-toolkit@v0.2.18
-    #     id: cuda-toolkit
-    #     with:
-    #       cuda: "12.1.0"
-
-    #   - name: Check nvcc version
-    #     run: nvcc -V
 
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        # with:
-        #   python-version: "3.12"
+      # - name: Set up Python
+      #   uses: actions/setup-python@v5
+      #   # with:
+      #   #   python-version: "3.12"
+      #   with:
+      #     python-version: ${{ matrix.python-version }}
+
+      # - name: Install system dependencies (Ubuntu)
+      #   if: runner.os == 'Linux'
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y make gcc g++ python3-dev
+
+      # - name: Install system dependencies (macOS)
+      #   if: runner.os == 'macOS'
+      #   run: |
+      #     brew install gcc make
+
+      # - name: Install development and distributions version
+      #   run: |
+      #     pip install --upgrade pip
+      #     pip install -v .
+      #     pip install pytest build cibuildwheel
+
+      # - name: Build Source Distribution
+      #   run: |
+      #     # make
+      #     # make test
+      #     # python -m build --sdist
+      #     cibuildwheel --output-dir dist
+
+      - name: build wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2.22.0
+        # env:
+        #   CIBW_SOME_OPTION: value
+        #    ...
         with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install system dependencies (Ubuntu)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y make gcc g++ python3-dev
-
-      - name: Install system dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install gcc make
-
-      - name: Install development and distributions version
-        run: |
-          pip install --upgrade pip
-          pip install -v .
-          pip install pytest build
-
-      - name: Build Source Distribution
-        run: |
-          make
-          make test
-          python -m build --sdist
+          # package-dir: .
+          # output-dir: wheelhouse
+          # config-file: "{package}/pyproject.toml"
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
         with:
-          name: python-package-distributions
-          path: dist/
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build sdist
+        run: python -m build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
 
   publish-to-pypi:
     name: Publish Python distribution to PyPI
@@ -96,8 +111,10 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
-          path: dist/
+          # unpacks all CIBW artifacts into dist/
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         env:
@@ -118,8 +135,10 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
-          path: dist/
+          # unpacks all CIBW artifacts into dist/
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
       - name: Sign the dists with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
@@ -160,8 +179,10 @@ jobs:
       - name: Download all the dists
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
-          path: dist/
+          # unpacks all CIBW artifacts into dist/
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
       - name: Publish distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
