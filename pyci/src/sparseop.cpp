@@ -566,9 +566,6 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
     long n3 = n1 * n2;
     double val1, val2 = 0.0;
     const ulong *rdet_up = wfn.det_ptr(idet);
-    const ulong *rdet_dn = rdet_up + nbasis;
-    std::cout << "rdet_up: " << *rdet_up << std::endl;
-    ulong *det_dn = det_up + nbasis;
     std::memcpy(det_up, rdet_up, sizeof(ulong) * wfn.nword); 
 
     fill_occs(wfn.nword, rdet_up, occs);
@@ -811,29 +808,6 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             for (k = 0; k < nocc_dn; ++k) {
                 kk = occs_dn[k];
                 koffset = ioffset + n2 * kk;
-                // second excitaiton: beta -> alpha
-                for (l = 0; l < nvir_up; ++l) {
-                    ll = virs_up[l];
-                    excite_det(kk, ll, det_up);
-                    jdet = wfn.index_det(det_up);
-                    if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
-                        // std::cout << "ii, kk, jj, ll: " << ii << ", " << kk  << ", " << jj << ", " << ll << std::endl;
-                        // std::cout << "ndet_up: " << *det_up << std::endl;
-                        if (kk < nbasis) kk -= nbasis;
-                        if (ll < nbasis) ll -= nbasis;
-                        // std::cout << "6_val: " << (sign_up *
-                                                //  phase_single_det(wfn.nword, kk, ll, rdet_up) *
-                                                //  (-ham.two_mo[koffset + n1 * ll + jj])) << std::endl;
-                        // counter += 1;
-                        // append<double>(data, sign_up *
-                        //                          phase_single_det(wfn.nword, kk, ll, rdet_up) *
-                        //                          (-ham.two_mo[koffset + n1 * ll + jj])); 
-                        // append<long>(indices, jdet);
-                        kk = occs_dn[k];
-                        ll = virs_up[l];
-                    }
-                    excite_det(ll, kk, det_up); 
-                }
                 // sedond excitation: beta -> beta
                 for (l = j+1; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
