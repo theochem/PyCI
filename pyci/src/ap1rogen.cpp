@@ -274,8 +274,8 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 
     nparam = nocc_up * (nbasis - nocc_up); //paired-doubles
     std::cout << "nparam (doubles): " << nparam << std::endl;
-    // nparam += wfn_.nocc * (2* nbasis - wfn_.nocc); // beta singles
-    // std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
+    nparam += wfn_.nocc * (wfn_.nbasis - wfn_.nocc); // beta singles
+    std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
 
     
 
