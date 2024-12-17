@@ -942,15 +942,13 @@ public:
     // Permanent calculation: Ryser's Algorithm
     bool permanent_calculation(const std::vector<long>&, const double*, double&);
 
+    // Helper function for d_overlap
+    double compute_derivative(const std::vector<long> , const double*, std::size_t);
+
     // Overlap function
-    // virtual void overlap(const NonSingletCI &, const double *x, double *y);
     virtual void overlap(const std::size_t, const double *x, double *y);
 
-    // Helper function for d_overlap
-    bool compute_derivative(const std::vector<long>& excitation_indices, const double*, std::size_t, double& );
-
     // Overlap gradient function
-    // virtual void d_overlap(const NonSingletCI &, const size_t, const double *x, double *y);
     virtual void d_overlap(const size_t, const double *x, double *y);
 };
 
