@@ -157,7 +157,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
     bool nvir_pairs = false;
     if (max_pairs == vir_pairs.size()) {
         nvir_pairs = true;
-        std::cout << "nvir_pairs: " << nvir_pairs << std::endl;
+        // std::cout << "nvir_pairs: " << nvir_pairs << std::endl;
     }
     
     // std::cout << "exci order: " << excitation_order << ", max_pairs: " << max_pairs << std::endl;
@@ -596,7 +596,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 // std::cout << "size of y array: " << &y.size() << std::endl;
                 double dpair = 0.0;
                 double dsingle = 0.0;
-                std::cout << "exc_info.single_inds: ";
+                // std::cout << "exc_info.single_inds: ";
                 // for (const auto& sid : exc_info.single_inds) {
                 //     std::cout << sid << " ";
                 // }
