@@ -199,7 +199,6 @@ class FanCI(metaclass=ABCMeta):
         # Generate determinant spaces
         wfn = fill_wavefunction(wfn, nproj, fill)
 
-        print("type", type(wfn))
         # Compute CI matrix operator with nproj rows and len(wfn) columns
         if type(wfn).__name__ == "nonsingletci_wfn":
             ci_op = pyci.sparse_op(ham, wfn, nrow=nproj, ncol=len(wfn), symmetric=False, wfntype="nonsingletci")
@@ -689,7 +688,6 @@ def fill_wavefunction(wfn: pyci.wavefunction, nproj: int, fill: str) -> None:
         print(f"e_max: {e_max}, len(wfn) before filling: {len(wfn)}")
         for nexc in range(e_max + 1):
             if len(wfn) >= nproj:
-                print("Breaking filling as len(wfn) >= nproj")
                 break
             pyci.add_excitations(wfn, nexc)
 
@@ -714,7 +712,6 @@ def fill_wavefunction(wfn: pyci.wavefunction, nproj: int, fill: str) -> None:
         wfn = wfn.__class__(wfn.nbasis, wfn.nocc_up, wfn.nocc_dn, wfn.to_det_array(nproj))
 
     # Fill wfn with S space determinants
-    print("\nAdding S space determinants")
     for det in wfn.to_det_array(nproj):
         pyci.add_excitations(wfn, *connections, ref=det)
 
