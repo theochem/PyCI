@@ -25,20 +25,14 @@ FullCIWfn::FullCIWfn(FullCIWfn &&wfn) noexcept : TwoSpinWfn(wfn) {
 }
 
 FullCIWfn::FullCIWfn(const DOCIWfn &wfn) : TwoSpinWfn(wfn.nbasis, wfn.nocc_up, wfn.nocc_dn) {
-    std::cout << "Initializing FullCIWfn from DOCIWfn" << std::endl;
     ndet = wfn.ndet;
-    std::cout << "Number of determinants: " << ndet << std::endl;
     dets.resize(wfn.ndet * nword2);
-    std::cout << "Resized dets array to: " << (wfn.ndet * nword2) << std::endl;
     dict.clear();
-    std::cout << "Cleared dictionary" << std::endl;
     for (long i = 0; i < wfn.ndet; ++i) {
         std::memcpy(&dets[i * wfn.nword2], wfn.det_ptr(i), sizeof(ulong) * wfn.nword);
         std::memcpy(&dets[i * wfn.nword2 + wfn.nword], wfn.det_ptr(i), sizeof(ulong) * wfn.nword);
         dict[rank_det(&dets[i * wfn.nword2])] = i;
-        std::cout << "Processed determinant " << i << std::endl;
     }
-    std::cout << "Finished initializing FullCIWfn from DOCIWfn" << std::endl;
 }
 
 FullCIWfn::FullCIWfn(const std::string &filename) : TwoSpinWfn(filename) {
