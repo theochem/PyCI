@@ -685,7 +685,6 @@ def fill_wavefunction(wfn: pyci.wavefunction, nproj: int, fill: str) -> None:
         # Fill wfn with P space determinants in excitation order until len(wfn) >= nproj;
         # only add Hartree-Fock det. (zero order excitation) if wfn is empty
         # for nexc in range(bool(len(wfn)), e_max + 1):
-        print(f"e_max: {e_max}, len(wfn) before filling: {len(wfn)}")
         for nexc in range(e_max + 1):
             if len(wfn) >= nproj:
                 break
