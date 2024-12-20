@@ -250,12 +250,9 @@ void TwoSpinWfn::add_excited_dets(const ulong *rdet, const long e_up, const long
         add_det(rdet);
         return;
     }
-    std::cout << "Inside twospin/add_excited_dets " << std::endl;
-    std::cout << "Calling OneSpinWfn to add_excited_dets in wfn_up " << std::endl;
     OneSpinWfn wfn_up(nbasis, nocc_up, nocc_up);
     wfn_up.add_excited_dets(&rdet[0], e_up);
 
-    std::cout << "Calling OneSpinWfn to add_excited_dets in wfn_up " << std::endl;
     OneSpinWfn wfn_dn(nbasis, nocc_dn, nocc_dn);
     wfn_dn.add_excited_dets(&rdet[nword], e_dn);
     AlignedVector<ulong> det(nword2);
@@ -330,8 +327,6 @@ long TwoSpinWfn::py_add_occs(const Array<long> occs) {
 long TwoSpinWfn::py_add_excited_dets(const long exc, const pybind11::object ref) {
     AlignedVector<ulong> v_ref;
     ulong *ptr;
-    std::cout << "Inside twospin/py_add_excited_dets " << std::endl;
-    std::cout << "exc: " << exc << std::endl;
     if (ref.is(pybind11::none())) {
         v_ref.resize(nword2);
         ptr = &v_ref[0];
@@ -345,8 +340,6 @@ long TwoSpinWfn::py_add_excited_dets(const long exc, const pybind11::object ref)
     long a = (exc < maxup) ? exc : maxup;
     long b = exc - a;
     while ((a >= 0) && (b <= maxdn)){
-        std::cout << "Callling twospin/add_excited_dets with " << std::endl;
-        std::cout << "a: " << a << " b: " << b << std::endl;
         add_excited_dets(ptr, a--, b++);
     }
     return ndet - ndet_old;
