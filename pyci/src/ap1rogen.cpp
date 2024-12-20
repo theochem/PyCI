@@ -589,7 +589,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
             // std::cout << "single_permanent: " << single_permanent << std::endl;
 
             for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
-                std::cout << "computing deriv of idet: " << idet << " wrt iparam: " << iparam << std::endl;
+                // std::cout << "computing deriv of idet: " << idet << " wrt iparam: " << iparam << std::endl;
                 // std::cout << "nparam: " << nparam << std::endl;
                 // std::cout << "Size(pair_inds): " << exc_info.pair_inds.size() << std::endl;
                 // std::cout << "Size(single_inds): " << exc_info.single_inds.size() << std::endl;
