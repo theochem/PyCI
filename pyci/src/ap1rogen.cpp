@@ -88,7 +88,7 @@ std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partiti
     std::vector<std::pair<int, int>> partitions;
     for (int p = 0; p <= std::min(e / 2 , max_opairs); ++p) {
         int s = e - 2 * p;
-        // std::cout << "p, s: " << p << " " << s << std::endl;
+        // //std::cout << "p, s: " << p << " " << s << std::endl;
         if (max_opairs > 0 && nvir_pairs && p) {
             if (e % 2 !=0) { // if e is odd
                 partitions.emplace_back(p, s); 
@@ -109,11 +109,11 @@ std::vector<std::pair<int, int>> AP1roGeneralizedSenoObjective::generate_partiti
 void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::size_t>& holes,
     const std::vector<std::size_t>& particles, int excitation_order, std::vector<long>& pair_inds,
     std::vector<long>& single_inds, long nbasis, const NonSingletCI &wfn_) {
-    std::cout << "Inside generate_excitations" << std::endl;
+    //std::cout << "Inside generate_excitations" << std::endl;
     AlignedVector<std::pair<int,int>> occ_pairs, vir_pairs;
     AlignedVector<long> occs_up, occs_dn, virs_up, virs_dn, temp_occs;
     for (int i : holes) {
-        // std::cout << "i: " << i << ", nbasis: " << nbasis << std::endl;
+        // //std::cout << "i: " << i << ", nbasis: " << nbasis << std::endl;
         (i < nbasis ? occs_up : occs_dn).push_back(i);
     }
     for (int a : particles) {
@@ -121,7 +121,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         (a < nbasis ? virs_up : virs_dn).push_back(a);
     }
 
-    std::cout << "up dn set created\n";
+    //std::cout << "up dn set created\n";
     // Create an unordered set for fast lookup of occupied down-orbitals
     std::unordered_set<int> occ_dn_set(occs_dn.begin(), occs_dn.end()); 
     std::unordered_set<int> virs_set(particles.begin(), particles.end());    
@@ -141,17 +141,18 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
     }
     // std::cout << "vir_pairs created\n";
         
-    std::cout << "\nInside generate_excitations" << std::endl;
-    std::cout << "holes:" ;
-    for (const auto& hole : holes) {
-        std::cout << hole << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "particles:" ;
-    for (const auto& particle : particles) {
-        std::cout << particle << " ";
-    }
-    std::cout << std::endl;
+    // std::cout << "\nInside generate_excitations" << std::endl;
+    // std::cout << "holes:" ;
+    // for (const auto& hole : holes) {
+    //     std::cout << hole << " ";
+    // // }
+    // std::cout << std::endl;
+    // std::cout << "particles:" ;
+    // for (const auto& particle : particles) {
+    //     std::cout << particle << " ";
+    // }
+    // std::cout << std::endl;
+
     std::vector<std::pair<int,int>>::size_type max_pairs = occ_pairs.size();
     bool nvir_pairs = false;
     if (max_pairs == vir_pairs.size()) {
@@ -159,21 +160,21 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         std::cout << "nvir_pairs: " << nvir_pairs << std::endl;
     }
     
-    std::cout << "exci order: " << excitation_order << ", max_pairs: " << max_pairs << std::endl;
+    // std::cout << "exci order: " << excitation_order << ", max_pairs: " << max_pairs << std::endl;
     auto partitions = generate_partitions(excitation_order, max_pairs, nvir_pairs);
-    std::cout << "Generated partitions" << std::endl;
+    // std::cout << "Generated partitions" << std::endl;
     
-    std::cout << "Partitions: " << std::endl;
-    for (const auto& pair : partitions) {
-        std::cout << "num_pairs: " << pair.first << ", num_singles: " << pair.second << std::endl;
-    }
+    // std::cout << "Partitions: " << std::endl;
+    // for (const auto& pair : partitions) {
+    //     std::cout << "num_pairs: " << pair.first << ", num_singles: " << pair.second << std::endl;
+    // }
 
     for (const auto& pair : partitions) {
         const auto& num_pairs = pair.first;
         const auto& num_singles = pair.second; 
         // Step 2: Generate combinations of pairs and singles
-        std::cout << "Generating combinations of pairs and singles" << std::endl;
-        std::cout << "num_pairs: " << num_pairs << ", num_singles: " << num_singles << std::endl;
+        // std::cout << "Generating combinations of pairs and singles" << std::endl;
+        // std::cout << "num_pairs: " << num_pairs << ", num_singles: " << num_singles << std::endl;
         std::vector<std::vector<std::size_t>> hole_pairs, hole_singles;
         std::vector<std::vector<std::size_t>> part_pairs, part_singles;
 
@@ -183,20 +184,20 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
         if (num_pairs > 0) {
             generate_combinations(holes, 2, hole_pairs, nbasis);
             generate_combinations(particles, 2, part_pairs, nbasis);
-            std::cout << "Generated hole_pairs" << std::endl;
+            // std::cout << "Generated hole_pairs" << std::endl;
 
 
             
             for (const auto& hpair_comb : hole_pairs) {
                 for (const auto& ppair_comb : part_pairs){
-                    std::cout << "Handling pair excitations" << std::endl;
+                    // std::cout << "Handling pair excitations" << std::endl;
                     // if (used_holes.empty() || std::none_of(hpair_comb.begin(), hpair_comb.end(),
                     //         [&](std::size_t h) { return std::find(used_holes.begin(), used_holes.end(), h) != used_holes.end(); })) {
                     if (!hpair_comb.empty() || !ppair_comb.empty()) {
                         long pindx = wfn_.calc_pindex(hpair_comb[0], ppair_comb[0]);
-                        std::cout << "Pair index: " << pindx << std::endl;
-                        std::cout << "hpair_comb: " << hpair_comb[0] << " " << hpair_comb[1] << std::endl;
-                        std::cout << "ppair_comb: " << ppair_comb[0] << " " << ppair_comb[1] << std::endl;
+                        // std::cout << "Pair index: " << pindx << std::endl;
+                        // std::cout << "hpair_comb: " << hpair_comb[0] << " " << hpair_comb[1] << std::endl;
+                        // std::cout << "ppair_comb: " << ppair_comb[0] << " " << ppair_comb[1] << std::endl;
                         if (pair_inds[0] == -1) {
                             pair_inds.clear();
                         }
@@ -210,7 +211,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
 
         // Now handle single excitations
         if (num_singles  > 0) {
-            std::cout << "Handling single excitations" << std::endl;
+            // std::cout << "Handling single excitations" << std::endl;
             // Filter holes and particles to exclude used ones
             std::vector<std::size_t> remaining_holes, remaining_particles;
 
@@ -239,23 +240,23 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
                             single_inds.clear();
                         }
                         single_inds.push_back(sindx);
-                        std::cout << "Single index: " << sindx << std::endl;
-                        std::cout << "h: " << hsingle_comb[0] <<  ", p: " << psingle_comb[0] << std::endl;
+                        // std::cout << "Single index: " << sindx << std::endl;
+                        // std::cout << "h: " << hsingle_comb[0] <<  ", p: " << psingle_comb[0] << std::endl;
                         // used_holes.push_back(hsingle_comb[0]);
                         // used_parts.push_back(psingle_comb[0]);
                     }
                 }
             }
         }
-        std::cout << "Generated single indices" << std::endl;
-        for (const auto& sid : single_inds) {
-            std::cout << sid << " ";
-        }
-        std::cout << std::endl;
-        std::cout << "Generated pair indices" << std::endl;
-        for (const auto& pid : pair_inds) {
-            std::cout << pid << " ";
-        }
+        // std::cout << "Generated single indices" << std::endl;
+        // for (const auto& sid : single_inds) {
+        //     std::cout << sid << " ";
+        // }
+        // std::cout << std::endl;
+        // std::cout << "Generated pair indices" << std::endl;
+        // for (const auto& pid : pair_inds) {
+        //     std::cout << pid << " ";
+        // }
     
     }
 }
@@ -263,26 +264,26 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
 void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {
     // default_value = std::numeric_limits<double>::quiet_NaN();
-    std::cout << "Inside init_overlap" << std::endl;
+    // std::cout << "Inside init_overlap" << std::endl;
     // Initialize your class-specific variables here
     // init_Overlap objective for the AP1roGSDspin_sen-o 
-    std::cout << "wfn_.nocc_up: " << wfn_.nocc_up << "wfn_.nvir_up" << wfn_.nvir_up << std::endl;
-    std::cout << "wfn_.nocc: " << wfn_.nocc << "wfn_.nvir" << wfn_.nvir << std::endl;
+    // std::cout << "wfn_.nocc_up: " << wfn_.nocc_up << "wfn_.nvir_up" << wfn_.nvir_up << std::endl;
+    // std::cout << "wfn_.nocc: " << wfn_.nocc << "wfn_.nvir" << wfn_.nvir << std::endl;
     long nocc_up = wfn_.nocc / 2; 
     long nbasis = wfn_.nbasis / 2;
     // long nvir_up = nbasis - nocc_up;
 
     nparam = nocc_up * (nbasis - nocc_up); //paired-doubles
-    std::cout << "nparam (doubles): " << nparam << std::endl;
+    // std::cout << "nparam (doubles): " << nparam << std::endl;
     nparam += wfn_.nocc * (wfn_.nbasis - wfn_.nocc); // beta singles
-    std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
+    // std::cout << "nparam (doubles + S_alpha + S_beta): " << nparam << std::endl;
 
     
 
     ovlp.resize(nconn);
     d_ovlp.resize(nconn * nparam);
     det_exc_param_indx.resize(nconn);
-    std::cout << "Size of d_ovlp: " << d_ovlp.size() << std::endl;
+    // std::cout << "Size of d_ovlp: " << d_ovlp.size() << std::endl;
 
     std::size_t nword = (ulong)wfn_.nword;
     long nb = wfn_.nbasis;
@@ -294,11 +295,11 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
         wfn_.fill_hartreefock_det(nb, nocc, &rdet[0]);
         const ulong *det = wfn_.det_ptr(idet);
         ensure_struct_size(det_exc_param_indx, idet+1);
-        std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
-        std::cout << "\n---------> Det: " ;
+        // std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+        // std::cout << "\n---------> Det: " ;
         bool are_same = true;
         for (std::size_t k = 0; k < nword; ++k) {
-            std::cout << det[k] << " ";
+            // std::cout << det[k] << " ";
             if (rdet[k] != det[k]) {
                 are_same = false;
                 break;
@@ -317,9 +318,9 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
             word = rdet[iword] ^ det[iword]; //str for excitation
             hword = word & rdet[iword]; //str for hole
             pword = word & det[iword]; //str for particle
-            std::cout << "\nword: " << word << std::endl;
-            std::cout << "hword: " << hword << std::endl;
-            std::cout << "pword: " << pword << std::endl;
+            // std::cout << "\nword: " << word << std::endl;
+            // std::cout << "hword: " << hword << std::endl;
+            // std::cout << "pword: " << pword << std::endl;
             while(hword){
                 h = Ctz(hword);
                 p = Ctz(pword);
@@ -341,44 +342,38 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
             }
         }
         //nexc_list[idet] = nexc;
-        std::cout << "nexc: " << nexc << std::endl;
-        std::cout << "Ensured struct size" << std::endl;
+        // std::cout << "nexc: " << nexc << std::endl;
+        // std::cout << "Ensured struct size" << std::endl;
         DetExcParamIndx exc_info;
         exc_info.det.resize(nword);
         exc_info.pair_inds.resize(1);
         exc_info.single_inds.resize(1);
         exc_info.pair_inds[0] = -1;
         exc_info.single_inds[0] = -1;
-        std::cout << "Assigned first elem as -1 to both pair_inds and single_inds" << std::endl;
+        // std::cout << "Assigned first elem as -1 to both pair_inds and single_inds" << std::endl;
         std::memcpy(&exc_info.det[0], &det[0], sizeof(ulong) * nword);
         // std::cout << "\nCopied det" << std::endl;
         if (!are_same) generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, nbasis, wfn_);
-        std::cout << "Generated excitations" << std::endl;
-        std::cout << "size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
+        // std::cout << "Generated excitations" << std::endl;
+        // std::cout << "size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
         std::sort(exc_info.pair_inds.begin(), exc_info.pair_inds.end());
         std::sort(exc_info.single_inds.begin(), exc_info.single_inds.end());
-        if (idet == 41) {
-            std::cout << "Det: ";
-            for (std::size_t k = 0; k < nword; ++k) {
-                std::cout << det[k] << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "exc_info.pair_inds: ";
-            for (const auto& pid : exc_info.pair_inds) {
-                std::cout << pid << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "exc_info.single_inds: ";
-            for (const auto& sid : exc_info.single_inds) {
-                std::cout << sid << " ";
-            }
-            std::cout << std::endl;
-        }
-        // if (exc_info.pair_inds.empty()) {
-        //     exc_info.pair_inds[0] = -1;
-        // }
-        // if (exc_info.single_inds.empty()) {
-        //     exc_info.single_inds[0] = -1;
+        // if (idet == 41) {
+            // std::cout << "Det: ";
+            // for (std::size_t k = 0; k < nword; ++k) {
+            //     std::cout << det[k] << " ";
+            // }
+            // std::cout << std::endl;
+            // std::cout << "exc_info.pair_inds: ";
+            // for (const auto& pid : exc_info.pair_inds) {
+            //     std::cout << pid << " ";
+            // }
+            // std::cout << std::endl;
+            // std::cout << "exc_info.single_inds: ";
+            // for (const auto& sid : exc_info.single_inds) {
+            //     std::cout << sid << " ";
+            // }
+            // std::cout << std::endl;
         // }
         det_exc_param_indx[idet] = exc_info;
     }
@@ -391,7 +386,7 @@ bool AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long
     if (n == 0) {permanent = 1.0; return true;}
     if (n == 1) {
         permanent = x[excitation_inds[0]]; 
-        std::cout << "I'm here, perm: " << permanent << std::endl;
+        // std::cout << "I'm here, perm: " << permanent << std::endl;
         return true;}
     permanent = 0.0;
     std::size_t subset_count = 1UL << n; // 2^n subsets
@@ -439,15 +434,15 @@ bool AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long
 
 double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long> excitation_inds, 
     const double* x, std::size_t iparam) {
-    std::cout << "\nComputing derivative" << std::endl;
+    // std::cout << "\nComputing derivative" << std::endl;
 
     double reduced_permanent = 0.0;
-    std::cout << "excitation_inds: ";
-    for (const auto& eid : excitation_inds) {
-        std::cout << eid << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "iparam: " << iparam << std::endl;
+    // std::cout << "excitation_inds: ";
+    // for (const auto& eid : excitation_inds) {
+    //     std::cout << eid << " ";
+    // }
+    // std::cout << std::endl;
+    // std::cout << "iparam: " << iparam << std::endl;
     // Check if excitation_inds is empty, first element is -1
     if (excitation_inds[0] == -1) {return 0.0;} 
    
@@ -467,43 +462,43 @@ double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>
     modified_x[iparam] = 1.0;
     
 
-    std::cout << "Modified x: ";
-        for (const auto& rid : modified_x) {
-            std::cout << rid << " ";
-        }
-    std::cout << std::endl;
+    // std::cout << "Modified x: ";
+    //     for (const auto& rid : modified_x) {
+    //         std::cout << rid << " ";
+    //     }
+    // std::cout << std::endl;
     permanent_calculation(excitation_inds, modified_x.data(), reduced_permanent);
 
     if (std::isnan(reduced_permanent) || std::isinf(reduced_permanent)) {
         std::cerr << "Error: reduced_permanent is invalid (NaN or Inf)" << std::endl;
         return 0.0;
     }
-    std::cout << "\nreduced_permanent: " << reduced_permanent << std::endl;
+    // std::cout << "\nreduced_permanent: " << reduced_permanent << std::endl;
     return reduced_permanent;
 }
 
 
 
 void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
-    std::cout << "\nInside overlap" << std::endl;
-    std::cout << "ndet: "   << ndet << std::endl;
+    // std::cout << "\nInside overlap" << std::endl;
+    // std::cout << "ndet: "   << ndet << std::endl;
     p_permanent.resize(nconn);
     s_permanent.resize(nconn);
-    std::cout << "Input params: ";
-    for (std::size_t i = 0; i < nparam; ++i) {
-        std::cout << x[i] << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "Ovlp: " ;
-    for (std::size_t i = 0; i < ndet; ++i) {
-        std::cout << y[i] << " ";
-    }
-    std::cout << std::endl;
+    // std::cout << "Input params: ";
+    // for (std::size_t i = 0; i < nparam; ++i) {
+    //     std::cout << x[i] << " ";
+    // }
+    // std::cout << std::endl;
+    // std::cout << "Ovlp: " ;
+    // for (std::size_t i = 0; i < ndet; ++i) {
+    //     std::cout << y[i] << " ";
+    // }
+    // std::cout << std::endl;
     for (std::size_t idet = 0; idet != ndet; ++idet) {
         // std::cout << "Size of det_exc_param_indx: " << det_exc_param_indx.size() << std::endl;
     
         if (idet < det_exc_param_indx.size()) {
-            std::cout << "\n\nidet: " <<  idet << " found in storage" << std::endl;
+            // std::cout << "\n\nidet: " <<  idet << " found in storage" << std::endl;
 
             // Access the excitation parameter indices
             const DetExcParamIndx& exc_info = det_exc_param_indx[idet];
@@ -527,23 +522,23 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
             p_permanent[idet] = pair_permanent;
             s_permanent[idet] = single_permanent;
 
-            std::cout << "exc_info.pair_inds, x[idx]: ";
-            for (const auto& pid : exc_info.pair_inds) {
-                std::cout << pid << ", " << x[pid] << " ";
-            }
-            std::cout << "\nexc_info.single_inds: ";
-            for (const auto& sid : exc_info.single_inds) {
-                std::cout << sid << " ";
-            }
-            std::cout << "\npair_permanent: " << pair_permanent << std::endl;
-            std::cout << "single_permanent: " << single_permanent << std::endl;
+            // std::cout << "exc_info.pair_inds, x[idx]: ";
+            // for (const auto& pid : exc_info.pair_inds) {
+            //     std::cout << pid << ", " << x[pid] << " ";
+            // }
+            // std::cout << "\nexc_info.single_inds: ";
+            // for (const auto& sid : exc_info.single_inds) {
+            //     std::cout << sid << " ";
+            // }
+            // std::cout << "\npair_permanent: " << pair_permanent << std::endl;
+            // std::cout << "single_permanent: " << single_permanent << std::endl;
 
             if (y != nullptr && idet < ndet) {
                 y[idet] = pair_permanent * single_permanent;
             } else {
                 std::cerr << "y is nullptr or idet is out of bounds" << std::endl;
             }
-            std::cout << "y[" << idet << "]: " << y[idet] << std::endl;
+            // std::cout << "y[" << idet << "]: " << y[idet] << std::endl;
         } else {
             std::cout << "idet" <<  idet << " not found in storage" << std::endl;
             y[idet] = 0.0;
@@ -556,7 +551,7 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
 
 // void AP1roGeneralizedSenoObjective::d_overlap(const NonSingletCI &wfn_, const size_t ndet, const double *x, double *y){
 void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x, double *y){
-    std::cout << "\n------>Computing d_overlap" << std::endl;
+    // std::cout << "\n------>Computing d_overlap" << std::endl;
     // std::cout << "Size of s_permanent: " << s_permanent.size() << std::endl;
     // std::cout << "Size of p_permanent: " << p_permanent.size() << std::endl;
     // std::cout << "ndet: " << ndet << std::endl;
@@ -568,12 +563,12 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
             double pair_permanent = 1.0;
             double single_permanent = 1.0;
             if (idet < s_permanent.size() && idet < p_permanent.size()) {
-                std::cout << "\n\nidet: " <<  idet << " found in storage" << std::endl;
+                // std::cout << "\n\nidet: " <<  idet << " found in storage" << std::endl;
                 pair_permanent = p_permanent[idet];
                 single_permanent = s_permanent[idet];
             }
             else {
-                std::cout << "\nidet: " << idet << " not found in storage" << std::endl;
+                // std::cout << "\nidet: " << idet << " not found in storage" << std::endl;
                 if (exc_info.pair_inds[0] != -1) {
                     if (!permanent_calculation(exc_info.pair_inds, x, pair_permanent)) {
                         std::cerr << "Error calculating pair_permanent for idet" << idet << std::endl;
@@ -589,13 +584,9 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 }
                 
             }
-            
-            
-            // std::vector<long> pair_inds = exc_info.pair_inds;
-            // std::vector<long> single_inds = exc_info.single_inds;
-            
-            std::cout << "\npair_permanent: " << pair_permanent << std::endl;
-            std::cout << "single_permanent: " << single_permanent << std::endl;
+
+            // std::cout << "\npair_permanent: " << pair_permanent << std::endl;
+            // std::cout << "single_permanent: " << single_permanent << std::endl;
 
             for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
                 std::cout << "computing deriv of idet: " << idet << " wrt iparam: " << iparam << std::endl;
@@ -606,38 +597,39 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 double dpair = 0.0;
                 double dsingle = 0.0;
                 std::cout << "exc_info.single_inds: ";
-                for (const auto& sid : exc_info.single_inds) {
-                    std::cout << sid << " ";
-                }
-                std::cout << std::endl;
-                std::cout << "exc_info.pair_inds: ";
-                for (const auto& pid : exc_info.pair_inds) {
-                    std::cout << pid << " ";
-                }
-                std::cout << std::endl;
+                // for (const auto& sid : exc_info.single_inds) {
+                //     std::cout << sid << " ";
+                // }
+                // std::cout << std::endl;
+                // std::cout << "exc_info.pair_inds: ";
+                // for (const auto& pid : exc_info.pair_inds) {
+                //     std::cout << pid << " ";
+                // }
+                // std::cout << std::endl;
+
                 if (exc_info.single_inds[0] != -1) {
                     dsingle = compute_derivative(exc_info.single_inds, x, iparam);
                     // std::cout << "dsingle: " << dsingle << std::endl;
                 }
-                std::cout << "dsingle: " << dsingle << std::endl;
+                // std::cout << "dsingle: " << dsingle << std::endl;
                 
                 if (exc_info.pair_inds[0] != -1) {
                     dpair = compute_derivative(exc_info.pair_inds, x, iparam);
                     // std::cout << "dpair: " << dpair << std::endl;
                 }
-                std::cout << "dpair: " << dpair << std::endl;
+                // std::cout << "dpair: " << dpair << std::endl;
                 
                 
                 // std::cout << "dpair: " << dpair << std::endl;
                 // std::cout << "dsingle: " << dsingle <<  "\n" ;
-                std::cout << "deriv index:" << idet * nparam + iparam << std::endl;
-                std::cout <<  "final deriv: " << dpair * single_permanent + dsingle * pair_permanent << " wrt iparam: " << iparam << std::endl;
+                // std::cout << "deriv index:" << idet * nparam + iparam << std::endl;
+                // std::cout <<  "final deriv: " << dpair * single_permanent + dsingle * pair_permanent << " wrt iparam: " << iparam << std::endl;
 
                 y[ndet * iparam + idet] = dpair * single_permanent + dsingle * pair_permanent;
             }
         }
         else {
-            std::cout << "Determinant " << idet << " not found in det_map" << std::endl;
+            // std::cout << "Determinant " << idet << " not found in det_map" << std::endl;
             // Set all derivatives to zero if determinant is not found
             for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
                 y[ndet * iparam + idet] = 0.0;
@@ -648,140 +640,3 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
 
 
 } // namespace pyci
-
-
-    // double derivative = 0.0;
-    // std::vector<double> modified_x(x, x + nparam);
-    // modified_x[excitation_inds[excitation_idx]] = 1.0;
-    // derivative = permanent_calculation(excitation_inds, modified_x.data());
-    // return derivative;
-
-
-                // for (std::size_t i = 0; i < exc_info.pair_inds.size(); ++i) {
-                //         std::cout << exc_info.pair_inds[i] << " ";
-                //         std::cout << exc_info.single_inds[i] << " ";
-                // }
-                // std::cout << "\nSize of x: " << &x.size() << std::endl; 
-        
-                // if (exc_info.pair_inds[0] != -1) {
-                //     if (!compute_derivative(exc_info.pair_inds, x, iparam, dpair)) {
-                //         std::cerr << "Error calculating derivative pair_permanent for idet" << idet << std::endl;
-                //         // pair_permanent = 0.0; // Default to 0 or another appropriate fallback
-                //     }
-                // }
-
-                // if (exc_info.pair_inds[0] != -1) {
-                //     if (!compute_derivative(exc_info.single_inds, x, iparam, dsingle)) {
-                //         std::cerr << "Error calculating derivative singles_permanent for idet" << idet << std::endl;
-                //         // pair_permanent = 0.0; // Default to 0 or another appropriate fallback
-                //     }
-                // }
-
-                // std::size_t idx = 0;
-                // if (exc_info.pair_inds[idx] != -1) {
-                //     std::cout << "exc_info.pair_inds: ";
-                //     for (const auto pid : exc_info.pair_inds) {
-                //         std::cout << pid << " ";
-                //     }
-                //     d_pair = compute_derivative(exc_info.pair_inds, x, iparam);
-                // }
-                // if (exc_info.single_inds[idx] != -1) {                                    
-                //     std::cout << "exc_info.single_inds: ";
-                //     for (const auto sid : exc_info.single_inds) {
-                //         std::cout << sid << " ";
-                //     }
-                //     std::cout << "\nCalling compute deriv for single_inds\n";
-                //     d_single = compute_derivative(exc_info.single_inds, x, iparam);
-                //     std::cout << "calling done\n";
-                // }
-        
-
-// std::vector<std::pair<std::size_t, std::size_t>> occ_pairs;
-//             for (std::size_t hole in holes) {
-//                 std::size_t conjugate = hole + wfn_.nbasis / 2;
-//                 if(std::find(holes.begin(), holes.end(), conjugate) != holes.end()) {
-//                     occ_pairs.push_back(std::make_pair(hole, conjugate));
-//                     // exc_info.pair_inds.push_back(wfn_.nvir_up * hole);
-//                 }
-//             }
-
-//             std::vector<std::size_t, std::size_t> vir_pairs;
-//             for (std::size_t part in particles) {
-//                 std::size_t conjugate = part + wfn_.nbasis / 2;
-//                 if(std::find(particles.begin(), particles.end(), conjugate) != particles.end()) {
-//                     vir_pairs.push_back(std::make_pair(part, conjugate));
-//                     // exc_info.pair_inds.push_back(wfn_.nvir_up * part);
-//                 }
-//             }
-
-//             for (const auto& pair : occ_pairs) {
-//                for (const auto& vir_pair : vir_pairs) {
-//                    exc_info.pair_inds.push_back(wfn_.nvir_up * pair.first + vir_pair.first);
-//                    exc_info.pair_inds.push_back(wfn_.nvir_up * pair.second + vir_pair.second);
-//                }
-//             }
-
-
-
-        // std::cout << "Generated hole_pairs: " << std::endl; 
-        // for (const auto& hole_pair : hole_pairs) {
-        //     for (const auto& elem: hole_pair) {
-        //         std::cout << elem << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
-
-        // Limit the number of pairs and singles to the requested partition
-        // hole_pairs.resize(std::min(hole_pairs.size(), static_cast<std::size_t>(num_pairs)));
-        // hole_singles.resize(std::min(hole_singles.size(), static_cast<std::size_t>(num_singles)));
-        // part_pairs.resize(std::min(part_pairs.size(), static_cast<std::size_t>(num_pairs)));
-        // part_singles.resize(std::min(part_singles.size(), static_cast<std::size_t>(num_singles)));
-
-        // Match pairs and singles
-        // for (const auto& hole_pair : hole_pairs) {
-        //     for (const auto& part_pair : part_pairs) {
-        //         std::cout << "hole_pair: " << hole_pair[0] << " " << hole_pair[1] << std::endl;
-        //         std::cout << "part_pair: " << part_pair[0] << " " << part_pair[1] << std::endl;
-        //         // Check constraints
-        //         pair_inds.push_back(nvir_up * hole_pair[0] + part_pair[0]);
-        //         //pair_inds.push_back(wfn_.nvir_up * hole_pair[1] + part_pair[1]);
-        //     }
-        // }
-
-        // for (const auto& hole_single : hole_singles) {
-        //     for (const auto& part_single : part_singles) {
-        //         // Check constraints
-        //         std::cout << "h: " << hole_single[0] << ", p: " << part_single[0] << std::endl;
-        //         single_inds.push_back(nvir_up * nocc / 2 + hole_single[0] * nvir + part_single[0]);
-        //     }
-        // }
-
-
-                //Retrieve the DetExcParamIndx object from the hash map
-        // const ulong* det = det_ptr(idet);
-
-        // // std::vector<ulong> det_vector(det, det + wfn_.nword);
-        // // Find corresponding DetExcParamIndx for the current determinant
-        // std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
-        // // Populate the hash map (assume det_exc_param_indx is iterable)
-        // for (const auto& exc_info : det_exc_param_indx) {
-        //     det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
-        // }
-
-        // auto it = det_map.find(det_vector);
-
-
-                // Retrieve the corresponding determinant
-        // const ulong* det = det_ptr(idet);
-
-        // std::vector<ulong> det_vector(det, det + wfn_.nword);
-        // Find corresponding DetExcParamIndx for the current determinant
-        // std::unordered_map<std::vector<ulong>, DetExcParamIndx> det_map;
-        // // Populate the hash map (assume det_exc_param_indx is iterable)
-        // for (const auto& exc_info : det_exc_param_indx) {
-        //     det_map[exc_info.det] = exc_info; // Use exc_info.det as the key
-        // }
-        
-        // Find corresponding DetExcParamIndx for the current determinant
-        // auto it = det_map.find(det_vector);
-        
