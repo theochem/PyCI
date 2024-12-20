@@ -453,7 +453,7 @@ double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>
     // If iparam is not in excitation_inds, return 0
     if (it == excitation_inds.end()) {return 0.0;}
   
-    if (excitation_inds.size() == 1 && excitation_inds[0] == iparam) {
+    if (excitation_inds.size() == 1 && excitation_inds[0] == static_cast<long>(iparam)) {
         reduced_permanent = 1.0;
         return reduced_permanent;
     }
