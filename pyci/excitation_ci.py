@@ -35,7 +35,5 @@ def add_excitations(wfn, *excitations, ref=None):
         Default is the Hartree-Fock determinant.
 
     """
-    print("Inside excitation_ci/add_excitations")
     for e in excitations:
-        print(f"Adding {e}-excited determinants...")
         wfn.add_excited_dets(e, ref=ref)
