@@ -646,9 +646,6 @@ protected:
     using Wfn::dets;
     using Wfn::dict;
 
-private:
-    // bool is_hf_det; 
-
 public:
     NonSingletCI(const NonSingletCI &);
 
