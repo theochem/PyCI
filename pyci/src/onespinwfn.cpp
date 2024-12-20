@@ -219,12 +219,6 @@ void OneSpinWfn::add_all_dets(long nthread) {
 
 void OneSpinWfn::add_excited_dets(const ulong *rdet, const long e) {
     long i, j, k, no = binomial(nocc_up, e), nv = binomial(nvir_up, e);
-    std::cout << "Inside onespinwfn/add_excited_dets" << std::endl;
-    std::cout << "no: " << no << ", nv: " << nv << ", nword: " << nword << std::endl;
-    std::cout << "nocc_up: " << nocc_up << ", nvir_up: " << nvir_up << std::endl;
-    std::cout << "e: " << e << std::endl;
-    std::cout << "rdet: " << *rdet << std::endl;
-
     AlignedVector<ulong> det(nword);
     AlignedVector<long> occs(nocc_up);
     AlignedVector<long> virs(nvir_up);
@@ -233,18 +227,6 @@ void OneSpinWfn::add_excited_dets(const ulong *rdet, const long e) {
     fill_occs(nword, rdet, &occs[0]);
     fill_virs(nword, nbasis, rdet, &virs[0]);
     
-    std::cout << "occs: ";
-    for (const auto& elem : occs) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "virs: ";
-    for (const auto& elem : virs) {
-        std::cout << elem << " ";
-    }
-    std::cout << std::endl;
-
     for (k = 0; k < e; ++k)
         virinds[k] = k;
     virinds[e] = nvir_up + 1;
@@ -253,35 +235,11 @@ void OneSpinWfn::add_excited_dets(const ulong *rdet, const long e) {
             occinds[k] = k;
         occinds[e] = nocc_up + 1;
         for (j = 0; j < no; ++j) {
-            std::cout << "virinds: ";
-            for (const auto& elem : virinds) {
-                std::cout << elem << " ";
-            }
-            std::cout << std::endl;
-
-            std::cout << "occinds: ";
-            for (const auto& elem : occinds) {
-                std::cout << elem << " ";
-            }
-            std::cout << std::endl;
-
-            // Print determinant before excite_det loop
-            std::cout << "Determinant before excite_det loop: ";
-            for (int k = 0; k < nword; ++k) {
-                std::cout << det[k] << " ";
-            }
-            std::cout << std::endl;
-
             std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
             for (k = 0; k < e; ++k) {
                 excite_det(occs[occinds[k]], virs[virinds[k]], &det[0]);
             }
 
-            // Print determinant after excite_det loop
-            std::cout << "Determinant after excite_det loop: ";
-            for (int k = 0; k < nword; ++k) {
-                std::cout << det[k] << " ";
-            }
             std::cout << std::endl;
             add_det(&det[0]);
             next_colex(&occinds[0]);
