@@ -60,9 +60,6 @@ void AP1roGObjective::init_overlap(const DOCIWfn &wfn_)
     nrow = wfn_.nocc_up;
     ncol = wfn_.nbasis - wfn_.nocc_up;
 
-    std::cout << "nconn, nparam: " << nconn << "," << nparam << ", nrow: " << nrow << ", ncol: " << ncol << std::endl;
-
-
     ovlp.resize(nconn);
     d_ovlp.resize(nconn * nparam);
 
@@ -78,33 +75,20 @@ void AP1roGObjective::init_overlap(const DOCIWfn &wfn_)
         ulong word, hword, pword;
         std::size_t h, p, nexc = 0;
         
-        std::cout << "idet: " << idet << std::endl;
-        std::cout << "nword: " << nword << std::endl;
-
         for (std::size_t iword = 0; iword != nword; ++iword) {
-            std::cout << "rdet[" << iword << "]: " << rdet[iword] << std::endl;
-            std::cout << "det[iword]: " << det[iword] << std::endl;
             word = rdet[iword] ^ det[iword];
             hword = word & rdet[iword];
             pword = word & det[iword];
-            std::cout << "word: " << word << ", hword: " << hword << ", pword: " << pword << std::endl;
+
             while (hword) {
                 h = Ctz(hword);
                 p = Ctz(pword);
                 hole_list[idet * wfn_.nocc_up + nexc] = h + iword * Size<ulong>();
                 part_list[idet * wfn_.nocc_up + nexc] = p + iword * Size<ulong>() - wfn_.nocc_up;
                 
-                std::cout << "nexc: " << nexc << ",h: " << h << ", p: " << p << std::endl;
-                std::cout << "hole_list: " << hole_list[idet * wfn_.nocc_up + nexc] << ", part_list: " << part_list[idet * wfn_.nocc_up + nexc] << std::endl;
-                
                 hword &= ~(1UL << h);
                 pword &= ~(1UL << p);
-                ++nexc;
-                std::cout << "hword" << hword << std::endl;
-                std::cout << "pword" << pword << std::endl;
-                std::cout << "nexc: " << nexc << std::endl;
-                std::cout << "nexc_list: " << nexc_list[idet] << std::endl;
-            
+                ++nexc;         
             }
         }
         nexc_list[idet] = nexc;
@@ -132,8 +116,6 @@ void AP1roGObjective::overlap(const size_t ndet, const double *x, double *y) {
 
         /* Iterate over c = pow(2, m) submatrices (equal to (1 << m)) submatrices. */
         c = 1UL << m;
-        std::cout << "idet" << idet << std::endl;
-        std::cout <<"c: " << c << ", m: " << m << std::endl;
 
         /* Loop over columns of submatrix; compute product of row sums. */
         for (k = 0; k < c; ++k) {
@@ -146,26 +128,18 @@ void AP1roGObjective::overlap(const size_t ndet, const double *x, double *y) {
 
                     /* Add element to row sum if the row index is in the characteristic *
                      * vector of the submatrix, which is the binary vector given by k.  */
-                    std::cout << "k: " << k << std::endl;
-                    std::cout << "i, j: " << i << "," << j << std::endl;
-                    //std::cout << "1UL << j: " << 1UL << j << std::endl;
                     std::size_t xpq = k & (1UL << j);
                     std::cout << "k &(1UL << j): "  << xpq << std::endl;
                     if (k & (1UL << j)) {
-                        std::cout << "hlist[i], plist[j]: " << hlist[i] << "," << plist[j] << std::endl;
-                        std::cout << "ncol * hlist[i] + plist[j]: " << ncol * hlist[i] + plist[j] << std::endl;
                         rowsum += x[ncol * hlist[i] + plist[j]];
-                        std::cout << "rowsum: " << rowsum << std::endl;
                     }
                 }
 
                 /* Update product of row sums. */
                 rowsumprod *= rowsum;
-                std::cout << "rowsumprod: " << rowsumprod << std::endl;
             }
 
             /* Add term multiplied by the parity of the characteristic vector. */
-            std::cout << "\n(__builtin_popcountll(k) & 1) << 1: " << (__builtin_popcountll(k) & 1) << std::endl;
             out += rowsumprod * (1 - ((__builtin_popcountll(k) & 1) << 1));
         }
 
