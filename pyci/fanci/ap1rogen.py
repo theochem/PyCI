@@ -58,57 +58,20 @@ class AP1roGeneralizedSeno(FanCI):
 
         nparam = nocc * (ham.nbasis - nocc) + (2 * nocc) * (2 * (ham.nbasis - nocc)) + 1 #less params considering we added singles as well
         nproj = nparam if nproj is None else nproj
-        print("\n nparam, nproj", nparam, nproj)
 
         if wfn is None:
             wfn = pyci.doci_wfn(ham.nbasis, nocc, nocc)
-            print("\nCreated DOCI wfn instance for AP1roGSDGeneralized_sen-o.")
             wfn.add_excited_dets(1) # add pair excited determinants
-
-            print("\nCreating fci wfn")
             wfn = pyci.fullci_wfn(wfn)
-            print("wfn.nocc, wfn.nocc_up, wfn.nocc_dn: ", wfn.nocc, wfn.nocc_up, wfn.nocc_dn)
-            occ_array = wfn.to_occ_array()
-            det_array = wfn.to_det_array()
-            print(f"\nFor FCI {len(occ_array)} det & corresponding occ_array:")
-            for i, j in zip(det_array, occ_array):
-                print(i, j)
-
-            print("\nCreating NonSingletCI wfn")
             wfn = pyci.nonsingletci_wfn(wfn)
-            print("wfn.nocc, wfn.nocc_up, wfn.nocc_dn: ", wfn.nocc, wfn.nocc_up, wfn.nocc_dn)
-            occ_array = wfn.to_occ_array()
-            det_array = wfn.to_det_array()
-            print("\nFor NonSingletCI wfn det_array: ", len(det_array), "\n", det_array)
-            #for det, occ in zip(det_array, occ_array):
-            #    print(det, bin(int(det)), occ)
-
-            ## Generate the bitstring
-            #bitstring = ((1 << wfn.nocc //2) - 1) << ham.nbasis | (1 << wfn.nocc//2) - 1
-            ## Convert to binary string with leading zeros
-            #nb = ham.nbasis
-            #bit_str = format(bitstring, f'0{2 * nb}b')
-            #unocc = [i for i in range(len(bit_str)) if bit_str[nb-i-1] == '0']
-            #occ = [i for i in range(len(bit_str)) if bit_str[nb-i-1] == '1']
-            ## Adding non-spin-preserving alpha -> beta singles
-            #for i in occ:
-            #   for a in unocc:
-            #       exc_str = _excite_det(i, a, int(bit_str,2))
-            #       print("i, a, exc_str", i, a, exc_str, format(exc_str, f'0{2*nb}b'))
-            #       wfn.add_det(np.array(exc_str, dtype=pyci.c_ulong))
-            #       
-            #det_array = wfn.to_det_array()
-            #print("\nFor GenCI wfn det_array after adding Gen_sen-o S:", len(det_array), "\n", det_array)
                    
         elif not isinstance(wfn, pyci.nonsingletci_wfn):
             raise TypeError(f"Invalid `wfn` type `{type(wfn)}`; must be `pyci.nonsingletci_wfn`")
-        #elif wfn.nocc_up != nocc or wfn.nocc != nocc:
         elif wfn.nocc != nocc:
             raise ValueError(f"wfn.nocc does not match `nocc={nocc}` parameter")
 
 
         # Initialize base class
-        print("\nInitializing base class")
         FanCI.__init__(self, ham, wfn, nproj, nparam, **kwargs)
 
         # Assign reference occupations
@@ -213,9 +176,3 @@ class AP1roGeneralizedSeno(FanCI):
         """
         return self._cext.jacobian(self._ci_op, x)
 
-
-def _excite_det(i: int, a: int, bitstring: int):
-    bitstring &= ~(1 << i)
-    bitstring |= (1 << a)
-    #pdb.set_trace()
-    return bitstring
