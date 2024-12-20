@@ -128,8 +128,6 @@ void AP1roGObjective::overlap(const size_t ndet, const double *x, double *y) {
 
                     /* Add element to row sum if the row index is in the characteristic *
                      * vector of the submatrix, which is the binary vector given by k.  */
-                    std::size_t xpq = k & (1UL << j);
-                    std::cout << "k &(1UL << j): "  << xpq << std::endl;
                     if (k & (1UL << j)) {
                         rowsum += x[ncol * hlist[i] + plist[j]];
                     }
