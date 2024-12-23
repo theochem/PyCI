@@ -592,7 +592,6 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
         // first excitation: alpha -> alpha 
         for (j = 0; j < nvir_up; ++j) {
             jj = virs_up[j];
-            // alpha -> alpha excitation elements
             excite_det(ii, jj, det_up);
             sign_up = phase_single_det(wfn.nword, ii, jj, rdet_up);
             jdet = wfn.index_det(det_up);
@@ -631,7 +630,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     // check if the excited determinant is in wfn
                     if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                         counter += 1;
-                        // add the matrix element
+                        // add the aaaa -->  aaaa matrix element
                         append<double>(data, phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) *
                                                  (ham.two_mo[koffset + n1 * jj + ll] -
                                                   ham.two_mo[koffset + n1 * ll + jj]));
@@ -656,12 +655,14 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
                         // std::cout << "\nii, kk, jj, ll: " << ii << ", " << kk  << ", " << jj << ", " << ll << std::endl;
                         // std::cout << "ndet_up: " << *det_up << std::endl;
-                        double sign = phase_single_det(wfn.nword, kk, ll, rdet_up);
+                        // double sign = phase_single_det(wfn.nword, kk, ll, rdet_up);
+                        double sign = phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up);
                         if (jj >= nbasis) jj -= nbasis;
                         if (kk >= nbasis) kk -= nbasis;                           
                         if (ll >= nbasis) ll -= nbasis;
                         counter += 1;
-                        append<double>(data, sign_up * sign * ham.two_mo[ioffset + n2 * kk + n1 * jj + ll]); 
+                        // append<double>(data, sign_up * sign * ham.two_mo[ioffset + n2 * kk + n1 * jj + ll]); 
+                        append<double>(data, sign * ham.two_mo[ioffset + n2 * kk + n1 * jj + ll]); 
                         append<long>(indices, jdet);
                         ll = virs_dn[l];
                         kk = occs_dn[k];
@@ -695,6 +696,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             jdet = wfn.index_det(det_up);
             // check if the excited determinant is in wfn
             if ((jdet != -1) && (jdet < jmin) && (jdet < ncol)) {
+                if (ii >= nbasis) ii -= nbasis;
                 if (jj >= nbasis) jj -= nbasis;
                 // std::cout << "ndet_up: " << *det_up << std::endl;
                 counter += 1;
@@ -710,6 +712,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                     val1 += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
                 }
                 jj = virs_dn[j];
+                ii = occs_dn[i];
                 append<double>(data, phase_single_det(wfn.nword, ii, jj, rdet_up) * val1);
                 append<long>(indices, jdet);
                 
