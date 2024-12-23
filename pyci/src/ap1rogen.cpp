@@ -436,45 +436,80 @@ double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>
     const double* x, std::size_t iparam) {
     // std::cout << "\nComputing derivative" << std::endl;
 
-    double reduced_permanent = 0.0;
-    // std::cout << "excitation_inds: ";
-    // for (const auto& eid : excitation_inds) {
-    //     std::cout << eid << " ";
-    // }
-    // std::cout << std::endl;
-    // std::cout << "iparam: " << iparam << std::endl;
-    // Check if excitation_inds is empty, first element is -1
-    if (excitation_inds[0] == -1) {return 0.0;} 
+    //---------------------------------------------------------
+    // double reduced_permanent = 0.0;
+    // // Check if excitation_inds is empty, first element is -1
+    // if (excitation_inds[0] == -1) {return 0.0;} 
    
 
-    // check if iparam is within excitation_inds
-    auto it = std::find(excitation_inds.begin(), excitation_inds.end(), iparam);
+    // // check if iparam is within excitation_inds
+    // auto it = std::find(excitation_inds.begin(), excitation_inds.end(), iparam);
 
-    // If iparam is not in excitation_inds, return 0
-    if (it == excitation_inds.end()) {return 0.0;}
+    // // If iparam is not in excitation_inds, return 0
+    // if (it == excitation_inds.end()) {return 0.0;}
   
-    if (excitation_inds.size() == 1 && excitation_inds[0] == static_cast<long>(iparam)) {
-        reduced_permanent = 1.0;
-        return reduced_permanent;
-    }
-    // Modify x such that it excludes the parameter at index iparam
-    std::vector<double> modified_x(x, x + nparam);
-    modified_x[iparam] = 1.0;
+    // if (excitation_inds.size() == 1 && excitation_inds[0] == static_cast<long>(iparam)) {
+    //     reduced_permanent = 1.0;
+    //     return reduced_permanent;
+    // }
+    // // Modify x such that it excludes the parameter at index iparam
+    // std::vector<double> modified_x(x, x + nparam);
+    // modified_x[iparam] = 1.0;
     
 
-    // std::cout << "Modified x: ";
-    //     for (const auto& rid : modified_x) {
-    //         std::cout << rid << " ";
-    //     }
-    // std::cout << std::endl;
-    permanent_calculation(excitation_inds, modified_x.data(), reduced_permanent);
+    // // std::cout << "Modified x: ";
+    // //     for (const auto& rid : modified_x) {
+    // //         std::cout << rid << " ";
+    // //     }
+    // // std::cout << std::endl;
+    // permanent_calculation(excitation_inds, modified_x.data(), reduced_permanent);
 
-    if (std::isnan(reduced_permanent) || std::isinf(reduced_permanent)) {
-        std::cerr << "Error: reduced_permanent is invalid (NaN or Inf)" << std::endl;
-        return 0.0;
+    // if (std::isnan(reduced_permanent) || std::isinf(reduced_permanent)) {
+    //     std::cerr << "Error: reduced_permanent is invalid (NaN or Inf)" << std::endl;
+    //     return 0.0;
+    // }
+    // // std::cout << "\nreduced_permanent: " << reduced_permanent << std::endl;
+    // return reduced_permanent;
+    //---------------------------------------------------------
+    std::size_t n = static_cast<std::size_t>(std::sqrt(excitation_inds.size()));
+    if (n == 0) {return 0.0;}
+    if (n == 1) {
+        return (excitation_inds[0] == static_cast<double>(iparam)) ? 1.0 : 0.0;
     }
-    // std::cout << "\nreduced_permanent: " << reduced_permanent << std::endl;
-    return reduced_permanent;
+
+    double derivative = 0.0;
+    std::size_t subset_count = 1UL << n; // 2^n subsets
+    // Derive i and j from iparam
+    std::size_t i = iparam / n;
+    std::size_t j = iparam % n;
+
+    for (std::size_t subset = 0; subset < subset_count; ++subset) {
+        // skip subsets where column j is not included
+        if ((subset & (1UL << j))) continue;
+
+        double rowsumprod = 1.0;
+
+        // Compute product of row sums for rows k != i
+        for (std::size_t k = 0; k < n; ++k) {
+            if (k == i) continue;
+
+            double rowsum = 0.0;
+            
+            for (std::size_t l = 0; l < n; ++l) {
+                if (subset & (1UL << l)) {
+                    rowsum += x[excitation_inds[k * n + l]];                    
+                }
+            }            
+            rowsumprod *= rowsum;
+        }
+        // Parity adjustment
+        int subset_parity = (__builtin_popcount(subset) % 2 == 0) ? 1 : -1;
+        derivative += rowsumprod * subset_parity;
+    }
+    // Final adjustment for the excluded row i
+    derivative *= ((n % 2 == 1) ? -1 : 1);
+    return derivative;
+
 }
 
 
@@ -555,6 +590,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
     // std::cout << "Size of s_permanent: " << s_permanent.size() << std::endl;
     // std::cout << "Size of p_permanent: " << p_permanent.size() << std::endl;
     // std::cout << "ndet: " << ndet << std::endl;
+    // const double epsilon = 1.0e-7;
     for (std::size_t idet = 0; idet != ndet; ++idet)   {
 
         // Ensure we have the excitation parameters for this determinant
@@ -594,8 +630,25 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 // std::cout << "Size(pair_inds): " << exc_info.pair_inds.size() << std::endl;
                 // std::cout << "Size(single_inds): " << exc_info.single_inds.size() << std::endl;
                 // std::cout << "size of y array: " << &y.size() << std::endl;
-                double dpair = 0.0;
-                double dsingle = 0.0;
+                //-----Numerical Derivative Calculation---------------------------------------
+                // double pair_plus = 0.0;
+                // double single_plus = 0.0;
+                // std::vector<double> x_perturb(x, x + nparam);
+                // x_perturb[iparam] += epsilon;
+                // permanent_calculation(exc_info.pair_inds, x_perturb.data(), pair_plus);
+                // permanent_calculation(exc_info.single_inds, x_perturb.data(), single_plus);
+
+                // x_perturb[iparam] -= 2 * epsilon;
+                // double pair_minus = 0.0;
+                // double single_minus = 0.0;
+                // permanent_calculation(exc_info.pair_inds, x_perturb.data(), pair_minus);
+                // permanent_calculation(exc_info.single_inds, x_perturb.data(), single_minus);
+                
+                // double dpair = 0.0;
+                // double dsingle = 0.0;
+                // dpair = (pair_plus - pair_minus) / (2 * epsilon);
+                // dsingle = (single_plus - single_minus) / (2 * epsilon);
+                //----------------------------------------------------------------------------
                 // std::cout << "exc_info.single_inds: ";
                 // for (const auto& sid : exc_info.single_inds) {
                 //     std::cout << sid << " ";
@@ -606,7 +659,8 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 //     std::cout << pid << " ";
                 // }
                 // std::cout << std::endl;
-
+                double dpair = 0.0;
+                double dsingle = 0.0;
                 if (exc_info.single_inds[0] != -1) {
                     dsingle = compute_derivative(exc_info.single_inds, x, iparam);
                     // std::cout << "dsingle: " << dsingle << std::endl;
