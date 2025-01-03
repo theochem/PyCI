@@ -288,6 +288,27 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
         }
         // std::cout << std::endl; 
         return ;
+
+
+        // //-----------------------pCCDSspin test-----------------------
+        // // std::cout << "-----Handling excitation order 1-----" << std::endl;
+        // for (long occ : occs_up) {
+        //     for (long vir : virs_up) {
+        //         std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
+        //         excite_det(occ, vir, &det[0]);
+        //         add_det(&det[0]);
+        //     }
+        // }
+
+        // for (long occ : occs_dn) {
+        //     for (long vir : virs_dn) {
+        //         std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
+        //         excite_det(occ, vir, &det[0]);
+        //         add_det(&det[0]);
+        //     }
+        // }
+        // return;
+        // //-----------------------pCCDSspin test-----------------------
     }
 
     // Handle excitation orders >= 2
@@ -345,7 +366,8 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 
                     std::memcpy(&det[0], rdet, sizeof(ulong) * nword);
                     std::vector<long> used_virs;
-                    DetExcParamIndx det_exc;
+                    std::vector<long> used_occs;
+                    // DetExcParamIndx det_exc;
                     
                     for (std::size_t idx = 0; idx < d; ++idx) {
                         const auto& occ_pair = occ_pairs[opair_comb[idx]];
@@ -354,6 +376,9 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                         excite_det(occ_pair.first, vir_pair.first, &det[0]);
                         excite_det(occ_pair.second, vir_pair.second, &det[0]);
 
+
+                        used_occs.push_back(occ_pair.first);
+                        used_occs.push_back(occ_pair.second);
                         used_virs.push_back(vir_pair.first);
                         used_virs.push_back(vir_pair.second);
                         
@@ -434,6 +459,76 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
                             }
                             
                         }
+
+                        // //-----------------------pCCDSspin test-----------------------
+                        // AlignedVector<long> remaining_occs;
+                        // AlignedVector<long> remaining_virs;
+                        // for (long occ : occs) {
+                        //     if (std::find(used_occs.begin(), used_occs.end(), occ) == used_occs.end()) {
+                        //         remaining_occs.push_back(occ);
+                        //     }
+                        // }
+
+                        // for (long vir : virs) {
+                        //     if (std::find(used_virs.begin(), used_virs.end(), vir) == used_virs.end()) {
+                        //         remaining_virs.push_back(vir);
+                        //     }
+                        // }
+
+                        // AlignedVector<long> rem_occ_up;
+                        // AlignedVector<long> rem_occ_dn;
+                        // for (long occ : remaining_occs) {
+                        //     if (occ < nbasis / 2) {
+                        //         rem_occ_up.push_back(occ);
+                        //     } else {
+                        //         rem_occ_dn.push_back(occ);
+                        //     }
+                        // }
+
+                        // AlignedVector<long> rem_vir_up;
+                        // AlignedVector<long> rem_vir_dn;
+                        // for (long vir : remaining_virs) {
+                        //     if (vir < nbasis / 2) {
+                        //         rem_vir_up.push_back(vir);
+                        //     } else {
+                        //         rem_vir_dn.push_back(vir);
+                        //     }
+                        // }
+                   
+                        // auto occ_combs = generate_combinations(rem_occ_up.size(), num_singles);
+                        // auto vir_combs = generate_combinations(rem_vir_up.size(), num_singles);
+
+                        
+                        // for (const auto& occ_comb : occ_combs) {
+                        //     for (const auto& vir_comb : vir_combs) {
+                        //         AlignedVector<ulong> temp_det(nword);
+                        //         std::memcpy(&temp_det[0], det.data(), sizeof(ulong) * nword);
+                        //         for (std::size_t idx = 0; idx < num_singles; ++idx) {
+                        //             long occ = rem_occ_up[occ_comb[idx]];
+                        //             long vir = rem_vir_up[vir_comb[idx]];
+                        //             excite_det(occ, vir, &temp_det[0]);
+                        //         }
+                        //         add_det(&temp_det[0]);
+                        //     }
+                        // }
+
+                        // auto occ_combs_dn = generate_combinations(rem_occ_dn.size(), num_singles);
+                        // auto vir_combs_dn = generate_combinations(rem_vir_dn.size(), num_singles);
+
+                        // for (const auto& occ_comb : occ_combs_dn) {
+                        //     for (const auto& vir_comb : vir_combs_dn) {
+                        //         AlignedVector<ulong> temp_det(nword);
+                        //         std::memcpy(&temp_det[0], det.data(), sizeof(ulong) * nword);
+                        //         for (std::size_t idx = 0; idx < num_singles; ++idx) {
+                        //             long occ = rem_occ_dn[occ_comb[idx]];
+                        //             long vir = rem_vir_dn[vir_comb[idx]];
+                        //             excite_det(occ, vir, &temp_det[0]);
+                        //         }
+                        //         add_det(&temp_det[0]);
+                        //     }
+                        // }
+
+                        // //-----------------------pCCDSspin test-----------------------
                     }   
                     else if (num_singles == 0){
                         // If num_singles == 0, directly add determinant after pair excitations
