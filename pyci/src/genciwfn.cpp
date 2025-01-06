@@ -39,7 +39,7 @@ GenCIWfn::GenCIWfn(const FullCIWfn &wfn) : OneSpinWfn(wfn.nbasis * 2, wfn.nocc, 
             occs_dn[j] += wfn.nbasis;
         fill_det(wfn.nocc, occs_up, &dets[k]);
         dict[rank_det(&dets[k])] = i;
-        k += wfn.nword2;
+        k += wfn.nword;
     }
 }
 
