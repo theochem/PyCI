@@ -553,9 +553,12 @@ void NonSingletCI::add_excited_dets(const ulong *rdet, const long e){
 void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) const {
    /* GenCIWfn build using FullCIWfn initializes the OneSpinWfn with nbasis * 2, so we are calling it nb2 here*/
     long nb = nb2/2;
-    // FIXME: The code is assuming nocc is even
-    long nocc_beta = nocc/2; //std::min(nocc, nb);
-    long nocc_alpha = nocc/2; //std::min(0L, nocc - nb);
+    // Ensure nocc is even
+    if (nocc % 2 != 0) {
+        throw std::invalid_argument("Number of occupied orbitals (nocc) must be even.");
+    }
+    long nocc_beta = nocc / 2;
+    long nocc_alpha = nocc / 2;
     // long num_ulongs = (nb2 + Size<ulong>() - 1) / Size<ulong>();
     
 
@@ -583,16 +586,28 @@ void NonSingletCI::fill_hartreefock_det(long nb2, long nocc, ulong *det) const {
     //     std::cout << det[i] << " ";
     // }
     // std::cout << std::endl;
-
 }
 
+
+
+/**
+ * @brief Adds excited determinants to the current wavefunction.
+ *
+ * This function generates excited determinants based on the given excitation level
+ * and reference determinant. If no reference determinant is provided, it uses the
+ * Hartree-Fock determinant.
+ *
+ * @param exc The excitation level.
+ * @param ref The reference determinant as a pybind11 object. If none, Hartree-Fock determinant is used.
+ * @return The number of new determinants added.
+ */
 long NonSingletCI::py_add_excited_dets(const long exc, const pybind11::object ref) {
     AlignedVector<ulong> v_ref;
     ulong *ptr;
     if (ref.is(pybind11::none())) {
         v_ref.resize(nword);
         ptr = &v_ref[0];
-        fill_hartreefock_det(nbasis,nocc, ptr);
+        fill_hartreefock_det(nbasis, nocc, ptr);
     } else {
         ptr = reinterpret_cast<ulong *>(ref.cast<Array<ulong>>().request().ptr);
     }
