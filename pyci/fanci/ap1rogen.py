@@ -59,6 +59,9 @@ class AP1roGeneralizedSeno(FanCI):
         nparam = nocc * (ham.nbasis - nocc) + (2 * nocc) * (2 * (ham.nbasis - nocc)) + 1 #less params considering we added singles as well
         nproj = nparam if nproj is None else nproj
 
+        if nproj > nparam:
+            raise ValueError("nproj cannot be greater than the size of the space")
+
         if wfn is None:
             wfn = pyci.doci_wfn(ham.nbasis, nocc, nocc)
             wfn.add_excited_dets(1) # add pair excited determinants
