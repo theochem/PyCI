@@ -539,14 +539,10 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
     long ioffset, koffset, sign_up;
     long nbasis = wfn.nbasis / 2;
     long n1 = nbasis; 
-    long n1 = nbasis; 
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val1, val2 = 0.0;
     const ulong *rdet_up = wfn.det_ptr(idet);
-    const ulong *rdet_dn = rdet_up + nbasis;
-    std::cout << "rdet_up: " << *rdet_up << std::endl;
-    ulong *det_dn = det_up + nbasis;
     std::memcpy(det_up, rdet_up, sizeof(ulong) * wfn.nword); 
 
     fill_occs(wfn.nword, rdet_up, occs);
