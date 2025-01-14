@@ -581,8 +581,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
         for (k = i + 1; k < nocc_up; ++k) {
             kk = occs_up[k];
             koffset = ioffset + n2 * kk;
-            val2 += ham.two_mo[koffset + n1 * ii + kk] - ham.two_mo[koffset + n1 * kk + ii];
-            
+            val2 += ham.two_mo[koffset + n1 * ii + kk] - ham.two_mo[koffset + n1 * kk + ii];  
         }
         for (k = 0; k < nocc_dn; ++k) {
             kk = occs_dn[k];
@@ -618,9 +617,9 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                 jj = virs_up[j];
             }
             
-            // loop over spin-down occupied indices
-            for (k = 0; k < nocc_dn; ++k) {
-                kk = occs_dn[k];
+            // loop over spin-up occupied indices
+            for (k = 0; k < nocc_up; ++k) {
+                kk = occs_up[k];
                 koffset = ioffset + n2 * kk;
                 // second excitation: alpha -> alpha
                 for (l = j + 1; l < nvir_up; ++l) {
