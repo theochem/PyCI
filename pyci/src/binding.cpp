@@ -127,6 +127,26 @@ two_mo : numpy.ndarray
 
 )""");
 
+secondquant_op.def_readonly("one_ao", &SQuantOp::one_ao_array, R"""(
+One-particle atomic integral array.
+
+Returns
+-------
+one_mo : numpy.ndarray
+    One-particle atomic integral array.
+
+)""");
+
+secondquant_op.def_readonly("two_ao", &SQuantOp::two_ao_array, R"""(
+Two-particle atomic integral array.
+
+Returns
+-------
+two_mo : numpy.ndarray
+    Two-particle atomic integral array.
+
+)""");
+
 secondquant_op.def_readonly("h", &SQuantOp::h_array, R"""(
 Seniority-zero one-particle molecular integral array.
 

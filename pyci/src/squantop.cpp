@@ -25,17 +25,21 @@ SQuantOp::SQuantOp(void) {
 }
 
 SQuantOp::SQuantOp(const SQuantOp &ham)
-    : nbasis(ham.nbasis), ecore(ham.ecore), one_mo(ham.one_mo), two_mo(ham.two_mo), h(ham.h),
+    : nbasis(ham.nbasis), ecore(ham.ecore), one_mo(ham.one_mo), two_mo(ham.two_mo), 
+      one_ao(ham.one_ao), two_ao(ham.two_ao), h(ham.h),
       v(ham.v), w(ham.w), one_mo_array(ham.one_mo_array), two_mo_array(ham.two_mo_array),
+      one_ao_array(ham.one_ao_array), two_ao_array(ham.two_ao_array),
       h_array(ham.h_array), v_array(ham.v_array), w_array(ham.w_array) {
 }
 
 SQuantOp::SQuantOp(SQuantOp &&ham) noexcept
     : nbasis(std::exchange(ham.nbasis, 0)), ecore(std::exchange(ham.ecore, 0.0)),
       one_mo(std::exchange(ham.one_mo, nullptr)), two_mo(std::exchange(ham.two_mo, nullptr)),
+      one_ao(std::exchange(ham.one_ao, nullptr)), two_ao(std::exchange(ham.two_ao, nullptr)),
       h(std::exchange(ham.h, nullptr)), v(std::exchange(ham.v, nullptr)),
       w(std::exchange(ham.w, nullptr)), one_mo_array(std::move(ham.one_mo_array)),
-      two_mo_array(std::move(ham.two_mo_array)), h_array(std::move(ham.h_array)),
+      two_mo_array(std::move(ham.two_mo_array)), one_ao_array(std::move(ham.one_ao_array)),
+      two_ao_array(std::move(ham.two_ao_array)),  h_array(std::move(ham.h_array)),
       v_array(std::move(ham.v_array)), w_array(std::move(ham.w_array)) {
 }
 
@@ -158,6 +162,37 @@ SQuantOp::SQuantOp(const std::string &filename) {
                 two_mo[i * n3 + j * n2 + i * n1 + j] * 2 - two_mo[i * n3 + j * n2 + j * n1 + i];
         }
     }
+
+    // Spatial to spin conversion (n * n) to (2n * 2n)
+    long m1 = n1 *2;
+    long m2 = m1 * m1;
+    long m3 = m1 * m2;
+
+    one_ao_array = Array<double>({m1, m1});
+    two_ao_array = Array<double>({m1, m1, m1, m1});
+    one_ao = reinterpret_cast<double *>(one_ao_array.request().ptr);
+    two_ao = reinterpret_cast<double *>(two_ao_array.request().ptr);
+
+    for (long i = 0; i < n1; ++i) {
+        for (long j = 0; j < n1; ++j) {
+            one_ao[i * m1 + j] = one_mo[i * n1 + j];
+            one_ao[(i + n1) * m1 + (j + n1)] = one_mo[i * n1 + j];
+        }
+    }
+
+    for (long i = 0; i < n1; ++i) {
+        for (long j = 0; j < n1; ++j) {
+            for (long k = 0; k < n1; ++k) {
+                for (long l = 0; l < n1; ++l) {
+                    two_ao[i * m3 + j * m2 + k * m1 + l]  = two_mo[i * n1 * n1 * n1 + j * n1 * n1 + k * n1 + l];
+                    two_ao[(i + n1) * m3 + (j + n1) * m2 + (k + n1) * m1 + (l + n1)] = two_mo[i * n1 * n1 * n1 + j * n1 * n1 + k * n1 + l];
+                    two_ao[i * m3 + (j + n1) * m2 + k * m1 + (l + n1)] = two_mo[i * n1 * n1 * n1 + j * n1 * n1 + k * n1 + l];
+                    two_ao[(i + n1) * m3 + j * m2 + (k + n1) * m1 + l] = two_mo[i * n1 * n1 * n1 + j * n1 * n1 + k * n1 + l];
+                }
+            }
+        }
+    }
+
 }
 
 SQuantOp::SQuantOp(const double e, const Array<double> mo1, const Array<double> mo2)
