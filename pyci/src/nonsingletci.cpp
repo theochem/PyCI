@@ -157,7 +157,9 @@ long NonSingletCI::calc_sindex(const long occ, const long vir) const {
     // std::cout << "o: " << o << ", v: " << v << std::endl;
     // std::cout << "nocc: " << nocc << ", nb: " << nb << std::endl;
 
-    long idx = nocc / 2 * (nbasis - nocc) / 2 +  o * (nbasis - nocc) + v;
+    // long idx = nocc / 2 * (nbasis - nocc) / 2 +  o * (nbasis - nocc) + v; //considering doubles are listed first
+
+    long idx = o * (nbasis - nocc) + v; // considering singles are listed first
     // std::cout << "idx: " << idx << std::endl;
     return idx;
 }
@@ -175,7 +177,8 @@ long NonSingletCI::calc_pindex(const long occ, const long vir) const {
     } else {
         o = occ;
     }
-    long idx = (nbasis / 2 - nocc / 2) * o + v;
+    // long idx = (nbasis / 2 - nocc / 2) * o + v; //considering doubles are listed first
+    long idx = (nbasis - nocc) * nocc + (nbasis / 2 - nocc / 2) * o + v; //considering singles are listed first
     return idx;
 }
 

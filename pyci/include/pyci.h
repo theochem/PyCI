@@ -618,6 +618,7 @@ struct DetExcParamIndx {
     AlignedVector<ulong> det;
     std::vector<long> pair_inds;
     std::vector<long> single_inds;
+    int sign;
 };
 
 // Inline utility function for resizing DetExcParamIndx Object
@@ -933,6 +934,13 @@ public:
                             const std::vector<std::size_t>& , int , std::vector<long>& ,
                             std::vector<long>&, long, const NonSingletCI &);
 
+    // Return the signature of applying annihilators then creators to the Slater determinant.
+    int sign_swap(AlignedVector<ulong> , long, long);
+
+    // Return the sign of the Slater determinant after applying excitation operators.
+    int sign_excite(AlignedVector<ulong> , const std::vector<std::size_t>& , const std::vector<std::size_t>& );
+
+
     // Initializer for {d_,}overlap variables
     void init_overlap(const NonSingletCI &);
 
@@ -943,10 +951,10 @@ public:
     double compute_derivative(const std::vector<long> , const double*, std::size_t);
 
     // Overlap function
-    virtual void overlap(const std::size_t, const double *x, double *y);
+    virtual void overlap(const std::size_t, const double*, double*);
 
     // Overlap gradient function
-    virtual void d_overlap(const size_t, const double *x, double *y);
+    virtual void d_overlap(const size_t, const double*, double*);
 };
 
 } // namespace pyci

@@ -13,6 +13,8 @@ import numpy as np
 
 from scipy.optimize import OptimizeResult, least_squares, root
 
+from scipy.optimize import minimize
+
 import pyci
 
 
@@ -207,7 +209,21 @@ class FanCI(metaclass=ABCMeta):
 
         # Compute arrays of occupations
         sspace = wfn.to_occ_array()
+
+        # if type(wfn).__name__ == "nonsingletci_wfn":
+        #     pspace = sspace[np.r_[0:13, 21:29, 37:45, 53:60, 66:72, 75:77, 81, 99:102, 104:108, 109:117, 126:129, 131:135, 
+        #               136:144, 171:183, 189:195, 201:206, 209, 221:224, 225:231, 2316:239, 240:246, 261:267, 
+        #               273:278, 282:286, 288, 300:302, 303:309, 314:316, 317:323, 337:344, 348:352, 356:359, 
+        #               365:369, 371:375, 381:384, 388:391, 393:395, 400:403, 405:408, 413:416, 418:420, 422, 
+        #               424:426, 427, 430]]
+        #     # nproj = len(pspace)
+        # else:
         pspace = sspace[:nproj]
+        print("len(sspace), len(pspace): ", len(sspace), len(pspace))
+        # dec_sspace = wfn.to_det_array()
+        # print("Printing sspace")
+        # for dec, bin in zip(dec_sspace, sspace):
+        #     print("\n", dec, bin)
 
         # Assign attributes to instance
         self._nequation = nequation
@@ -274,6 +290,10 @@ class FanCI(metaclass=ABCMeta):
         elif mode == "root":
             opt_args = f, x0
             optimizer = root
+        # FIXME: For BFGS to work, objective function must return a scalar value
+        elif mode == "bfgs":
+            opt_args = f, x0
+            optimizer = minimize
         else:
             raise ValueError("invalid mode parameter")
 

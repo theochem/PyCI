@@ -106,7 +106,7 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
     std::vector<long>& single_inds, long nbasis, const NonSingletCI &wfn_) {
 
     AlignedVector<std::pair<int,int>> occ_pairs, vir_pairs;
-    AlignedVector<long> occs_up, occs_dn, virs_up, virs_dn, temp_occs;
+    AlignedVector<long> occs_up, occs_dn, virs_up, virs_dn; // , temp_occs;
     for (int i : holes) {
         (i < nbasis ? occs_up : occs_dn).push_back(i);
     }
@@ -118,15 +118,15 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
     std::unordered_set<int> occ_dn_set(occs_dn.begin(), occs_dn.end()); 
     std::unordered_set<int> virs_set(particles.begin(), particles.end());    
 
-    // Generate occ_pairs and vir_pairs
+    // Generate occ_pairs
     for (long i : occs_up) {
         if (occ_dn_set.find(i + nbasis) != occ_dn_set.end()) {
             occ_pairs.push_back({i, i + nbasis});   
-            temp_occs.push_back(i);
-            temp_occs.push_back(i + nbasis);
+            // temp_occs.push_back(i);
+            // temp_occs.push_back(i + nbasis);
         }
     }
-    // std::cout << "occ_pairs created\n";
+    // Generate vir_pairs
     for (long a : particles) {
         if (virs_set.find(a + nbasis) != virs_set.end()) {
             vir_pairs.push_back({a, a + nbasis});   
@@ -159,6 +159,8 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
                 for (const auto& ppair_comb : part_pairs){
                     if (!hpair_comb.empty() || !ppair_comb.empty()) {
                         long pindx = wfn_.calc_pindex(hpair_comb[0], ppair_comb[0]);
+
+                        // Clear the default values
                         if (pair_inds[0] == -1) {
                             pair_inds.clear();
                         }
@@ -190,7 +192,9 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
                 for (const auto& psingle_comb : part_singles) {
                     if (std::find(used_holes.begin(), used_holes.end(), hsingle_comb[0]) == used_holes.end() &&
                         std::find(used_parts.begin(), used_parts.end(), psingle_comb[0]) == used_parts.end()) {
+                        // Calculate the index of the single excitation
                         long sindx = wfn_.calc_sindex(hsingle_comb[0], psingle_comb[0]);
+                        // Clear the default values
                         if (single_inds[0] == -1) {
                             single_inds.clear();
                         }
@@ -202,6 +206,86 @@ void AP1roGeneralizedSenoObjective::generate_excitations(const std::vector<std::
     
     }
 }
+
+
+int AP1roGeneralizedSenoObjective::sign_swap(AlignedVector<ulong> sd, long pos_current, long pos_future){
+    // Return the signature of applying annihilators then creators to the Slater determinant.
+    if (pos_current < 0 || pos_future < 0) {
+        throw std::invalid_argument("The current and future positions must be positive integers.");
+    }
+
+    // if (!((sd >> pos_current) & 1)) {
+    if (!((sd[pos_current / Size<ulong>()] >> (pos_current % Size<ulong>())) & 1)) {
+        throw std::invalid_argument("Given orbital is not occupied in the Slater determinant.");
+    }
+
+    int num_trans = 0;
+    if (pos_current < pos_future) {
+        // Count the number of set bits between pos_current and pos
+        for (long i = pos_current + 1; i <= pos_future; ++i) {
+            if ((sd[i / Size<ulong>()] >> (i % Size<ulong>())) & 1) {
+                ++num_trans;
+            }
+        }
+    } else {
+        for (long i = pos_future; i < pos_current; ++i) {
+            if ((sd[i / Size<ulong>()] >> (i % Size<ulong>())) & 1) {
+                ++num_trans;
+            }
+        }
+    }
+
+    // if (pos_current < pos_future) {
+    //     // Count the number of set bits between pos_current and pos_future
+    //     num_trans = std::bitset<sizeof(ulong) * 8>(sd >> (pos_current + 1)).count() - std::bitset<sizeof(ulong) * 8>(sd >> (pos_future + 1)).count();
+    // } else {
+    //     // Count the number of set bits between pos_future and pos_current
+    //     num_trans = std::bitset<sizeof(ulong) * 8>(sd >> pos_future).count() - std::bitset<sizeof(ulong) * 8>(sd >> pos_current).count();
+    // }
+
+    return (num_trans % 2 == 0) ? 1 : -1;
+
+}
+
+int AP1roGeneralizedSenoObjective::sign_excite(AlignedVector<ulong> sd,
+    const std::vector<std::size_t>& annihilators, const std::vector<std::size_t>& creators) {
+    // Return the sign of the Slater determinant after applying excitation operators.
+    int sign = 1;
+    for (std::size_t i : annihilators) {
+        // if (!((sd >> i) & 1)) {
+        if (!((sd[i / Size<ulong>()] >> (i % Size<ulong>())) & 1)) {
+            //print sd
+            std::cout << "Annihilator: " << i << std::endl;
+            for (int k = 0; k < sd.size(); ++k) {
+                std::cout << sd[k] << " ";
+            }
+            std::cout << std::endl;
+            throw std::invalid_argument("Given Slater determinant cannot be excited using the given creators and annihilators.");
+        }
+        sign *= sign_swap(sd, i, 0);
+        // sd = sd & ~(1UL << i); // annihilate ith orbital
+        sd[i / Size<ulong>()] &= ~(1UL << (i % Size<ulong>())); // annihilate ith orbital
+    }
+
+    for (std::size_t a : creators) {
+        // sd = sd | (1UL << a); // create ath orbital
+        sd[a / Size<ulong>()] |= (1UL << (a % Size<ulong>())); // create ath orbital
+        // if (sd == 0) {
+        if (!((sd[a / Size<ulong>()] >> (a % Size<ulong>())) & 1)) {
+            //print sd
+            std::cout << "Creator: " << a << std::endl;
+            for (int k = 0; k < sd.size(); ++k) {
+                std::cout << sd[k] << " ";
+            }
+            std::cout << std::endl;
+            throw std::invalid_argument("Given Slater determinant cannot be excited using the given creators and annihilators.");
+        }
+        sign *= sign_swap(sd, a, 0);
+    }
+    return sign;
+}
+
+
 
 void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
 {
@@ -226,6 +310,7 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
         const ulong *det = wfn_.det_ptr(idet);
         ensure_struct_size(det_exc_param_indx, idet+1);
 
+        // Check if given det is the same as the reference det
         bool are_same = true;
         for (std::size_t k = 0; k < nword; ++k) {
             // std::cout << det[k] << " ";
@@ -264,18 +349,33 @@ void AP1roGeneralizedSenoObjective::init_overlap(const NonSingletCI &wfn_)
                 ++nexc;
             }
         }
-
+        // New container for the excitation information
         DetExcParamIndx exc_info;
         exc_info.det.resize(nword);
         exc_info.pair_inds.resize(1);
         exc_info.single_inds.resize(1);
+
+        // Default values for indices
         exc_info.pair_inds[0] = -1;
         exc_info.single_inds[0] = -1;
+
         std::memcpy(&exc_info.det[0], &det[0], sizeof(ulong) * nword);
+
+        // Generate excitations if the given det is not the same as the reference det
         if (!are_same) generate_excitations(holes, particles, nexc, exc_info.pair_inds, exc_info.single_inds, nbasis, wfn_);
+        
+        // Sort the indices for single and pair excitations
         std::sort(exc_info.pair_inds.begin(), exc_info.pair_inds.end());
         std::sort(exc_info.single_inds.begin(), exc_info.single_inds.end());
 
+        // Store the sign of the overall excitation
+        int sign = 1;
+        if (exc_info.pair_inds[0] != -1 || exc_info.single_inds[0] != -1) {
+            sign = sign_excite(rdet, holes, particles);
+        }
+        exc_info.sign = sign;
+        
+        // store the excitation information
         det_exc_param_indx[idet] = exc_info;
     }
 }
@@ -287,7 +387,8 @@ bool AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long
     if (n == 0) {permanent = 1.0; return true;}
     if (n == 1) {
         permanent = x[excitation_inds[0]]; 
-        return true;}
+        return true;
+    }
     permanent = 0.0;
     std::size_t subset_count = 1UL << n; // 2^n subsets
     for (std::size_t subset = 0; subset < subset_count; ++subset) {
@@ -297,7 +398,11 @@ bool AP1roGeneralizedSenoObjective::permanent_calculation(const std::vector<long
             double rowsum = 0.0;
             for (std::size_t j = 0; j < n; ++j) {
                 if (subset & (1UL << j)) {
+                    // std::cout << "\n rowsum: " << rowsum << std::endl;
+                    // std::cout << "excitation_inds[i * n + j]: " << excitation_inds[i * n + j] << std::endl;
+                    // std::cout << "x[excitation_inds[i * n + j]]: " << x[excitation_inds[i * n + j]] << std::endl;
                     rowsum += x[excitation_inds[i * n + j]];
+                    // std::cout << "rowsum: " << rowsum << std::endl;
                 }
             }
             if (std::isnan(rowsum) || std::isinf(rowsum)) {
@@ -387,6 +492,12 @@ double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>
 void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
     p_permanent.resize(nconn);
     s_permanent.resize(nconn);
+    //print x
+    for (std::size_t i = 0; i < nparam; ++i) {
+        std::cout << x[i] << " ";
+    }
+    std::cout << "\n" << std::endl;
+
 
     for (std::size_t idet = 0; idet != ndet; ++idet) {
     
@@ -398,22 +509,32 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, d
 
             if (exc_info.pair_inds[0] != -1) {
                 if (!permanent_calculation(exc_info.pair_inds, x, pair_permanent)) {
-                    std::cerr << "Error calculating pair_permanent for idet" << idet << std::endl;
+                    std::cerr << "Error calculating pair_permanent for idet" << idet << "\n" << std::endl;
                 }
             }
-
+            
             if (exc_info.single_inds[0] != -1) {
                 if (!permanent_calculation(exc_info.single_inds, x, single_permanent)) {
-                    std::cerr << "Error calculating single_permanent for idet " << idet << std::endl;
+                    std::cerr << "Error calculating single_permanent for idet " << idet << "\n" << std::endl;
                 }
+            }
+            // If given det is not allowed in the wfn, set the permanents to zero
+            // idet = 0 is the reference HF determinant 
+            if (exc_info.pair_inds[0] == -1 && exc_info.single_inds[0] == -1 && idet != 0) {
+                pair_permanent = 0.0;
+                single_permanent = 0.0;
             }
 
             p_permanent[idet] = pair_permanent;
             s_permanent[idet] = single_permanent;
 
+
             if (y != nullptr && idet < ndet) {
-                y[idet] = pair_permanent * single_permanent;
-            } else {
+                y[idet] = exc_info.sign * pair_permanent * single_permanent;
+                if (idet < 225) {
+                    std::cout << idet << " " << exc_info.det[0] << " " << y[idet] << std::endl;
+                }
+            }else {
                 std::cerr << "y is nullptr or idet is out of bounds" << std::endl;
             }
         } else {
@@ -452,6 +573,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
             //     }
                 
             // }
+            
             for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
                 double dpair = 0.0;
                 double dsingle = 0.0;
@@ -462,8 +584,10 @@ void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x
                 if (exc_info.pair_inds[0] != -1) {
                     dpair = compute_derivative(exc_info.pair_inds, x, iparam);
                 }
-                // std::cout << "dpair: " << dpair << ", dsingle: " << dsingle << std::endl;
+                // std::cout << "\nidet: " << idet << ", det: " << exc_info.det[0] << std::endl;
+                // std::cout << "single_inds: " << exc_info.single_inds[0] << ", pair_inds: " << exc_info.pair_inds[0] << std::endl;
                 // std::cout << "single_permanent: " << single_permanent << ", pair_permanent: " << pair_permanent << std::endl;
+                // std::cout <<  "wrt iparam: " << iparam << ", dpair: " << dpair << ", dsingle: " << dsingle << std::endl;
                 // std::cout << "idet: " << idet << " deriv: " << dpair * single_permanent + dsingle * pair_permanent << std::endl;
                 y[ndet * iparam + idet] = dpair * single_permanent + dsingle * pair_permanent;
             }

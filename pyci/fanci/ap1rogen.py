@@ -59,13 +59,20 @@ class AP1roGeneralizedSeno(FanCI):
         nparam = nocc * (ham.nbasis - nocc) + (2 * nocc) * (2 * (ham.nbasis - nocc)) + 1 #less params considering we added singles as well
         nproj = nparam if nproj is None else nproj
 
-        if nproj > nparam:
-            raise ValueError("nproj cannot be greater than the size of the space")
+        # if nproj > nparam:
+        #     raise ValueError("nproj cannot be greater than the size of the space")
 
         if wfn is None:
-            wfn = pyci.doci_wfn(ham.nbasis, nocc, nocc)
-            wfn.add_excited_dets(1) # add pair excited determinants
-            wfn = pyci.fullci_wfn(wfn)
+            # wfn = pyci.doci_wfn(ham.nbasis, nocc, nocc)
+            # wfn.add_excited_dets(1) # add pair excited determinants
+            wfn = pyci.fullci_wfn(ham.nbasis, nocc, nocc)
+            # exc=0 ensures addint HF determinannt first
+            pyci.add_excitations(wfn,0,1,2,3,4)
+            print("Printing FCI wfn dets: ")
+            for sd in (wfn.to_occ_array()):
+                sd = np.array(sd)
+                print(np.concatenate((sd[0],sd[1]+ham.nbasis)))
+            
             wfn = pyci.nonsingletci_wfn(wfn)
                    
         elif not isinstance(wfn, pyci.nonsingletci_wfn):
@@ -76,6 +83,11 @@ class AP1roGeneralizedSeno(FanCI):
 
         # Initialize base class
         FanCI.__init__(self, ham, wfn, nproj, nparam, **kwargs)
+        print("\n\nPrinting nonsingletci wfn dets: ")
+        for sd in (self._sspace):
+            print(sd)
+            # sd = np.array(sd)
+            # print(np.concatenate((sd[0],sd[1]+ham.nbasis)))
 
         # Assign reference occupations
         #ref_occs_up = np.arange(nocc_up, dtype=pyci.c_long)
