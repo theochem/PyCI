@@ -104,13 +104,13 @@ pyci/_pyci.so: pyci/_pyci.so.$(PYCI_VERSION)
 	ln -sf $(notdir $(<)) $(@)
 
 deps/eigen:
-	@git clone https://gitlab.com/libeigen/eigen.git $(@)
+	[ -d $@ ] || git clone https://gitlab.com/libeigen/eigen.git $@
 
 deps/spectra:
-	@git clone https://github.com/yixuan/spectra.git $(@)
+	[ -d $@ ] || git clone https://github.com/yixuan/spectra.git $@
 
 deps/parallel-hashmap:
-	@git clone https://github.com/greg7mdp/parallel-hashmap.git $(@)
+	[ -d $@ ] || git clone https://github.com/greg7mdp/parallel-hashmap.git $@
 
 deps/pybind11:
-	@git clone https://github.com/pybind/pybind11.git $(@)
+	[ -d $@ ] || git clone https://github.com/pybind/pybind11.git $@
