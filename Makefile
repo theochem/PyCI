@@ -74,7 +74,7 @@ all: pyci/_pyci.so.$(PYCI_VERSION) pyci/_pyci.so.$(VERSION_MAJOR) pyci/_pyci.so
 
 .PHONY: test
 test:
-	$(PYTHON) -m pytest -sv ./pyci
+	@set -e; $(PYTHON) -m pytest -sv ./pyci
 
 .PHONY: clean
 clean:
