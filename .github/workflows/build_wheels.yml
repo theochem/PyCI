@@ -144,6 +144,9 @@ jobs:
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_PRERELEASE_PYTHONS: True
           CIBW_FREE_THREADED_SUPPORT: True
+          CIBW_OUTPUT_DIR: ./wheelhouse
+          CIBW_BUILD_VERBOSITY: 2
+          CIBW_ENVIRONMENT: CFLAGS="-I/project/pyci/include" LDFLAGS="-L/project/pyci"
 
       - name: Rename macOS wheels
         if: startsWith( matrix.buildplat[0], 'macos-' )
