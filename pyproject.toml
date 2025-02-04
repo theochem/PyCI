@@ -118,4 +118,4 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
 
 [tool.setuptools.commands]
 # Custom command to run `make` during the build process
-build_ext = { module = "pyci.make_build_wrapper", callable = "make_build" }
+build_ext = { module = "build_wrapper", callable = "build_with_make" }
