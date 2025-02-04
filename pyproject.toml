@@ -2,12 +2,10 @@
 [build-system]
 # Required packages for building the project
 requires = [
-    # "scikit-build-core >= 0.9.10",
     "setuptools_scm>=8",            # For version management
     "setuptools>=61.0.0",           # For building the package
     "pytest>=8.0.0",                # For running tests
 ]
-# build-backend = "scikit_build_core.build"
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -93,16 +91,6 @@ packages = [
     "data/*.npy",     # NumPy data files
     "data/*.npz"      # Compressed NumPy data files
 ]
-
-# Build configuration
-[tool.scikit-build]
-sdist.exclude = [
-    ".github",
-    "tests/data/*.fchk",
-    "examples/*.fchk"
-]
-metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
-
 
 [tool.cibuildwheel.linux]
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
