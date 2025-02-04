@@ -104,6 +104,10 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
 
 
 
+[tool.cibuildwheel]
+# Switch to using build
+build-frontend = "build"
+
 [tool.cibuildwheel.linux]
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
 
@@ -111,3 +115,7 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
 # Version management configuration
 [tool.setuptools_scm]
 # Enable setuptools-scm for version management
+
+[tool.setuptools.commands]
+# Custom command to run `make` during the build process
+build_ext = { module = "pyci.make_build_wrapper", callable = "make_build" }

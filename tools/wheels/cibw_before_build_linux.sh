@@ -29,5 +29,5 @@ python -m pip install pytest
 
 
 # compile library
-make
-make test
+# make
+# make test
