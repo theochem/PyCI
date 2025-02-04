@@ -103,6 +103,11 @@ build-frontend = "build"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
 
 
+[tool.cibuildwheel]
+output-dir = "wheelhouse"
+CIBW_BEFORE_ALL_LINUX = "bash ./tools/wheels/cibw_before_all_linux.sh"
+
+
 # Version management configuration
 [tool.setuptools_scm]
 # Enable setuptools-scm for version management
