@@ -75,6 +75,7 @@ packages = [
     "pyci.test",
     "pyci.fanci.test",
 ]
+include_package_data = true
 
 [tool.setuptools.package-data]
 # Non-Python files to include in the package
@@ -103,9 +104,6 @@ build-frontend = "build"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
 
 
-
-[tool.setuptools]
-include_package_data = true
 
 [tool.cibuildwheel]
 # Switch to using build
