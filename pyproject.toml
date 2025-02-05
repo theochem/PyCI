@@ -75,7 +75,6 @@ packages = [
     "pyci.test",
     "pyci.fanci.test",
 ]
-include_package_data = true
 
 [tool.setuptools.package-data]
 # Non-Python files to include in the package
