@@ -1,0 +1,271 @@
+# Workflow to build and test wheels.
+name: Wheel builder
+
+on:
+  push:
+    tags:
+      # Trigger on version tags (e.g., v1.0.0)
+      - "v[0-9].[0-9].[0-9]*"
+      - "[0-9].[0-9].[0-9]*"
+      # Trigger on pre-release tags (e.g., v1.0.0-alpha.1)
+      - "v[0-9].[0-9].[0-9]*-*"
+      - "[0-9].[0-9].[0-9]*-*"
+env:
+  # The name of the package to be published to PyPI and TestPyPI.
+  PYPI_NAME: qc-PyCI
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+# ensure that only one wheel builder runs at a time
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build_wheels:
+    name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+      ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
+      ${{ matrix.buildplat[4] }}
+    runs-on: ${{ matrix.buildplat[0] }}
+
+    strategy:
+      # Ensure that a wheel builder finishes even if another fails
+      fail-fast: false
+      matrix:
+        # If need to exclude several configurations see:
+        # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
+        buildplat:
+        # Different architectures are in different jobs because the need of different compiler configurations
+        - [ubuntu-22.04, manylinux, x86_64, "", ""]
+        - [ubuntu-22.04, musllinux, x86_64, "", ""]
+        - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
+        # - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
+        # - [macos-13, macosx, x86_64, openblas, "10.13"]
+        # - [macos-13, macosx, x86_64, accelerate, "14.0"]
+        # - [macos-14, macosx, arm64, openblas, "12.3"]
+        # - [macos-14, macosx, arm64, accelerate, "14.0"]
+        # - [windows-2019, win, AMD64, "", ""]
+        # python[0] is the python version of the wheel and python[1] is the python version of the configuration
+        python: [["cp39", "3.9"],["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
+
+    env:
+      # set 32-bit flag accessable in the build script
+      IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
+
+    steps:
+      - name: Checkout pyci
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: win_amd64 - mingw-w64
+        # TODO: finish the windows build actions
+        run: |
+          # mingw-w64
+          if [[ ${{ matrix.buildplat[0] }} == 'windows-2019' && ${{ matrix.buildplat[2] }} == 'AMD64' ]]; then
+            choco install -y mingw
+            export PATH="/c/Program Files/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64/bin:$PATH"
+            echo "PATH=$PATH" >> $GITHUB_ENV
+          fi
+
+      - name: windows - set PKG_CONFIG_PATH
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          $env:CIBW = "${{ github.workspace }}"
+          # It seems somewhere in the env passing, `\` is not
+          # passed through, so convert it to '/'
+          $env:CIBW=$env:CIBW.replace("\","/")
+          echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
+
+      - name: Setup macOS
+        if: startsWith( matrix.buildplat[0], 'macos-' )
+        run: |
+          if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
+            echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
+            # Always use preinstalled gfortran for Accelerate builds
+            ln -s $(which gfortran-13) gfortran
+            export PATH=$PWD:$PATH
+            echo "PATH=$PATH" >> "$GITHUB_ENV"
+            LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
+          fi
+          if [[ ${{ matrix.buildplat[4] }} == '10.13' ]]; then
+            # 20241017 macos-13 images span Xcode 14.1-->15.2
+            XCODE_VER='14.1'
+          else
+            XCODE_VER='15.2'
+          fi
+          CIBW="sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app"
+          echo "CIBW_BEFORE_ALL=$CIBW" >> $GITHUB_ENV
+          # setting SDKROOT necessary when using the gfortran compiler
+          # installed in cibw_before_build_macos.sh
+          sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app
+          CIBW="MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }}\
+            SDKROOT=$(xcrun --sdk macosx --show-sdk-path)\
+            PKG_CONFIG_PATH=${{ github.workspace }}"
+          echo "CIBW_ENVIRONMENT=$CIBW" >> "$GITHUB_ENV"
+
+          echo "REPAIR_PATH=$LIB_PATH" >> "$GITHUB_ENV"
+
+          PREFIX=DYLD_LIBRARY_PATH="\$(dirname \$(gfortran --print-file-name libgfortran.dylib))"
+          # remove libgfortran from location used for linking (if any), to
+          # check wheel has bundled things correctly and all tests pass without
+          # needing installed gfortran
+          POSTFIX=" sudo rm -rf /opt/gfortran-darwin-x86_64-native &&\
+                    sudo rm -rf /usr/local/gfortran/lib"
+          CIBW="$PREFIX delocate-listdeps -d {wheel} && echo "-----------" &&\
+            $PREFIX delocate-wheel -v $EXCLUDE --require-archs \
+            {delocate_archs} -w {dest_dir} {wheel} && echo "-----------" &&\
+            delocate-listdeps -d {dest_dir}/*.whl && echo "-----------" &&\
+            $POSTFIX"
+
+          # Rename x86 Accelerate wheel to test on macOS 13 runner
+          if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
+            CIBW+=" && mv {dest_dir}/\$(basename {wheel}) \
+              {dest_dir}/\$(echo \$(basename {wheel}) | sed 's/14_0/13_0/')"
+          fi
+
+          # macos-arm64-openblas wheels that target macos-12 need a
+          # MACOS_DEPLOYMENT_TARGET of 12.3 otherwise delocate complains.
+          # Unclear of cause, possibly build tool related.
+          # This results in wheels that have 12_3 in their name. Since Python
+          # has no concept of minor OS versions in packaging land rename the
+          # wheel back to 12.
+          if [[ ${{ matrix.buildplat[0] }} == 'macos-14' && ${{ matrix.buildplat[4] }} == '12.3' ]]; then
+            CIBW+=" && echo \$(ls {dest_dir}) && \
+            mv {dest_dir}/*.whl \$(find {dest_dir} -type f -name '*.whl' | sed 's/12_3/12_0/')"
+          fi
+          echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@7940a4c0e76eb2030e473a5f864f291f63ee879b # v2.21.3
+        env:
+          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
+          CIBW_ARCHS: ${{ matrix.buildplat[2] }}
+          CIBW_PRERELEASE_PYTHONS: True
+          CIBW_FREE_THREADED_SUPPORT: True
+          CIBW_OUTPUT_DIR: ./wheelhouse
+          CIBW_BUILD_VERBOSITY: 2
+          CIBW_ENVIRONMENT: CFLAGS="-I/project/pyci/include" LDFLAGS="-L/project/pyci"
+
+      - name: Rename macOS wheels
+        if: startsWith( matrix.buildplat[0], 'macos-' )
+        run: |
+          # macos-x86_64-accelerate wheels targeting macos-14 were renamed to 13
+          # so they could be tested. Shift wheel name back to targeting 14.
+          if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
+            mv ./wheelhouse/*.whl $(find ./wheelhouse -type f -name '*.whl' | sed 's/13_0/14_0/')
+          fi
+
+      # - name: Test the build wheels
+      #   run: |
+      #     # Install the built wheels
+      #     pip install pytest
+      #     pip install ./wheelhouse/*.whl
+      #     # Test the installed wheels
+      #     pytest project/pyci
+
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          path: ./wheelhouse/*.whl
+          name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+            ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
+            ${{ matrix.buildplat[4] }}
+      
+
+
+      # TODO: Test the build wheels
+      # - name: Test the build wheels
+
+      # TODO: Upload the build wheels to the release
+
+  publish-to-pypi:
+    name: Publish Python distribution to PyPI
+    # only publish to PyPI on tag pushes
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build_wheels
+    runs-on: ubuntu-latest
+    environment:
+      name: PyPI-Release
+      url: https://pypi.org/project/${{ env.PYPI_NAME }}
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: ./wheelhouse/*.whl
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+
+  github-release:
+    name: Sign the Python distribution with Sigstore and upload them to GitHub Release
+    needs:
+      - publish-to-pypi
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: ./wheelhouse
+      - name: Sign the dists with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: >-
+            ./wheelhouse/*.whl
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create
+          "${{ github.ref_name }}"
+          --repo "${{ github.repository }}"
+          --notes ""
+      - name: Upload artifact signatures to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload
+          "${{ github.ref_name }}" wheelhouse/**
+          --repo "${{ github.repository }}"
+
+  publish-to-testpypi:
+    name: Publish Python distribution to TestPyPI
+    # if: ${{ github.ref == "refs/heads/master" && github.repository_owner == "theochem" }}
+    needs:
+      - build_wheels
+    runs-on: ubuntu-latest
+
+    environment:
+      name: TestPyPI
+      url: https://test.pypi.org/project/${{ env.PYPI_NAME }}
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: wheelhouse/
+      - name: Publish distribution to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
