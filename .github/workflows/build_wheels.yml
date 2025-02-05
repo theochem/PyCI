@@ -157,6 +157,13 @@ jobs:
             mv ./wheelhouse/*.whl $(find ./wheelhouse -type f -name '*.whl' | sed 's/13_0/14_0/')
           fi
 
+      - name: Test the build wheels
+        run: |
+          # Install the built wheels
+          pip install ./wheelhouse/*.whl
+          # Test the installed wheels
+          pytest pyci
+
       - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           path: ./wheelhouse/*.whl
