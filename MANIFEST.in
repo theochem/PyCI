@@ -5,3 +5,10 @@ include README.rst
 include doc/Makefile
 include doc/source/conf.py
 include doc/source/*.rst
+include pyci/pyci.so.0
+include pyci/pyci.so.0.6.1
+include pyci/_pyci.so
+include pyci/_pyci.so.0
+include pyci/_pyci.so.0.6.1
+
+
