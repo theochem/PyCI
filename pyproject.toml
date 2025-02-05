@@ -76,6 +76,7 @@ packages = [
     "pyci.fanci.test",
     "pyci.fanci.test.data",
 ]
+include_package_data = true
 
 [tool.setuptools.package-data]
 # Non-Python files to include in the package
@@ -90,9 +91,6 @@ packages = [
     "data/*.npy",     # NumPy data files
     "data/*.npz"      # Compressed NumPy data files
 ]
-
-[tool.setuptools]
-include_package_data = true
 
 [tool.cibuildwheel]
 # Switch to using build
