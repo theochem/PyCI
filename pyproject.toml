@@ -104,6 +104,9 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
 
 
 
+[tool.setuptools]
+include_package_data = true
+
 [tool.cibuildwheel]
 # Switch to using build
 build-frontend = "build"
