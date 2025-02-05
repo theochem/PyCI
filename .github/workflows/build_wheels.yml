@@ -160,6 +160,7 @@ jobs:
       - name: Test the build wheels
         run: |
           # Install the built wheels
+          pip install pytest
           pip install ./wheelhouse/*.whl
           # Test the installed wheels
           pytest pyci
