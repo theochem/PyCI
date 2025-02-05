@@ -91,6 +91,9 @@ packages = [
     "data/*.npz"      # Compressed NumPy data files
 ]
 
+[tool.setuptools]
+include_package_data = true
+
 [tool.cibuildwheel]
 # Switch to using build
 build-frontend = "build"
