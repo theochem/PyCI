@@ -1,15 +1,11 @@
 set -xe
 
-
-if grep -q "manylinux" /etc/os-release 2>/dev/null; then
-    echo "Inside a manylinux container"
-    yum install -y git make
-elif ldd --version 2>&1 | grep -q "musl"; then
+if ldd --version 2>&1 | grep -q "musl"; then
     echo "Inside a musllinux container"
     apk add git make
 else
-    echo "Unknown or non-standard Linux environment"
-    exit 1
+    echo "Inside a manylinux container"
+    yum install -y git make
 fi
 
 
