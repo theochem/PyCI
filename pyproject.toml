@@ -74,7 +74,6 @@ packages = [
     "pyci.fanci",
     "pyci.test",
     "pyci.fanci.test",
-    "pyci.fanci.test.data",
 ]
 
 [tool.setuptools.package-data]
@@ -86,6 +85,11 @@ packages = [
     "src/*.cpp"       # C++ source files
 ]
 "pyci.test" = [
+    "data/*.fcidump", # Test input files
+    "data/*.npy",     # NumPy data files
+    "data/*.npz"      # Compressed NumPy data files
+]
+"pyci.fanci.test" = [
     "data/*.fcidump", # Test input files
     "data/*.npy",     # NumPy data files
     "data/*.npz"      # Compressed NumPy data files
