@@ -47,7 +47,7 @@ jobs:
         # - [macos-14, macosx, arm64, accelerate, "14.0"]
         # - [windows-2019, win, AMD64, "", ""]
         # python[0] is the python version of the wheel and python[1] is the python version of the configuration
-        python: [["cp39", "3.9"],["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
+        python: [["cp39", "3.9"],["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
 
     env:
       # set 32-bit flag accessable in the build script
