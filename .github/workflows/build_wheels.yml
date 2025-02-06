@@ -38,8 +38,8 @@ jobs:
         buildplat:
         # Different architectures are in different jobs because the need of different compiler configurations
         - [ubuntu-22.04, manylinux, x86_64, "", ""]
-        # - [ubuntu-22.04, musllinux, x86_64, "", ""]
-        # - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
+        - [ubuntu-22.04, musllinux, x86_64, "", ""]
+        - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
         # - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
         # - [macos-13, macosx, x86_64, openblas, "10.13"]
         # - [macos-13, macosx, x86_64, accelerate, "14.0"]
@@ -47,8 +47,7 @@ jobs:
         # - [macos-14, macosx, arm64, accelerate, "14.0"]
         # - [windows-2019, win, AMD64, "", ""]
         # python[0] is the python version of the wheel and python[1] is the python version of the configuration
-        # python: [["cp39", "3.9"],["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
-        python: [["cp39", "3.9"]]
+        python: [["cp39", "3.9"],["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
 
     env:
       # set 32-bit flag accessable in the build script
