@@ -182,8 +182,10 @@ jobs:
       - name: Download all artifacts
         run: |
           for artifact in $(gh run list-artifacts --run-id ${{ github.run_id }}); do
-            gh run download-artifact "$artifact" -p ./dist
+            gh run download-artifact "$artifact" -p ./wheelhouse
           done
+          mkdir -p dist
+          mv wheelhouse/*.whl dist/
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         env:
