@@ -145,7 +145,7 @@ jobs:
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_PRERELEASE_PYTHONS: True
           CIBW_FREE_THREADED_SUPPORT: True
-          CIBW_OUTPUT_DIR: ./dist
+          CIBW_OUTPUT_DIR: ./wheelhouse
           CIBW_BUILD_VERBOSITY: 2
           CIBW_ENVIRONMENT: CFLAGS="-I/project/pyci/include" LDFLAGS="-L/project/pyci"
 
@@ -155,16 +155,15 @@ jobs:
           # macos-x86_64-accelerate wheels targeting macos-14 were renamed to 13
           # so they could be tested. Shift wheel name back to targeting 14.
           if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
-            mv ./dist/*.whl $(find ./dist -type f -name '*.whl' | sed 's/13_0/14_0/')
+            mv ./wheelhouse/*.whl $(find ./wheelhouse -type f -name '*.whl' | sed 's/13_0/14_0/')
           fi
 
       - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
-          path: dist/
+          path: wheelhouse
           name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
             ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
             ${{ matrix.buildplat[4] }}
-
 
   publish-to-pypi:
     name: Publish Python distribution to PyPI
