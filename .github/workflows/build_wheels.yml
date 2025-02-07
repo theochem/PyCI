@@ -183,6 +183,11 @@ jobs:
         with:
           path: dist
           merge-multiple: false
+      - name: check wheels
+        run: |
+          for wheel in dist/*.whl; do
+            head -c 4 wheelhouse/qc_PyCI-0.6.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl | hexdump -C
+          done
 
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
