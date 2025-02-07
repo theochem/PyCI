@@ -169,7 +169,7 @@ jobs:
         run: |
           if [ "$(ls -A wheelhouse)" ]; then
             python -m pip install --upgrade twine
-            python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+            python -m twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*
           else
             echo "No wheel files to upload"
           fi
