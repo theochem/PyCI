@@ -168,6 +168,7 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
           if [ "$(ls -A wheelhouse)" ]; then
+            python -m pip install --upgrade twine
             python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
           else
             echo "No wheel files to upload"
