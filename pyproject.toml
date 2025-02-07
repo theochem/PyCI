@@ -103,15 +103,6 @@ build-frontend = "build"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
 
 
-
-[tool.cibuildwheel]
-# Switch to using build
-build-frontend = "build"
-
-[tool.cibuildwheel.linux]
-before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh"
-
-
 # Version management configuration
 [tool.setuptools_scm]
 # Enable setuptools-scm for version management
