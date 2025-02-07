@@ -162,10 +162,22 @@ jobs:
           echo "Contents of wheelhouse:"
           ls -l wheelhouse/
 
-      - name: Upload to TestPyPI
+      - name: Upload to PyPI
         env:
           TWINE_USERNAME: "__token__"
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          if [ "$(ls -A wheelhouse)" ]; then
+            python -m pip install --upgrade twine
+            python -m twine upload --repository-url https://upload.pypi.org/legacy/ wheelhouse/*
+          else
+            echo "No wheel files to upload"
+          fi
+
+      - name: Upload to TestPyPI
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
         run: |
           if [ "$(ls -A wheelhouse)" ]; then
             python -m pip install --upgrade twine
