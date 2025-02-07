@@ -157,41 +157,19 @@ jobs:
             mv ./wheelhouse/*.whl $(find ./wheelhouse -type f -name '*.whl' | sed 's/13_0/14_0/')
           fi
 
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
-        with:
-          path: wheelhouse
-          name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
-            ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
-            ${{ matrix.buildplat[4] }}
-
-  publish-to-pypi:
-    name: Publish Python distribution to PyPI
-    # only publish to PyPI on tag pushes
-    if: startsWith(github.ref, 'refs/tags/')
-    needs:
-      - build_wheels
-    runs-on: ubuntu-latest
-    environment:
-      name: PyPI-Release
-      url: https://pypi.org/project/${{ env.PYPI_NAME }}
-    permissions:
-      id-token: write
-
-    steps:
-      - name: Download wheels
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: false
-
-      - name: check wheels
+      - name: Check wheelhouse contents
         run: |
-          for wheel in dist/*.whl; do
-            head -c 4 wheelhouse/qc_PyCI-0.6.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl | hexdump -C
-          done
+          echo "Contents of wheelhouse:"
+          ls -l wheelhouse/
 
-      - name: Publish distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Upload to TestPyPI
         env:
           TWINE_USERNAME: "__token__"
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          if [ "$(ls -A wheelhouse)" ]; then
+            python -m pip install --upgrade twine
+            python -m twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*
+          else
+            echo "No wheel files to upload"
+          fi
