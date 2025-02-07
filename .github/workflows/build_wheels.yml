@@ -157,27 +157,12 @@ jobs:
             mv ./wheelhouse/*.whl $(find ./wheelhouse -type f -name '*.whl' | sed 's/13_0/14_0/')
           fi
 
-      # - name: Test the build wheels
-      #   run: |
-      #     # Install the built wheels
-      #     pip install pytest
-      #     pip install ./wheelhouse/*.whl
-      #     # Test the installed wheels
-      #     pytest project/pyci
-
       - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
-          path: ./wheelhouse/*.whl
+          path: wheelhouse
           name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
             ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
             ${{ matrix.buildplat[4] }}
-      
-
-
-      # TODO: Test the build wheels
-      # - name: Test the build wheels
-
-      # TODO: Upload the build wheels to the release
 
   publish-to-pypi:
     name: Publish Python distribution to PyPI
@@ -193,79 +178,14 @@ jobs:
       id-token: write
 
     steps:
-      - name: Download all the dists
+      - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          name: python-package-distributions
-          path: ./wheelhouse/*.whl
+          path: dist
+          merge-multiple: true
+
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         env:
           TWINE_USERNAME: "__token__"
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-
-  github-release:
-    name: Sign the Python distribution with Sigstore and upload them to GitHub Release
-    needs:
-      - publish-to-pypi
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-      id-token: write
-
-    steps:
-      - name: Download all the dists
-        uses: actions/download-artifact@v4
-        with:
-          name: python-package-distributions
-          path: ./wheelhouse
-      - name: Sign the dists with Sigstore
-        uses: sigstore/gh-action-sigstore-python@v3.0.0
-        with:
-          inputs: >-
-            ./wheelhouse/*.whl
-
-      - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create
-          "${{ github.ref_name }}"
-          --repo "${{ github.repository }}"
-          --notes ""
-      - name: Upload artifact signatures to GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: >-
-          gh release upload
-          "${{ github.ref_name }}" wheelhouse/**
-          --repo "${{ github.repository }}"
-
-  publish-to-testpypi:
-    name: Publish Python distribution to TestPyPI
-    # if: ${{ github.ref == "refs/heads/master" && github.repository_owner == "theochem" }}
-    needs:
-      - build_wheels
-    runs-on: ubuntu-latest
-
-    environment:
-      name: TestPyPI
-      url: https://test.pypi.org/project/${{ env.PYPI_NAME }}
-
-    permissions:
-      id-token: write
-
-    steps:
-      - name: Download all the dists
-        uses: actions/download-artifact@v4
-        with:
-          name: python-package-distributions
-          path: wheelhouse/
-      - name: Publish distribution to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
