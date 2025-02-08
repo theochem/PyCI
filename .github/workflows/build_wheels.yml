@@ -162,26 +162,64 @@ jobs:
           echo "Contents of wheelhouse:"
           ls -l wheelhouse/
 
-      - name: Upload to PyPI
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          if [ "$(ls -A wheelhouse)" ]; then
-            python -m pip install --upgrade twine
-            python -m twine upload --repository-url https://upload.pypi.org/legacy/ wheelhouse/*
-          else
-            echo "No wheel files to upload"
-          fi
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          path: ./wheelhouse/*.whl
+          name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+            ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
+            ${{ matrix.buildplat[4] }}
 
-      - name: Upload to TestPyPI
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+  publish-to-pypi:
+    name: Publish Python distribution to PyPI
+    # only publish to PyPI on tag pushes
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build_wheels
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi-release
+      url: https://pypi.org/project/${{ env.PYPI_NAME }}
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true  # Merge all artifacts into the dist/ directory
+
+      - name: Check dist contents
         run: |
-          if [ "$(ls -A wheelhouse)" ]; then
-            python -m pip install --upgrade twine
-            python -m twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*
-          else
-            echo "No wheel files to upload"
-          fi
+          echo "Contents of dist:"
+          ls -l dist/
+
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: false
+          verbose: true
+
+      # - name: Upload to PyPI
+      #   env:
+      #     TWINE_USERNAME: "__token__"
+      #     TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+      #   run: |
+      #     if [ "$(ls -A wheelhouse)" ]; then
+      #       python -m pip install --upgrade twine
+      #       python -m twine upload --repository-url https://upload.pypi.org/legacy/ wheelhouse/*
+      #     else
+      #       echo "No wheel files to upload"
+      #     fi
+
+      # - name: Upload to TestPyPI
+      #   env:
+      #     TWINE_USERNAME: "__token__"
+      #     TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+      #   run: |
+      #     if [ "$(ls -A wheelhouse)" ]; then
+      #       python -m pip install --upgrade twine
+      #       python -m twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*
+      #     else
+      #       echo "No wheel files to upload"
+      #    fi
