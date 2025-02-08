@@ -177,7 +177,7 @@ jobs:
       - build_wheels
     runs-on: ubuntu-latest
     environment:
-      name: PyPI-Release
+      name: pypi-release
       url: https://pypi.org/project/${{ env.PYPI_NAME }}
     permissions:
       id-token: write
