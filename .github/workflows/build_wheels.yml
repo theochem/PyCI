@@ -187,11 +187,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist/
+          merge-multiple: true  # Merge all artifacts into the dist/ directory
+
+      - name: Check dist contents
+        run: |
+          echo "Contents of dist:"
+          ls -l dist/
+
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        with:
+          verbose: true
 
       # - name: Upload to PyPI
       #   env:
