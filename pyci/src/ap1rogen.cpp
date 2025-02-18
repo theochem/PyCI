@@ -1060,7 +1060,7 @@ double AP1roGeneralizedSenoObjective::product_amplitudes_multi(
         for (const auto& exc_inds : inds_multi) {
             // std::cout << "Processing exc_inds\n";
         
-            std::size_t exc_order = exc_inds.first;
+            // std::size_t exc_order = exc_inds.first;
             const std::vector<std::vector<int>> inds_sign = exc_inds.second;
             
             // std::cout << "Exc_order: " << exc_order << std::endl;
@@ -1181,6 +1181,71 @@ double AP1roGeneralizedSenoObjective::product_amplitudes_multi(
     // return output;
 }
 
+std::vector<double> AP1roGeneralizedSenoObjective::product_ampli_multi_deriv(
+    const std::unordered_map<int, std::vector<std::vector<int>>>& indices_multi,
+    bool deriv, const double* params){
+    std::vector<double> output(nparam, 0.0);
+    if (!deriv) {
+        throw std::invalid_argument("Deriv must be enabled for this function.");
+    }
+
+    for (const auto& indices_sign : indices_multi) {
+        const auto& indices = indices_sign.second;
+        std::vector<int> signs(indices.size());
+        std::transform(indices.begin(), indices.end(), signs.begin(), [](const std::vector<int>& row) {
+            return row.back() > 1 ? -1 : row.back();
+        });
+
+        std::set<int> unique_indices;
+        for (const auto& row : indices) {
+            unique_indices.insert(row.begin(), row.end() - 1);
+        }
+
+        for (int ind : unique_indices) {
+            std::vector<bool> bool_indices(indices.size());
+            std::transform(indices.begin(), indices.end(), bool_indices.begin(), [ind](const std::vector<int>& row) {
+                return std::find(row.begin(), row.end() - 1, ind) != row.end() - 1;
+            });
+
+            std::vector<bool> row_inds(indices.size());
+            std::transform(bool_indices.begin(), bool_indices.end(), row_inds.begin(), [](bool b) { return b; });
+
+            std::vector<std::vector<double>> selected_params(indices.size());
+            for (std::size_t i = 0; i < indices.size(); ++i) {
+                selected_params[i].resize(indices[i].size() - 1);
+                for (std::size_t j = 0; j < indices[i].size() - 1; ++j) {
+                    selected_params[i][j] = params[indices[i][j]];
+                }
+            }
+
+            std::vector<double> old_params(selected_params.size());
+            for (std::size_t i = 0; i < selected_params.size(); ++i) {
+                if (bool_indices[i]) {
+                    old_params[i] = selected_params[i][0];
+                    selected_params[i][0] = 1.0;
+                }
+            }
+
+            for (std::size_t i = 0; i < row_inds.size(); ++i) {
+                if (row_inds[i]) {
+                    double prod = 1.0;
+                    for (std::size_t j = 0; j < selected_params[i].size(); ++j) {
+                        prod *= selected_params[i][j];
+                    }
+                    output[ind] += prod * signs[i];
+                }
+            }
+
+            for (std::size_t i = 0; i < selected_params.size(); ++i) {
+                if (bool_indices[i]) {
+                    selected_params[i][0] = old_params[i];
+                }
+            }
+        }
+    }
+    return output;
+}
+
 int AP1roGeneralizedSenoObjective::sign_swap(AlignedVector<ulong> sd, long pos_current, long pos_future){
     // Return the signature of applying annihilators then creators to the Slater determinant.
     if (pos_current < 0 || pos_future < 0) {
@@ -1275,6 +1340,8 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double* x, d
         // return;
     }
 
+    det_ac_inds.resize(nconn);
+
     for (std::size_t idet = 0; idet != ndet; ++idet) {
     //  std::cout << "\n-----Processing idet = " << idet << "\n";
         y[idet] = 0.0;
@@ -1313,6 +1380,20 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double* x, d
         std::vector<std::size_t> holes;
         std::vector<std::size_t> particles;
 
+        // Container to save annhiliation and creation indices, and sign
+        DetExcParamIndx ac_info;
+        ac_info.det.resize(nword);
+        ac_info.pair_inds.resize(1); // for annhilation indices
+        ac_info.single_inds.resize(1); // for creation indices
+
+        // Default values for indices
+        ac_info.pair_inds[0] = -1;
+        ac_info.single_inds[0] = -1;
+        ac_info.sign = 1;
+
+        // Storing current det
+        std::memcpy(&ac_info.det[0], &det[0], sizeof(ulong) * nword);
+
         // Collect holes and particles
         for (std::size_t iword = 0; iword != nword; ++iword)
         {
@@ -1336,6 +1417,7 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double* x, d
                 ++nexc;
             }
         }
+
 
         // Sen-o processing
         // Check  if annhiliation and creation operators are in the exop_combinations
@@ -1493,24 +1575,46 @@ void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double* x, d
                 amplitudes = product_amplitudes_multi(inds_multi, false, x);
                 // double amplitudes = std::get<double>(amplitudes_variant);
                 int sign = sign_excite(rdet, holes, particles);
+                ac_info.sign = sign;
                 y[idet] = sign * amplitudes;
 
                 // std::cout << "Amplitudes: " ;
                 std::cout << amplitudes << ",," << sign << std::endl;
                 // std::cout << "Sign: " <<;
-                 
+                
+
+
             } else{
                 std::unordered_map<int, std::vector<std::vector<int>>> inds_multi = exop_combs[key];
                 auto amplitudes = product_amplitudes_multi(inds_multi, false, x);
                 int sign = sign_excite(rdet, holes, particles);
+                ac_info.sign = sign;
                 std::cout << amplitudes << ",," << sign << std::endl;
                 y[idet] = sign * amplitudes;
             }
 
+            // Store the annihilation and creation indices and sign
+            if (holes.size() > 0 && particles.size() > 0) {
+                // std::cout << "Storing annihilation and creation indices\n";
+                std::vector<long> holes_long(holes.begin(), holes.end());
+                std::vector<long> particles_long(particles.begin(), particles.end());
+                ac_info.pair_inds.clear();
+                ac_info.single_inds.clear();
+                ac_info.pair_inds = holes_long;
+                ac_info.single_inds = particles_long;
+                
+                // Ensure det_ac_inds has enough space
+                ensure_struct_size(det_ac_inds, idet+1);
+                det_ac_inds[idet] = ac_info;
+                // std::cout << "storing done\n";
+            }
+
         } else if (are_same) {
             y[idet] = 1.0;
+            det_ac_inds[idet] = ac_info;
         } else {
             y[idet] = 0.0;
+            det_ac_inds[idet] = ac_info;
         }
         
         
@@ -1874,6 +1978,117 @@ double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>
 
 }
 
+void AP1roGeneralizedSenoObjective::d_overlap(std::size_t ndet, const double* x, double* y) {
+    std::cout << "-------Computing Derivative\n nbasis: " << nbasis << ", ndet: " << ndet << "\n" ;
+    for (std::size_t idet = 0; idet< ndet; idet++) {
+        // Ensure we have annhiliation and creation indices for this determinant
+        if (idet < det_ac_inds.size()) {
+            std::cout << "Processing idet: " << idet << std::endl;
+            const DetExcParamIndx ac_info = det_ac_inds[idet];
+
+            std::cout << "pair_inds: ";
+            for (long i : ac_info.pair_inds) {
+                std::cout << i << " ";
+            }
+            std::cout << std::endl;
+            std::cout << "single_inds: ";
+            for (long i : ac_info.single_inds) {
+                std::cout << i << " ";
+            }
+            std::cout << std::endl;
+
+            // if reference determinant, set the derivative to zero
+            if (ac_info.pair_inds[0] == -1 && ac_info.single_inds[0] == -1) {
+                std::cout << "Reference determinant\n";
+                for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
+                    y[idet * nparam + iparam] = 0.0;
+                }
+                continue;
+            } else {
+                // std::vector<long> a_inds = ac_info.pair_inds; //annihilation indices
+                // std::vector<long> c_inds = ac_info.single_inds; //creation indices
+                // std::vector<long> combined_inds = a_inds;
+                std::vector<std::size_t> a_inds(ac_info.pair_inds.begin(), ac_info.pair_inds.end());
+                std::vector<std::size_t> c_inds(ac_info.single_inds.begin(), ac_info.single_inds.end());
+                std::pair<std::vector<std::size_t>, std::vector<std::size_t>> key = std::make_pair(a_inds, c_inds);
+
+                // combined_inds.insert(combined_inds.end(), c_inds.begin(), c_inds.end());
+                if (exop_combs.find(key) == exop_combs.end()) {
+                    generate_possible_exops(a_inds, c_inds);
+                }
+
+                auto& inds_multi = exop_combs[key];
+                AlignedVector<ulong> det = ac_info.det;
+                const int sign = ac_info.sign;
+                std::vector<long> occs(nocc);
+                fill_occs(nword, det.data(), &occs[0]);
+
+                for (auto& exc_order : inds_multi) {
+                    auto& indices_sign = exc_order.second;
+                    std::vector<std::vector<int>> selected_rows;
+
+                    std::cout << "exc_order: " << exc_order.first << std::endl;
+
+                    for (std::size_t row_ind = 0; row_ind < indices_sign.size(); ++row_ind) {
+                        const auto& row  = indices_sign[row_ind];
+                        std::set<int> trash;
+                        bool skip_row = false;
+
+                        for (const auto& exop_index : row) {
+                            const auto& exop = ind_exops[exop_index];
+                            if (exop.size() == 2) {
+                                if (trash.find(exop[0]) != trash.end()) {
+                                    skip_row = true;
+                                    break;
+                                }
+                                if (exop[0] < static_cast<int>(nbasis / 2)) {
+                                    if (std::find(occs.begin(),  occs.end(), exop[0] + static_cast<int>(nbasis / 2)) == occs.end()) {
+                                        skip_row = true;
+                                        break;
+                                    } else {
+                                        trash.insert(exop[0]);
+                                        trash.insert(exop[0] + static_cast<int>(nbasis / 2));
+                                    }
+                                } else {
+                                    if (std::find(occs.begin(), occs.end(), exop[0] - static_cast<int>(nbasis / 2)) == occs.end()) {
+                                        skip_row = true;
+                                        break;
+                                    } else {
+                                        trash.insert(exop[0]);
+                                        trash.insert(exop[0] - static_cast<int>(nbasis / 2));
+                                    }
+                                }
+                            } else {
+                                for (std::size_t j = 0; j < exop.size() / 2; ++j) {
+                                    if (trash.find(exop[j]) != trash.end()) {
+                                        skip_row = true;
+                                        break;
+                                    } else {
+                                        trash.insert(exop[j]);
+                                    }
+                                }
+                                if (skip_row) break;
+                            }
+                        }
+                        if (!skip_row) {
+                            selected_rows.push_back(row);
+                        }
+                    }
+                    indices_sign = selected_rows;
+                    inds_multi[exc_order.first] = indices_sign;
+                }
+                std::vector<double> damplitudes = product_ampli_multi_deriv(inds_multi, true, x);
+                for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
+                    y[idet * nparam + iparam] = sign * damplitudes[iparam];
+                }
+
+                
+
+            }
+        }
+    }
+}
+
 
 
 // void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
@@ -1934,63 +2149,63 @@ double AP1roGeneralizedSenoObjective::compute_derivative(const std::vector<long>
 // }
 
 
-void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x, double *y){
+// void AP1roGeneralizedSenoObjective::d_overlap(const size_t ndet, const double *x, double *y){
 
-    for (std::size_t idet = 0; idet != ndet; ++idet)   {
-        // Ensure we have the excitation parameters for this determinant
-        if (idet < det_exc_param_indx.size()) {
-            const DetExcParamIndx exc_info = det_exc_param_indx[idet];
-            double pair_permanent = 1.0;
-            double single_permanent = 1.0;
-            if (idet < s_permanent.size() && idet < p_permanent.size()) {
-                pair_permanent = p_permanent[idet];
-                single_permanent = s_permanent[idet];
-            }
-            // else {
-            //     if (exc_info.pair_inds[0] != -1) {
-            //         if (!permanent_calculation(exc_info.pair_inds, x, pair_permanent)) {
-            //             std::cerr << "Error calculating pair_permanent for idet" << idet << std::endl;
-            //         }
-            //     }
+//     for (std::size_t idet = 0; idet != ndet; ++idet)   {
+//         // Ensure we have the excitation parameters for this determinant
+//         if (idet < det_exc_param_indx.size()) {
+//             const DetExcParamIndx exc_info = det_exc_param_indx[idet];
+//             double pair_permanent = 1.0;
+//             double single_permanent = 1.0;
+//             if (idet < s_permanent.size() && idet < p_permanent.size()) {
+//                 pair_permanent = p_permanent[idet];
+//                 single_permanent = s_permanent[idet];
+//             }
+//             // else {
+//             //     if (exc_info.pair_inds[0] != -1) {
+//             //         if (!permanent_calculation(exc_info.pair_inds, x, pair_permanent)) {
+//             //             std::cerr << "Error calculating pair_permanent for idet" << idet << std::endl;
+//             //         }
+//             //     }
 
-            //     if (exc_info.single_inds[0] != -1) {
-            //         if (!permanent_calculation(exc_info.single_inds, x, single_permanent)) {
-            //             std::cerr << "Error calculating single_permanent for idet " << idet << std::endl;
-            //         }
-            //     }
+//             //     if (exc_info.single_inds[0] != -1) {
+//             //         if (!permanent_calculation(exc_info.single_inds, x, single_permanent)) {
+//             //             std::cerr << "Error calculating single_permanent for idet " << idet << std::endl;
+//             //         }
+//             //     }
                 
-            // }
+//             // }
             
-            for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
-                double dpair = 0.0;
-                double dsingle = 0.0;
-                if (exc_info.single_inds[0] != -1) {
-                    dsingle = compute_derivative(exc_info.single_inds, x, iparam);
-                }
+//             for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
+//                 double dpair = 0.0;
+//                 double dsingle = 0.0;
+//                 if (exc_info.single_inds[0] != -1) {
+//                     dsingle = compute_derivative(exc_info.single_inds, x, iparam);
+//                 }
                 
-                if (exc_info.pair_inds[0] != -1) {
-                    dpair = compute_derivative(exc_info.pair_inds, x, iparam);
-                }
-                // std::cout << "\nidet: " << idet << ", det: " << exc_info.det[0] << std::endl;
-                // std::cout << "single_inds: " << exc_info.single_inds[0] << ", pair_inds: " << exc_info.pair_inds[0] << std::endl;
-                // std::cout << "single_permanent: " << single_permanent << ", pair_permanent: " << pair_permanent << std::endl;
-                // std::cout <<  "wrt iparam: " << iparam << ", dpair: " << dpair << ", dsingle: " << dsingle << std::endl;
-                // std::cout << "idet: " << idet << " deriv: " << dpair * single_permanent + dsingle * pair_permanent << std::endl;
-                y[ndet * iparam + idet] = dpair * single_permanent + dsingle * pair_permanent;
-            }
-        }
-        else {
-            for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
-                y[ndet * iparam + idet] = 0.0;
-            }
-        }
-    }
-}
+//                 if (exc_info.pair_inds[0] != -1) {
+//                     dpair = compute_derivative(exc_info.pair_inds, x, iparam);
+//                 }
+//                 // std::cout << "\nidet: " << idet << ", det: " << exc_info.det[0] << std::endl;
+//                 // std::cout << "single_inds: " << exc_info.single_inds[0] << ", pair_inds: " << exc_info.pair_inds[0] << std::endl;
+//                 // std::cout << "single_permanent: " << single_permanent << ", pair_permanent: " << pair_permanent << std::endl;
+//                 // std::cout <<  "wrt iparam: " << iparam << ", dpair: " << dpair << ", dsingle: " << dsingle << std::endl;
+//                 // std::cout << "idet: " << idet << " deriv: " << dpair * single_permanent + dsingle * pair_permanent << std::endl;
+//                 y[ndet * iparam + idet] = dpair * single_permanent + dsingle * pair_permanent;
+//             }
+//         }
+//         else {
+//             for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
+//                 y[ndet * iparam + idet] = 0.0;
+//             }
+//         }
+//     }
+// }
 
 
 } // namespace pyci
 
-
+//---------------------------ROUGH WORK--------------------------------------------
 // std::vector<std::vector<std::size_t>> AP1roGeneralizedSenoObjective::int_partition_dp(const std::vector<std::size_t>& coins, std::size_t total){
 //     // Coin change problem
 //     std::vector<std::vector<std::vector<std::size_t>>> dp(total +1);
