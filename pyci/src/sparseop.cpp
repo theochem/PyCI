@@ -535,8 +535,10 @@ void SparseOp::add_row(const SQuantOp &ham, const GenCIWfn &wfn, const long idet
 
 void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long idet, ulong *det_up,
                        long *occs, long *virs) {
-    long n = wfn.nbasis / 2;
-    long n1 = wfn.nbasis; 
+    long n = wfn.nbasis / 2; // nspatial
+    long n1 = wfn.nbasis; // nspin
+
+    // std::cout << "n: " << n << ", n1: " << n1 << std::endl;
     long n2 = n1 * n1;
     long n3 = n1 * n2;
    
@@ -554,6 +556,9 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
     long nvir_up = n - nocc_up;
     long nvir_dn = n - nocc_dn;
     long nvir = nvir_up + nvir_dn;
+    
+    // std::cout << "nocc_up: " << nocc_up << ", nocc_dn: " << nocc_dn << ", nvir_up: " << nvir_up << ", nvir_dn: " << nvir_dn << std::endl;
+
     long *virs_up = virs;
     long *virs_dn = nullptr;
     for (long i = 0; i < nvir; ++i) {
@@ -613,7 +618,7 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
             }
             
             // loop over spin-up occupied indices
-            for (k = 0; k < nocc_up; ++k) {
+            for (k = i+1; k < nocc_up; ++k) {
                 kk = occs_up[k];
                 koffset = ioffset + n2 * kk;
                 // second excitation: alpha -> alpha
@@ -641,7 +646,6 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                 // second excitation: beta -> beta
                 for (l = 0; l < nvir_dn; ++l) {
                     ll = virs_dn[l];
-                    kk = occs_dn[k];
                     excite_det(kk, ll, det_up);
                     jdet = wfn.index_det(det_up);
                     // check if the excited determinant is in wfn
@@ -652,10 +656,8 @@ void SparseOp::add_row(const SQuantOp &ham, const NonSingletCI &wfn, const long 
                         append<long>(indices, jdet);
                     }
                     excite_det(ll, kk, det_up); 
-                    excite_det(ll, kk, det_up); 
                 }
-            }
-            
+            }            
             excite_det(jj, ii, det_up);
         }
     }
