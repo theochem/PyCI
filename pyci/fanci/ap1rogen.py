@@ -67,11 +67,11 @@ class AP1roGeneralizedSeno(FanCI):
             # wfn.add_excited_dets(1) # add pair excited determinants
             wfn = pyci.fullci_wfn(ham.nbasis, nocc, nocc)
             # exc=0 ensures addint HF determinannt first
-            pyci.add_excitations(wfn,0,1,2,3,4)
+            pyci.add_excitations(wfn,1,2,3,4)
             print("Printing FCI wfn dets: ")
-            for sd in (wfn.to_occ_array()):
+            for i, sd in enumerate(wfn.to_occ_array()):
                 sd = np.array(sd)
-                print(np.concatenate((sd[0],sd[1]+ham.nbasis)))
+                print(wfn.to_det_array()[i],np.concatenate((sd[0],sd[1]+ham.nbasis)))
             
             wfn = pyci.nonsingletci_wfn(wfn)
                    
@@ -83,11 +83,13 @@ class AP1roGeneralizedSeno(FanCI):
 
         # Initialize base class
         FanCI.__init__(self, ham, wfn, nproj, nparam, **kwargs)
+        print("Nonsingletci nbasis: ",wfn.nbasis)
         print("\n\nPrinting nonsingletci wfn dets: ")
         for sd in (self._sspace):
             print(sd)
             # sd = np.array(sd)
             # print(np.concatenate((sd[0],sd[1]+ham.nbasis)))
+        print("Done printing\n\n")
 
         # Assign reference occupations
         #ref_occs_up = np.arange(nocc_up, dtype=pyci.c_long)
