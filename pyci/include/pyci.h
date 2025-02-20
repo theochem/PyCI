@@ -28,6 +28,7 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <variant>
 
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE long
 #include <Eigen/Core>
@@ -68,6 +69,30 @@
 #ifndef PYCI_CHUNKSIZE_MIN
 #define PYCI_CHUNKSIZE_MIN 1024
 #endif
+
+// Specialize std::hash for std::vector<int>
+namespace std {
+    template <>
+    struct hash<std::vector<int>> {
+        int operator()(const std::vector<int>& vec) const {
+            int seed = vec.size();
+            for (auto& i : vec) {
+                seed ^= i + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            }
+            return seed;
+        }
+    };
+
+    template <>
+    struct hash<std::pair<std::vector<int>, std::vector<int>>> {
+        int operator()(const std::pair<std::vector<int>, std::vector<int>>& p) const {
+            int seed = hash<std::vector<int>>()(p.first);
+            seed ^= hash<std::vector<int>>()(p.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            return seed;
+        }
+    };
+}
+
 
 namespace pyci {
 
@@ -895,17 +920,88 @@ public:
     using Objective<NonSingletCI>::ovlp;   // Overlap vector
     using Objective<NonSingletCI>::d_ovlp; // Overlap gradient matrix
     
+    using Partition = std::vector<int>; // Type alias for a partition
+    using CacheKey = std::pair<int, int>; // Key type for cache
+    // Custom hash function for CacheKey
+    struct CacheKeyHash {
+        std::size_t operator()(const CacheKey& key) const {
+            return std::hash<int>()(key.first) ^ (std::hash<int>()(key.second) << 1);
+        }
+    };
+    // Define the cache type
+    using Cache = std::unordered_map<CacheKey, std::vector<Partition>, CacheKeyHash>;
 
-    // double default_value;
+
+    std::size_t nbasis;
+    std::size_t nocc;
+    std::size_t ndet;
+    std::size_t nword;
+
+
+    struct HashVector {
+        long operator()(const std::vector<long>& v) const {
+            long hash = 0;
+            for (long i : v) {
+                hash ^= std::hash<long>()(i) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+            }
+            return hash;
+        }
+    };
+
+    // Custom equality function for std::vector<int>
+    struct VectorEqual {
+        bool operator()(const std::vector<long>& v1, const std::vector<long>& v2) const {
+            return v1 == v2;
+        }
+    };
+    
+
+
+    // std::unordered_map<std::vector<int>, int> exops;
+    std::unordered_map<std::vector<long>, int, HashVector, VectorEqual> exops;
+    std::vector<std::vector<long>> ind_exops;
+    std::vector<int> ranks;
     std::vector<DetExcParamIndx> det_exc_param_indx; // Det and excitation details
+    std::vector<DetExcParamIndx> det_ac_inds; // Det, annhilation and creation indices, sign
     std::vector<std::size_t> nexc_list;
+    const NonSingletCI& wfn_; // Member variable to store the wavefunction
+    
+    
+    
+    // struct pair_hash {
+    //     template <class T1, class T2>
+    //     std::size_t operator()(const std::pair<T1, T2>& p) const {
+    //         auto hash1 = std::hash<T1>{}(p.first);
+    //         auto hash2 = std::hash<T2>{}(p.second);
+    //         return hash1 ^ (hash2 << 1); // Combine the two hash values
+    //     }
+    // };
+    // Custom hash function for std::vector<long unsigned int>
+    struct vector_hash {
+        std::size_t operator()(const std::vector<std::size_t>& v) const {
+            std::size_t hash = 0;
+            for (auto& i : v) {
+                hash ^= std::hash<std::size_t>{}(i) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+            }
+            return hash;
+        }
+    };
+    // Custom hash function for std::pair<std::vector<long unsigned int>, std::vector<long unsigned int>>
+    struct pair_hash {
+        std::size_t operator()(const std::pair<std::vector<std::size_t>, std::vector<std::size_t>>& p) const {
+            auto hash1 = vector_hash{}(p.first);
+            auto hash2 = vector_hash{}(p.second);
+            return hash1 ^ (hash2 << 1); // Combine the two hash values
+        }
+    };
+    
+
+
+    std::unordered_map<std::pair<std::vector<std::size_t>, std::vector<std::size_t>>, std::unordered_map<int, std::vector<std::vector<int>>>, pair_hash> exop_combs;
+
     std::vector<double> s_permanent;
     std::vector<double> p_permanent;
     
-public:
-    // Keep in mind the {DOCI,FullCI,GenCI}Wfn class names in
-    // the arguments below depend on the template specialization
-
     // C++ constructor
     AP1roGeneralizedSenoObjective(const SparseOp &, const NonSingletCI &,
                          const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
@@ -922,6 +1018,9 @@ public:
     // C++ move constructor
     AP1roGeneralizedSenoObjective(AP1roGeneralizedSenoObjective &&) noexcept;
 
+    // Function to set attributes from wfn
+    void set_attributes_from_wfn(const NonSingletCI & );
+
     // Generate combinations of pairs and singles
     template <typename T>
     void generate_combinations(const std::vector<T>&, int , std::vector<std::vector<T>>&, long );
@@ -934,6 +1033,17 @@ public:
                             const std::vector<std::size_t>& , int , std::vector<long>& ,
                             std::vector<long>&, long, const NonSingletCI &);
 
+    
+    // std::variant<double, std::vector<double>>  
+    double product_amplitudes_multi(
+            const std::unordered_map<int, std::vector<std::vector<int>>>&,
+            bool, const double*);
+
+        
+    std::vector<double> product_ampli_multi_deriv(
+        const std::unordered_map<int, std::vector<std::vector<int>>>& ,
+        bool , const double* );
+    
     // Return the signature of applying annihilators then creators to the Slater determinant.
     int sign_swap(AlignedVector<ulong> , long, long);
 
@@ -955,6 +1065,52 @@ public:
 
     // Overlap gradient function
     virtual void d_overlap(const size_t, const double*, double*);
+
+    // New methods
+    void printPartitions(const std::vector<Partition>&);
+    
+    std::vector<Partition> findPartitions(const std::vector<int>&, int, int, Cache&);
+    
+    std::vector<Partition> intPartitionRecursive(const std::vector<int>&, int, int);
+    
+    // template <typename T>
+    void generateCombinations(const std::vector<std::size_t>, std::vector<int>::size_type, int, std::vector<int>&, std::vector<std::vector<int>>&);
+    
+    // std::unordered_map<std::vector<int>, int> assign_exops(const std::vector<int>&, int); //, const std::vector<std::vector<std::size_t>>*);
+    std::unordered_map<std::vector<long>, int, HashVector, VectorEqual> assign_exops(); //const long, const long, const long);
+
+    void assign_and_sort_exops(const std::vector<int>& , int); //, const std::vector<std::vector<std::size_t>>* );
+    
+    // void helper_generate_partitions(const std::vector<std::size_t>, std::vector<std::pair<int, int>>&, std::vector<std::pair<int, int>>::size_type, std::vector<std::vector<int>>&, std::vector<std::vector<std::vector<int>>>&);
+    void get_unordered_partition(std::vector<int>&, std::vector<std::pair<int, int>>& , 
+                                  std::vector<std::vector<int>>& , int , 
+                                  std::vector<std::vector<std::vector<int>>>& );     
+
+    std::vector<std::vector<std::vector<int>>> generate_unordered_partitions(std::vector<int>, std::vector<std::pair<int, int>>);
+    
+    std::unordered_map<int, std::vector<std::vector<int>>> group_by_size(const std::vector<std::vector<int>>&);
+    
+    template <typename T>
+    std::vector<std::vector<T>>  generate_perms(const std::vector<T> & vec) ;
+    // std::vector<std::vector<T>> generate_perms(const std::vector<T>&, std::vector<T>&, std::vector<bool>&);
+    
+    std::vector<std::pair<std::vector<int>, std::vector<int>>> combine_pairs(const std::vector<std::vector<int>>&, const std::vector<std::vector<int>>&);    
+    
+    int sign_perm(std::vector<std::size_t>, const std::vector<std::size_t>, bool);
+    
+    template <typename T>
+    T choose_dtype(size_t);
+
+    template <typename T>
+    std::vector<std::vector<std::pair<std::vector<T>, std::vector<T>>>> cartesian_product(const std::vector<std::pair<std::vector<std::vector<T>>, std::vector<std::vector<T>>>>& );
+    // std::vector<std::vector<T>> cartesian_product(const std::vector<std::vector<T>>& );
+    
+    void generate_possible_exops(const std::vector<std::size_t>&, const std::vector<std::size_t>&); 
+    //, std::vector<int>&, std::unordered_map<std::pair<std::vector<int>, std::vector<int>>, std::vector<uint64_t>>&);//std::vector<std::vector<uint64_t>>&);
+    
+    
 };
 
 } // namespace pyci
+
+
