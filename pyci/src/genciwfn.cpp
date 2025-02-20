@@ -26,20 +26,55 @@ GenCIWfn::GenCIWfn(GenCIWfn &&wfn) noexcept : OneSpinWfn(wfn) {
 GenCIWfn::GenCIWfn(const DOCIWfn &wfn) : GenCIWfn(FullCIWfn(wfn)) {
 }
 
+// GenCIWfn::GenCIWfn(const FullCIWfn &wfn) : OneSpinWfn(wfn.nbasis * 2, wfn.nocc, 0) {
 GenCIWfn::GenCIWfn(const FullCIWfn &wfn) : OneSpinWfn(wfn.nbasis * 2, wfn.nocc, 0) {
     ndet = wfn.ndet;
-    dets.resize(wfn.ndet * wfn.nword2);
+    dets.resize(wfn.ndet * wfn.nword);
     AlignedVector<long> occs(wfn.nocc);
+    std::cout << "Inside GenCIWfn constructor" << std::endl;
+    std::cout << "wfn.nbasis: " << wfn.nbasis << ", wfn.nocc: " << wfn.nocc << std::endl;
+    std::cout << "wfn.nocc: " << wfn.nocc << ", wfn.nocc_up, _dn: " << wfn.nocc_up << ", " << wfn.nocc_dn  << std::endl;
+    std::cout << "wfn.ndet: " << wfn.ndet << std::endl;
     long *occs_up = &occs[0], *occs_dn = &occs[wfn.nocc_up];
     long j, k = 0;
-    for (long i = 0; i < wfn.ndet; ++i) {
+
+    std::cout << "occs: " ;
+    for (int i = 0; i < wfn.nocc; i++) {
+        std::cout << occs[i] << " ";
+    }
+    std::cout << std::endl;
+    
+    for (long i = 0; i < wfn.ndet; i += 1) {
         fill_occs(wfn.nword, wfn.det_ptr(i), occs_up);
-        fill_occs(wfn.nword, wfn.det_ptr(i), occs_dn);
+        fill_occs(wfn.nword, wfn.det_ptr(i) + wfn.nword, occs_dn);
+
+        std::cout << "\nwfn.det_ptr(" << i << "): " << wfn.det_ptr(i)[0] << " " << wfn.det_ptr(i)[1] << std::endl;
+        std::cout << "occs_up: " ;
+        for (int l = 0; l < wfn.nocc_up; l++) {
+            std::cout << occs_up[l] << " ";
+        }
+        std::cout << std::endl;
+        std::cout << "occs_dn: " ;
+        for (int l = 0; l < wfn.nocc_dn; l++) {
+            std::cout << occs_dn[l] << " ";
+        }
+        std::cout << std::endl;
+
         for (j = 0; j < wfn.nocc_dn; ++j)
             occs_dn[j] += wfn.nbasis;
+
+        std::cout << "updated occs_dn: ";
+        for(int l = 0; l < wfn.nocc_dn; l++) {
+            std::cout << occs_dn[l] << " ";
+        }
+        std::cout << std::endl;
+
+
         fill_det(wfn.nocc, occs_up, &dets[k]);
         dict[rank_det(&dets[k])] = i;
-        k += wfn.nword;       
+        std::cout << "det[" << k << "]: " << dets[k] << std::endl;
+        k += wfn.nword;
+           
     }
 }
 
