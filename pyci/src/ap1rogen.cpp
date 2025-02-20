@@ -1983,33 +1983,24 @@ void AP1roGeneralizedSenoObjective::d_overlap(std::size_t ndet, const double* x,
     for (std::size_t idet = 0; idet< ndet; idet++) {
         // Ensure we have annhiliation and creation indices for this determinant
         if (idet < det_ac_inds.size()) {
-            std::cout << "Processing idet: " << idet << std::endl;
+            std::cout << "\n**Processing idet: " << idet ;
             const DetExcParamIndx ac_info = det_ac_inds[idet];
-
-            std::cout << "pair_inds: ";
-            for (long i : ac_info.pair_inds) {
-                std::cout << i << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "single_inds: ";
-            for (long i : ac_info.single_inds) {
-                std::cout << i << " ";
-            }
+            
+            std::cout << " " ;
+            for (std::size_t k = 0; k < nword; k++) {
+                std::cout << ac_info.det[k]; }
             std::cout << std::endl;
 
             // if reference determinant, set the derivative to zero
             if (ac_info.pair_inds[0] == -1 && ac_info.single_inds[0] == -1) {
-                std::cout << "Reference determinant\n";
+                std::cout << "Processing reference determinant\n";
                 for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
-                    y[idet * nparam + iparam] = 0.0;
+                    y[ndet * iparam + idet] = 0.0;
                 }
                 continue;
             } else {
-                // std::vector<long> a_inds = ac_info.pair_inds; //annihilation indices
-                // std::vector<long> c_inds = ac_info.single_inds; //creation indices
-                // std::vector<long> combined_inds = a_inds;
-                std::vector<std::size_t> a_inds(ac_info.pair_inds.begin(), ac_info.pair_inds.end());
-                std::vector<std::size_t> c_inds(ac_info.single_inds.begin(), ac_info.single_inds.end());
+                std::vector<std::size_t> a_inds(ac_info.pair_inds.begin(), ac_info.pair_inds.end()); //annihilation indices
+                std::vector<std::size_t> c_inds(ac_info.single_inds.begin(), ac_info.single_inds.end()); //creation indices
                 std::pair<std::vector<std::size_t>, std::vector<std::size_t>> key = std::make_pair(a_inds, c_inds);
 
                 // combined_inds.insert(combined_inds.end(), c_inds.begin(), c_inds.end());
@@ -2023,37 +2014,65 @@ void AP1roGeneralizedSenoObjective::d_overlap(std::size_t ndet, const double* x,
                 std::vector<long> occs(nocc);
                 fill_occs(nword, det.data(), &occs[0]);
 
-                for (auto& exc_order : inds_multi) {
-                    auto& indices_sign = exc_order.second;
+                for (auto& pair : inds_multi) {
+                    auto& indices_sign = pair.second;
                     std::vector<std::vector<int>> selected_rows;
 
-                    std::cout << "exc_order: " << exc_order.first << std::endl;
+                    // std::cout << "exc_order: " << pair.first << std::endl;
 
-                    for (std::size_t row_ind = 0; row_ind < indices_sign.size(); ++row_ind) {
-                        const auto& row  = indices_sign[row_ind];
-                        std::set<int> trash;
+                    for (const auto& row : indices_sign) {
+                        std::cout << "Row: ";
+                        std::cout << "[";
+                        for (int i : row) {
+                            std::cout << i << " ";
+                        }
+                        std::cout << "]" << std::endl;
+
+                        std::unordered_set<int> trash;
                         bool skip_row = false;
+                      
+                        // for (const auto& exop_indx : row) {
+                        for (auto it = row.begin(); it != row.end() - 1; ++it) {
+                            const auto& exop_index = *it;
 
-                        for (const auto& exop_index : row) {
+                            // Check if exop_indx is a valid index
+                            if (exop_index < 0 || static_cast<std::size_t>(exop_index) >= ind_exops.size()) {
+                                std::cout << "ind_exops.size(): " << ind_exops.size() << std::endl;
+                                std::cerr << "Error: exop_index " << exop_index << " is out of bounds" << std::endl;
+                                continue;
+                            }
                             const auto& exop = ind_exops[exop_index];
+
+                            // std::cout << "exop_index: " << exop_index << std::endl;
+                            // std::cout << "exop: ";
+                            // for (long i : exop) {
+                            //     std::cout << i << " ";
+                            // }
+                            // std::cout << std::endl;
+
                             if (exop.size() == 2) {
                                 if (trash.find(exop[0]) != trash.end()) {
+                                    // std::cout << "exop[0] already in trash\n";
                                     skip_row = true;
                                     break;
                                 }
                                 if (exop[0] < static_cast<int>(nbasis / 2)) {
                                     if (std::find(occs.begin(),  occs.end(), exop[0] + static_cast<int>(nbasis / 2)) == occs.end()) {
                                         skip_row = true;
+                                        // std::cout << "exop[0] + nbasis / 2 not in occs\n";
                                         break;
                                     } else {
+                                        // std::cout << "exop[0] + nbasis / 2 in occs\n";
                                         trash.insert(exop[0]);
                                         trash.insert(exop[0] + static_cast<int>(nbasis / 2));
                                     }
                                 } else {
                                     if (std::find(occs.begin(), occs.end(), exop[0] - static_cast<int>(nbasis / 2)) == occs.end()) {
                                         skip_row = true;
+                                        // std::cout << "exop[0] - nbasis / 2 not in occs\n";
                                         break;
                                     } else {
+                                        // std::cout << "exop[0] - nbasis / 2 in occ\n";
                                         trash.insert(exop[0]);
                                         trash.insert(exop[0] - static_cast<int>(nbasis / 2));
                                     }
@@ -2061,6 +2080,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(std::size_t ndet, const double* x,
                             } else {
                                 for (std::size_t j = 0; j < exop.size() / 2; ++j) {
                                     if (trash.find(exop[j]) != trash.end()) {
+                                        std::cout << "exop[j] already in trash\n";
                                         skip_row = true;
                                         break;
                                     } else {
@@ -2074,15 +2094,27 @@ void AP1roGeneralizedSenoObjective::d_overlap(std::size_t ndet, const double* x,
                             selected_rows.push_back(row);
                         }
                     }
+                    
+                    std::cout << "Selected: ";
+                    for (const auto& row : selected_rows) {
+                        std::cout << "[";
+                        for (int i : row) {
+                            std::cout << i << " ";
+                        }
+                        std::cout << "]" << std::endl;
+                    }
+                    std::cout << std::endl;
+
                     indices_sign = selected_rows;
-                    inds_multi[exc_order.first] = indices_sign;
+                    inds_multi[pair.first] = indices_sign;
                 }
                 std::vector<double> damplitudes = product_ampli_multi_deriv(inds_multi, true, x);
                 for (std::size_t iparam = 0; iparam < nparam; ++iparam) {
-                    y[idet * nparam + iparam] = sign * damplitudes[iparam];
-                }
-
-                
+                    y[ndet * iparam + idet] = sign * damplitudes[iparam];
+                    if (damplitudes[iparam] != 0.0) {
+                        std::cout <<  "iparam: " << iparam << ", dampli: " << damplitudes[iparam] << ", sign: " << sign << std::endl;
+                    }
+                }  
 
             }
         }
@@ -2090,7 +2122,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(std::size_t ndet, const double* x,
 }
 
 
-
+//-------------------------------------FIRST APPROACH BEGIN-------------------------------------------------------------------------
 // void AP1roGeneralizedSenoObjective::overlap(std::size_t ndet, const double *x, double *y) {
 //     p_permanent.resize(nconn);
 //     s_permanent.resize(nconn);
@@ -2201,221 +2233,7 @@ void AP1roGeneralizedSenoObjective::d_overlap(std::size_t ndet, const double* x,
 //         }
 //     }
 // }
+//-------------------------------------FIRST APPROACH END-------------------------------------------------------------------------
 
 
 } // namespace pyci
-
-//---------------------------ROUGH WORK--------------------------------------------
-// std::vector<std::vector<std::size_t>> AP1roGeneralizedSenoObjective::int_partition_dp(const std::vector<std::size_t>& coins, std::size_t total){
-//     // Coin change problem
-//     std::vector<std::vector<std::vector<std::size_t>>> dp(total +1);
-
-//     for (std::size_t coin : coins) {
-//         for (std::size_t i = coin; i <= total; ++i) {
-//             for (const auto& partition : dp[i - coin]) {
-//                 auto new_partition = partition;
-//                 new_partition.push back(coin);  
-//                 dp[i].push_back(new_partition);
-//             }
-//         }
-//     }
-//     return dp[total];
-// }
-
-
-// // Assign excitation operators
-// std::unordered_map<std::vector<int>, int> AP1roGeneralizedSenoObjective::assign_exops(
-//     const std::vector<int>& ranks,
-//     int nspin){ 
-//     //    const std::vector<std::vector<std::size_t>>* indices) {
-
-//     std::unordered_map<std::vector<int>, int> exops;
-//     int counter = 0;
-//     std::cout << "****Ranks: ";
-//     for (int rank : ranks) {
-//         std::cout << rank << " ";
-//     }
-//     std::cout << std::endl;
-//     std::cout << "****nspin: " << nspin << std::endl;
-
-    // if (indices == nullptr) {
-    //     // Generate all possible excitation operators consistent with the ranks
-    //     for (int rank : ranks) {
-    //         std::vector<std::vector<int>> ann_combs;
-    //         std::vector<int> temp;
-    //         generateCombinations(std::vector<std::size_t>(nspin), rank, 0, temp, ann_combs);
-
-    //         for (const auto& annhs : ann_combs) {
-    //             std::vector<std::size_t> remaining;
-    //             for (int i = 0; i < nspin; ++i) {
-    //                 if (std::find(annhs.begin(), annhs.end(), i) == annhs.end()) {
-    //                     remaining.push_back(i);
-    //                 }
-    //             }
-    //             std::vector<std::vector<int>> crea_combs;
-    //             generateCombinations(remaining, rank, 0, temp, crea_combs);
-
-    //             for (const auto& crea : crea_combs) {
-    //                 std::vector<int> exop(annhs);
-    //                 exop.insert(exop.end(), crea.begin(), crea.end());
-    //                 exops[exop] = counter++;
-    //             }
-    //         }
-    //     }
-
-    // } else {
-    //     // Validate the indices
-    //     if (indices->size() != 2) {
-    //         throw std::invalid_argument("`indices` must have exactly 2 elements.");
-    //     }
-        
-    //     for (const auto& inds : *indices) {
-    //         if (!std::all_of(inds.begin(), inds.end(), [](int i) { return i >= 0 ; })) {
-    //             throw std::invalid_argument("All `indices` must be non-negative integers.");
-    //         }
-    //     }
-
-    //     std::vector<std::size_t> ex_from = indices->at(0);
-    //     std::vector<std::size_t> ex_to = indices->at(1);
-
-    //     // Remove duplicates and sort
-    //     std::sort(ex_from.begin(), ex_from.end());
-    //     ex_from.erase(std::unique(ex_from.begin(), ex_from.end()), ex_from.end());
-    //     std::sort(ex_to.begin(), ex_to.end());
-    //     ex_to.erase(std::unique(ex_to.begin(), ex_to.end()), ex_to.end());
-
-    //     // Generate excitaion operators based on `indices`
-    //     for (int rank : ranks) {
-    //         std::vector<std::vector<int>> ann_combs;
-    //         std::vector<int> temp;
-    //         generateCombinations(ex_from, rank, 0, temp, ann_combs);
-
-    //         for (const auto& annh: ann_combs) {
-    //             std::vector<std::vector<int>> crea_combs;
-    //             generateCombinations(ex_to, rank, 0, temp, crea_combs);
-
-    //             for (const auto& crea : crea_combs) {
-    //                 std::vector<int> op(annh);
-    //                 op.insert(op.end(), crea.begin(), crea.end());
-    //                 exops[op] = counter++;
-    //             }
-    //         }
-    //     }
-    // }
-//     for (int rank : ranks) {
-//         std::vector<std::vector<int>> ann_combs;
-//         std::vector<int> temp;
-//         generateCombinations(std::vector<std::size_t>(nspin), rank, 0, temp, ann_combs);
-
-//         for (const auto& annhs : ann_combs) {
-//             std::vector<std::size_t> remaining;
-//             for (int i = 0; i < nspin; ++i) {
-//                 if (std::find(annhs.begin(), annhs.end(), i) == annhs.end()) {
-//                     remaining.push_back(i);
-//                 }
-//             }
-//             std::vector<std::vector<int>> crea_combs;
-//             generateCombinations(remaining, rank, 0, temp, crea_combs);
-
-//             for (const auto& crea : crea_combs) {
-//                 std::vector<int> exop(annhs);
-//                 exop.insert(exop.end(), crea.begin(), crea.end());
-//                 exops[exop] = counter++;
-//             }
-//         }
-//     }
-//     std::cout << "****Exops: ";
-//     for (const auto& exop : exops) {
-//         std::cout << "{ ";
-//         for (int i : exop.first) {
-//             std::cout << i << " ";
-//         }
-//         std::cout << "} :";
-//         std::cout << exop.second << " ";
-//         std::cout << std::endl;
-//     }
-//     return exops;
-
-// }
-
-// // Function to assign exops and sort keys
-// void AP1roGeneralizedSenoObjective::assign_and_sort_exops(const std::vector<int>& ranks,
-//                                     int nspin){ //, const std::vector<std::vector<std::size_t>>* indices) {
-//     std::cout << "Assigning and sorting excitation operators...\n";
-//     exops = assign_exops(ranks, nspin); //, indices);
-//     std::cout << "Assigned " << exops.size() << " excitation operators.\n";
-//     ind_exops.clear();
-//     for (const auto& pair : exops) {
-//         ind_exops.push_back(pair.first);
-//     }
-//     std::sort(ind_exops.begin(), ind_exops.end(), [this](const std::vector<int>& a, const std::vector<int>& b) {
-//         return exops[a] < exops[b];
-//     });
-//     std::cout << "Sorted excitation operators.\n";
-//     std::cout << "Exops: ";
-//     for (const auto& exop : ind_exops) {
-//         std::cout << "{ ";
-//         for (int i : exop) {
-//             std::cout << i << " ";
-//         }
-//         std::cout << "} ";
-//     }
-// }
-
-
-
-// generate unordered partition
-   // // Flatten the bin_config
-    // std::vector<std::pair<int, int>> bin_config;
-    // // for (const auto& [bin_size, bin_count] : bin_size_num) {
-    // for (const auto& bins : bin_size_num) {
-    //     const auto& bin_size = bins.first;
-    //     const auto& bin_count = bins.second;
-    //     for (int i = 0; i < bin_count; ++i) {
-    //         bin_config.emplace_back(bin_size, 1);
-    //     }
-    // }
-    // std::vector<std::vector<std::vector<int>>> results;
-    // std::vector<std::vector<int>> current_partition;
-    // helper_generate_partitions(collection, bin_config, 0, current_partition, results);
-
-
-// void AP1roGeneralizedSenoObjective::helper_generate_partitions(
-//     const std::vector<std::size_t> collection, 
-//     std::vector<std::pair<int, int>>& bin_config,
-//     std::vector<std::pair<int, int>>::size_type bin_idx, 
-//     std::vector<std::vector<int>>& current_partition, 
-//     std::vector<std::vector<std::vector<int>>>& results) {
-//     if (bin_idx == bin_config.size()) {
-//         results.push_back(current_partition);
-//         return;
-//     }
-
-//     int bin_size = bin_config[bin_idx].first;
-//     // int bin_count = bin_config[bin_idx].second;
-
-//     // Generate all combinations for the current bin size
-//     std::vector<std::vector<int>> all_combs;
-//     std::vector<int> current_comb;
-//     generateCombinations(collection, bin_size, 0, current_comb, all_combs);
-
-//     // Duplicate combinations
-//     std::set<std::vector<int>> unique_combs(all_combs.begin(), all_combs.end());
-
-//     for (const auto& bin : unique_combs) {
-//         // Enforce bin ordering; First element of the current bin 
-//         // must be >= the first element of the previous bin (if any)
-//         if (!current_partition.empty() && current_partition.back()[0] > bin[0]) {
-//             continue;
-//         }
-        
-//         std::vector<std::size_t> remaining_elements(collection.begin(), collection.end());
-//         for (int elem : bin) {
-//             remaining_elements.erase(std::remove(remaining_elements.begin(), remaining_elements.end(), elem), remaining_elements.end());
-//         }
-
-//         current_partition.push_back(bin);
-//         helper_generate_partitions(remaining_elements, bin_config, bin_idx + 1, current_partition, results);
-//         current_partition.pop_back();
-//     }
-// }
