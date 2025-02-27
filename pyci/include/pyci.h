@@ -221,7 +221,7 @@ void clearbit_det(const long, ulong *);
 
 void compute_rdms(const DOCIWfn &, const double *, double *, double *);
 
-void compute_rdms_1234(const DOCIWfn &, const double *, double *, double *, double *, double *);
+void compute_rdms_1234(const DOCIWfn &, const double *, double *, double *, double *, double *, double *, double *, double *);
 
 void compute_rdms(const FullCIWfn &, const double *, double *, double *);
 

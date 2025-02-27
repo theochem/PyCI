@@ -88,11 +88,11 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
     j = 0;
     while (j < i) {
         d5[j]=0;
-        d6[j]=0
+        d6[j]=0;
         d7[j++]=0;
     }
     // iterate over determinants
-    for (long idet = 0, jdet, mdet, k, l, m, n, p, q; idet < wfn.ndet; ++idet) {
+    for (long idet = 0, jdet, mdet, pdet, k, l, m, n, p, q; idet < wfn.ndet; ++idet) {
         double val1, val2;
         // fill working vectors
         wfn.copy_det(idet, det);
@@ -146,7 +146,7 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
                         d5[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * n + l] += val1;
 
                     }
-                    //pair excitation elements 4rdm  i,j >m
+                    //pair excitation elements 4rdm  n >k,l
                     for (p= 0; p < wfn.nvir_up; ++p){
                         q = virs[p];
                         excite_det(n, q, det);
@@ -161,7 +161,7 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
                             d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * l + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * q + n] += val2;
                     }
                     }
-                    //pair excitation elements 4rdm  m >j  
+                    //pair excitation elements 4rdm  l >k,n 
                     for (p= 0; p < wfn.nvir_up; ++p){
                         q = virs[p];
                         excite_det(l, q, det);
@@ -176,7 +176,7 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
                             d6[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * k + (wfn.nbasis) * q + l] += val2;
                     }
                     }
-                    //pair excitation elements 4rdm  m >i  
+                    //pair excitation elements 4rdm  k >n,l  
                     for (p= 0; p < wfn.nvir_up; ++p){
                         q = virs[p];
                         excite_det(k, q, det);
@@ -193,7 +193,7 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
                     }
 
                 }
-                // pair excitation elements 3rdm j>i
+                // pair excitation elements 3rdm l>k
                 for (m = 0; m < wfn.nvir_up; ++m) {
                     n = virs[m];
                     excite_det(l, n, det);
@@ -205,7 +205,7 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
                         d4[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * l + n] += val2;
                         d4[(wfn.nbasis * wfn.nbasis) * k + wfn.nbasis * n + l] += val2;
                     }
-                } //pair excitation elements 3rdm i > j
+                } //pair excitation elements 3rdm k > l
                 for (m = 0; m < wfn.nvir_up; ++m) {
                     n = virs[m];
                     excite_det(k, n, det);
@@ -1022,12 +1022,18 @@ pybind11::tuple py_compute_rdms_1234_doci(const DOCIWfn &wfn, const Array<double
     Array<double> d2({wfn.nbasis, wfn.nbasis});
     Array<double> d3({wfn.nbasis, wfn.nbasis, wfn.nbasis});
     Array<double> d4({wfn.nbasis, wfn.nbasis, wfn.nbasis});
+    Array<double> d5({wfn.nbasis, wfn.nbasis, wfn.nbasis, wfn.nbasis});
+    Array<double> d6({wfn.nbasis, wfn.nbasis, wfn.nbasis, wfn.nbasis});
+    Array<double> d7({wfn.nbasis, wfn.nbasis, wfn.nbasis, wfn.nbasis});
     compute_rdms_1234(wfn, reinterpret_cast<const double *>(coeffs.request().ptr),
                  reinterpret_cast<double *>(d0.request().ptr),
                  reinterpret_cast<double *>(d2.request().ptr),
                  reinterpret_cast<double *>(d3.request().ptr),
-                 reinterpret_cast<double *>(d4.request().ptr));
-    return pybind11::make_tuple(d0, d2, d3, d4);
+                 reinterpret_cast<double *>(d4.request().ptr),
+                 reinterpret_cast<double *>(d5.request().ptr),
+                 reinterpret_cast<double *>(d6.request().ptr),
+                 reinterpret_cast<double *>(d7.request().ptr));
+    return pybind11::make_tuple(d0, d2, d3, d4, d5, d6, d7);
 }
 
 pybind11::tuple py_compute_rdms_fullci(const FullCIWfn &wfn, const Array<double> coeffs) {
