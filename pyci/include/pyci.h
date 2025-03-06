@@ -41,7 +41,11 @@
 
 #include <parallel_hashmap/phmap.h>
 
+#ifdef _USE_RAPIDHASH
+#include <rapidhash.h>
+#else
 #include <SpookyV2.h>
+#endif
 
 #include <sort_with_arg.h>
 
@@ -118,14 +122,24 @@ inline int Ctz(const unsigned long long t) {
 
 /* Hash function. */
 
+#ifdef _USE_RAPIDHASH
+typedef std::uint64_t Hash;
+
+template<typename T, typename U>
+Hash spookyhash(T length, const U *data) {
+    return rapidhash(reinterpret_cast<const void *>(data), length * sizeof(U));
+}
+#else
 typedef std::pair<ulong, ulong> Hash;
 
 template<typename T, typename U>
 Hash spookyhash(T length, const U *data) {
     Hash h(0x23a23cf5033c3c81UL, 0xb3816f6a2c68e530UL);
-    SpookyHash::Hash128(reinterpret_cast<const void *>(data), length * sizeof(U), &h.first, &h.second);
+    SpookyHash::Hash128(reinterpret_cast<const void *>(data), length * sizeof(U), &h.first,
+                        &h.second);
     return h;
 }
+#endif
 
 /* Vector template types. */
 
@@ -162,7 +176,8 @@ template<typename Scalar>
 using Array = pybind11::array_t<Scalar, pybind11::array::c_style | pybind11::array::forcecast>;
 
 template<typename Scalar>
-using ColMajorArray = pybind11::array_t<Scalar, pybind11::array::f_style | pybind11::array::forcecast>;
+using ColMajorArray =
+    pybind11::array_t<Scalar, pybind11::array::f_style | pybind11::array::forcecast>;
 
 /* Forward-declare classes. */
 
@@ -260,14 +275,14 @@ pybind11::tuple py_compute_rdms_fullci(const FullCIWfn &, const Array<double>);
 
 pybind11::tuple py_compute_rdms_genci(const GenCIWfn &, const Array<double>);
 
-pybind11::tuple py_compute_transition_rdms_doci(const DOCIWfn &, const DOCIWfn &, const Array<double>,
-                                           const Array<double>);
+pybind11::tuple py_compute_transition_rdms_doci(const DOCIWfn &, const DOCIWfn &,
+                                                const Array<double>, const Array<double>);
 
-pybind11::tuple py_compute_transition_rdms_fullci(const FullCIWfn &, const FullCIWfn &, const Array<double>,
-                                           const Array<double>);
+pybind11::tuple py_compute_transition_rdms_fullci(const FullCIWfn &, const FullCIWfn &,
+                                                  const Array<double>, const Array<double>);
 
-pybind11::tuple py_compute_transition_rdms_genci(const GenCIWfn &, const GenCIWfn &, const Array<double>,
-                                           const Array<double>);
+pybind11::tuple py_compute_transition_rdms_genci(const GenCIWfn &, const GenCIWfn &,
+                                                 const Array<double>, const Array<double>);
 
 template<class WfnType>
 double py_compute_overlap(const WfnType &, const WfnType &, const Array<double>,
@@ -710,21 +725,19 @@ public:
     std::vector<double> val_paramcons;
 
 public:
+    Objective(const SparseOp &, const Wfn &, const std::size_t = 0UL, const long * = nullptr,
+              const double * = nullptr, const std::size_t = 0UL, const long * = nullptr,
+              const double * = nullptr);
 
-    Objective(const SparseOp &, const Wfn &,
-              const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
-              const std::size_t = 0UL, const long * = nullptr, const double * = nullptr);
-
-    Objective(const SparseOp &, const Wfn &,
-              const pybind11::object, const pybind11::object,
+    Objective(const SparseOp &, const Wfn &, const pybind11::object, const pybind11::object,
               const pybind11::object, const pybind11::object);
 
     Objective(const Objective &);
 
     Objective(Objective &&) noexcept;
 
-    void init(const std::size_t, const long *, const double *,
-              const std::size_t, const long *, const double *);
+    void init(const std::size_t, const long *, const double *, const std::size_t, const long *,
+              const double *);
 
     void objective(const SparseOp &, const double *, double *);
 
@@ -758,13 +771,12 @@ public:
     std::vector<std::size_t> part_list;
 
 public:
-    AP1roGObjective(const SparseOp &, const DOCIWfn &,
-                    const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
-                    const std::size_t = 0UL, const long * = nullptr, const double * = nullptr);
+    AP1roGObjective(const SparseOp &, const DOCIWfn &, const std::size_t = 0UL,
+                    const long * = nullptr, const double * = nullptr, const std::size_t = 0UL,
+                    const long * = nullptr, const double * = nullptr);
 
-    AP1roGObjective(const SparseOp &, const DOCIWfn &,
-                    const pybind11::object, const pybind11::object,
-                    const pybind11::object, const pybind11::object);
+    AP1roGObjective(const SparseOp &, const DOCIWfn &, const pybind11::object,
+                    const pybind11::object, const pybind11::object, const pybind11::object);
 
     AP1roGObjective(const AP1roGObjective &);
 
@@ -790,13 +802,12 @@ public:
     std::vector<std::size_t> part_list;
 
 public:
-    APIGObjective(const SparseOp &, const DOCIWfn &,
-                    const std::size_t = 0UL, const long * = nullptr, const double * = nullptr,
-                    const std::size_t = 0UL, const long * = nullptr, const double * = nullptr);
+    APIGObjective(const SparseOp &, const DOCIWfn &, const std::size_t = 0UL,
+                  const long * = nullptr, const double * = nullptr, const std::size_t = 0UL,
+                  const long * = nullptr, const double * = nullptr);
 
-    APIGObjective(const SparseOp &, const DOCIWfn &,
-                    const pybind11::object, const pybind11::object,
-                    const pybind11::object, const pybind11::object);
+    APIGObjective(const SparseOp &, const DOCIWfn &, const pybind11::object, const pybind11::object,
+                  const pybind11::object, const pybind11::object);
 
     APIGObjective(const APIGObjective &);
 
