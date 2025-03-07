@@ -43,7 +43,7 @@ CFLAGS += $(shell $(PYTHON) tools/python_include_dirs.py)
 
 # Set external projects and their include directories
 DEPS := $(addprefix deps/,eigen spectra parallel-hashmap pybind11 rapidhash)
-CFLAGS += $(addprefix -Ideps/,eigen spectra/include parallel-hashmap pybind11/include)
+CFLAGS += $(addprefix -Ideps/,eigen spectra/include parallel-hashmap pybind11/include rapidhash)
 
 # This C++ compile flag is needed in order for Macs to find system libraries
 ifeq ($(shell uname -s),Darwin)
