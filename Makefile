@@ -48,6 +48,9 @@ CFLAGS += $(addprefix -Ideps/,eigen spectra/include parallel-hashmap pybind11/in
 # This C++ compile flag is needed in order for Macs to find system libraries
 ifeq ($(shell uname -s),Darwin)
 CFLAGS += -undefined dynamic_lookup
+PYCI_EXTENSION := dylib
+else
+PYCI_EXTENSION := so
 endif
 
 # Set PyCI version number
@@ -73,7 +76,7 @@ OBJECTS := $(patsubst %.cpp,%.o,$(wildcard pyci/src/*.cpp))
 # -------------
 
 .PHONY: all
-all: pyci/_pyci.so.$(PYCI_VERSION) pyci/_pyci.so.$(VERSION_MAJOR) pyci/_pyci.so
+all: pyci/_pyci.$(PYCI_EXTENSION).$(PYCI_VERSION) pyci/_pyci.$(PYCI_EXTENSION).$(VERSION_MAJOR) pyci/_pyci.$(PYCI_EXTENSION)
 
 .PHONY: test
 test:
@@ -81,7 +84,7 @@ test:
 
 .PHONY: clean
 clean:
-	rm -rf pyci/src/*.o pyci/_pyci.so*
+	rm -rf pyci/src/*.o pyci/_pyci.$(PYCI_EXTENSION)*
 
 .PHONY: cleandeps
 cleandeps:
@@ -91,19 +94,20 @@ cleandeps:
 compile_flags.txt:
 	echo "$(CFLAGS)" | tr ' ' '\n' > $(@)
 
+
 # Make targets
 # ------------
 
 pyci/src/%.o: pyci/src/%.cpp pyci/include/pyci.h $(DEPS)
 	$(CXX) $(CFLAGS) $(DEFS) -c $(<) -o $(@)
 
-pyci/_pyci.so.$(PYCI_VERSION): $(OBJECTS)
+pyci/_pyci.$(PYCI_EXTENSION).$(PYCI_VERSION): $(OBJECTS)
 	$(CXX) $(CFLAGS) $(DEFS) -shared $(^) -o $(@)
 
-pyci/_pyci.so.$(VERSION_MAJOR): pyci/_pyci.so.$(PYCI_VERSION)
+pyci/_pyci.$(PYCI_EXTENSION).$(VERSION_MAJOR): pyci/_pyci.$(PYCI_EXTENSION).$(PYCI_VERSION)
 	ln -sf $(notdir $(<)) $(@)
 
-pyci/_pyci.so: pyci/_pyci.so.$(PYCI_VERSION)
+pyci/_pyci.$(PYCI_EXTENSION): pyci/_pyci.$(PYCI_EXTENSION).$(PYCI_VERSION)
 	ln -sf $(notdir $(<)) $(@)
 
 deps/eigen:
