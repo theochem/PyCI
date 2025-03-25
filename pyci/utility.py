@@ -398,7 +398,7 @@ def spin_free_rdms(d1, d2, d3=None, d4=None, d5=None, d6=None, d7=None):
         # FullCI RDM spin-blocks
         rdm1_sf = np.zeros((nbasis, nbasis), dtype=np.double)
         rdm2_sf = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
-        rdm1, rdm2, rdm3 = spinize_rdms_1234(d1, d2, d3, d4, d5, d6, d7)
+        rdm1, rdm2 = spinize_rdms(d1, d2)
         aa = rdm1[:nbasis, :nbasis]
         bb = rdm1[nbasis:, nbasis:]
         aaaa = rdm2[:nbasis, :nbasis, :nbasis, :nbasis]
