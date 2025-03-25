@@ -137,7 +137,7 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
     "filename, wfn_type, occs, energy",
     [
         ("BH_sto-3g_eq", pyci.doci_wfn, (3, 3), -26.93841940211769),
-        ("h10_chain_1.4_STO-6G", pyci.doci_wfn, (5, 5), -9.84401083866329),
+        ("h8_fcidump", pyci.doci_wfn, (4, 4),-4.307571602003291 ), 
         ("h6_sto_3g", pyci.doci_wfn, (3, 3), -5.877285606582455),
     ],
 )
@@ -149,7 +149,7 @@ def test_compute_rdms_1234(filename, wfn_type, occs, energy):
     es, cs = op.solve(n=1, tol=1.0e-6)
     if not isinstance(wfn, pyci.doci_wfn):
         raise TypeError('Wfn must be DOCI')
-    d0, d2, d3, d4= pyci.compute_rdms_1234(wfn, cs[0])
+    d0, d2, d3, d4, d5, d6, d7 = pyci.compute_rdms_1234(wfn, cs[0])
     npt.assert_allclose(np.trace(d0), wfn.nocc_up, rtol=0, atol=1.0e-9)
     npt.assert_allclose(np.sum(d2), wfn.nocc_up * (wfn.nocc_up - 1), rtol=0, atol=1.0e-9)
     k0, k2 = pyci.reduce_senzero_integrals(ham.h, ham.v, ham.w, wfn.nocc_up)
@@ -157,7 +157,7 @@ def test_compute_rdms_1234(filename, wfn_type, occs, energy):
     energy += np.einsum("ij,ij", k0, d0)
     energy += np.einsum("ij,ij", k2, d2)
     npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
-    rdm1, rdm2, rdm3 = pyci.spinize_rdms_1234(d0, d2, d3 ,d4)
+    rdm1, rdm2, rdm3, rdm4 = pyci.spinize_rdms_1234(d0, d2, d3, d4, d5, d6, d7)
     assert np.all(np.abs(rdm1 - rdm1.T) < 1e-5)
     # # Test RDM2 is antisymmetric
     # for i in range(0, wfn.nbasis * 2):
@@ -181,10 +181,12 @@ def test_compute_rdms_1234(filename, wfn_type, occs, energy):
         assert np.all(np.abs(rdm3[i, :, i, :, :, :]) < 1e-5)
         assert np.all(np.abs(rdm3[:, :, :,  i, :, i]) < 1e-5)
     #TEST COMPLETE 3RDM AND BLOCKS TRACES 
-    aabaab=rdm3[:ham.nbasis, :ham.nbasis, ham.nbasis:, :ham.nbasis, :ham.nbasis, ham.nbasis:]
-    bbabba=rdm3[ham.nbasis:, ham.nbasis:, :ham.nbasis, ham.nbasis:, ham.nbasis:, :ham.nbasis]
-    aaaaaa=rdm3[:ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis]
-    bbbbbb=rdm3[ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:]
+    aabaab = rdm3[:ham.nbasis, :ham.nbasis, ham.nbasis:, :ham.nbasis, :ham.nbasis, ham.nbasis:]
+    bbabba = rdm3[ham.nbasis:, ham.nbasis:, :ham.nbasis, ham.nbasis:, ham.nbasis:, :ham.nbasis]
+    aaaaaa = rdm3[:ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis]
+    bbbbbb = rdm3[ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:]
+    abbabb = rdm3[:ham.nbasis, ham.nbasis:, ham.nbasis:, :ham.nbasis, ham.nbasis:, ham.nbasis:]
+    baabaa = rdm3[ham.nbasis:, :ham.nbasis, :ham.nbasis, ham.nbasis:, :ham.nbasis, :ham.nbasis]
     npt.assert_allclose(np.einsum('ijkijk -> ', rdm3),(wfn.nocc_up * 2)*(wfn.nocc_up * 2 - 1) * (wfn.nocc_up * 2 - 2) ,rtol=0, atol=1.0e-9)
     npt.assert_allclose(np.einsum('ijkijk -> ', aaaaaa),(wfn.nocc_up) * (wfn.nocc_up - 1) * (wfn.nocc_up - 2) , rtol=0, atol=1.0e-9)
     npt.assert_allclose(np.einsum('ijkijk -> ', aabaab),(wfn.nocc_up) * (wfn.nocc_dn) * (wfn.nocc_up - 1) , rtol=0, atol=1.0e-9)
@@ -221,6 +223,164 @@ def test_compute_rdms_1234(filename, wfn_type, occs, energy):
     fac=(1.0 / (wfn.nocc_dn - 1.0))
     npt.assert_allclose(np.einsum('mijmkl->ijkl ', bbabba) * fac,d2_block_baba, rtol=0, atol=1.0e-9)
     npt.assert_allclose(np.einsum('imjkml->ijkl ', bbabba) * fac,d2_block_baba, rtol=0, atol=1.0e-9)
+    
+    # # Test RDM4 is antisymmetric
+    # "Testing that non Antiysmmetric parts are all zeros."
+    for i in range(0, wfn.nbasis * 2):
+        assert np.all(np.abs(rdm4[i, i, i, i, :, :, :]) < 1e-5)
+        assert np.all(np.abs(rdm4[:, :, :, i, i, i, i]) < 1e-5)
+        assert np.all(np.abs(rdm4[i, i, :, :, :, :, :, :]) < 1e-5)
+        assert np.all(np.abs(rdm4[:, :, :, :, :,  :, i, i]) < 1e-5)
+        assert np.all(np.abs(rdm4[:, :, i, i, :, :, :, :]) < 1e-5)
+        assert np.all(np.abs(rdm4[:, :, :, :, i, i, :, :]) < 1e-5)
+        assert np.all(np.abs(rdm4[i, :, i, :, :, :, :, :]) < 1e-5) 
+        assert np.all(np.abs(rdm4[:, :, :, :, :, i, :, i]) < 1e-5)
+        assert np.all(np.abs(rdm4[:, i, :, i, :, :, :, :]) < 1e-5) 
+        assert np.all(np.abs(rdm4[:, :, :, :, i, :, i, :]) < 1e-5) 
+    #TEST COMPLETE 4RDM AND BLOCKS TRACES
+    abbbabbb = rdm4[:ham.nbasis, ham.nbasis:, ham.nbasis:, ham.nbasis:, :ham.nbasis, ham.nbasis:, ham.nbasis:, ham.nbasis:]
+    baaabaaa = rdm4[ham.nbasis:, :ham.nbasis, :ham.nbasis, :ham.nbasis, ham.nbasis:, :ham.nbasis, :ham.nbasis, :ham.nbasis]
+    aaabaaab = rdm4[:ham.nbasis, :ham.nbasis, :ham.nbasis, ham.nbasis:, :ham.nbasis, :ham.nbasis, :ham.nbasis, ham.nbasis:]
+    bbbabbba = rdm4[ham.nbasis:, ham.nbasis:, ham.nbasis:, :ham.nbasis, ham.nbasis:, ham.nbasis:, ham.nbasis:, :ham.nbasis]
+    abababab = rdm4[:ham.nbasis, ham.nbasis:, :ham.nbasis, ham.nbasis:, :ham.nbasis, ham.nbasis:, :ham.nbasis, ham.nbasis:]
+    babababa = rdm4[ham.nbasis:, :ham.nbasis, ham.nbasis:, :ham.nbasis, ham.nbasis:, :ham.nbasis, ham.nbasis:, :ham.nbasis]
+    aaaaaaaa = rdm4[:ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis, :ham.nbasis]
+    bbbbbbbb = rdm4[ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:, ham.nbasis:] 
+    npt.assert_allclose(np.einsum('ijklijkl -> ', rdm4),(wfn.nocc_up * 2)*(wfn.nocc_up * 2 - 1) * (wfn.nocc_up * 2 - 2) * (wfn.nocc_up * 2 - 3) ,rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijklijkl -> ', abbbabbb),(wfn.nocc_up) * (wfn.nocc_dn) * (wfn.nocc_dn - 1) * (wfn.nocc_dn - 2) , rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijklijkl -> ', baaabaaa),(wfn.nocc_dn) * (wfn.nocc_up) * (wfn.nocc_up - 1) * (wfn.nocc_up - 2), rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijklijkl -> ', aaabaaab),(wfn.nocc_dn) * (wfn.nocc_up) * (wfn.nocc_up - 1) * (wfn.nocc_up - 2) , rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijklijkl -> ', bbbabbba),(wfn.nocc_up) * (wfn.nocc_dn) * (wfn.nocc_dn - 1) * (wfn.nocc_dn - 2) , rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijklijkl -> ', abababab),(wfn.nocc_up) * (wfn.nocc_dn) * (wfn.nocc_up - 1) * (wfn.nocc_dn - 1) , rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijklijkl -> ', babababa),(wfn.nocc_up) * (wfn.nocc_dn) * (wfn.nocc_up - 1) * (wfn.nocc_dn - 1) , rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijklijkl -> ', aaaaaaaa),(wfn.nocc_up)*(wfn.nocc_up - 1) * (wfn.nocc_up - 2) * (wfn.nocc_up - 3) , rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijklijkl -> ', bbbbbbbb),(wfn.nocc_dn)*(wfn.nocc_dn - 1) * (wfn.nocc_dn - 2) * (wfn.nocc_dn - 3), rtol=0, atol=1.0e-9)
+    
+    # # # BLOCK TRACES TESTS
+    # #ALL-ALPHA/BETA BLOCKS
+    # With the 3RDM
+    fac=1 / (wfn.nocc_up - 3)
+    npt.assert_allclose(np.einsum('pijkplmn ->ijklmn',aaaaaaaa)*fac, aaaaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('pijkplmn ->ijklmn',aaaaaaaa)*fac, aaaaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipjklpmn ->ijklmn',aaaaaaaa)*fac, aaaaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpklmpn ->ijklmn',aaaaaaaa)*fac, aaaaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijkplmnp ->ijklmn',aaaaaaaa)*fac, aaaaaa, rtol=0, atol=1.0e-9)
+    fac=1 / (wfn.nocc_dn - 3)
+    npt.assert_allclose(np.einsum('pijkplmn ->ijklmn',bbbbbbbb)*fac, bbbbbb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('pijkplmn ->ijklmn',bbbbbbbb)*fac, bbbbbb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipjklpmn ->ijklmn',bbbbbbbb)*fac, bbbbbb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpklmpn ->ijklmn',bbbbbbbb)*fac, bbbbbb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijkplmnp ->ijklmn',bbbbbbbb)*fac, bbbbbb, rtol=0, atol=1.0e-9)
+    #With 2RDMs
+    fac=1 / ((wfn.nocc_up - 3) * (wfn.nocc_up - 2))
+    npt.assert_allclose(np.einsum('pqijpqkl ->ijklmn',aaaaaaaa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('piqjpkql ->ijklmn',aaaaaaaa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipqjkpql ->ijklmn',aaaaaaaa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipjqkplq ->ijklmn',aaaaaaaa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('pijqpklq ->ijklmn',aaaaaaaa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpqklpq ->ijklmn',aaaaaaaa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_dn - 3) * (wfn.nocc_dn - 2))
+    npt.assert_allclose(np.einsum('pqijpqkl ->ijklmn',bbbbbbbb)*fac, d2_block_bbbb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('piqjpkql ->ijklmn',bbbbbbbb)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('piqjpkql ->ijklmn',bbbbbbbb)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipqjkpql ->ijklmn',bbbbbbbb)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipjqkplq ->ijklmn',bbbbbbbb)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('pijqpklq ->ijklmn',bbbbbbbb)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpqklpq ->ijklmn',bbbbbbbb)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    
+    # #ABABABAB/BABABABA BLOCKS
+    #With the 3rdms
+    fac=1 / (wfn.nocc_dn - 1)
+    npt.assert_allclose(np.einsum('ipjklpmn ->ijklmn',abababab)*fac, aabaab, rtol=0, atol=1.0e-9)
+    fac=1 / (wfn.nocc_up -1)
+    npt.assert_allclose(np.einsum('ijpklmpn ->ijklmn',abababab)*fac, abbabb, rtol=0, atol=1.0e-9)
+    fac=1 / (wfn.nocc_up -1)
+    npt.assert_allclose(np.einsum('ipjklpmn ->ijklmn',babababa)*fac, bbabba, rtol=0, atol=1.0e-9)
+    fac=1 / (wfn.nocc_dn - 1)
+    npt.assert_allclose(np.einsum('ijpklmpn ->ijklmn',babababa)*fac, baabaa, rtol=0, atol=1.0e-9)
+    #With the 2rdms
+    fac=1 / ((wfn.nocc_up - 1) * (wfn.nocc_up - 1))
+    npt.assert_allclose(np.einsum('pqijpqkl ->ijkl',abababab)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipqjkpql ->ijkl',abababab)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpqklpq ->ijkl',abababab)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('pqijpqkl ->ijkl',babababa)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipqjkpql ->ijkl',babababa)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpqklpq ->ijkl',babababa)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_up) * (wfn.nocc_up - 1))
+    npt.assert_allclose(np.einsum('piqjpkql ->ijkl',abababab)*fac, d2_block_bbbb, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_up - 1) * (wfn.nocc_dn - 1))
+    npt.assert_allclose(np.einsum('pijqpklq ->ijkl',abababab)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_dn) * (wfn.nocc_dn - 1))
+    npt.assert_allclose(np.einsum('ipjqkplq ->ijkl',abababab)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_dn) * (wfn.nocc_dn - 1))
+    npt.assert_allclose(np.einsum('piqjpkql ->ijkl',babababa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_up - 1) * (wfn.nocc_dn - 1))
+    npt.assert_allclose(np.einsum('pijqpklq ->ijkl',babababa)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_up) * (wfn.nocc_up - 1))
+    npt.assert_allclose(np.einsum('ipjqkplq ->ijkl',babababa)*fac, d2_block_bbbb, rtol=0, atol=1.0e-9)
+
+    # AAABAAAB/BBBABBBA BLOCKS
+    #With the 3rdms
+    fac=1/(wfn.nocc_up-2)
+    npt.assert_allclose(np.einsum('pijkplmn ->ijklmn',aaabaaab)*fac, aabaab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipjklpmn ->ijklmn',aaabaaab)*fac, aabaab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpklmpn ->ijklmn',aaabaaab)*fac, aabaab, rtol=0, atol=1.0e-9)
+    fac=1/(wfn.nocc_dn)
+    npt.assert_allclose(np.einsum('ijkplmnp ->ijklmn',aaabaaab)*fac, aaaaaa, rtol=0, atol=1.0e-9)
+    fac=1/(wfn.nocc_dn-2)
+    npt.assert_allclose(np.einsum('pijkplmn ->ijklmn',bbbabbba)*fac, bbabba, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipjklpmn ->ijklmn',bbbabbba)*fac, bbabba, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpklmpn ->ijklmn',bbbabbba)*fac, bbabba, rtol=0, atol=1.0e-9)
+    fac=1/(wfn.nocc_up)
+    npt.assert_allclose(np.einsum('ijkplmnp ->ijklmn',bbbabbba)*fac, bbbbbb, rtol=0, atol=1.0e-9)
+
+    #With the 2rdms
+    fac=1/((wfn.nocc_up-2)*(wfn.nocc_up-1))
+    npt.assert_allclose(np.einsum('pqijpqkl ->ijkl',aaabaaab)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('piqjpkql ->ijkl',aaabaaab)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipqjkpql ->ijkl',aaabaaab)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    fac=1/((wfn.nocc_dn-2)*(wfn.nocc_dn-1))
+    npt.assert_allclose(np.einsum('pqijpqkl ->ijkl',bbbabbba)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('piqjpkql ->ijkl',bbbabbba)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipqjkpql ->ijkl',bbbabbba)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+    fac=1/((wfn.nocc_dn)*(wfn.nocc_up-2))
+    npt.assert_allclose(np.einsum('ijpqklpq ->ijkl',aaabaaab)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    fac=1/((wfn.nocc_up)*(wfn.nocc_dn-2))
+    npt.assert_allclose(np.einsum('ijpqklpq ->ijkl',bbbabbba)*fac, d2_block_bbbb, rtol=0, atol=1.0e-9)
+
+    # ABBBABBB/BAAABAAA BLOCKS
+    #With the 3rdms
+    fac=1 / (wfn.nocc_dn-2)
+    npt.assert_allclose(np.einsum('ipjklpmn ->ijklmn',abbbabbb)*fac, abbabb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpklmpn ->ijklmn',abbbabbb)*fac, abbabb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijkplmnp ->ijklmn',abbbabbb)*fac, abbabb, rtol=0, atol=1.0e-9)
+    fac=1 / (wfn.nocc_up)
+    npt.assert_allclose(np.einsum('pijkplmn ->ijklmn',abbbabbb)*fac, bbbbbb, rtol=0, atol=1.0e-9)
+    fac=1 / (wfn.nocc_up-2)
+    npt.assert_allclose(np.einsum('ipjklpmn ->ijklmn',baaabaaa)*fac, baabaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpklmpn ->ijklmn',baaabaaa)*fac, baabaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijkplmnp ->ijklmn',baaabaaa)*fac, baabaa, rtol=0, atol=1.0e-9)
+    fac=1 / (wfn.nocc_dn)
+    npt.assert_allclose(np.einsum('pijkplmn ->ijklmn',baaabaaa)*fac, aaaaaa, rtol=0, atol=1.0e-9)
+
+    #With the 2rdms
+    fac=1 / ((wfn.nocc_dn - 2) * (wfn.nocc_up))
+    npt.assert_allclose(np.einsum('pqijpqkl ->ijkl',abbbabbb)*fac, d2_block_bbbb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('piqjpkql ->ijkl',abbbabbb)*fac, d2_block_bbbb, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('pijqpklq ->ijkl',abbbabbb)*fac, d2_block_bbbb, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_dn - 2) * (wfn.nocc_dn - 1))
+    npt.assert_allclose(np.einsum('ipqjkpql ->ijkl',abbbabbb)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipjqkplq ->ijkl',abbbabbb)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpqklpq ->ijkl',abbbabbb)*fac, d2_block_abab, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_up - 2) * (wfn.nocc_dn))
+    npt.assert_allclose(np.einsum('pqijpqkl ->ijkl',baaabaaa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('piqjpkql ->ijkl',baaabaaa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('pijqpklq ->ijkl',baaabaaa)*fac, d2_block_aaaa, rtol=0, atol=1.0e-9)
+    fac=1 / ((wfn.nocc_up - 2) * (wfn.nocc_up - 1))
+    npt.assert_allclose(np.einsum('ipqjkpql ->ijkl',baaabaaa)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ipjqkplq ->ijkl',baaabaaa)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+    npt.assert_allclose(np.einsum('ijpqklpq ->ijkl',baaabaaa)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
+
 
 
 @pytest.mark.parametrize(
