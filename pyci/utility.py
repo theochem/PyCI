@@ -150,7 +150,7 @@ def spinize_rdms(d1, d2):
     return rdm1, rdm2
 
 
-def spinize_rdms_1234(d1, d2, d3, d4):
+def spinize_rdms_1234(d1, d2, d3, d4, d5, d6, d7):
     r"""
     Convert the DOCI matrices or FullCI RDM spin-blocks to full, generalized RDMs.
 
@@ -164,6 +164,12 @@ def spinize_rdms_1234(d1, d2, d3, d4):
         d_3 = \left<pqr|pqr\right>
     .. math::
         d_4 = \left<pqq|prr\right>
+    .. math::
+        d_5 = \left<pqrs|pqrs\right>
+    .. math::
+        d_6 = \left<pprr|ppss\right>
+    .. math::
+        d_7 = \left<pprr|ppss\right>
     Returns
     -------
     rdm1 : numpy.ndarray
@@ -172,6 +178,8 @@ def spinize_rdms_1234(d1, d2, d3, d4):
         Generalized two-particle RDM.
     rdm3 : numpy.ndarray
         Generalized three-particle RDM.
+    rdm4 : numpy.ndarray
+        Generalized four-particle RDM.
     """
     if d1.ndim != 2:
         raise TypeError('wfn must be a DOCI')
@@ -180,6 +188,7 @@ def spinize_rdms_1234(d1, d2, d3, d4):
     rdm1 = np.zeros((nspin, nspin), dtype=np.double)
     rdm2 = np.zeros((nspin, nspin, nspin, nspin), dtype=np.double)
     rdm3 = np.zeros((nspin, nspin, nspin, nspin,nspin,nspin), dtype=np.double)
+    rdm4 = np.zeros((nspin, nspin, nspin, nspin, nspin, nspin, nspin, nspin), dtype=np.float64)
     aa = rdm1[:nbasis, :nbasis]
     bb = rdm1[nbasis:, nbasis:]
     aaaa = rdm2[:nbasis, :nbasis, :nbasis, :nbasis]
@@ -188,10 +197,20 @@ def spinize_rdms_1234(d1, d2, d3, d4):
     baba = rdm2[nbasis:, :nbasis, nbasis:, :nbasis]
     abba = rdm2[:nbasis, nbasis:, nbasis:, :nbasis]
     baab = rdm2[nbasis:, :nbasis, :nbasis, nbasis:]
-    aaaaaa = rdm3[:nbasis,:nbasis,:nbasis,:nbasis,:nbasis,:nbasis]
-    bbbbbb = rdm3[nbasis:,nbasis:,nbasis:,nbasis:,nbasis:,nbasis:]
-    bbabba = rdm3[nbasis:,nbasis:,:nbasis,nbasis:,nbasis:,:nbasis]
-    aabaab = rdm3[:nbasis,:nbasis,nbasis:,:nbasis,:nbasis,nbasis:]
+    aaaaaa = rdm3[:nbasis, :nbasis, :nbasis, :nbasis, :nbasis, :nbasis]
+    bbbbbb = rdm3[nbasis:, nbasis:, nbasis:, nbasis:, nbasis:, nbasis:]
+    bbabba = rdm3[nbasis:, nbasis:, :nbasis, nbasis:, nbasis:, :nbasis]
+    aabaab = rdm3[:nbasis, :nbasis, nbasis:, :nbasis, :nbasis, nbasis:]
+    abbabb = rdm3[:nbasis, nbasis:, nbasis:, :nbasis, nbasis:, nbasis:]
+    baabaa = rdm3[nbasis:, :nbasis, :nbasis, nbasis:, :nbasis, :nbasis]
+    aaaaaaaa = rdm4[:nbasis, :nbasis, :nbasis, :nbasis, :nbasis, :nbasis, :nbasis, :nbasis]
+    bbbbbbbb = rdm4[nbasis:, nbasis:, nbasis:, nbasis:, nbasis:, nbasis:, nbasis:, nbasis:]
+    aaabaaab = rdm4[:nbasis, :nbasis, :nbasis, nbasis:, :nbasis, :nbasis, :nbasis, nbasis:]
+    bbbabbba = rdm4[nbasis:, nbasis:, nbasis:, :nbasis, nbasis:, nbasis:, nbasis:, :nbasis]
+    abbbabbb = rdm4[:nbasis, nbasis:, nbasis:, nbasis:, :nbasis, nbasis:, nbasis:, nbasis:]
+    baaabaaa = rdm4[nbasis:, :nbasis, :nbasis, :nbasis, nbasis:, :nbasis, :nbasis, :nbasis]
+    abababab = rdm4[:nbasis, nbasis:, :nbasis, nbasis:, :nbasis, nbasis:, :nbasis, nbasis:]
+    babababa = rdm4[nbasis:, :nbasis, nbasis:, :nbasis, nbasis:, :nbasis, nbasis:, :nbasis]
     for p in range(nbasis):
         aa[p, p] = d1[p, p]
         bb[p, p] = d1[p, p]
@@ -202,31 +221,100 @@ def spinize_rdms_1234(d1, d2, d3, d4):
             bbbb[p, q, p, q] += d2[p, q]
             abab[p, q, p, q] += d2[p, q]
             baba[p, q, p, q] += d2[p, q]
-            bbabba[p, q, q, p, q, q] += 2.0 * d2[p, q]
-            aabaab[p, q, q, p, q, q] += 2.0 * d2[p, q]
+            bbabba[p, q, q, p, q, q] += d2[p, q] 
+            aabaab[p, q, q, p, q, q] += d2[p, q] 
+            abbabb[p, p, q, p, p, q] += d2[p, q]
+            baabaa[p, p, q, p, p, q] += d2[p, q]
+            abababab[p, p, q, q, p, p, q, q] += d2[p, q] #this had a *2.0
+            babababa[p, p, q, q, p, p, q, q] += d2[p, q] #this had a *2.0
             for r in range(nbasis):               
-                bbabba[p, q, q, p, r, r] += 2.0 * d4[p, q, r]
-                aabaab[p, q, q, p, r, r] += 2.0 * d4[p, q, r] 
+                bbabba[p, q, q, p, r, r] += d4[p, q, r] 
+                aabaab[p, q, q, p, r, r] += d4[p, q, r] 
+                abbabb[q, q, p, r, r, p] += d4[p, q, r]
+                baabaa[q, q, p, r, r, p] += d4[p, q, r]
                 aaaaaa[p, q, r, p, q, r] += d3[p, q, r]
                 bbbbbb[p, q, r, p, q, r] += d3[p, q, r]
                 bbabba[p, q, r, p, q, r] += d3[p, q, r]
                 aabaab[p, q, r, p, q, r] += d3[p, q, r]
+                abbbabbb[p, p, q, r, p, p, q, r] += d3[p, q, r] #this had a *2.0
+                baaabaaa[p, p, q, r, p, p, q, r] += d3[p, q, r] #this had a *2.0
+                aaabaaab[q, r, p, p, q, r, p, p] += d3[p, q, r] #this is new
+                bbbabbba[q, r, p, p, q, r, p, p] += d3[p, q, r] #this is new
+                abababab[p, p, q, r, p, p, q, r] += d3[p, q, r]
+                babababa[p, p, q, r, p, p, q, r] += d3[p, q, r]
+                abababab[q, r, p, p, q, r, p, p] += d3[p, q, r] #this is new
+                babababa[q, r, p, p, q, r, p, p] += d3[p, q, r] #this is new
+                abababab[p, p, q, q, p, p, r, r] +=  d4[p, q, r] #this had a *2.0
+                babababa[p, p, q, q, p, p, r, r] +=  d4[p, q, r] #this had a *2.0
+                abababab[q, q, p, p, r, r, p, p] +=  d4[p, q, r] #this is new
+                babababa[q, q, p, p, r, r, p, p] +=  d4[p, q, r] #this is new
+                for s in range(nbasis):
+                    aaaaaaaa[p, q, r, s, p, q, r, s] += d5[p, q, r, s]
+                    bbbbbbbb[p, q, r, s, p, q, r, s] += d5[p, q, r, s]
+                    aaabaaab[p, q, r, s, p, q, r, s] += d5[p, q, r, s]
+                    baaabaaa[p, q, r, s, p, q, r, s] += d5[p, q, r, s]
+                    abababab[p, q, r, s, p, q, r, s] += d5[p, q, r, s]
+                    babababa[p, q, r, s, p, q, r, s] += d5[p, q, r, s]                  
+                    aaabaaab[p, q, r, r, p, q, s, s] += d6[p, q, r, s]
+                    bbbabbba[p, q, r, r, p, q, s, s] += d6[p, q, r, s]
+                    abababab[p, q, r, r, p, q, s, s] += d6[p, q, r, s]
+                    babababa[p, q, r, r, p, q, s, s] += d6[p, q, r, s]
+                    abbbabbb[r, r, p, q, s, s, p, q] += d6[p, q, r, s] #this is new
+                    baaabaaa[r, r, p, q, s, s, p, q] += d6[p, q, r, s] #this is new
+                    abababab[r, r, p, q, s, s, p, q] += d6[p, q, r, s] #this is new
+                    babababa[r, r, p, q, s, s, p, q] += d6[p, q, r, s] #this is new
+                    abababab[p, p, q, q, r, r, s, s] += d7[p, q, r, s]
+                    babababa[p, p, q, q, r, r, s, s] += d7[p, q, r, s]
+                    
     rdm2 -= np.transpose(rdm2, axes=(1, 0, 2, 3))
     rdm2 -= np.transpose(rdm2, axes=(0, 1, 3, 2))
     rdm2 *= 0.5
-    rdm3 += np.einsum('ijklmn -> ijknlm', rdm3)+\
-            np.einsum('ijklmn -> ijkmnl', rdm3) 
+    rdm3 += np.einsum('pqrstu -> pqrust', rdm3)+\
+            np.einsum('pqrstu -> pqrtus', rdm3) 
     rdm3 *= 1
-    rdm3 -= np.einsum('ijklmn -> ijkmln', rdm3)
-    rdm3 += np.einsum('ijklmn -> kijlmn', rdm3)+\
-            np.einsum('ijklmn -> jkilmn', rdm3) 
+    rdm3 -= np.einsum('pqrstu -> pqrtsu', rdm3)
+    rdm3 += np.einsum('pqrstu -> rpqstu', rdm3)+\
+            np.einsum('pqrstu -> qrpstu', rdm3)
     aaaaaa *= 1/3
     bbbbbb *= 1/3
-    rdm3 -= np.einsum('ijklmn -> jiklmn', rdm3)
+    rdm3 -= np.einsum('pqrstu -> qprstu', rdm3)
     rdm3 *= 0.5
-    return rdm1, rdm2, rdm3
+    rdm4_copy=np.copy(rdm4)
+    rdm4 += np.einsum('pqrstuvw -> pqrstwuv', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrstvwu', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrsutwv', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrsuvtw', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrsuwvt', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrsvtuw', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrsvwtu', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrsvuwt', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrswtvu', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrswutv', rdm4_copy)
+    rdm4 += np.einsum('pqrstuvw -> pqrswvut', rdm4_copy)
+    rdm4 *=1
+    del rdm4_copy
+    rdm4 -= np.einsum('pqrstuvw -> pqrsutvw', rdm4)
+    rdm4_copy=np.copy(rdm4)
+    rdm4 += np.einsum('pqrstuvw -> psqrtuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> prsqtuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> qpsrtuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> qrpstuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> qsrptuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> rpqstuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> rspqtuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> rqsptuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> sprqtuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> sqprtuvw', rdm4_copy) 
+    rdm4 += np.einsum('pqrstuvw -> srqptuvw', rdm4_copy)
+    del rdm4_copy
+    rdm4 *= 0.5
+    aaaaaaaa *= 1/6
+    bbbbbbbb *= 1/6
+    rdm4 -= np.einsum('pqrstuvw -> qprstuvw', rdm4)
+    rdm4 *= 0.5
+    return rdm1, rdm2, rdm3, rdm4
 
-def spin_free_rdms(d1, d2, d3=None, d4=None):
+def spin_free_rdms(d1, d2, d3=None, d4=None, d5=None, d6=None, d7=None):
     r"""
 
     Wrapper of spinze_rdms function that sums over the spin degree of freedom 
@@ -234,14 +322,21 @@ def spin_free_rdms(d1, d2, d3=None, d4=None):
 
     Parameters
     ----------
-    d1 : numpy.ndarray
-        :math:`D_0` matrix or FullCI 1-RDM spin-blocks.
-    d2 : numpy.ndarray
-        :math:`D_2` matrix or FullCI 2-RDM spin-blocks.
-    d3 : numpy.ndarray
-        :math `D_3` matrix for 3-RDM spin-blocks    
-    d4 : numpy.ndarray
-        :math `D_4` matrix for 3-RDM spin-blocks   
+    .. math::
+        d_0 = \left<pp|qq\right>
+    .. math::
+        d_2 = \left<pq|pq\right>
+    .. math::
+        d_3 = \left<pqr|pqr\right>
+    .. math::
+        d_4 = \left<pqq|prr\right>
+    .. math::
+        d_5 = \left<pqrs|pqrs\right>
+    .. math::
+        d_6 = \left<pprr|ppss\right>
+    .. math::
+        d_7 = \left<pprr|ppss\right>
+    Returns  
 
     Returns
     -------
@@ -251,21 +346,23 @@ def spin_free_rdms(d1, d2, d3=None, d4=None):
         Spin traced two-particle RDM.
     rdm3 : numpy.ndarray
         Spin traced three-particle RDM.
+    rdm4 : numpy.ndarray
+        Spin traced four-particle RDM.
     """
     nbasis = d1.shape[1]
-    rdm1, rdm2, rdm3 = spinize_rdms_1234(d1, d2, d3, d4)
-    rdm1_sf = np.zeros((nbasis, nbasis), dtype=np.double)
-    rdm2_sf = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
-    rdm3_sf = np.zeros((nbasis, nbasis, nbasis, nbasis, nbasis, nbasis), dtype=np.double)
-    aa = rdm1[:nbasis, :nbasis]
-    bb = rdm1[nbasis:, nbasis:]
-    aaaa = rdm2[:nbasis, :nbasis, :nbasis, :nbasis]
-    bbbb = rdm2[nbasis:, nbasis:, nbasis:, nbasis:]
-    abab = rdm2[:nbasis, nbasis:, :nbasis, nbasis:]
-    baba = rdm2[nbasis:, :nbasis, nbasis:, :nbasis]
     if d1.ndim == 2:
     # DOCI matrices
-        rdm3_sf=np.zeros((nbasis, nbasis, nbasis, nbasis,nbasis,nbasis), dtype=np.double)
+        rdm1_sf = np.zeros((nbasis, nbasis), dtype=np.double)
+        rdm2_sf = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+        rdm3_sf=np.zeros((nbasis, nbasis, nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+        rdm4_sf=np.zeros((nbasis, nbasis, nbasis, nbasis, nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+        rdm1, rdm2, rdm3, rdm4 = spinize_rdms_1234(d1, d2, d3, d4, d5, d6, d7)
+        aa = rdm1[:nbasis, :nbasis]
+        bb = rdm1[nbasis:, nbasis:]
+        aaaa = rdm2[:nbasis, :nbasis, :nbasis, :nbasis]
+        bbbb = rdm2[nbasis:, nbasis:, nbasis:, nbasis:]
+        abab = rdm2[:nbasis, nbasis:, :nbasis, nbasis:]
+        baba = rdm2[nbasis:, :nbasis, nbasis:, :nbasis]
         aaaaaa= rdm3[:nbasis, :nbasis, :nbasis, :nbasis, :nbasis, :nbasis]
         bbbbbb= rdm3[nbasis:, nbasis:, nbasis:, nbasis:, nbasis:, nbasis:]
         bbabba= rdm3[nbasis:, nbasis:, :nbasis, nbasis:, nbasis:, :nbasis]
@@ -274,12 +371,40 @@ def spin_free_rdms(d1, d2, d3=None, d4=None):
         aabaab = rdm3[:nbasis, :nbasis, nbasis:, :nbasis, :nbasis, nbasis:]
         abaaba = rdm3[:nbasis, nbasis:, :nbasis, :nbasis, nbasis:, :nbasis]
         baabaa = rdm3[nbasis:, :nbasis, :nbasis, nbasis:, :nbasis, :nbasis]
+        aaaaaaaa = rdm4[:nbasis, :nbasis, :nbasis, :nbasis, :nbasis, :nbasis, :nbasis, :nbasis]
+        bbbbbbbb = rdm4[nbasis:, nbasis:, nbasis:, nbasis:, nbasis:, nbasis:, nbasis:, nbasis:]
+        aaabaaab = rdm4[:nbasis, :nbasis, :nbasis, nbasis:, :nbasis, :nbasis, :nbasis, nbasis:]
+        bbbabbba = rdm4[nbasis:, nbasis:, nbasis:, :nbasis, nbasis:, nbasis:, nbasis:, :nbasis]
+        abbbabbb = rdm4[:nbasis, nbasis:, nbasis:, nbasis:, :nbasis, nbasis:, nbasis:, nbasis:]
+        baaabaaa = rdm4[nbasis:, :nbasis, :nbasis, :nbasis, nbasis:, :nbasis, :nbasis, :nbasis]
+        abababab = rdm4[:nbasis, nbasis:, :nbasis, nbasis:, :nbasis, nbasis:, :nbasis, nbasis:]
+        babababa = rdm4[nbasis:, :nbasis, nbasis:, :nbasis, nbasis:, :nbasis, nbasis:, :nbasis]
+        aabaaaba = rdm4[:nbasis, :nbasis, nbasis:, :nbasis, :nbasis, :nbasis, nbasis:, :nbasis]
+        bbabbbab = rdm4[nbasis:, nbasis:, :nbasis, nbasis:, nbasis:, nbasis:, :nbasis, nbasis:]
+        aabbaabb = rdm4[:nbasis, :nbasis, nbasis:, nbasis:, :nbasis, :nbasis, nbasis:, nbasis:]
+        bbaabbaa = rdm4[nbasis:, nbasis:, :nbasis, :nbasis, nbasis:, nbasis:, :nbasis, :nbasis]
+        abaaabaa = rdm4[:nbasis, nbasis:, :nbasis, :nbasis, :nbasis, nbasis:, :nbasis, :nbasis]
+        babbbabb = rdm4[nbasis:, :nbasis, nbasis:, nbasis:, nbasis:, :nbasis, nbasis:, nbasis:]
+        abbaabba = rdm4[:nbasis, nbasis:, nbasis:, :nbasis, :nbasis, nbasis:, nbasis:, :nbasis]
+        baabbaab = rdm4[nbasis:, :nbasis, :nbasis, nbasis:, nbasis:, :nbasis, :nbasis, nbasis:]
         rdm1_sf = aa + bb
         rdm2_sf = aaaa + abab+ baba+ bbbb
         rdm3_sf = aaaaaa + bbbbbb + aabaab + abaaba + baabaa + bbabba + babbab + abbabb
-        return (rdm1_sf, rdm2_sf, rdm3_sf)
+        rdm4_sf =  aaaaaaaa + bbbbbbbb + aaabaaab + bbbabbba + abbbabbb + abbbabbb +baaabaaa \
+        + abababab + babababa + aabaaaba + bbabbbab + aabbaabb + bbaabbaa + abaaabaa + babbbabb \
+        + abbaabba + baabbaab
+        return (rdm1_sf, rdm2_sf, rdm3_sf, rdm4_sf)
     else:
         # FullCI RDM spin-blocks
+        rdm1_sf = np.zeros((nbasis, nbasis), dtype=np.double)
+        rdm2_sf = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+        rdm1, rdm2, rdm3 = spinize_rdms_1234(d1, d2, d3, d4, d5, d6, d7)
+        aa = rdm1[:nbasis, :nbasis]
+        bb = rdm1[nbasis:, nbasis:]
+        aaaa = rdm2[:nbasis, :nbasis, :nbasis, :nbasis]
+        bbbb = rdm2[nbasis:, nbasis:, nbasis:, nbasis:]
+        abab = rdm2[:nbasis, nbasis:, :nbasis, nbasis:]
+        baba = rdm2[nbasis:, :nbasis, nbasis:, :nbasis]
         rdm1_sf = aa + bb
         rdm2_sf = aaaa + abab + baba + bbbb
         return (rdm1_sf, rdm2_sf)
