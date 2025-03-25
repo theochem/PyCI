@@ -225,8 +225,8 @@ def spinize_rdms_1234(d1, d2, d3, d4, d5, d6, d7):
             aabaab[p, q, q, p, q, q] += d2[p, q] 
             abbabb[p, p, q, p, p, q] += d2[p, q]
             baabaa[p, p, q, p, p, q] += d2[p, q]
-            abababab[p, p, q, q, p, p, q, q] += d2[p, q] #this had a *2.0
-            babababa[p, p, q, q, p, p, q, q] += d2[p, q] #this had a *2.0
+            abababab[p, p, q, q, p, p, q, q] += d2[p, q] 
+            babababa[p, p, q, q, p, p, q, q] += d2[p, q] 
             for r in range(nbasis):               
                 bbabba[p, q, q, p, r, r] += d4[p, q, r] 
                 aabaab[p, q, q, p, r, r] += d4[p, q, r] 
@@ -236,18 +236,18 @@ def spinize_rdms_1234(d1, d2, d3, d4, d5, d6, d7):
                 bbbbbb[p, q, r, p, q, r] += d3[p, q, r]
                 bbabba[p, q, r, p, q, r] += d3[p, q, r]
                 aabaab[p, q, r, p, q, r] += d3[p, q, r]
-                abbbabbb[p, p, q, r, p, p, q, r] += d3[p, q, r] #this had a *2.0
-                baaabaaa[p, p, q, r, p, p, q, r] += d3[p, q, r] #this had a *2.0
-                aaabaaab[q, r, p, p, q, r, p, p] += d3[p, q, r] #this is new
-                bbbabbba[q, r, p, p, q, r, p, p] += d3[p, q, r] #this is new
+                abbbabbb[p, p, q, r, p, p, q, r] += d3[p, q, r]
+                baaabaaa[p, p, q, r, p, p, q, r] += d3[p, q, r] 
+                aaabaaab[q, r, p, p, q, r, p, p] += d3[p, q, r]
+                bbbabbba[q, r, p, p, q, r, p, p] += d3[p, q, r]
                 abababab[p, p, q, r, p, p, q, r] += d3[p, q, r]
                 babababa[p, p, q, r, p, p, q, r] += d3[p, q, r]
-                abababab[q, r, p, p, q, r, p, p] += d3[p, q, r] #this is new
-                babababa[q, r, p, p, q, r, p, p] += d3[p, q, r] #this is new
-                abababab[p, p, q, q, p, p, r, r] +=  d4[p, q, r] #this had a *2.0
-                babababa[p, p, q, q, p, p, r, r] +=  d4[p, q, r] #this had a *2.0
-                abababab[q, q, p, p, r, r, p, p] +=  d4[p, q, r] #this is new
-                babababa[q, q, p, p, r, r, p, p] +=  d4[p, q, r] #this is new
+                abababab[q, r, p, p, q, r, p, p] += d3[p, q, r]
+                babababa[q, r, p, p, q, r, p, p] += d3[p, q, r]
+                abababab[p, p, q, q, p, p, r, r] +=  d4[p, q, r] 
+                babababa[p, p, q, q, p, p, r, r] +=  d4[p, q, r]
+                abababab[q, q, p, p, r, r, p, p] +=  d4[p, q, r]
+                babababa[q, q, p, p, r, r, p, p] +=  d4[p, q, r]
                 for s in range(nbasis):
                     aaaaaaaa[p, q, r, s, p, q, r, s] += d5[p, q, r, s]
                     bbbbbbbb[p, q, r, s, p, q, r, s] += d5[p, q, r, s]
@@ -259,13 +259,12 @@ def spinize_rdms_1234(d1, d2, d3, d4, d5, d6, d7):
                     bbbabbba[p, q, r, r, p, q, s, s] += d6[p, q, r, s]
                     abababab[p, q, r, r, p, q, s, s] += d6[p, q, r, s]
                     babababa[p, q, r, r, p, q, s, s] += d6[p, q, r, s]
-                    abbbabbb[r, r, p, q, s, s, p, q] += d6[p, q, r, s] #this is new
-                    baaabaaa[r, r, p, q, s, s, p, q] += d6[p, q, r, s] #this is new
-                    abababab[r, r, p, q, s, s, p, q] += d6[p, q, r, s] #this is new
-                    babababa[r, r, p, q, s, s, p, q] += d6[p, q, r, s] #this is new
+                    abbbabbb[r, r, p, q, s, s, p, q] += d6[p, q, r, s] 
+                    baaabaaa[r, r, p, q, s, s, p, q] += d6[p, q, r, s] 
+                    abababab[r, r, p, q, s, s, p, q] += d6[p, q, r, s] 
+                    babababa[r, r, p, q, s, s, p, q] += d6[p, q, r, s] 
                     abababab[p, p, q, q, r, r, s, s] += d7[p, q, r, s]
-                    babababa[p, p, q, q, r, r, s, s] += d7[p, q, r, s]
-                    
+                    babababa[p, p, q, q, r, r, s, s] += d7[p, q, r, s]                  
     rdm2 -= np.transpose(rdm2, axes=(1, 0, 2, 3))
     rdm2 -= np.transpose(rdm2, axes=(0, 1, 3, 2))
     rdm2 *= 0.5
