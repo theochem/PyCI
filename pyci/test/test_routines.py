@@ -136,7 +136,7 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [
-        ("BH_sto-3g_eq", pyci.doci_wfn, (3, 3), -26.93841940211769),
+        ("BH3", pyci.doci_wfn, (4, 4), -26.121994681435808),
         ("h8_fcidump", pyci.doci_wfn, (4, 4),-4.307571602003291 ), 
         ("h6_sto_3g", pyci.doci_wfn, (3, 3), -5.877285606582455),
     ],
@@ -157,7 +157,7 @@ def test_compute_rdms_1234(filename, wfn_type, occs, energy):
     energy += np.einsum("ij,ij", k0, d0)
     energy += np.einsum("ij,ij", k2, d2)
     npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
-    rdm1, rdm2, rdm3, rdm4 = pyci.spinize_rdms_1234(d0, d2, d3, d4, d5, d6, d7)
+    rdm1, rdm2, rdm3, rdm4 = pyci.spinize_rdms_1234(d0, d2, d3, d4, d5, d6, d7, flag='34RDM')
     assert np.all(np.abs(rdm1 - rdm1.T) < 1e-5)
     # # Test RDM2 is antisymmetric
     # for i in range(0, wfn.nbasis * 2):
