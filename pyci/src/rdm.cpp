@@ -241,7 +241,7 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
                             d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * k + l] += val2;
                             d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * n + (wfn.nbasis * wfn.nbasis) * q + (wfn.nbasis) * l + k] += val2;
                             d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * l + k] += val2;
-                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * k + n] += val2;
+                            d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * q + (wfn.nbasis * wfn.nbasis) * n + (wfn.nbasis) * k + l] += val2;
 
 
                         }
