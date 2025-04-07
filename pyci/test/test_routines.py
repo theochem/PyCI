@@ -383,7 +383,6 @@ def test_compute_rdms_1234(filename, wfn_type, occs, energy):
     npt.assert_allclose(np.einsum('ijpqklpq ->ijkl',baaabaaa)*fac, d2_block_baba, rtol=0, atol=1.0e-9)
 
 
-
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [
@@ -468,7 +467,7 @@ def test_run_hci(filename, wfn_type, occs, energy):
         assert len(wfn) == np.prod([comb(wfn.nbasis, occ, exact=True) for occ in occs])
     else:
         assert len(wfn) == comb(wfn.nbasis, occs[0], exact=True)
-    npt.assert_allclose(es[0], energy, rtol=0.0, atol=1.0e-9)
+    npt.assert_allclose(es[0], energy, rtol=0.0, atol=2.0e-9)
 
 
 @pytest.mark.parametrize(

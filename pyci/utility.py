@@ -348,8 +348,6 @@ def spin_free_rdms(d1, d2, d3=None, d4=None, d5=None, d6=None, d7=None, flag= '3
     flag : ('3RDM' | '34RDM'), default='3RDM'
             RDM selection
     Returns  
-
-    Returns
     -------
     rdm1 : numpy.ndarray
         Spin traced one-particle RDM.
