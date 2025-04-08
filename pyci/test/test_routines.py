@@ -132,7 +132,7 @@ def test_compute_rdms(filename, wfn_type, occs, energy):
     energy += 0.25 * np.einsum("ijkl,ijkl", two_mo, rdm2)
     npt.assert_allclose(energy, es[0], rtol=0.0, atol=1.0e-9)
 
-
+@pytest.mark.bigmem
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [
