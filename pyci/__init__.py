@@ -57,6 +57,8 @@ __all__ = [
     "make_senzero_integrals",
     "reduce_senzero_integrals",
     "spinize_rdms",
+    "spinize_rdms_1234",
+    "spin_free_rdms",
     "odometer_one_spin",
     "odometer_two_spin",
     "add_excitations",

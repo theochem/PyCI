@@ -76,6 +76,10 @@ all: pyci/_pyci.so.$(PYCI_VERSION) pyci/_pyci.so.$(VERSION_MAJOR) pyci/_pyci.so
 test:
 	@set -e; $(PYTHON) -m pytest -sv ./pyci
 
+.PHONY: test-bigmem
+test-bigmem:
+	@set -e; $(PYTHON) -m pytest -sv ./pyci --bigmem
+
 .PHONY: clean
 clean:
 	rm -rf pyci/src/*.o pyci/_pyci.so*
