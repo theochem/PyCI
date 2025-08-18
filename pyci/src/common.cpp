@@ -30,7 +30,7 @@ long get_num_threads(void) {
 }
 
 long end_chunk_idx(const long thread_idx, const long num_threads, const long sideLength) {
-    return ceil(sqrt(thread_idx / num_threads) * sideLength);
+    return ceil(static_cast<double>(thread_idx) / static_cast<double>(num_threads) * sideLength);
 }
 
 void set_num_threads(const long n) {
