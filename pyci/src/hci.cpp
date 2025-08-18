@@ -267,11 +267,9 @@ long add_hci(const SQuantOp &ham, WfnType &wfn, const double *coeffs, const doub
         v_threads.emplace_back(&hci_thread<WfnType>, std::ref(ham), std::ref(wfn),
                                std::ref(v_wfns.back()), coeffs, eps, start, end);
     }
-    long n = 0;
-    for (auto &thread : v_threads) {
-        thread.join();
-        wfn.add_dets_from_wfn(v_wfns[n++]);
-    }
+    for (auto &thread : v_threads) thread.join();
+    for (auto &wf : v_wfns) wfn.add_dets_from_wfn(wf);
+
     return wfn.ndet - ndet_old;
 }
 
