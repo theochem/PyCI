@@ -223,16 +223,13 @@ void compute_rdms_1234(const DOCIWfn &wfn, const double *coeffs, double *d0, dou
                     n = virs[m];
                     for (p= m + 1; p < wfn.nvir_up; ++p){
                         q = virs[p];
-
                         excite_det(l, q, det);
-                        pdet = wfn.index_det(det);
-                        excite_det(q, l, det);
-
                         excite_det(k, n, det);
                         mdet = wfn.index_det(det);
+                        excite_det(q, l, det);
                         excite_det(n, k, det);
                         // check if excited determinants are the same and if it is in wfn
-                        if ((mdet==pdet) && (mdet> idet)) {
+                        if ((mdet> idet)) {
                             val2 = coeffs[mdet] * coeffs[idet];
                             d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * n + q] += val2;
                             d7[(wfn.nbasis * wfn.nbasis * wfn.nbasis ) * k + (wfn.nbasis * wfn.nbasis) * l + (wfn.nbasis) * q + n] += val2;
