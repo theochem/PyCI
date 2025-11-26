@@ -104,6 +104,7 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairH
             jj = virs_up[j];
             // 1-0 excitation elements
             excite_det(ii, jj, det_up);
+            fill_occs(wfn.nword, det_up, t_up);
             sign_up = phase_single_det(wfn.nword, ii, jj, rdet_up);
             val = ham.one_mo[n1 * ii + jj];
             for (k = 0; k < wfn.nocc_up; ++k) {
@@ -121,7 +122,6 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairH
                 rank = wfn.rank_det(det_up);
                 if (wfn.index_det_from_rank(rank) == -1) {
                     val *= sign_up;
-                    fill_occs(wfn.nword, det_up, t_up);
                     compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank], val, n2,
                                                 n3, t_up);
                 }
@@ -367,12 +367,8 @@ double compute_enpt2(const SQuantOp &ham, const WfnType &wfn, const double *coef
         v_threads.emplace_back(&compute_enpt2_thread<WfnType>, std::ref(ham), std::ref(wfn),
                                std::ref(v_terms[i]), coeffs, eps, start, end);
     }
-    long n = 0;
-    for (auto &thread : v_threads) {
-        thread.join();
-        compute_enpt2_thread_condense(terms, v_terms[n], n);
-        ++n;
-    }
+    for (auto &thread : v_threads) thread.join();
+    for (long n=0; n<nthread; n++) compute_enpt2_thread_condense(terms, v_terms[n], n);
     // compute enpt2 correction
     double e = energy - ham.ecore, correction = 0.0;
     for (const auto &keyval : terms)
