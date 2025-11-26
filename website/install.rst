@@ -65,7 +65,7 @@ E.g., for Debian- or Ubuntu- based Linux systems:
 
 .. code:: shell
 
-    sudo apt-get install make git gcc python3 python3-devel python3-pip
+    sudo apt-get install make git gcc python3 python3-dev python3-pip
 
 The required Python packages can then be installed with pip:
 
