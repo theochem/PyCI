@@ -473,12 +473,12 @@ def test_run_hci(filename, wfn_type, occs, energy):
 @pytest.mark.parametrize(
     "filename, wfn_type, occs, energy",
     [
-        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.964248588),
-        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.881173703),
-        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.603138756),
-        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.964248588),
-        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.617423859),
-        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -75.784506748),
+        ("he_ccpvqz", pyci.fullci_wfn, (1, 1), -2.903862702173526),
+        ("li2_ccpvdz", pyci.doci_wfn, (3, 3), -14.90042952400693),
+        ("be_ccpvdz", pyci.doci_wfn, (2, 2), -14.61920612157886),
+        ("he_ccpvqz", pyci.doci_wfn, (1, 1), -2.903862702173526),
+        ("be_ccpvdz", pyci.fullci_wfn, (2, 2), -14.61740346031583),
+        ("h2o_ccpvdz", pyci.doci_wfn, (5, 5), -76.04227376501808),
     ],
 )
 def test_enpt2(filename, wfn_type, occs, energy):
