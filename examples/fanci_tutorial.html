@@ -1,0 +1,766 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>FanCI Quickstart &#8212; Ayers Lab</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/fanci_tutorial';</script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Documentation" href="../api/api.html" />
+    <link rel="prev" title="PyCI Quickstart" href="pyci_tutorial.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../intro.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.png" class="logo__image only-light" alt="Ayers Lab - Home"/>
+    <script>document.write(`<img src="../_static/logo.png" class="logo__image only-dark" alt="Ayers Lab - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../intro.html">
+                    Welcome to PyCI Documentation!
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyci_tutorial.html">PyCI Quickstart</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">FanCI Quickstart</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">API Documentation</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-launch-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Launch interactive content">
+    <i class="fas fa-rocket"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://colab.research.google.com/github/QuantumElephant/PyCI/blob/master/website/examples/fanci_tutorial.ipynb" target="_blank"
+   class="btn btn-sm dropdown-item"
+   title="Launch on Colab"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  
+    <img alt="Colab logo" src="../_static/images/logo_colab.png">
+  </span>
+<span class="btn__text-container">Colab</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="initThebeSBT()"
+  class="btn btn-sm btn-launch-thebe dropdown-item"
+  title="Launch Thebe"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-play"></i>
+  </span>
+<span class="btn__text-container">Live Code</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/QuantumElephant/PyCI" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/QuantumElephant/PyCI/issues/new?title=Issue%20on%20page%20%2Fexamples/fanci_tutorial.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/examples/fanci_tutorial.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>FanCI Quickstart</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#supported-fanci-methods">Supported FanCI methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#closed-shell">Closed-shell</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#open-shell">Open-shell</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-data-and-defining-the-hamiltonian">Loading data and defining the Hamiltonian</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-reference-hatree-fock-energy">Computing reference (Hatree-Fock) energy</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ap1rog">AP1roG</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pccd-s">pCCD+S</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compare-results">Compare results</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-reduced-density-matrices">Computing reduced density matrices</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="fanci-quickstart">
+<h1>FanCI Quickstart<a class="headerlink" href="#fanci-quickstart" title="Link to this heading">#</a></h1>
+<p>FanCI is a Python library for computing various post-Hartree-Fock methods
+(of the <a class="reference external" href="https://doi.org/10.1016/j.comptc.2021.113187"><em>Flexible Ansätze for N-electron CI</em></a>, or “FanCI”, type) using the <a class="reference internal" href="#www.github.com/PyCI/PyCI"><span class="xref myst">PyCI</span></a> library. The main objective of FanCI is to provide a simple and flexible framework to implement and test new CI methods. FanCI is not intended to be a high performance library, but rather a tool to test new ideas and methods.</p>
+<section id="supported-fanci-methods">
+<h2>Supported FanCI methods<a class="headerlink" href="#supported-fanci-methods" title="Link to this heading">#</a></h2>
+<p>FanCI wavefunctions can be based on the open-shell <code class="docutils literal notranslate"><span class="pre">fullci_wfn</span></code> class, the closed-shell <code class="docutils literal notranslate"><span class="pre">doci_wfn</span></code> class, or the generalized <code class="docutils literal notranslate"><span class="pre">genci_wfn</span></code> class of PyCI.</p>
+<p>In the following tutorial we will look at the following wavefunction models using <strong>Be</strong> as our toy model:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://doi.org/10.1021/ct300902c">AP1roG</a> (closed-shell)</p></li>
+<li><p><a class="reference external" href="https://doi.org/10.48550/arXiv.2310.01764">pCCD+S</a> (open-shell)</p></li>
+</ul>
+<p>Available methods include:</p>
+<section id="closed-shell">
+<h3>Closed-shell<a class="headerlink" href="#closed-shell" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.AP1roG">AP1roG</a></p></li>
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.APIG">APIG</a></p></li>
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.DetRatio">Determinant ratio</a></p></li>
+</ul>
+</section>
+<section id="open-shell">
+<h3>Open-shell<a class="headerlink" href="#open-shell" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.pCCDS">pCCD+S</a></p></li>
+<li><p><a class="reference external" href="http://pyci.qcdevs.org/api/api.html#pyci.fanci.DetRatio">Determinant ratio</a></p></li>
+</ul>
+</section>
+<section id="loading-data-and-defining-the-hamiltonian">
+<h3>Loading data and defining the Hamiltonian<a class="headerlink" href="#loading-data-and-defining-the-hamiltonian" title="Link to this heading">#</a></h3>
+<p>First, we need to load the integrals data from a quantum chemistry package. PyCI supports the use of files in the <a class="reference external" href="https://doi.org/10.1016/0010-4655(89)90033-7">FCIDUMP</a> file format. The following code shows how to load the integrals from a FCIDUMP file and define the Hamiltonian.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import modules</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyci</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyci.fanci</span><span class="w"> </span><span class="kn">import</span> <span class="n">AP1roG</span><span class="p">,</span> <span class="n">pCCDS</span>
+<span class="c1"># optional</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyci.test</span><span class="w"> </span><span class="kn">import</span> <span class="n">datafile</span>
+
+<span class="c1"># System information</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">(</span><span class="s2">&quot;lih_sto6g.fcidump&quot;</span><span class="p">)</span>
+<span class="n">ham</span> <span class="o">=</span> <span class="n">pyci</span><span class="o">.</span><span class="n">hamiltonian</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="n">e_dict</span> <span class="o">=</span> <span class="p">{}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="computing-reference-hatree-fock-energy">
+<h3>Computing reference (Hatree-Fock) energy<a class="headerlink" href="#computing-reference-hatree-fock-energy" title="Link to this heading">#</a></h3>
+<p>The following code shows how to compute the reference (Hartree-Fock) energy (minus the constant (nuclear-nuclear repulsion) term) using the PyCI package.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get Hartree-Fock energy</span>
+<span class="n">hf_wfn</span> <span class="o">=</span> <span class="n">pyci</span><span class="o">.</span><span class="n">doci_wfn</span><span class="p">(</span><span class="n">ham</span><span class="o">.</span><span class="n">nbasis</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">hf_wfn</span><span class="o">.</span><span class="n">add_hartreefock_det</span><span class="p">()</span>
+<span class="n">hf_op</span> <span class="o">=</span> <span class="n">pyci</span><span class="o">.</span><span class="n">sparse_op</span><span class="p">(</span><span class="n">ham</span><span class="p">,</span> <span class="n">hf_wfn</span><span class="p">)</span>
+<span class="n">e_dict</span><span class="p">[</span><span class="s2">&quot;HF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hf_op</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">ham</span><span class="o">.</span><span class="n">ecore</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="ap1rog">
+<h3>AP1roG<a class="headerlink" href="#ap1rog" title="Link to this heading">#</a></h3>
+<p>The following code shows how to create an initial-guess array for the nonlinear FanCI parameters of the wavefunction. In the case of AP1roG, it is usually ok to leave the wavefunction parameters at zero. The last parameter, the energy, is set to the Hartree-Fock energy.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize AP1roG instance</span>
+<span class="n">ap1rog</span> <span class="o">=</span> <span class="n">AP1roG</span><span class="p">(</span><span class="n">ham</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Make initial guess</span>
+<span class="n">ap1_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ap1rog</span><span class="o">.</span><span class="n">nparam</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">pyci</span><span class="o">.</span><span class="n">c_double</span><span class="p">)</span>
+<span class="n">ap1_params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_dict</span><span class="p">[</span><span class="s2">&quot;HF&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>One can use the built-in <code class="docutils literal notranslate"><span class="pre">optimize</span></code> method to optimize the wavefunction parameters using a SciPy optimizer. If one would like to use a different optimizer, the objective function and its Jacobian are available for use as <code class="docutils literal notranslate"><span class="pre">obj.compute_objective(x)</span></code> and <code class="docutils literal notranslate"><span class="pre">obj.compute_jacobian(x)</span></code>.</p>
+<p>Optimize the AP1roG wavefunction:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Optimize wavefunction</span>
+<span class="n">ap1rog_results</span> <span class="o">=</span> <span class="n">ap1rog</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="n">ap1_params</span><span class="p">,</span> <span class="n">use_jac</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">e_dict</span><span class="p">[</span><span class="s2">&quot;AP1roG&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ap1rog_results</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="pccd-s">
+<h3>pCCD+S<a class="headerlink" href="#pccd-s" title="Link to this heading">#</a></h3>
+<p>The following code shows how the optimized parameters from a simpler wavefunction (AP1roG) can be used as the initial guess to a more complicated and more accurate wavefunction (pCCD+S).</p>
+<p>Use the AP1roG wave function to generate an initial guess for the pCCD+S wave function; optimize it:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize pCCD+S instance</span>
+<span class="n">pccds</span> <span class="o">=</span> <span class="n">pCCDS</span><span class="p">(</span><span class="n">ham</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Make initial guess from AP1roG params</span>
+<span class="n">pccds_params</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">pccds</span><span class="o">.</span><span class="n">nparam</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">pyci</span><span class="o">.</span><span class="n">c_double</span><span class="p">)</span>
+<span class="n">pccds_params</span><span class="p">[:</span><span class="n">pccds</span><span class="o">.</span><span class="n">wfn</span><span class="o">.</span><span class="n">nocc_up</span> <span class="o">*</span> <span class="n">pccds</span><span class="o">.</span><span class="n">wfn</span><span class="o">.</span><span class="n">nvir_up</span><span class="p">]</span> <span class="o">=</span> <span class="n">ap1rog_results</span><span class="o">.</span><span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">pccds_params</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ap1rog_results</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># Optimize wavefunction</span>
+<span class="n">pccds_results</span> <span class="o">=</span> <span class="n">pccds</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="n">pccds_params</span><span class="p">,</span> <span class="n">use_jac</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">e_dict</span><span class="p">[</span><span class="s2">&quot;pCCD+S&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pccds_results</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="compare-results">
+<h3>Compare results<a class="headerlink" href="#compare-results" title="Link to this heading">#</a></h3>
+<p>Compare the energies and verify that  <span class="math notranslate nohighlight">\(E_\text{HF}\)</span> &gt; <span class="math notranslate nohighlight">\(E_\text{AP1roG}\)</span> &gt; <span class="math notranslate nohighlight">\(E_\text{pCCD+S}\)</span>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Print energies from various methods</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;METHOD&#39;</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="s1">&#39;ENERGY&#39;</span><span class="si">:</span><span class="s2">&gt;16s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">energy</span> <span class="ow">in</span> <span class="n">e_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">&gt;8s</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">energy</span><span class="si">:</span><span class="s2">&gt;16.9e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  METHOD,           ENERGY
+      HF, -8.947289175e+00
+  AP1roG, -8.963531034e+00
+  pCCD+S, -8.963613544e+00
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="computing-reduced-density-matrices">
+<h3>Computing reduced density matrices<a class="headerlink" href="#computing-reduced-density-matrices" title="Link to this heading">#</a></h3>
+<p>PyCI can be used to approximately evaluate the 1- and 2- electron reduced density matrices of the FanCI wavefunction object. For example, here we use a larger, although still much smaller than FullCI, projection space (seniority-(0,2) + excitation-(0,1,2,3) CI) over which to compute the CI coefficients <span class="math notranslate nohighlight">\(c_i = \langle\psi_i\mid\Psi_\text{pCCD+S}\rangle\)</span>, which are then used to approximately (but accurately) evaluate the pCCD+S RDMs in a reasonable manner.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make larger projection space over which to evaluate RDMs</span>
+<span class="n">proj_wfn</span> <span class="o">=</span> <span class="n">pyci</span><span class="o">.</span><span class="n">fullci_wfn</span><span class="p">(</span><span class="n">ham</span><span class="o">.</span><span class="n">nbasis</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Add seniority- 0 and 2 determinants</span>
+<span class="n">pyci</span><span class="o">.</span><span class="n">add_seniorities</span><span class="p">(</span><span class="n">proj_wfn</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="c1"># Add singly, doubly, triply excited determinants</span>
+<span class="n">pyci</span><span class="o">.</span><span class="n">add_excitations</span><span class="p">(</span><span class="n">proj_wfn</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># Evaluate coefficients with optimized pCCD+S</span>
+<span class="n">coeffs</span> <span class="o">=</span> <span class="n">pccds</span><span class="o">.</span><span class="n">compute_overlap</span><span class="p">(</span><span class="n">pccds_results</span><span class="o">.</span><span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">proj_wfn</span><span class="o">.</span><span class="n">to_occ_array</span><span class="p">())</span>
+
+<span class="c1"># Compute RDMs using larger projection space and pCCD+S coefficients</span>
+<span class="n">d1</span><span class="p">,</span> <span class="n">d2</span> <span class="o">=</span> <span class="n">pyci</span><span class="o">.</span><span class="n">compute_rdms</span><span class="p">(</span><span class="n">proj_wfn</span><span class="p">,</span> <span class="n">coeffs</span><span class="p">)</span>
+<span class="n">rdm1</span><span class="p">,</span> <span class="n">rdm2</span> <span class="o">=</span> <span class="n">pyci</span><span class="o">.</span><span class="n">spinize_rdms</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Validate the RDMs; ensure that  <span class="math notranslate nohighlight">\(\text{tr}\left(\gamma\right) \approx n_\text{elec}\)</span>  and that <span class="math notranslate nohighlight">\(\frac{1}{2}\sum_{pq}{\Gamma_{pqpq}} \approx n_\text{pair}\)</span>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Validate the RDMs</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of electrons = </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">rdm1</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of pairs     = </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;pqpq&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">rdm2</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">2.0</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Number of electrons = 4.1
+Number of pairs     = 6.1
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "QuantumElephant/PyCI",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./examples"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="pyci_tutorial.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">PyCI Quickstart</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../api/api.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API Documentation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#supported-fanci-methods">Supported FanCI methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#closed-shell">Closed-shell</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#open-shell">Open-shell</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-data-and-defining-the-hamiltonian">Loading data and defining the Hamiltonian</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-reference-hatree-fock-energy">Computing reference (Hatree-Fock) energy</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ap1rog">AP1roG</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pccd-s">pCCD+S</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compare-results">Compare results</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-reduced-density-matrices">Computing reduced density matrices</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The QC-Dev Community with the support of Digital Research Alliance of Canada and The Jupyter Book Community
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2023-2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

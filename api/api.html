@@ -1,0 +1,2353 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>API Documentation &#8212; Ayers Lab</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/api';</script>
+    <link rel="icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="FanCI Quickstart" href="../examples/fanci_tutorial.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search this book..."
+         aria-label="Search this book..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../intro.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.png" class="logo__image only-light" alt="Ayers Lab - Home"/>
+    <script>document.write(`<img src="../_static/logo.png" class="logo__image only-dark" alt="Ayers Lab - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="../intro.html">
+                    Welcome to PyCI Documentation!
+                </a>
+            </li>
+        </ul>
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/pyci_tutorial.html">PyCI Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/fanci_tutorial.html">FanCI Quickstart</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">API Documentation</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/QuantumElephant/PyCI" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/QuantumElephant/PyCI/issues/new?title=Issue%20on%20page%20%2Fapi/api.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/api/api.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>API Documentation</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#constants">Constants</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.__version__"><code class="docutils literal notranslate"><span class="pre">__version__</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#numerical-types">Numerical Types</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.c_long"><code class="docutils literal notranslate"><span class="pre">c_long</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.c_ulong"><code class="docutils literal notranslate"><span class="pre">c_ulong</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.c_double"><code class="docutils literal notranslate"><span class="pre">c_double</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#classes">Classes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#second-quantized-operator-class">Second-quantized operator class</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op"><code class="docutils literal notranslate"><span class="pre">secondquant_op</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.ecore"><code class="docutils literal notranslate"><span class="pre">secondquant_op.ecore</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.h"><code class="docutils literal notranslate"><span class="pre">secondquant_op.h</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.nbasis"><code class="docutils literal notranslate"><span class="pre">secondquant_op.nbasis</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.one_mo"><code class="docutils literal notranslate"><span class="pre">secondquant_op.one_mo</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.to_file"><code class="docutils literal notranslate"><span class="pre">secondquant_op.to_file()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.two_mo"><code class="docutils literal notranslate"><span class="pre">secondquant_op.two_mo</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.v"><code class="docutils literal notranslate"><span class="pre">secondquant_op.v</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.w"><code class="docutils literal notranslate"><span class="pre">secondquant_op.w</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.hamiltonian"><code class="docutils literal notranslate"><span class="pre">hamiltonian</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#base-wave-function-classes">Base wave function classes</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction"><code class="docutils literal notranslate"><span class="pre">wavefunction</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nbasis"><code class="docutils literal notranslate"><span class="pre">wavefunction.nbasis</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nocc"><code class="docutils literal notranslate"><span class="pre">wavefunction.nocc</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nocc_dn"><code class="docutils literal notranslate"><span class="pre">wavefunction.nocc_dn</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nocc_up"><code class="docutils literal notranslate"><span class="pre">wavefunction.nocc_up</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nvir"><code class="docutils literal notranslate"><span class="pre">wavefunction.nvir</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nvir_dn"><code class="docutils literal notranslate"><span class="pre">wavefunction.nvir_dn</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nvir_up"><code class="docutils literal notranslate"><span class="pre">wavefunction.nvir_up</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.squeeze"><code class="docutils literal notranslate"><span class="pre">wavefunction.squeeze()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_all_dets"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_all_dets()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_det"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_dets_from_wfn"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_dets_from_wfn()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_excited_dets"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_excited_dets()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_hartreefock_det"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_hartreefock_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_occs"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_occs()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.index_det"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.index_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.index_det_from_rank"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.index_det_from_rank()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.rank_det"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.rank_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.reserve"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.reserve()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.to_det_array"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.to_det_array()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.to_file"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.to_file()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.to_occ_array"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.to_occ_array()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_all_dets"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_all_dets()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_det"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_dets_from_wfn"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_dets_from_wfn()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_excited_dets"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_excited_dets()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_hartreefock_det"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_hartreefock_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_occs"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_occs()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.index_det"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.index_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.index_det_from_rank"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.index_det_from_rank()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.rank_det"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.rank_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.reserve"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.reserve()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.to_det_array"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.to_det_array()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.to_file"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.to_file()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.to_occ_array"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.to_occ_array()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#doci-wave-function">DOCI wave function</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.doci_wfn"><code class="docutils literal notranslate"><span class="pre">doci_wfn</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fullci-wave-function">FullCI wave function</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fullci_wfn"><code class="docutils literal notranslate"><span class="pre">fullci_wfn</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#generalized-ci-wave-function">Generalized CI wave function</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.genci_wfn"><code class="docutils literal notranslate"><span class="pre">genci_wfn</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sparse-matrix-operator">Sparse matrix operator</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op"><code class="docutils literal notranslate"><span class="pre">sparse_op</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.data"><code class="docutils literal notranslate"><span class="pre">sparse_op.data()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.dtype"><code class="docutils literal notranslate"><span class="pre">sparse_op.dtype</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.ecore"><code class="docutils literal notranslate"><span class="pre">sparse_op.ecore</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.get_element"><code class="docutils literal notranslate"><span class="pre">sparse_op.get_element()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.indices"><code class="docutils literal notranslate"><span class="pre">sparse_op.indices()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.indptr"><code class="docutils literal notranslate"><span class="pre">sparse_op.indptr()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.matvec"><code class="docutils literal notranslate"><span class="pre">sparse_op.matvec()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.reserve"><code class="docutils literal notranslate"><span class="pre">sparse_op.reserve()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.shape"><code class="docutils literal notranslate"><span class="pre">sparse_op.shape</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.size"><code class="docutils literal notranslate"><span class="pre">sparse_op.size</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.solve"><code class="docutils literal notranslate"><span class="pre">sparse_op.solve()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.squeeze"><code class="docutils literal notranslate"><span class="pre">sparse_op.squeeze()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.symmetric"><code class="docutils literal notranslate"><span class="pre">sparse_op.symmetric</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.update"><code class="docutils literal notranslate"><span class="pre">sparse_op.update()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#threading">Threading</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.get_num_threads"><code class="docutils literal notranslate"><span class="pre">get_num_threads()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.set_num_threads"><code class="docutils literal notranslate"><span class="pre">set_num_threads()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#selected-ci-routines">Selected CI routines</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.add_hci"><code class="docutils literal notranslate"><span class="pre">add_hci()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.add_excitations"><code class="docutils literal notranslate"><span class="pre">add_excitations()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.add_seniorities"><code class="docutils literal notranslate"><span class="pre">add_seniorities()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.add_gkci"><code class="docutils literal notranslate"><span class="pre">add_gkci()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post-ci-routines">Post-CI routines</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.compute_rdms"><code class="docutils literal notranslate"><span class="pre">compute_rdms()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.spinize_rdms"><code class="docutils literal notranslate"><span class="pre">spinize_rdms()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.compute_enpt2"><code class="docutils literal notranslate"><span class="pre">compute_enpt2()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.compute_overlap"><code class="docutils literal notranslate"><span class="pre">compute_overlap()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integral-transformations">Integral transformations</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.make_senzero_integrals"><code class="docutils literal notranslate"><span class="pre">make_senzero_integrals()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.reduce_senzero_integrals"><code class="docutils literal notranslate"><span class="pre">reduce_senzero_integrals()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fanci-classes">FanCI classes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG"><code class="docutils literal notranslate"><span class="pre">AP1roG</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG.compute_jacobian"><code class="docutils literal notranslate"><span class="pre">AP1roG.compute_jacobian()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG.compute_objective"><code class="docutils literal notranslate"><span class="pre">AP1roG.compute_objective()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG.compute_overlap"><code class="docutils literal notranslate"><span class="pre">AP1roG.compute_overlap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">AP1roG.compute_overlap_deriv()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG"><code class="docutils literal notranslate"><span class="pre">APIG</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_jacobian"><code class="docutils literal notranslate"><span class="pre">APIG.compute_jacobian()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_objective"><code class="docutils literal notranslate"><span class="pre">APIG.compute_objective()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_overlap"><code class="docutils literal notranslate"><span class="pre">APIG.compute_overlap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">APIG.compute_overlap_deriv()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.DetRatio"><code class="docutils literal notranslate"><span class="pre">DetRatio</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.DetRatio.compute_overlap"><code class="docutils literal notranslate"><span class="pre">DetRatio.compute_overlap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.DetRatio.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">DetRatio.compute_overlap_deriv()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.pCCDS"><code class="docutils literal notranslate"><span class="pre">pCCDS</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.pCCDS.compute_overlap"><code class="docutils literal notranslate"><span class="pre">pCCDS.compute_overlap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.pCCDS.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">pCCDS.compute_overlap_deriv()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="api-documentation">
+<h1>API Documentation<a class="headerlink" href="#api-documentation" title="Link to this heading">#</a></h1>
+<section id="constants">
+<h2>Constants<a class="headerlink" href="#constants" title="Link to this heading">#</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="pyci.__version__">
+<span class="sig-name descname"><span class="pre">__version__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'0.6.1'</span></em><a class="headerlink" href="#pyci.__version__" title="Link to this definition">#</a></dt>
+<dd><p>PyCI version string.</p>
+</dd></dl>
+
+<section id="numerical-types">
+<h3>Numerical Types<a class="headerlink" href="#numerical-types" title="Link to this heading">#</a></h3>
+<dl class="py data">
+<dt class="sig sig-object py" id="pyci.c_long">
+<span class="sig-name descname"><span class="pre">c_long</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">dtype('int64')</span></em><a class="headerlink" href="#pyci.c_long" title="Link to this definition">#</a></dt>
+<dd><p>Signed integer C++ dtype.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pyci.c_ulong">
+<span class="sig-name descname"><span class="pre">c_ulong</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">dtype('uint64')</span></em><a class="headerlink" href="#pyci.c_ulong" title="Link to this definition">#</a></dt>
+<dd><p>Unsigned integer C++ dtype.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="pyci.c_double">
+<span class="sig-name descname"><span class="pre">c_double</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">dtype('float64')</span></em><a class="headerlink" href="#pyci.c_double" title="Link to this definition">#</a></dt>
+<dd><p>Floating point C++ dtype.</p>
+</dd></dl>
+
+</section>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">#</a></h2>
+<section id="second-quantized-operator-class">
+<h3>Second-quantized operator class<a class="headerlink" href="#second-quantized-operator-class" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.secondquant_op">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">secondquant_op</span></span><a class="headerlink" href="#pyci.secondquant_op" title="Link to this definition">#</a></dt>
+<dd><p>Second-quantized operator class.</p>
+<p>For arbitrary-seniority systems:</p>
+<div class="math notranslate nohighlight">
+\[O = \sum_{pq}{t_{pq} a^\dagger_p a_q} + \sum_{pqrs}{g_{pqrs} a^\dagger_p a^\dagger_q a_s a_r}\]</div>
+<p>For seniority-zero systems:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\]</div>
+<p>O = sum_{p}{h_p N_p} + sum_{p neq q}{v_{pq} P^dagger_p P_q} + sum_{pq}{w_{pq} N_p N_q}</p>
+</div></blockquote>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[h_{p} = \left&lt;p|T|p\right&gt; = t_{pp}\]</div>
+<div class="math notranslate nohighlight">
+\[v_{pq} = \left&lt;pp|V|qq\right&gt; = g_{ppqq}\]</div>
+<div class="math notranslate nohighlight">
+\[w_{pq} = 2 \left&lt;pq|V|pq\right&gt; - \left&lt;pq|V|qp\right&gt; = 2 * g_{pqpq} - g_{pqqp}\]</div>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.ecore">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ecore</span></span><a class="headerlink" href="#pyci.secondquant_op.ecore" title="Link to this definition">#</a></dt>
+<dd><p>Constant (or &quot;zero-particle&quot;) integral.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ecore</strong> – Constant (or &quot;zero-particle&quot;) integral.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.h">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">h</span></span><a class="headerlink" href="#pyci.secondquant_op.h" title="Link to this definition">#</a></dt>
+<dd><p>Seniority-zero one-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>h</strong> – Seniority-zero one-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.nbasis">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nbasis</span></span><a class="headerlink" href="#pyci.secondquant_op.nbasis" title="Link to this definition">#</a></dt>
+<dd><p>Number of spatial orbital basis functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nbasis</strong> – Number of spatial orbital basis functions.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.one_mo">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">one_mo</span></span><a class="headerlink" href="#pyci.secondquant_op.one_mo" title="Link to this definition">#</a></dt>
+<dd><p>One-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>one_mo</strong> – One-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.secondquant_op.to_file">
+<span class="sig-name descname"><span class="pre">to_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.secondquant_op.to_file" title="Link to this definition">#</a></dt>
+<dd><p>Write this operator to an FCIDUMP file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>TextIO</em>) – Name of FCIDUMP file to write.</p></li>
+<li><p><strong>nelec</strong> (<em>int</em><em>, </em><em>default=0</em>) – Number of electrons to write.</p></li>
+<li><p><strong>ms2</strong> (<em>int</em><em>, </em><em>default=0</em>) – Spin number to write.</p></li>
+<li><p><strong>tol</strong> (<em>float</em><em>, </em><em>default=0.0</em>) – Only write integrals with magnitude larger than this value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.two_mo">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">two_mo</span></span><a class="headerlink" href="#pyci.secondquant_op.two_mo" title="Link to this definition">#</a></dt>
+<dd><p>Two-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>two_mo</strong> – Two-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.v">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">v</span></span><a class="headerlink" href="#pyci.secondquant_op.v" title="Link to this definition">#</a></dt>
+<dd><p>Seniority-zero two-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>v</strong> – Seniority-zero two-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.secondquant_op.w">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">w</span></span><a class="headerlink" href="#pyci.secondquant_op.w" title="Link to this definition">#</a></dt>
+<dd><p>Seniority-two two-particle molecular integral array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>w</strong> – Seniority-two two-particle molecular integral array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyci.hamiltonian">
+<span class="sig-name descname"><span class="pre">hamiltonian</span></span><a class="headerlink" href="#pyci.hamiltonian" title="Link to this definition">#</a></dt>
+<dd><p>alias of <a class="reference internal" href="#pyci.secondquant_op" title="pyci._pyci.secondquant_op"><code class="xref py py-class docutils literal notranslate"><span class="pre">secondquant_op</span></code></a></p>
+</dd></dl>
+
+</section>
+<section id="base-wave-function-classes">
+<h3>Base wave function classes<a class="headerlink" href="#base-wave-function-classes" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.wavefunction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wavefunction</span></span><a class="headerlink" href="#pyci.wavefunction" title="Link to this definition">#</a></dt>
+<dd><p>Wave function base class.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.wavefunction.nbasis">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nbasis</span></span><a class="headerlink" href="#pyci.wavefunction.nbasis" title="Link to this definition">#</a></dt>
+<dd><p>Number of spatial orbital functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nbasis</strong> – Number of spatial orbital functions.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.wavefunction.nocc">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nocc</span></span><a class="headerlink" href="#pyci.wavefunction.nocc" title="Link to this definition">#</a></dt>
+<dd><p>Number of occupied spin-orbitals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nocc</strong> – Number of occupied spin-orbitals.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.wavefunction.nocc_dn">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nocc_dn</span></span><a class="headerlink" href="#pyci.wavefunction.nocc_dn" title="Link to this definition">#</a></dt>
+<dd><p>Number of occupied spin-down orbitals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nocc_dn</strong> – Number of occupied spin-down orbitals.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.wavefunction.nocc_up">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nocc_up</span></span><a class="headerlink" href="#pyci.wavefunction.nocc_up" title="Link to this definition">#</a></dt>
+<dd><p>Number of occupied spin-up orbitals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nocc_up</strong> – Number of occupied spin-up orbitals.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.wavefunction.nvir">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nvir</span></span><a class="headerlink" href="#pyci.wavefunction.nvir" title="Link to this definition">#</a></dt>
+<dd><p>Number of virtual spin-orbitals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nvir</strong> – Number of virtual spin-orbitals.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.wavefunction.nvir_dn">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nvir_dn</span></span><a class="headerlink" href="#pyci.wavefunction.nvir_dn" title="Link to this definition">#</a></dt>
+<dd><p>Number of virtual spin-down orbitals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nvir_dn</strong> – Number of virtual spin-down orbitals.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.wavefunction.nvir_up">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nvir_up</span></span><a class="headerlink" href="#pyci.wavefunction.nvir_up" title="Link to this definition">#</a></dt>
+<dd><p>Number of virtual spin-up orbitals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nvir_up</strong> – Number of virtual spin-up orbitals.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.wavefunction.squeeze">
+<span class="sig-name descname"><span class="pre">squeeze</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.wavefunction.squeeze" title="Link to this definition">#</a></dt>
+<dd><p>Free any unused memory allocated to this object.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">one_spin_wfn</span></span><a class="headerlink" href="#pyci.one_spin_wfn" title="Link to this definition">#</a></dt>
+<dd><p>One-spin wave function base class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.add_all_dets">
+<span class="sig-name descname"><span class="pre">add_all_dets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.add_all_dets" title="Link to this definition">#</a></dt>
+<dd><p>Add all determinants to the wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nthread</strong> (<em>int</em>) – Number of threads to use.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.add_det">
+<span class="sig-name descname"><span class="pre">add_det</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.add_det" title="Link to this definition">#</a></dt>
+<dd><p>Add determinant <code class="docutils literal notranslate"><span class="pre">det</span></code> to the wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>det</strong> (<em>numpy.ndarray</em>) – Determinant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>index</strong> – Index of added determinant in wave function, or -1 if the determinant was not added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.add_dets_from_wfn">
+<span class="sig-name descname"><span class="pre">add_dets_from_wfn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.add_dets_from_wfn" title="Link to this definition">#</a></dt>
+<dd><p>Add the determinants from another wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.one_spin_wfn" title="pyci.one_spin_wfn"><em>pyci.one_spin_wfn</em></a>) – Wave function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.add_excited_dets">
+<span class="sig-name descname"><span class="pre">add_excited_dets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.add_excited_dets" title="Link to this definition">#</a></dt>
+<dd><p>Add excited determinants to the wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exc</strong> (<em>int</em>) – Excitation order.</p></li>
+<li><p><strong>ref</strong> (<em>numpy.ndarray</em><em>, </em><em>default=None</em>) – Reference determinant. Default is the Hartree-Fock determinant.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.add_hartreefock_det">
+<span class="sig-name descname"><span class="pre">add_hartreefock_det</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.add_hartreefock_det" title="Link to this definition">#</a></dt>
+<dd><p>Add the Hartree-Fock determinant to the wave function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.add_occs">
+<span class="sig-name descname"><span class="pre">add_occs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.add_occs" title="Link to this definition">#</a></dt>
+<dd><p>Add occupation vector <code class="docutils literal notranslate"><span class="pre">occs</span></code> to the wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>occs</strong> (<em>numpy.ndarray</em>) – Occupation vector.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>index</strong> – Index of added determinant in wave function, or -1 if the determinant was not added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.index_det">
+<span class="sig-name descname"><span class="pre">index_det</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.index_det" title="Link to this definition">#</a></dt>
+<dd><p>Return the index of determinant <code class="docutils literal notranslate"><span class="pre">det</span></code> in the wave function.</p>
+<p>If the determinant is not in the wave function, this function returns -1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>det</strong> (<em>numpy.ndarray</em>) – Determinant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>index</strong> – Index of determinant or -1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.index_det_from_rank">
+<span class="sig-name descname"><span class="pre">index_det_from_rank</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.index_det_from_rank" title="Link to this definition">#</a></dt>
+<dd><p>Return the index of determinant with rank <code class="docutils literal notranslate"><span class="pre">rank</span></code> in the wave function.</p>
+<p>If the determinant is not in the wave function, this function returns -1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rank</strong> (<em>int</em>) – Rank of determinant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>index</strong> – Index of determinant or -1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.rank_det">
+<span class="sig-name descname"><span class="pre">rank_det</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.rank_det" title="Link to this definition">#</a></dt>
+<dd><p>Return the rank of determinant <code class="docutils literal notranslate"><span class="pre">det</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>det</strong> (<em>numpy.ndarray</em>) – Determinant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rank</strong> – Rank of determinant.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.reserve">
+<span class="sig-name descname"><span class="pre">reserve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.reserve" title="Link to this definition">#</a></dt>
+<dd><p>Reserve space in memory for <code class="docutils literal notranslate"><span class="pre">n</span></code> determinants in the wave function object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> (<em>int</em>) – Number of determinants for which to reserve space.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.to_det_array">
+<span class="sig-name descname"><span class="pre">to_det_array</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.to_det_array" title="Link to this definition">#</a></dt>
+<dd><p>Return a section of the wave function as a numpy.ndarray of determinants.</p>
+<p>Arguments <code class="docutils literal notranslate"><span class="pre">low</span></code> and <code class="docutils literal notranslate"><span class="pre">high</span></code> behave like the first two arguments to <code class="docutils literal notranslate"><span class="pre">range</span></code>. By default, if
+neither are specified, the whole determinant is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> (<em>int</em><em>, </em><em>default=-1</em>) – Beginning of section.</p></li>
+<li><p><strong>end</strong> (<em>int</em><em>, </em><em>default=-1</em>) – End of section.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>array</strong> – Array of determinants.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.to_file">
+<span class="sig-name descname"><span class="pre">to_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.to_file" title="Link to this definition">#</a></dt>
+<dd><p>Write the wave function to a binary file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>TextIO</em>) – Name of the file to write.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.one_spin_wfn.to_occ_array">
+<span class="sig-name descname"><span class="pre">to_occ_array</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.one_spin_wfn.to_occ_array" title="Link to this definition">#</a></dt>
+<dd><p>Return a section of the wave function as a numpy.ndarray of occupation vectors.</p>
+<p>Arguments <code class="docutils literal notranslate"><span class="pre">low</span></code> and <code class="docutils literal notranslate"><span class="pre">high</span></code> behave like the first two arguments to <code class="docutils literal notranslate"><span class="pre">range()</span></code>. By default, if
+neither are specified, the whole determinant is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> (<em>int</em><em>, </em><em>default=-1</em>) – Beginning of section.</p></li>
+<li><p><strong>end</strong> (<em>int</em><em>, </em><em>default=-1</em>) – End of section.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>array</strong> – Array of occupation vectors.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">two_spin_wfn</span></span><a class="headerlink" href="#pyci.two_spin_wfn" title="Link to this definition">#</a></dt>
+<dd><p>Two-spin wave function base class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.add_all_dets">
+<span class="sig-name descname"><span class="pre">add_all_dets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.add_all_dets" title="Link to this definition">#</a></dt>
+<dd><p>Add all determinants to the wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nthread</strong> (<em>int</em>) – Number of threads to use.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.add_det">
+<span class="sig-name descname"><span class="pre">add_det</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.add_det" title="Link to this definition">#</a></dt>
+<dd><p>Add determinant <code class="docutils literal notranslate"><span class="pre">det</span></code> to the wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>det</strong> (<em>numpy.ndarray</em>) – Determinant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>index</strong> – Index of added determinant in wave function, or -1 if the determinant was not added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.add_dets_from_wfn">
+<span class="sig-name descname"><span class="pre">add_dets_from_wfn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.add_dets_from_wfn" title="Link to this definition">#</a></dt>
+<dd><p>Add the determinants from another wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.two_spin_wfn" title="pyci.two_spin_wfn"><em>pyci.two_spin_wfn</em></a>) – Wave function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.add_excited_dets">
+<span class="sig-name descname"><span class="pre">add_excited_dets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.add_excited_dets" title="Link to this definition">#</a></dt>
+<dd><p>Add excited determinants to the wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exc</strong> (<em>int</em>) – Excitation order.</p></li>
+<li><p><strong>ref</strong> (<em>numpy.ndarray</em><em>, </em><em>default=None</em>) – Reference determinant. Default is the Hartree-Fock determinant.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.add_hartreefock_det">
+<span class="sig-name descname"><span class="pre">add_hartreefock_det</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.add_hartreefock_det" title="Link to this definition">#</a></dt>
+<dd><p>Add the Hartree-Fock determinant to the wave function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.add_occs">
+<span class="sig-name descname"><span class="pre">add_occs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.add_occs" title="Link to this definition">#</a></dt>
+<dd><p>Add occupation vector <code class="docutils literal notranslate"><span class="pre">occs</span></code> to the wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>occs</strong> (<em>numpy.ndarray</em>) – Occupation vector.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>index</strong> – Index of added determinant in wave function, or -1 if the determinant was not added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.index_det">
+<span class="sig-name descname"><span class="pre">index_det</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.index_det" title="Link to this definition">#</a></dt>
+<dd><p>Return the index of determinant <code class="docutils literal notranslate"><span class="pre">det</span></code> in the wave function.</p>
+<p>If the determinant is not in the wave function, this function returns -1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>det</strong> (<em>numpy.ndarray</em>) – Determinant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>index</strong> – Index of determinant or -1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.index_det_from_rank">
+<span class="sig-name descname"><span class="pre">index_det_from_rank</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.index_det_from_rank" title="Link to this definition">#</a></dt>
+<dd><p>Return the index of determinant with rank <code class="docutils literal notranslate"><span class="pre">rank</span></code> in the wave function.</p>
+<p>If the determinant is not in the wave function, this function returns -1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rank</strong> (<em>int</em>) – Rank of determinant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>index</strong> – Index of determinant or -1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.rank_det">
+<span class="sig-name descname"><span class="pre">rank_det</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.rank_det" title="Link to this definition">#</a></dt>
+<dd><p>Return the rank of determinant <code class="docutils literal notranslate"><span class="pre">det</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>det</strong> (<em>numpy.ndarray</em>) – Determinant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rank</strong> – Rank of determinant.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.reserve">
+<span class="sig-name descname"><span class="pre">reserve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.reserve" title="Link to this definition">#</a></dt>
+<dd><p>Reserve space in memory for <code class="docutils literal notranslate"><span class="pre">n</span></code> determinants in the wave function object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> (<em>int</em>) – Number of determinants for which to reserve space.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.to_det_array">
+<span class="sig-name descname"><span class="pre">to_det_array</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.to_det_array" title="Link to this definition">#</a></dt>
+<dd><p>Return a section of the wave function as a numpy.ndarray of determinants.</p>
+<p>Arguments <code class="docutils literal notranslate"><span class="pre">low</span></code> and <code class="docutils literal notranslate"><span class="pre">high</span></code> behave like the first two arguments to <code class="docutils literal notranslate"><span class="pre">range</span></code>. By default, if
+neither are specified, the whole determinant is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> (<em>int</em><em>, </em><em>default=-1</em>) – Beginning of section.</p></li>
+<li><p><strong>end</strong> (<em>int</em><em>, </em><em>default=-1</em>) – End of section.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>array</strong> – Array of determinants.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.to_file">
+<span class="sig-name descname"><span class="pre">to_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.to_file" title="Link to this definition">#</a></dt>
+<dd><p>Write the wave function to a binary file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>TextIO</em>) – Name of the file to write.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.two_spin_wfn.to_occ_array">
+<span class="sig-name descname"><span class="pre">to_occ_array</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.two_spin_wfn.to_occ_array" title="Link to this definition">#</a></dt>
+<dd><p>Return a section of the wave function as a numpy.ndarray of occupation vectors.</p>
+<p>Arguments <code class="docutils literal notranslate"><span class="pre">low</span></code> and <code class="docutils literal notranslate"><span class="pre">high</span></code> behave like the first two arguments to <code class="docutils literal notranslate"><span class="pre">range()</span></code>. By default, if
+neither are specified, the whole determinant is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>low</strong> (<em>int</em><em>, </em><em>default=-1</em>) – Beginning of section.</p></li>
+<li><p><strong>end</strong> (<em>int</em><em>, </em><em>default=-1</em>) – End of section.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>array</strong> – Array of occupation vectors.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="doci-wave-function">
+<h3>DOCI wave function<a class="headerlink" href="#doci-wave-function" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.doci_wfn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">doci_wfn</span></span><a class="headerlink" href="#pyci.doci_wfn" title="Link to this definition">#</a></dt>
+<dd><p>DOCI wave function base class.</p>
+</dd></dl>
+
+</section>
+<section id="fullci-wave-function">
+<h3>FullCI wave function<a class="headerlink" href="#fullci-wave-function" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.fullci_wfn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fullci_wfn</span></span><a class="headerlink" href="#pyci.fullci_wfn" title="Link to this definition">#</a></dt>
+<dd><p>FullCI wave function base class.</p>
+</dd></dl>
+
+</section>
+<section id="generalized-ci-wave-function">
+<h3>Generalized CI wave function<a class="headerlink" href="#generalized-ci-wave-function" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.genci_wfn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">genci_wfn</span></span><a class="headerlink" href="#pyci.genci_wfn" title="Link to this definition">#</a></dt>
+<dd><p>Generalized CI wave function base class.</p>
+</dd></dl>
+
+</section>
+<section id="sparse-matrix-operator">
+<h3>Sparse matrix operator<a class="headerlink" href="#sparse-matrix-operator" title="Link to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.sparse_op">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sparse_op</span></span><a class="headerlink" href="#pyci.sparse_op" title="Link to this definition">#</a></dt>
+<dd><p>Sparse matrix operator class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.data">
+<span class="sig-name descname"><span class="pre">data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.data" title="Link to this definition">#</a></dt>
+<dd><p>Return CSR matrix data vector</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.sparse_op.dtype">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#pyci.sparse_op.dtype" title="Link to this definition">#</a></dt>
+<dd><p>Data type of matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dtype</strong> – Data type of matrix.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.dtype</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.sparse_op.ecore">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ecore</span></span><a class="headerlink" href="#pyci.sparse_op.ecore" title="Link to this definition">#</a></dt>
+<dd><p>Constant (or “zero-particle”) integral.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ecore</strong> – Constant (or “zero-particle”) integral.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.get_element">
+<span class="sig-name descname"><span class="pre">get_element</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.get_element" title="Link to this definition">#</a></dt>
+<dd><p>Return the <span class="math notranslate nohighlight">\(\left(i, j\right)\)</span>-th element of the sparse matrix operator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.indices">
+<span class="sig-name descname"><span class="pre">indices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.indices" title="Link to this definition">#</a></dt>
+<dd><p>Return CSR matrix indices vector</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.indptr">
+<span class="sig-name descname"><span class="pre">indptr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.indptr" title="Link to this definition">#</a></dt>
+<dd><p>Return CSR matrix index pointer vector</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.matvec">
+<span class="sig-name descname"><span class="pre">matvec</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.matvec" title="Link to this definition">#</a></dt>
+<dd><p>Compute the matrix vector product of the sparse matrix operator with vector <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<div class="math notranslate nohighlight">
+\[A \mathbf{x} = \mathbf{y}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>numpy.ndarray</em>) – Vector to which the operator will be applied.</p></li>
+<li><p><strong>out</strong> (<em>numpy.ndarray</em><em>, </em><em>default=None</em>) – Array in which to store the result. One will be created if this is not specified.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>y</strong> – Result vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.reserve">
+<span class="sig-name descname"><span class="pre">reserve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.reserve" title="Link to this definition">#</a></dt>
+<dd><p>Reserve space in memory for <code class="docutils literal notranslate"><span class="pre">n</span></code> nonzero elements in the sparse matrix operator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> (<em>int</em>) – Number of elements for which to reserve space.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.sparse_op.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pyci.sparse_op.shape" title="Link to this definition">#</a></dt>
+<dd><p>Shape of the matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>nrow</strong> (<em>int</em>) – Number of rows.</p></li>
+<li><p><strong>ncol</strong> (<em>int</em>) – Number of columns.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.sparse_op.size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#pyci.sparse_op.size" title="Link to this definition">#</a></dt>
+<dd><p>Number of non-zero matrix elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>size</strong> – Number of non-zero matrix elements.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.solve">
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.solve" title="Link to this definition">#</a></dt>
+<dd><p>Solve a CI eigenproblem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em><em>, </em><em>default=1</em>) – Number of lowest eigenpairs to find.</p></li>
+<li><p><strong>c0</strong> (<em>np.ndarray</em><em>, </em><em>default=</em><em>[</em><em>1</em><em>,</em><em>0</em><em>,</em><em>...</em><em>,</em><em>0</em><em>]</em>) – Initial guess for lowest eigenvector.</p></li>
+<li><p><strong>ncv</strong> (<em>int</em><em>, </em><em>default=min</em><em>(</em><em>nrow</em><em>, </em><em>max</em><em>(</em><em>2 * n + 1</em><em>, </em><em>20</em><em>)</em><em>)</em>) – Number of Lanczos vectors to use.</p></li>
+<li><p><strong>maxiter</strong> (<em>int</em><em>, </em><em>default=nrow * n * 10</em>) – Maximum number of iterations to perform.</p></li>
+<li><p><strong>tol</strong> (<em>float</em><em>, </em><em>default=1.0e-12</em>) – Convergence tolerance.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>es</strong> (<em>np.ndarray</em>) – Energies.</p></li>
+<li><p><strong>cs</strong> (<em>np.ndarray</em>) – Coefficient vectors.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.squeeze">
+<span class="sig-name descname"><span class="pre">squeeze</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.squeeze" title="Link to this definition">#</a></dt>
+<dd><p>Free any unused memory allocated to this object.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyci.sparse_op.symmetric">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">symmetric</span></span><a class="headerlink" href="#pyci.sparse_op.symmetric" title="Link to this definition">#</a></dt>
+<dd><p>Whether the sparse matrix operator is symmetric/Hermitian.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symmetric</strong> – Whether the sparse matrix operator is symmetric/Hermitian.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.sparse_op.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.sparse_op.update" title="Link to this definition">#</a></dt>
+<dd><p>Update a sparse matrix operator for the HCI algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ham</strong> (<a class="reference internal" href="#pyci.secondquant_op" title="pyci.secondquant_op"><em>pyci.secondquant_op</em></a>) – Hamiltonian.</p></li>
+<li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Wave function.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The user is responsible for using the same <code class="docutils literal notranslate"><span class="pre">ham</span></code> and <code class="docutils literal notranslate"><span class="pre">wfn</span></code>.
+This method doesn’t work with rectangular operators. Those must
+be re-initialized from the wave function object.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
+<section id="threading">
+<h3>Threading<a class="headerlink" href="#threading" title="Link to this heading">#</a></h3>
+<p>The number of threads to use is decided as follows, in decreasing priority:</p>
+<ul class="simple">
+<li><p>The value of a keyword argument <code class="docutils literal notranslate"><span class="pre">nthread=</span></code> to a particular PyCI function or method call</p></li>
+<li><p>The value of <code class="docutils literal notranslate"><span class="pre">n</span></code> from the most recent invokation of <code class="docutils literal notranslate"><span class="pre">pyci.set_num_threads(n)</span></code></p></li>
+<li><p>The value of environment variable <code class="docutils literal notranslate"><span class="pre">PYCI_NUM_THREADS</span></code> when Python is started</p></li>
+<li><p>The number of threads supported by the hardware (<code class="docutils literal notranslate"><span class="pre">std::thread::hardware_concurrency()</span></code>)</p></li>
+</ul>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.get_num_threads">
+<span class="sig-name descname"><span class="pre">get_num_threads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.get_num_threads" title="Link to this definition">#</a></dt>
+<dd><p>Return the default number of threads to use.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nthread</strong> – Number of threads.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.set_num_threads">
+<span class="sig-name descname"><span class="pre">set_num_threads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.set_num_threads" title="Link to this definition">#</a></dt>
+<dd><p>Set the default number of threads to use.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nthread</strong> (<em>int</em>) – Number of threads.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="selected-ci-routines">
+<h3>Selected CI routines<a class="headerlink" href="#selected-ci-routines" title="Link to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.add_hci">
+<span class="sig-name descname"><span class="pre">add_hci</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.add_hci" title="Link to this definition">#</a></dt>
+<dd><p>Add determinants to a wave function by running an iteration of Heat-Bath CI <a class="reference internal" href="#hci1" id="id1"><span>[HCI1]</span></a>.</p>
+<div role="list" class="citation-list">
+<div class="citation" id="hci1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">HCI1</a><span class="fn-bracket">]</span></span>
+<p>Holmes, Adam A., Norm M. Tubman, and C. J. Umrigar. “Heat-bath configuration
+interaction: An efficient selected configuration interaction algorithm
+inspired by heat-bath sampling.” <em>Journal of chemical theory and computation</em>
+12.8 (2016): 3674-3680.</p>
+</div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ham</strong> (<a class="reference internal" href="#pyci.secondquant_op" title="pyci.secondquant_op"><em>pyci.secondquant_op</em></a>) – Hamiltonian.</p></li>
+<li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Wave function.</p></li>
+<li><p><strong>coeffs</strong> (<em>numpy.ndarray</em>) – Coefficient vector.</p></li>
+<li><p><strong>eps</strong> (<em>float</em><em>, </em><em>default=1.0e-5</em>) – <span class="math notranslate nohighlight">\(\epsilon\)</span> value for Heat-Bath CI routine.</p></li>
+<li><p><strong>nthread</strong> (<em>int</em>) – Number of threads to use.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ndet</strong> – Number of determinants added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.add_excitations">
+<span class="sig-name descname"><span class="pre">add_excitations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wfn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">excitations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.add_excitations" title="Link to this definition">#</a></dt>
+<dd><p>Add excited determinants to a wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Wave function.</p></li>
+<li><p><strong>excitations</strong> (<em>Sequence</em><em>[</em><em>int</em><em>]</em>) – List of excitation levels of determinants to add.</p></li>
+<li><p><strong>ref</strong> (<em>numpy.ndarray</em><em>, </em><em>optional</em>) – Reference determinant by which to determine excitation levels.
+Default is the Hartree-Fock determinant.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.add_seniorities">
+<span class="sig-name descname"><span class="pre">add_seniorities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wfn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">seniorities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.add_seniorities" title="Link to this definition">#</a></dt>
+<dd><p>Add determinants of the specified seniority/ies to the wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.fullci_wfn" title="pyci.fullci_wfn"><em>pyci.fullci_wfn</em></a>) – FullCI wave function.</p></li>
+<li><p><strong>seniorities</strong> (<em>Sequence</em><em>[</em><em>int</em><em>]</em>) – List of seniorities of determinants to add.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.add_gkci">
+<span class="sig-name descname"><span class="pre">add_gkci</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wfn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cntsp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energies</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.add_gkci" title="Link to this definition">#</a></dt>
+<dd><p>Add determinants to the wave function according to the odometer algorithm
+(Griebel-Knapeck CI) <a class="reference internal" href="#gkci1" id="id2"><span>[GKCI1]</span></a>.</p>
+<div role="list" class="citation-list">
+<div class="citation" id="gkci1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">GKCI1</a><span class="fn-bracket">]</span></span>
+<p>Anderson, James SM, Farnaz Heidar-Zadeh, and Paul W. Ayers. “Breaking the curse of
+dimension for the electronic Schrödinger equation with functional analysis.”
+<em>Computational and Theoretical Chemistry</em> 1142 (2018): 66-77.</p>
+</div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Wave function.</p></li>
+<li><p><strong>t</strong> (<em>float</em><em>, </em><em>default=-0.5</em>) – Smoothness factor.</p></li>
+<li><p><strong>p</strong> (<em>float</em><em>, </em><em>default=1.0</em>) – Cost factor.</p></li>
+<li><p><strong>mode</strong> (<em>Sequence</em><em>[</em><em>int</em><em>] or </em><em>(</em><em>'cntsp'</em><em> | </em><em>'gamma'</em><em> | </em><em>'interval'</em><em>)</em><em>, </em><em>default='cntsp'</em>) – Node pattern.</p></li>
+<li><p><strong>dim</strong> (<em>int</em><em>, </em><em>default=3</em>) – Number of nodes (for ‘gamma’ mode).</p></li>
+<li><p><strong>energies</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Orbital energies (required for ‘interval’ mode).</p></li>
+<li><p><strong>width</strong> (<em>float</em><em>, </em><em>optional</em>) – Width of one interval (required for ‘interval’ mode).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="post-ci-routines">
+<h3>Post-CI routines<a class="headerlink" href="#post-ci-routines" title="Link to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.compute_rdms">
+<span class="sig-name descname"><span class="pre">compute_rdms</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.compute_rdms" title="Link to this definition">#</a></dt>
+<dd><p>Compute the one- and two- particle reduced density matrices (RDMs) of a wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Wave function.</p></li>
+<li><p><strong>coeffs</strong> (<em>numpy.ndarray</em>) – Coefficient vector.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>d1</strong> (<em>numpy.ndarray</em>) – One-particle RDM matrix.</p></li>
+<li><p><strong>d2</strong> (<em>numpy.ndarray</em>) – Two-particle RDM matrix.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For DOCI wave functions, this method returns two nbasis-by-nbasis matrices, which include the unique
+seniority-zero and seniority-two terms from the full 2-RDMs:</p>
+<div class="math notranslate nohighlight">
+\[D_0 = \left&lt;pp|qq\right&gt;\]</div>
+<div class="math notranslate nohighlight">
+\[D_2 = \left&lt;pq|pq\right&gt;\]</div>
+<p>The diagonal elements of <span class="math notranslate nohighlight">\(D_0\)</span> are equal to the 1-RDM elements <span class="math notranslate nohighlight">\(\left&lt;p|p\right&gt;\)</span>.</p>
+<p>For FullCI wave functions, the leading dimension of <code class="docutils literal notranslate"><span class="pre">rdm1</span></code> has length 2 and specifies the
+spin-block 0) “up-up” or 1) “down-down”, and the leading dimensions of <code class="docutils literal notranslate"><span class="pre">rdm2</span></code> has length 3 and
+specifies the spin-block 0) “up-up-up-up”, 1) “down-down-down-down’, or 2) “up-down-up-down”.</p>
+<p>For Generalized CI wave functions, <code class="docutils literal notranslate"><span class="pre">rdm1</span></code> and <code class="docutils literal notranslate"><span class="pre">rdm2</span></code> are the full 1-RDM and 2-RDM, respectively.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.spinize_rdms">
+<span class="sig-name descname"><span class="pre">spinize_rdms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.spinize_rdms" title="Link to this definition">#</a></dt>
+<dd><p>Convert the DOCI matrices or FullCI RDM spin-blocks to full, generalized RDMs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>d1</strong> (<em>numpy.ndarray</em>) – <span class="math notranslate nohighlight">\(D_0\)</span> matrix or FullCI 1-RDM spin-blocks.</p></li>
+<li><p><strong>d2</strong> (<em>numpy.ndarray</em>) – <span class="math notranslate nohighlight">\(D_2\)</span> matrix or FullCI 2-RDM spin-blocks.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>rdm1</strong> (<em>numpy.ndarray</em>) – Generalized one-particle RDM.</p></li>
+<li><p><strong>rdm2</strong> (<em>numpy.ndarray</em>) – Generalized two-particle RDM.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.compute_enpt2">
+<span class="sig-name descname"><span class="pre">compute_enpt2</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.compute_enpt2" title="Link to this definition">#</a></dt>
+<dd><p>Compute the second-order multi-reference Epstein-Nesbet (ENPT2) energy for a wave function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ham</strong> (<a class="reference internal" href="#pyci.secondquant_op" title="pyci.secondquant_op"><em>pyci.secondquant_op</em></a>) – Hamiltonian.</p></li>
+<li><p><strong>wfn</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Wave function.</p></li>
+<li><p><strong>coeffs</strong> (<em>numpy.ndarray</em>) – Coefficient vector.</p></li>
+<li><p><strong>energy</strong> (<em>float</em>) – Variational CI energy for this wave function and Hamiltonian.</p></li>
+<li><p><strong>eps</strong> (<em>float</em><em>, </em><em>default=1.0e-5</em>) – <span class="math notranslate nohighlight">\(\epsilon\)</span> value for ENPT2 routine.</p></li>
+<li><p><strong>nthread</strong> (<em>int</em>) – Number of threads to use.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>pt_energy</strong> – ENPT2 energy.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.compute_overlap">
+<span class="sig-name descname"><span class="pre">compute_overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyci.compute_overlap" title="Link to this definition">#</a></dt>
+<dd><p>Compute the overlap <span class="math notranslate nohighlight">\(\left&lt;\Psi_1|\Psi_2\right&gt;\)</span> of two wave functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wfn1</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.wavefunction"><em>pyci.wavefunction</em></a>) – First wave function.</p></li>
+<li><p><strong>wfn2</strong> (<a class="reference internal" href="#pyci.wavefunction" title="pyci.wavefunction"><em>pyci.wavefunction</em></a>) – Second wave function.</p></li>
+<li><p><strong>coeffs1</strong> (<em>numpy.ndarray</em>) – First coefficient vector.</p></li>
+<li><p><strong>coeffs2</strong> (<em>numpy.ndarray</em>) – Second coefficient vector.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>olp</strong> – Overlap.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="integral-transformations">
+<h3>Integral transformations<a class="headerlink" href="#integral-transformations" title="Link to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.make_senzero_integrals">
+<span class="sig-name descname"><span class="pre">make_senzero_integrals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">one_mo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">two_mo</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.make_senzero_integrals" title="Link to this definition">#</a></dt>
+<dd><p>Return the non-zero chunks for seniority-zero of the full one- and two- particle integrals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>one_mo</strong> (<em>numpy.ndarray</em>) – Full one-particle integral array.</p></li>
+<li><p><strong>two_mo</strong> (<em>numpy.ndarray</em>) – Full two-particle integral array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>h</strong> (<em>numpy.ndarray</em>) – Seniority-zero one-particle integrals.</p></li>
+<li><p><strong>v</strong> (<em>numpy.ndarray</em>) – Seniority-zero two-particle integrals.</p></li>
+<li><p><strong>w</strong> (<em>numpy.ndarray</em>) – Seniority-two two-particle integrals.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyci.reduce_senzero_integrals">
+<span class="sig-name descname"><span class="pre">reduce_senzero_integrals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.reduce_senzero_integrals" title="Link to this definition">#</a></dt>
+<dd><p>Reduce the non-zero chunks for seniority-zero of the one- and two- particle integrals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>h</strong> (<em>numpy.ndarray</em>) – Seniority-zero one-particle integrals.</p></li>
+<li><p><strong>v</strong> (<em>numpy.ndarray</em>) – Seniority-zero two-particle integrals.</p></li>
+<li><p><strong>w</strong> (<em>numpy.ndarray</em>) – Seniority-two two-particle integrals.</p></li>
+<li><p><strong>nocc</strong> (<em>int</em>) – Number of pair-occupied orbitals.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>rv</strong> (<em>numpy.ndarray</em>) – Reduced seniority-zero two-particle integrals.</p></li>
+<li><p><strong>rw</strong> (<em>numpy.ndarray</em>) – Reduced seniority-two two-particle integrals.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+<section id="fanci-classes">
+<h2>FanCI classes<a class="headerlink" href="#fanci-classes" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.fanci.AP1roG">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AP1roG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.secondquant_op" title="pyci._pyci.secondquant_op"><span class="pre">secondquant_op</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.doci_wfn" title="pyci._pyci.doci_wfn"><span class="pre">doci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.AP1roG" title="Link to this definition">#</a></dt>
+<dd><p>AP1roG FanCI class.</p>
+<p>The AP1roG wave function is the <em>Antisymmetrized Product of 1-reference-orbital
+Geminals</em> <a class="reference internal" href="#ap1rog1" id="id3"><span>[AP1roG1]</span></a>, which has the form</p>
+<div class="math notranslate nohighlight">
+\[\left|\Psi\right&gt; = \prod_{p=1}^{N_\text{elec}/2}{\left(
+    a^\dagger_{\alpha;p} a^\dagger_{\beta;p} +
+    \sum_{k=N/2+1}^K{
+        c_{pk} a^\dagger_{\alpha;k} a^\dagger_{\beta;k}
+    }
+\right)} \left|\psi_0\right&gt; \,.\]</div>
+<div role="list" class="citation-list">
+<div class="citation" id="ap1rog1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">AP1roG1</a><span class="fn-bracket">]</span></span>
+<p>Limacher, Peter A., et al. “A new mean-field method suitable for strongly
+correlated electrons: Computationally facile antisymmetric products of
+nonorthogonal geminals.” <em>Journal of chemical theory and computation</em>
+9.3 (2013): 1394-1401.</p>
+</div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.AP1roG.compute_jacobian">
+<span class="sig-name descname"><span class="pre">compute_jacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.AP1roG.compute_jacobian" title="Link to this definition">#</a></dt>
+<dd><p>Compute the Jacobian of the FanCI objective function.</p>
+<blockquote>
+<div><p>j : x[k] -&gt; y[n, k]</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n, E].</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>jac</strong> – Jacobian matrix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.AP1roG.compute_objective">
+<span class="sig-name descname"><span class="pre">compute_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.AP1roG.compute_objective" title="Link to this definition">#</a></dt>
+<dd><p>Compute the FanCI objective function.</p>
+<blockquote>
+<div><p>f : x[k] -&gt; y[n]</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n, E].</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>obj</strong> – Objective vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.AP1roG.compute_overlap">
+<span class="sig-name descname"><span class="pre">compute_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.AP1roG.compute_overlap" title="Link to this definition">#</a></dt>
+<dd><p>Compute the FanCI overlap vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ovlp</strong> – Overlap array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.AP1roG.compute_overlap_deriv">
+<span class="sig-name descname"><span class="pre">compute_overlap_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.AP1roG.compute_overlap_deriv" title="Link to this definition">#</a></dt>
+<dd><p>Compute the FanCI overlap derivative matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ovlp</strong> – Overlap derivative array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.fanci.APIG">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">APIG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.secondquant_op" title="pyci._pyci.secondquant_op"><span class="pre">secondquant_op</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.doci_wfn" title="pyci._pyci.doci_wfn"><span class="pre">doci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.APIG" title="Link to this definition">#</a></dt>
+<dd><p>APIG FanCI class.</p>
+<p>The APIG wave function is the <em>Antisymmetrized Product of Interacting Geminals</em> <a class="reference internal" href="#apig1" id="id4"><span>[APIG1]</span></a>,
+which has the form</p>
+<div class="math notranslate nohighlight">
+\[\left|\Psi\right&gt; = \prod_{p=1}^{N_\text{elec}/2}{
+    \sum_{k=1}^K{
+        \left( c_{pk} a^\dagger_{\alpha;k} a^\dagger_{\beta;k} \right)
+    }
+} \left|\psi_0\right&gt; \,.\]</div>
+<div role="list" class="citation-list">
+<div class="citation" id="apig1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">APIG1</a><span class="fn-bracket">]</span></span>
+<p>Silver, David M. “Natural orbital expansion of interacting geminals.”
+<em>The Journal of Chemical Physics</em> 50.12 (1969): 5108-5116.</p>
+</div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.APIG.compute_jacobian">
+<span class="sig-name descname"><span class="pre">compute_jacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_jacobian" title="Link to this definition">#</a></dt>
+<dd><p>Compute the Jacobian of the FanCI objective function.</p>
+<blockquote>
+<div><p>j : x[k] -&gt; y[n, k]</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n, E].</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>jac</strong> – Jacobian matrix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.APIG.compute_objective">
+<span class="sig-name descname"><span class="pre">compute_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_objective" title="Link to this definition">#</a></dt>
+<dd><p>Compute the FanCI objective function.</p>
+<blockquote>
+<div><p>f : x[k] -&gt; y[n]</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n, E].</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>obj</strong> – Objective vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.APIG.compute_overlap">
+<span class="sig-name descname"><span class="pre">compute_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_overlap" title="Link to this definition">#</a></dt>
+<dd><p>Compute the FanCI overlap vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ovlp</strong> – Overlap array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.APIG.compute_overlap_deriv">
+<span class="sig-name descname"><span class="pre">compute_overlap_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.APIG.compute_overlap_deriv" title="Link to this definition">#</a></dt>
+<dd><p>Compute the FanCI overlap derivative matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ovlp</strong> – Overlap derivative array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.fanci.DetRatio">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DetRatio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.secondquant_op" title="pyci._pyci.secondquant_op"><span class="pre">secondquant_op</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numerator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">denominator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.doci_wfn" title="pyci._pyci.doci_wfn"><span class="pre">doci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.DetRatio" title="Link to this definition">#</a></dt>
+<dd><p>Determinant ratio FanCI class. This wave function has the form</p>
+<div class="math notranslate nohighlight">
+\[\left|\Psi\right&gt; = \sum_k{c_k\prod_{i=1}^N{a^\dagger_{k_i}}\left|\theta\right&gt;}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[c_k = \frac{
+    \prod_{n=1}^{n_\text{numer.}}{\text{det}\left[\vec{x_n;}_{k_1}\mid\cdots\mid\vec{x_n;}_{k_N}\right]}
+}{
+    \prod_{d=1}^{n_\text{denom.}}{\text{det}\left[\vec{y_d;}_{k_1}\mid\cdots\mid\vec{y_d;}_{k_N}\right]}
+} \,,\]</div>
+<p>with the vectors <span class="math notranslate nohighlight">\(\left\{x_n\right\}\)</span> and <span class="math notranslate nohighlight">\(\left\{y_d\right\}\)</span> being the parameters
+of the wave function which are concatenated into matrices according to the occupied indices of
+each <span class="math notranslate nohighlight">\(\psi_k\)</span> prior to their determinants being evaluated. For seniority-zero systems,
+<span class="math notranslate nohighlight">\(n_\text{numer.} + n_\text{denom.}\)</span> is even, and otherwise it is odd.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.DetRatio.compute_overlap">
+<span class="sig-name descname"><span class="pre">compute_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occs_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.DetRatio.compute_overlap" title="Link to this definition">#</a></dt>
+<dd><p>Compute the FanCI overlap vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p></li>
+<li><p><strong>occs_array</strong> (<em>(</em><em>np.ndarray</em><em> | </em><em>'P'</em><em> | </em><em>'S'</em><em>)</em>) – Array of determinant occupations for which to compute overlap. A string “P” or “S” can
+be passed instead that indicates whether <code class="docutils literal notranslate"><span class="pre">occs_array</span></code> corresponds to the “P” space
+or “S” space, so that a more efficient, specialized computation can be done for these.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ovlp</strong> – Overlap array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.DetRatio.compute_overlap_deriv">
+<span class="sig-name descname"><span class="pre">compute_overlap_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occs_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.DetRatio.compute_overlap_deriv" title="Link to this definition">#</a></dt>
+<dd><p>Compute the FanCI overlap derivative matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p></li>
+<li><p><strong>occs_array</strong> (<em>(</em><em>np.ndarray</em><em> | </em><em>'P'</em><em> | </em><em>'S'</em><em>)</em>) – Array of determinant occupations for which to compute overlap. A string “P” or “S” can
+be passed instead that indicates whether <code class="docutils literal notranslate"><span class="pre">occs_array</span></code> corresponds to the “P” space
+or “S” space, so that a more efficient, specialized computation can be done for these.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ovlp</strong> – Overlap derivative array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyci.fanci.pCCDS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pCCDS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ham</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.secondquant_op" title="pyci._pyci.secondquant_op"><span class="pre">secondquant_op</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc_up</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nocc_dn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyci.fullci_wfn" title="pyci._pyci.fullci_wfn"><span class="pre">fullci_wfn</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyci.fanci.pCCDS" title="Link to this definition">#</a></dt>
+<dd><p>Pair coupled cluster doubles + singles (or “AP1roGSDspin”) FanCI class.</p>
+<div class="math notranslate nohighlight">
+\[\left| \Psi_\text{pCCD+S} \right&gt; =
+\prod_{i=1}^{N/2} \left(
+    1 + \sum_{a=N/2+1}^K t_{i\bar{i};a\bar{a}} \hat{\tau}^{a\bar{a}}_{i\bar{i}}
+\right)
+\prod_{i=1}^{N/2} \left(
+    1 + \sum_{a=N/2+1}^K t_{i;a\bar{a}} \hat{\tau}^{a}_{i} \hat{n}_{\bar{i}}
+\right)
+\left| \psi_0 \right&gt; \,.\]</div>
+<p>This is AP1roG supplemented with single excitations that preserve the spin number, i.e.,
+no alpha to beta excitation is allowed, or vice-versa. Furthermore, the single excitations
+added are those that break an occupied pair of spin orbitals, increasing the seniority number.
+This determines the <cite>sen-o</cite> part of the name (from every occupied pair only one element of the
+pair is excited) <a class="reference internal" href="#pccds1" id="id5"><span>[pCCDS1]</span></a>.</p>
+<div role="list" class="citation-list">
+<div class="citation" id="pccds1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id5">pCCDS1</a><span class="fn-bracket">]</span></span>
+<p>Gaikwad, Pratiksha B., et al. “Coupled Cluster-Inspired Geminal Wavefunctions.”
+<em>arXiv preprint</em> arXiv:2310.01764 (2023).</p>
+</div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.pCCDS.compute_overlap">
+<span class="sig-name descname"><span class="pre">compute_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occs_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.pCCDS.compute_overlap" title="Link to this definition">#</a></dt>
+<dd><p>Compute the pCCDS overlap vector.</p>
+<p>The occupation vector is described in terms of the occupied/virtual indexes of the excitation
+that generates it from the reference. The indexes are further identified as corresponding to
+excitations of pairs or single spin-orbitals. The overlap is computed as the product of the
+permanents of the matrices formed by the pair and single excitations indexes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p></li>
+<li><p><strong>occs_array</strong> (<em>(</em><em>np.ndarray</em><em> | </em><em>'P'</em><em> | </em><em>'S'</em><em>)</em>) – Array of determinant occupations for which to compute overlap. A string “P” or “S” can
+be passed instead that indicates whether <code class="docutils literal notranslate"><span class="pre">occs_array</span></code> corresponds to the “P” space
+or “S” space, so that a more efficient, specialized computation can be done for these.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ovlp</strong> – Overlap array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyci.fanci.pCCDS.compute_overlap_deriv">
+<span class="sig-name descname"><span class="pre">compute_overlap_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occs_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#pyci.fanci.pCCDS.compute_overlap_deriv" title="Link to this definition">#</a></dt>
+<dd><p>Compute the FanCI overlap derivative matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>np.ndarray</em>) – Parameter array, [p_0, p_1, …, p_n].</p></li>
+<li><p><strong>occs_array</strong> (<em>(</em><em>np.ndarray</em><em> | </em><em>'P'</em><em> | </em><em>'S'</em><em>)</em>) – Array of determinant occupations for which to compute overlap. A string “P” or “S” can
+be passed instead that indicates whether <code class="docutils literal notranslate"><span class="pre">occs_array</span></code> corresponds to the “P” space
+or “S” space, so that a more efficient, specialized computation can be done for these.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ovlp</strong> – Overlap derivative array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "QuantumElephant/PyCI",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./api"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../examples/fanci_tutorial.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">FanCI Quickstart</p>
+      </div>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#constants">Constants</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.__version__"><code class="docutils literal notranslate"><span class="pre">__version__</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#numerical-types">Numerical Types</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.c_long"><code class="docutils literal notranslate"><span class="pre">c_long</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.c_ulong"><code class="docutils literal notranslate"><span class="pre">c_ulong</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.c_double"><code class="docutils literal notranslate"><span class="pre">c_double</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#classes">Classes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#second-quantized-operator-class">Second-quantized operator class</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op"><code class="docutils literal notranslate"><span class="pre">secondquant_op</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.ecore"><code class="docutils literal notranslate"><span class="pre">secondquant_op.ecore</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.h"><code class="docutils literal notranslate"><span class="pre">secondquant_op.h</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.nbasis"><code class="docutils literal notranslate"><span class="pre">secondquant_op.nbasis</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.one_mo"><code class="docutils literal notranslate"><span class="pre">secondquant_op.one_mo</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.to_file"><code class="docutils literal notranslate"><span class="pre">secondquant_op.to_file()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.two_mo"><code class="docutils literal notranslate"><span class="pre">secondquant_op.two_mo</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.v"><code class="docutils literal notranslate"><span class="pre">secondquant_op.v</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.secondquant_op.w"><code class="docutils literal notranslate"><span class="pre">secondquant_op.w</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.hamiltonian"><code class="docutils literal notranslate"><span class="pre">hamiltonian</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#base-wave-function-classes">Base wave function classes</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction"><code class="docutils literal notranslate"><span class="pre">wavefunction</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nbasis"><code class="docutils literal notranslate"><span class="pre">wavefunction.nbasis</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nocc"><code class="docutils literal notranslate"><span class="pre">wavefunction.nocc</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nocc_dn"><code class="docutils literal notranslate"><span class="pre">wavefunction.nocc_dn</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nocc_up"><code class="docutils literal notranslate"><span class="pre">wavefunction.nocc_up</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nvir"><code class="docutils literal notranslate"><span class="pre">wavefunction.nvir</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nvir_dn"><code class="docutils literal notranslate"><span class="pre">wavefunction.nvir_dn</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.nvir_up"><code class="docutils literal notranslate"><span class="pre">wavefunction.nvir_up</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.wavefunction.squeeze"><code class="docutils literal notranslate"><span class="pre">wavefunction.squeeze()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_all_dets"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_all_dets()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_det"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_dets_from_wfn"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_dets_from_wfn()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_excited_dets"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_excited_dets()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_hartreefock_det"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_hartreefock_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.add_occs"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.add_occs()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.index_det"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.index_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.index_det_from_rank"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.index_det_from_rank()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.rank_det"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.rank_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.reserve"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.reserve()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.to_det_array"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.to_det_array()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.to_file"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.to_file()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.one_spin_wfn.to_occ_array"><code class="docutils literal notranslate"><span class="pre">one_spin_wfn.to_occ_array()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_all_dets"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_all_dets()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_det"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_dets_from_wfn"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_dets_from_wfn()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_excited_dets"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_excited_dets()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_hartreefock_det"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_hartreefock_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.add_occs"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.add_occs()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.index_det"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.index_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.index_det_from_rank"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.index_det_from_rank()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.rank_det"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.rank_det()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.reserve"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.reserve()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.to_det_array"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.to_det_array()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.to_file"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.to_file()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.two_spin_wfn.to_occ_array"><code class="docutils literal notranslate"><span class="pre">two_spin_wfn.to_occ_array()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#doci-wave-function">DOCI wave function</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.doci_wfn"><code class="docutils literal notranslate"><span class="pre">doci_wfn</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fullci-wave-function">FullCI wave function</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fullci_wfn"><code class="docutils literal notranslate"><span class="pre">fullci_wfn</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#generalized-ci-wave-function">Generalized CI wave function</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.genci_wfn"><code class="docutils literal notranslate"><span class="pre">genci_wfn</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sparse-matrix-operator">Sparse matrix operator</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op"><code class="docutils literal notranslate"><span class="pre">sparse_op</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.data"><code class="docutils literal notranslate"><span class="pre">sparse_op.data()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.dtype"><code class="docutils literal notranslate"><span class="pre">sparse_op.dtype</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.ecore"><code class="docutils literal notranslate"><span class="pre">sparse_op.ecore</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.get_element"><code class="docutils literal notranslate"><span class="pre">sparse_op.get_element()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.indices"><code class="docutils literal notranslate"><span class="pre">sparse_op.indices()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.indptr"><code class="docutils literal notranslate"><span class="pre">sparse_op.indptr()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.matvec"><code class="docutils literal notranslate"><span class="pre">sparse_op.matvec()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.reserve"><code class="docutils literal notranslate"><span class="pre">sparse_op.reserve()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.shape"><code class="docutils literal notranslate"><span class="pre">sparse_op.shape</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.size"><code class="docutils literal notranslate"><span class="pre">sparse_op.size</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.solve"><code class="docutils literal notranslate"><span class="pre">sparse_op.solve()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.squeeze"><code class="docutils literal notranslate"><span class="pre">sparse_op.squeeze()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.symmetric"><code class="docutils literal notranslate"><span class="pre">sparse_op.symmetric</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.sparse_op.update"><code class="docutils literal notranslate"><span class="pre">sparse_op.update()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#threading">Threading</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.get_num_threads"><code class="docutils literal notranslate"><span class="pre">get_num_threads()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.set_num_threads"><code class="docutils literal notranslate"><span class="pre">set_num_threads()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#selected-ci-routines">Selected CI routines</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.add_hci"><code class="docutils literal notranslate"><span class="pre">add_hci()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.add_excitations"><code class="docutils literal notranslate"><span class="pre">add_excitations()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.add_seniorities"><code class="docutils literal notranslate"><span class="pre">add_seniorities()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.add_gkci"><code class="docutils literal notranslate"><span class="pre">add_gkci()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#post-ci-routines">Post-CI routines</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.compute_rdms"><code class="docutils literal notranslate"><span class="pre">compute_rdms()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.spinize_rdms"><code class="docutils literal notranslate"><span class="pre">spinize_rdms()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.compute_enpt2"><code class="docutils literal notranslate"><span class="pre">compute_enpt2()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.compute_overlap"><code class="docutils literal notranslate"><span class="pre">compute_overlap()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integral-transformations">Integral transformations</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.make_senzero_integrals"><code class="docutils literal notranslate"><span class="pre">make_senzero_integrals()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.reduce_senzero_integrals"><code class="docutils literal notranslate"><span class="pre">reduce_senzero_integrals()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fanci-classes">FanCI classes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG"><code class="docutils literal notranslate"><span class="pre">AP1roG</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG.compute_jacobian"><code class="docutils literal notranslate"><span class="pre">AP1roG.compute_jacobian()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG.compute_objective"><code class="docutils literal notranslate"><span class="pre">AP1roG.compute_objective()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG.compute_overlap"><code class="docutils literal notranslate"><span class="pre">AP1roG.compute_overlap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.AP1roG.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">AP1roG.compute_overlap_deriv()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG"><code class="docutils literal notranslate"><span class="pre">APIG</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_jacobian"><code class="docutils literal notranslate"><span class="pre">APIG.compute_jacobian()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_objective"><code class="docutils literal notranslate"><span class="pre">APIG.compute_objective()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_overlap"><code class="docutils literal notranslate"><span class="pre">APIG.compute_overlap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.APIG.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">APIG.compute_overlap_deriv()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.DetRatio"><code class="docutils literal notranslate"><span class="pre">DetRatio</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.DetRatio.compute_overlap"><code class="docutils literal notranslate"><span class="pre">DetRatio.compute_overlap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.DetRatio.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">DetRatio.compute_overlap_deriv()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.pCCDS"><code class="docutils literal notranslate"><span class="pre">pCCDS</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.pCCDS.compute_overlap"><code class="docutils literal notranslate"><span class="pre">pCCDS.compute_overlap()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pyci.fanci.pCCDS.compute_overlap_deriv"><code class="docutils literal notranslate"><span class="pre">pCCDS.compute_overlap_deriv()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The QC-Dev Community with the support of Digital Research Alliance of Canada and The Jupyter Book Community
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2023-2024.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
