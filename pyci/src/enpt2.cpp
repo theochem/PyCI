@@ -82,6 +82,7 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairH
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val;
+    double eps_i = eps / std::abs(coeffs[idet]);
     const ulong *rdet_up = wfn.det_ptr(idet);
     const ulong *rdet_dn = rdet_up + wfn.nword;
     ulong *det_dn = det_up + wfn.nword;
@@ -116,12 +117,11 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairH
                 kk = occs_dn[k];
                 val += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
             }
-            val *= coeffs[idet];
             // add determinant if |H*c| > eps and not already in wfn
-            if (std::abs(val) > eps) {
+            if (std::abs(val) > eps_i) {
                 rank = wfn.rank_det(det_up);
                 if (wfn.index_det_from_rank(rank) == -1) {
-                    val *= sign_up;
+                    val *= sign_up * coeffs[idet];
                     compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank], val, n2,
                                                 n3, t_up);
                 }
@@ -134,19 +134,19 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairH
                 for (l = 0; l < wfn.nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // 1-1 excitation elements
-                    excite_det(kk, ll, det_dn);
-                    val = ham.two_mo[koffset + n1 * jj + ll] * coeffs[idet];
-                    // add determinant if |H*c| > eps and not already in wfn
-                    if (std::abs(val) > eps) {
+                    val = ham.two_mo[koffset + n1 * jj + ll];
+                    if (std::abs(val) > eps_i) {
+                        excite_det(kk, ll, det_dn);
+                        // add determinant if |H*c| > eps and not already in wfn
                         rank = wfn.rank_det(det_up);
                         if (wfn.index_det_from_rank(rank) == -1) {
-                            val *= sign_up * phase_single_det(wfn.nword, kk, ll, rdet_dn);
+                            val *= sign_up * phase_single_det(wfn.nword, kk, ll, rdet_dn) * coeffs[idet];
                             fill_occs(wfn.nword, det_dn, t_dn);
                             compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank],
                                                         val, n2, n3, t_up);
                         }
+                        excite_det(ll, kk, det_dn);
                     }
-                    excite_det(ll, kk, det_dn);
                 }
             }
             std::memcpy(t_dn, occs_dn, sizeof(long) * wfn.nocc_dn);
@@ -158,21 +158,19 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairH
                 for (l = j + 1; l < wfn.nvir_up; ++l) {
                     ll = virs_up[l];
                     // 2-0 excitation elements
-                    excite_det(kk, ll, det_up);
-                    val =
-                        (ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj]) *
-                        coeffs[idet];
-                    // add determinant if |H*c| > eps and not already in wfn
-                    if (std::abs(val) > eps) {
+                    val = ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj];
+                    if (std::abs(val) > eps_i) {
+                        excite_det(kk, ll, det_up);
+                        // add determinant if |H*c| > eps and not already in wfn
                         rank = wfn.rank_det(det_up);
                         if (wfn.index_det_from_rank(rank) == -1) {
-                            val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up);
+                            val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_up) * coeffs[idet];
                             fill_occs(wfn.nword, det_up, t_up);
                             compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank],
                                                         val, n2, n3, t_up);
                         }
+                        excite_det(ll, kk, det_up);
                     }
-                    excite_det(ll, kk, det_up);
                 }
             }
             excite_det(jj, ii, det_up);
@@ -198,12 +196,11 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairH
                 koffset = ioffset + n2 * kk;
                 val += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
             }
-            val *= coeffs[idet];
             // add determinant if |H*c| > eps and not already in wfn
-            if (std::abs(val) > eps) {
+            if (std::abs(val) > eps_i) {
                 rank = wfn.rank_det(det_up);
                 if (wfn.index_det_from_rank(rank) == -1) {
-                    val *= phase_single_det(wfn.nword, ii, jj, rdet_dn);
+                    val *= phase_single_det(wfn.nword, ii, jj, rdet_dn) * coeffs[idet];
                     fill_occs(wfn.nword, det_dn, t_dn);
                     compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank], val, n2,
                                                 n3, t_up);
@@ -217,21 +214,19 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const FullCIWfn &wfn, PairH
                 for (l = j + 1; l < wfn.nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // 0-2 excitation elements
-                    excite_det(kk, ll, det_dn);
-                    val =
-                        (ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj]) *
-                        coeffs[idet];
-                    // add determinant if |H*c| > eps and not already in wfn
-                    if (std::abs(val) > eps) {
+                    val = ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj];
+                    if (std::abs(val) > eps_i) {
+                        excite_det(kk, ll, det_dn);
+                        // add determinant if |H*c| > eps and not already in wfn
                         rank = wfn.rank_det(det_up);
                         if (wfn.index_det_from_rank(rank) == -1) {
-                            val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn);
+                            val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet_dn) * coeffs[idet];
                             fill_occs(wfn.nword, det_dn, t_dn);
                             compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank],
                                                         val, n2, n3, t_up);
                         }
+                        excite_det(ll, kk, det_dn);
                     }
-                    excite_det(ll, kk, det_dn);
                 }
             }
             excite_det(jj, ii, det_dn);
@@ -270,6 +265,7 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const GenCIWfn &wfn, PairHa
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val;
+    double eps_i = eps / std::abs(coeffs[idet]);
     const ulong *rdet = wfn.det_ptr(idet);
     std::memcpy(det, rdet, sizeof(ulong) * wfn.nword);
     fill_occs(wfn.nword, rdet, occs);
@@ -290,12 +286,11 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const GenCIWfn &wfn, PairHa
                 koffset = ioffset + n2 * kk;
                 val += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
             }
-            val *= coeffs[idet];
             // add determinant if |H*c| > eps and not already in wfn
-            if (std::abs(val) > eps) {
+            if (std::abs(val) > eps_i) {
                 rank = wfn.rank_det(det);
                 if (wfn.index_det_from_rank(rank) == -1) {
-                    val *= phase_single_det(wfn.nword, ii, jj, rdet);
+                    val *= phase_single_det(wfn.nword, ii, jj, rdet) * coeffs[idet];
                     fill_occs(wfn.nword, det, tmps);
                     compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank], val, n2,
                                                 n3, tmps);
@@ -309,21 +304,19 @@ void compute_enpt2_thread_terms(const SQuantOp &ham, const GenCIWfn &wfn, PairHa
                 for (l = j + 1; l < wfn.nvir; ++l) {
                     ll = virs[l];
                     // double excitation elements
-                    excite_det(kk, ll, det);
-                    val =
-                        (ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj]) *
-                        coeffs[idet];
+                    val = ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj];
                     // add determinant if |H*c| > eps and not already in wfn
-                    if (std::abs(val) > eps) {
+                    if (std::abs(val) > eps_i) {
+                        excite_det(kk, ll, det);
                         rank = wfn.rank_det(det);
                         if (wfn.index_det_from_rank(rank) == -1) {
-                            val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet);
+                            val *= phase_double_det(wfn.nword, ii, kk, jj, ll, rdet) * coeffs[idet];
                             fill_occs(wfn.nword, det, tmps);
                             compute_enpt2_thread_gather(wfn, ham.one_mo, ham.two_mo, terms[rank],
                                                         val, n2, n3, tmps);
                         }
+                        excite_det(ll, kk, det);
                     }
-                    excite_det(ll, kk, det);
                 }
             }
             excite_det(jj, ii, det);

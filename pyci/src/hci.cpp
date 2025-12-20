@@ -22,6 +22,8 @@ namespace {
 void hci_thread_add_dets(const SQuantOp &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn, const double *coeffs,
                          const double eps, const long idet, ulong *det, long *occs, long *virs) {
     Hash rank;
+    double val;
+    double eps_i = eps / std::abs(coeffs[idet]);
     // fill working vectors
     wfn.copy_det(idet, det);
     fill_occs(wfn.nword, det, occs);
@@ -31,14 +33,15 @@ void hci_thread_add_dets(const SQuantOp &ham, const DOCIWfn &wfn, DOCIWfn &t_wfn
         k = occs[i];
         for (long j = 0, l; j < wfn.nvir_up; ++j) {
             l = virs[j];
-            excite_det(k, l, det);
+            val = ham.v[k * wfn.nbasis + l];
             // add determinant if |H*c| > eps and not already in wfn
-            if (std::abs(ham.v[k * wfn.nbasis + l] * coeffs[idet]) > eps) {
+            if (std::abs(val) > eps_i) {
+                excite_det(k, l, det);
                 rank = wfn.rank_det(det);
                 if (wfn.index_det_from_rank(rank) == -1)
                     t_wfn.add_det_with_rank(det, rank);
+                excite_det(l, k, det);
             }
-            excite_det(l, k, det);
         }
     }
 }
@@ -52,6 +55,7 @@ void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val;
+    double eps_i = eps / std::abs(coeffs[idet]);
     const ulong *rdet_up = wfn.det_ptr(idet);
     const ulong *rdet_dn = rdet_up + wfn.nword;
     ulong *det_dn = det_up + wfn.nword;
@@ -82,7 +86,7 @@ void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t
                 val += ham.two_mo[ioffset + n2 * kk + n1 * jj + kk];
             }
             // add determinant if |H*c| > eps and not already in wfn
-            if (std::abs(val * coeffs[idet]) > eps) {
+            if (std::abs(val) > eps_i) {
                 rank = wfn.rank_det(det_up);
                 if (wfn.index_det_from_rank(rank) == -1)
                     t_wfn.add_det_with_rank(det_up, rank);
@@ -95,15 +99,15 @@ void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t
                 for (l = 0; l < wfn.nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // 1-1 excitation elements
-                    excite_det(kk, ll, det_dn);
                     val = ham.two_mo[koffset + n1 * jj + ll];
                     // add determinant if |H*c| > eps and not already in wfn
-                    if (std::abs(val * coeffs[idet]) > eps) {
+                    if (std::abs(val) > eps_i) {
+                        excite_det(kk, ll, det_dn);
                         rank = wfn.rank_det(det_up);
                         if (wfn.index_det_from_rank(rank) == -1)
                             t_wfn.add_det_with_rank(det_up, rank);
+                        excite_det(ll, kk, det_dn);
                     }
-                    excite_det(ll, kk, det_dn);
                 }
             }
             // loop over spin-up occupied indices
@@ -114,15 +118,15 @@ void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t
                 for (l = j + 1; l < wfn.nvir_up; ++l) {
                     ll = virs_up[l];
                     // 2-0 excitation elements
-                    excite_det(kk, ll, det_up);
                     val = ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj];
                     // add determinant if |H*c| > eps and not already in wfn
-                    if (std::abs(val * coeffs[idet]) > eps) {
+                    if (std::abs(val) > eps_i) {
+                        excite_det(kk, ll, det_up);
                         rank = wfn.rank_det(det_up);
                         if (wfn.index_det_from_rank(rank) == -1)
                             t_wfn.add_det_with_rank(det_up, rank);
+                        excite_det(ll, kk, det_up);
                     }
-                    excite_det(ll, kk, det_up);
                 }
             }
             excite_det(jj, ii, det_up);
@@ -148,7 +152,7 @@ void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t
                 val += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
             }
             // add determinant if |H*c| > eps and not already in wfn
-            if (std::abs(val * coeffs[idet]) > eps) {
+            if (std::abs(val) > eps_i) {
                 rank = wfn.rank_det(det_up);
                 if (wfn.index_det_from_rank(rank) == -1)
                     t_wfn.add_det_with_rank(det_up, rank);
@@ -161,15 +165,15 @@ void hci_thread_add_dets(const SQuantOp &ham, const FullCIWfn &wfn, FullCIWfn &t
                 for (l = j + 1; l < wfn.nvir_dn; ++l) {
                     ll = virs_dn[l];
                     // 0-2 excitation elements
-                    excite_det(kk, ll, det_dn);
                     val = ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj];
                     // add determinant if |H*c| > eps and not already in wfn
-                    if (std::abs(val * coeffs[idet]) > eps) {
+                    if (std::abs(val) > eps_i) {
+                        excite_det(kk, ll, det_dn);
                         rank = wfn.rank_det(det_up);
                         if (wfn.index_det_from_rank(rank) == -1)
                             t_wfn.add_det_with_rank(det_up, rank);
+                        excite_det(ll, kk, det_dn);
                     }
-                    excite_det(ll, kk, det_dn);
                 }
             }
             excite_det(jj, ii, det_dn);
@@ -184,6 +188,7 @@ void hci_thread_add_dets(const SQuantOp &ham, const GenCIWfn &wfn, GenCIWfn &t_w
     long n2 = n1 * n1;
     long n3 = n1 * n2;
     double val;
+    double eps_i = eps / std::abs(coeffs[idet]);
     wfn.copy_det(idet, det);
     fill_occs(wfn.nword, det, occs);
     fill_virs(wfn.nword, wfn.nbasis, det, virs);
@@ -203,7 +208,7 @@ void hci_thread_add_dets(const SQuantOp &ham, const GenCIWfn &wfn, GenCIWfn &t_w
                 val += ham.two_mo[koffset + n1 * jj + kk] - ham.two_mo[koffset + n1 * kk + jj];
             }
             // add determinant if |H*c| > eps and not already in wfn
-            if (std::abs(val * coeffs[idet]) > eps) {
+            if (std::abs(val) > eps_i) {
                 rank = wfn.rank_det(det);
                 if (wfn.index_det_from_rank(rank) == -1)
                     t_wfn.add_det_with_rank(det, rank);
@@ -216,15 +221,15 @@ void hci_thread_add_dets(const SQuantOp &ham, const GenCIWfn &wfn, GenCIWfn &t_w
                 for (long l = j + 1, ll; l < wfn.nvir; ++l) {
                     ll = virs[l];
                     // double excitation elements
-                    excite_det(kk, ll, det);
                     val = ham.two_mo[koffset + n1 * jj + ll] - ham.two_mo[koffset + n1 * ll + jj];
                     // add determinant if |H*c| > eps and not already in wfn
-                    if (std::abs(val * coeffs[idet]) > eps) {
+                    if (std::abs(val) > eps_i) {
+                        excite_det(kk, ll, det);
                         rank = wfn.rank_det(det);
                         if (wfn.index_det_from_rank(rank) == -1)
                             t_wfn.add_det_with_rank(det, rank);
+                        excite_det(ll, kk, det);
                     }
-                    excite_det(ll, kk, det);
                 }
             }
             excite_det(jj, ii, det);
