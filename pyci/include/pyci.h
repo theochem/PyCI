@@ -117,14 +117,15 @@ inline int Ctz(const unsigned long long t) {
 }
 
 /* Hash function. */
-
-typedef std::pair<ulong, ulong> Hash;
+typedef std::pair<uint64_t, uint64_t> Hash;
 
 template<typename T, typename U>
 Hash spookyhash(T length, const U *data) {
-    Hash h(0x23a23cf5033c3c81UL, 0xb3816f6a2c68e530UL);
-    SpookyHash::Hash128(reinterpret_cast<const void *>(data), length * sizeof(U), &h.first, &h.second);
-    return h;
+    Hash h(0x23a23cf5033c3c81ULL, 0xb3816f6a2c68e530ULL); // Use ULL suffix for unsigned long long
+    uint64_t first = h.first;
+    uint64_t second = h.second;
+    SpookyHash::Hash128(reinterpret_cast<const void *>(data), length * sizeof(U), &first, &second);
+    return Hash(first, second);
 }
 
 /* Vector template types. */
@@ -134,6 +135,24 @@ using Vector = std::vector<T>;
 
 template<typename T>
 using AlignedVector = std::vector<T, Eigen::aligned_allocator<T>>;
+
+}
+// typedef std::pair<ulong, ulong> Hash;
+
+// template<typename T, typename U>
+// Hash spookyhash(T length, const U *data) {
+//     Hash h(0x23a23cf5033c3c81UL, 0xb3816f6a2c68e530UL);
+//     SpookyHash::Hash128(reinterpret_cast<const void *>(data), length * sizeof(U), &h.first, &h.second);
+//     return h;
+// }
+
+// /* Vector template types. */
+
+// template<typename T>
+// using Vector = std::vector<T>;
+
+// template<typename T>
+// using AlignedVector = std::vector<T, Eigen::aligned_allocator<T>>;
 
 /* Eigen dense matrix template types. */
 
