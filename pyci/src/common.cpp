@@ -152,6 +152,14 @@ void unrank_colex(long nbasis, const long nocc, long rank, long *occs) {
     }
 }
 
+inline ulong mask_above(long n) {
+    return (n >= Size<ulong>() - 1) ? 0UL : ~( (1UL << (n + 1)) - 1 );
+}
+
+inline ulong mask_below(long m) {
+    return (m >= Size<ulong>()) ? Max<ulong>() : (1UL << m) - 1;
+}
+
 long phase_single_det(const long nword, const long i, const long a, const ulong *det) {
     (void)nword; // nword is deliberately unused.
     long j, k, l, m, n, high, low, nperm = 0;
@@ -168,21 +176,18 @@ long phase_single_det(const long nword, const long i, const long a, const ulong 
     j = low / Size<ulong>();
     n = low % Size<ulong>();
     mask = det[j];
-    mask &= Max<ulong>();
     if (j == k) {
-        mask &= (1UL << m) - 1;
-        mask &= ~(1UL << (n + 1)) + 1;
+        mask &= mask_below(m);
+        mask &= mask_above(n);
         nperm += Pop(mask);
     } else {
-        mask &= ~(1UL << (n + 1)) + 1;
+        mask &= mask_above(n);
         nperm += Pop(mask);
         mask = det[k];
-        mask &= (1UL << m) - 1;
+        mask &= mask_below(m);
         nperm += Pop(mask);
         for (l = j + 1; l < k; ++l) {
-            mask = det[l];
-            mask &= Max<ulong>();
-            nperm += Pop(mask);
+            nperm += Pop(det[l]);
         }
     }
     return (nperm % 2) ? -1 : 1;
@@ -206,20 +211,18 @@ long phase_double_det(const long nword, const long i1, const long i2, const long
     j = low / Size<ulong>();
     n = low % Size<ulong>();
     mask = det[j];
-    mask &= Max<ulong>();
     if (j == k) {
-        mask &= (1UL << m) - 1;
-        mask &= ~(1UL << (n + 1)) + 1;
+        mask &= mask_below(m);
+        mask &= mask_above(n);
         nperm += Pop(mask);
     } else {
-        mask &= ~(1UL << (n + 1)) + 1;
+        mask &= mask_above(n);
         nperm += Pop(mask);
         mask = det[k];
-        mask &= (1UL << m) - 1;
+        mask &= mask_below(m);
         nperm += Pop(mask);
         for (l = j + 1; l < k; ++l) {
             mask = det[l];
-            mask &= Max<ulong>();
             nperm += Pop(mask);
         }
     }
@@ -236,20 +239,18 @@ long phase_double_det(const long nword, const long i1, const long i2, const long
     j = low / Size<ulong>();
     n = low % Size<ulong>();
     mask = det[j];
-    mask &= Max<ulong>();
     if (j == k) {
-        mask &= (1UL << m) - 1;
-        mask &= ~(1UL << (n + 1)) + 1;
+        mask &= mask_below(m);
+        mask &= mask_above(n);
         nperm += Pop(mask);
     } else {
-        mask &= ~(1UL << (n + 1)) + 1;
+        mask &= mask_above(n);
         nperm += Pop(mask);
         mask = det[k];
-        mask &= (1UL << m) - 1;
+        mask &= mask_below(m);
         nperm += Pop(mask);
         for (l = j + 1; l < k; ++l) {
             mask = det[l];
-            mask &= Max<ulong>();
             nperm += Pop(mask);
         }
     }
