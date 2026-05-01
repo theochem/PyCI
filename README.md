@@ -29,4 +29,19 @@ tutorials and the API reference.
 
 ## Citing PyCI
 
-See the CONTRIBUTORS file.
+See the [publication](https://pubs.aip.org/aip/jcp/article/161/13/132502/3315366/PyCI-A-Python-scriptable-library-for-arbitrary).
+
+@article{pyci2024,
+    author = {Richer, Michelle and Sánchez-Díaz, Gabriela and Martínez-González, Marco and Chuiko, Valerii and Kim, Taewon David and Tehrani, Alireza and Wang, Shuoyang and Gaikwad, Pratiksha B. and de Moura, Carlos E. V. and Masschelein, Cassandra and Miranda-Quintana, Ramón Alain and Gerolin, Augusto and Heidar-Zadeh, Farnaz and Ayers, Paul W.},
+    title = {PyCI: A Python-scriptable library for arbitrary determinant CI},
+    journal = {The Journal of Chemical Physics},
+    volume = {161},
+    number = {13},
+    pages = {132502},
+    year = {2024},
+    month = {10},
+    issn = {0021-9606},
+    doi = {10.1063/5.0219010},
+    url = {https://doi.org/10.1063/5.0219010},
+    eprint = {https://pubs.aip.org/aip/jcp/article-pdf/doi/10.1063/5.0219010/20192959/132502_1_5.0219010.pdf},
+}
