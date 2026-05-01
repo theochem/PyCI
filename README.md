@@ -31,6 +31,9 @@ tutorials and the API reference.
 
 See the [publication](https://pubs.aip.org/aip/jcp/article/161/13/132502/3315366/PyCI-A-Python-scriptable-library-for-arbitrary).
 
+> Michelle Richer, Gabriela Sánchez-Díaz, Marco Martínez-González, Valerii Chuiko, Taewon David Kim, Alireza Tehrani, Shuoyang Wang, Pratiksha B. Gaikwad, Carlos E. V. de Moura, Cassandra Masschelein, Ramón Alain Miranda-Quintana, Augusto Gerolin, Farnaz Heidar-Zadeh, Paul W. Ayers; "PyCI: A Python-scriptable library for arbitrary determinant CI." *J. Chem. Phys.* **161**: 132502 (2024).
+> https://doi.org/10.1063/5.0219010
+
 ```
 @article{pyci2024,
     author = {Richer, Michelle and Sánchez-Díaz, Gabriela and Martínez-González, Marco and Chuiko, Valerii and Kim, Taewon David and Tehrani, Alireza and Wang, Shuoyang and Gaikwad, Pratiksha B. and de Moura, Carlos E. V. and Masschelein, Cassandra and Miranda-Quintana, Ramón Alain and Gerolin, Augusto and Heidar-Zadeh, Farnaz and Ayers, Paul W.},
