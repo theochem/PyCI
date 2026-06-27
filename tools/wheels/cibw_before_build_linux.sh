@@ -23,8 +23,9 @@ fi
 # install python dependencies
 python -m pip install -U --pre pip
 #TODO: doubt, what will happen if the numpy version is different from the one in the wheel
-python -m pip install numpy
-python -m pip install scipy
+# avoid installing numpy and scipy from source
+python -m pip install --only-binary=:all: numpy
+python -m pip install --only-binary=:all: scipy
 python -m pip install pytest
 
 
