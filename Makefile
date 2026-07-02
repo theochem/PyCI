@@ -42,12 +42,15 @@ endif
 CFLAGS += $(shell $(PYTHON) tools/python_include_dirs.py)
 
 # Set external projects and their include directories
-DEPS := $(addprefix deps/,eigen spectra parallel-hashmap pybind11)
-CFLAGS += $(addprefix -Ideps/,eigen spectra/include parallel-hashmap pybind11/include)
+DEPS := $(addprefix deps/,eigen spectra parallel-hashmap pybind11 rapidhash)
+CFLAGS += $(addprefix -Ideps/,eigen spectra/include parallel-hashmap pybind11/include rapidhash)
 
 # This C++ compile flag is needed in order for Macs to find system libraries
 ifeq ($(shell uname -s),Darwin)
 CFLAGS += -undefined dynamic_lookup
+PYCI_EXTENSION := dylib
+else
+PYCI_EXTENSION := so
 endif
 
 # Set PyCI version number
@@ -61,6 +64,9 @@ DEFS := -D_PYCI_VERSION='$(PYCI_VERSION)'
 DEFS += -D_GIT_BRANCH='$(shell git rev-parse --abbrev-ref HEAD)'
 DEFS += -D_BUILD_TIME='$(shell date -u +%F\ %T)'
 DEFS += -D_COMPILER_VERSION='$(shell $(CXX) --version | head -n 1)'
+ifeq ($(shell uname -s),Darwin)
+DEFS += -D_USE_RAPIDHASH='1'
+endif
 
 # Set objects
 OBJECTS := $(patsubst %.cpp,%.o,$(wildcard pyci/src/*.cpp))
@@ -70,7 +76,7 @@ OBJECTS := $(patsubst %.cpp,%.o,$(wildcard pyci/src/*.cpp))
 # -------------
 
 .PHONY: all
-all: pyci/_pyci.so.$(PYCI_VERSION) pyci/_pyci.so.$(VERSION_MAJOR) pyci/_pyci.so
+all: pyci/_pyci.$(PYCI_EXTENSION).$(PYCI_VERSION) pyci/_pyci.$(PYCI_EXTENSION).$(VERSION_MAJOR) pyci/_pyci.$(PYCI_EXTENSION)
 
 .PHONY: test
 test:
@@ -82,29 +88,30 @@ test-bigmem:
 
 .PHONY: clean
 clean:
-	rm -rf pyci/src/*.o pyci/_pyci.so*
+	rm -rf pyci/src/*.o pyci/_pyci.$(PYCI_EXTENSION)*
 
 .PHONY: cleandeps
 cleandeps:
 	rm -rf deps
 
+.PHONY: compile_flags.txt
+compile_flags.txt:
+	echo "$(CFLAGS)" | tr ' ' '\n' > $(@)
+
 
 # Make targets
 # ------------
 
-compile_flags.txt:
-	echo "$(CFLAGS)" | tr ' ' '\n' > $(@)
-
 pyci/src/%.o: pyci/src/%.cpp pyci/include/pyci.h $(DEPS)
 	$(CXX) $(CFLAGS) $(DEFS) -c $(<) -o $(@)
 
-pyci/_pyci.so.$(PYCI_VERSION): $(OBJECTS)
+pyci/_pyci.$(PYCI_EXTENSION).$(PYCI_VERSION): $(OBJECTS)
 	$(CXX) $(CFLAGS) $(DEFS) -shared $(^) -o $(@)
 
-pyci/_pyci.so.$(VERSION_MAJOR): pyci/_pyci.so.$(PYCI_VERSION)
+pyci/_pyci.$(PYCI_EXTENSION).$(VERSION_MAJOR): pyci/_pyci.$(PYCI_EXTENSION).$(PYCI_VERSION)
 	ln -sf $(notdir $(<)) $(@)
 
-pyci/_pyci.so: pyci/_pyci.so.$(PYCI_VERSION)
+pyci/_pyci.$(PYCI_EXTENSION): pyci/_pyci.$(PYCI_EXTENSION).$(PYCI_VERSION)
 	ln -sf $(notdir $(<)) $(@)
 
 deps/eigen:
@@ -118,3 +125,6 @@ deps/parallel-hashmap:
 
 deps/pybind11:
 	[ -d $@ ] || git clone https://github.com/pybind/pybind11.git $@
+
+deps/rapidhash:
+	[ -d $@ ] || git clone https://github.com/nicoshev/rapidhash.git $@

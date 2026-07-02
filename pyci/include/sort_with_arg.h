@@ -15,7 +15,11 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include <algorithm>
+#include <iterator>
+#include <utility>
 
 /* see <http://stackoverflow.com/a/46370189> */
 
@@ -63,8 +67,13 @@ struct value_reference_t {
 };
 
 template<typename _Data, typename _Order>
-struct value_iterator_t : iterator<random_access_iterator_tag, value_t<_Data, _Order>, ptrdiff_t,
-                                   value_t<_Data, _Order> *, value_reference_t<_Data, _Order>> {
+struct value_iterator_t {
+    using iterator_category = std::random_access_iterator_tag;
+    using difference_type = ptrdiff_t;
+    using value_type = value_t<_Data, _Order>;
+    using pointer = value_t<_Data, _Order> *;
+    using reference = value_reference_t<_Data, _Order>;
+
     _Data *itData;
     _Order *itVal;
     value_iterator_t(_Data *_itData, _Order *_itVal) : itData(_itData), itVal(_itVal) {
