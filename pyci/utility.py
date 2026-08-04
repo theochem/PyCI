@@ -402,10 +402,59 @@ def spin_free_rdms(d1, d2, d3=None, d4=None, d5=None, d6=None, d7=None, flag= '3
         rdm2_sf = aaaa + abab+ baba+ bbbb
         rdm3_sf = aaaaaa + bbbbbb + aabaab + abaaba + baabaa + bbabba + babbab + abbabb
         if (flag == '34RDM') :
-            rdm4_sf =  aaaaaaaa + bbbbbbbb + aaabaaab + bbbabbba + abbbabbb + abbbabbb +baaabaaa \
+            rdm4_sf =  aaaaaaaa + bbbbbbbb + aaabaaab + bbbabbba + abbbabbb +baaabaaa \
             + abababab + babababa + aabaaaba + bbabbbab + aabbaabb + bbaabbaa + abaaabaa + babbbabb \
             + abbaabba + baabbaab
         return (rdm1_sf, rdm2_sf, rdm3_sf, rdm4_sf)
+    else:
+        # FullCI RDM spin-blocks
+        rdm1_sf = np.zeros((nbasis, nbasis), dtype=np.double)
+        rdm2_sf = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+        rdm1, rdm2 = spinize_rdms(d1, d2)
+        aa = rdm1[:nbasis, :nbasis]
+        bb = rdm1[nbasis:, nbasis:]
+        aaaa = rdm2[:nbasis, :nbasis, :nbasis, :nbasis]
+        bbbb = rdm2[nbasis:, nbasis:, nbasis:, nbasis:]
+        abab = rdm2[:nbasis, nbasis:, :nbasis, nbasis:]
+        baba = rdm2[nbasis:, :nbasis, nbasis:, :nbasis]
+        rdm1_sf = aa + bb
+        rdm2_sf = aaaa + abab + baba + bbbb
+        return (rdm1_sf, rdm2_sf)
+    
+def spin_free_rdms_12(d1, d2):
+    r"""
+
+    Wrapper of spinze_rdms function that sums over the spin degree of freedom 
+    to obtain spinless rdms.
+
+    Parameters
+    ----------
+    d1 : numpy.ndarray
+       math: d_1 = \left<pp|qq\right>
+    d2 : numpy.ndarray
+       math: d_2 = \left<pq|pq\right>
+    Returns  
+    -------
+    rdm1 : numpy.ndarray
+        Spin traced one-particle RDM.
+    rdm2 : numpy.ndarray
+        Spin traced two-particle RDM.
+    """
+    nbasis = d1.shape[1]
+    if d1.ndim == 2:
+    # DOCI matrices
+        rdm1_sf = np.zeros((nbasis, nbasis), dtype=np.double)
+        rdm2_sf = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+        rdm1, rdm2 = spinize_rdms(d1, d2)
+        aa = rdm1[:nbasis, :nbasis]
+        bb = rdm1[nbasis:, nbasis:]
+        aaaa = rdm2[:nbasis, :nbasis, :nbasis, :nbasis]
+        bbbb = rdm2[nbasis:, nbasis:, nbasis:, nbasis:]
+        abab = rdm2[:nbasis, nbasis:, :nbasis, nbasis:]
+        baba = rdm2[nbasis:, :nbasis, nbasis:, :nbasis]
+        rdm1_sf = aa + bb
+        rdm2_sf = aaaa + abab+ baba+ bbbb
+        return (rdm1_sf, rdm2_sf)
     else:
         # FullCI RDM spin-blocks
         rdm1_sf = np.zeros((nbasis, nbasis), dtype=np.double)
