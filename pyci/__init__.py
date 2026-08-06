@@ -23,7 +23,7 @@ from pyci._pyci import compute_overlap, compute_rdms, compute_transition_rdms,co
 from pyci._pyci import add_hci, compute_enpt2
 
 from pyci.utility import make_senzero_integrals, reduce_senzero_integrals, spinize_rdms,spinize_rdms_1234,spin_free_rdms, spin_free_rdms_12
-from pyci.utility import odometer_one_spin, odometer_two_spin
+from pyci.utility import odometer_one_spin, odometer_two_spin, non_redundant_spin_block_123, spin_free_rdms_123_new_version
 
 from pyci.excitation_ci import add_excitations
 from pyci.seniority_ci import add_seniorities
@@ -60,6 +60,8 @@ __all__ = [
     "spinize_rdms_1234",
     "spin_free_rdms",
     "spin_free_rdms_12",
+    "non_redundant_spin_block_123",
+    "spin_free_rdms_123_new_version",
     "odometer_one_spin",
     "odometer_two_spin",
     "add_excitations",
