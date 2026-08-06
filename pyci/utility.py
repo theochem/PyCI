@@ -323,6 +323,37 @@ def spinize_rdms_1234(d1, d2, d3, d4, d5, d6, d7, flag='3RDM' ):
         rdm4 *= 0.5
     return rdm1, rdm2, rdm3, rdm4
 
+
+def non_redundant_spin_block_12(d1, d2):
+    r"""
+    Convert the DOCI matrices or FullCI RDM spin-blocks to full, generalized RDMs.
+
+    Parameters
+    ----------
+    d1 : numpy.ndarray
+       math: d_1 = \left<pp|qq\right>
+    d2 : numpy.ndarray
+       math: d_2 = \left<pq|pq\right>
+    Returns
+    -------
+    aa : numpy.ndarray
+        all-alpha spin-block of one-particle RDM.
+    abab : numpy.ndarray
+        Mixed spin-block of two-particle RDM.
+    """
+    if d1.ndim != 2:
+        raise TypeError('wfn must be a DOCI')
+    nbasis = d1.shape[1]
+    aa =  np.zeros((nbasis, nbasis), dtype=np.double)
+    abab = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+    for p in range(nbasis):
+        aa[p, p] = d1[p, p]
+        for q in range(nbasis):
+            abab[p, p, q, q] += d1[p, q]
+            abab[p, q, p, q] += d2[p, q]
+    abab = 0.5* (abab + np.einsum('pqrs -> rspq',abab))
+    return aa, abab
+
 def non_redundant_spin_block_123(d1, d2, d3, d4):
     r"""
     Convert the DOCI matrices or FullCI RDM spin-blocks to full, generalized RDMs.
@@ -366,105 +397,31 @@ def non_redundant_spin_block_123(d1, d2, d3, d4):
                 aabaab[q, q, p, r, r, p] += d4[p, q, r] 
                 aabaab[p, q, r, p, q, r] += d3[p, q, r]
     abab = 0.5* (abab + np.einsum('pqrs -> rspq',abab))
-    print(aabaab[1][2][3][1][2][3])
-    print('aabaab has qprtsu symmetry', np.allclose(aabaab, np.einsum('pqrstu->qprtsu',aabaab )))
-    print('aabaab has stupqr symmetry before', np.allclose(aabaab, np.einsum('pqrstu->stupqr',aabaab )))
     aabaab[...] -= np.einsum('pqrstu -> qprstu', aabaab)
-    print(aabaab[1][2][3][1][2][3])
     aabaab[...] -= np.einsum('pqrstu -> pqrtsu', aabaab)
-    print(aabaab[1][2][3][1][2][3])
     aabaab *= 0.5
-    print(aabaab[1][2][3][1][2][3])
-    print('aabaab has qprtsu symmetry after symmetrization', np.allclose(aabaab, np.einsum('pqrstu->qprtsu',aabaab )))
-    print('aabaab has upper index antisymmetry:',np.allclose(aabaab, -np.einsum('pqrstu -> qprstu', aabaab)))
-    print('aabaab has lower index antisymmetry:',np.allclose(aabaab, -np.einsum('pqrstu -> pqrtsu', aabaab)))
     return aa, abab, aabaab
 
-def spin_free_rdms_123_new_version(d1, d2, d3, d4):
-    aa, abab, aabaab = non_redundant_spin_block_123(d1, d2, d3, d4)
-    rdm1_sf = np.zeros((aa.shape[0], aa.shape[1]), dtype=np.double)
-    rdm2_sf = np.zeros((abab.shape[0], abab.shape[1], abab.shape[2], abab.shape[3]), dtype=np.double)
-    rdm3_sf = np.zeros((aabaab.shape[0], aabaab.shape[1], aabaab.shape[2], aabaab.shape[3], aabaab.shape[4], aabaab.shape[5]), dtype=np.double)
-    aaaaaa = np.zeros((aabaab.shape[0], aabaab.shape[1], aabaab.shape[2], aabaab.shape[3], aabaab.shape[4], aabaab.shape[5]), dtype=np.double)
-    rdm1_sf[...] = (2.0)*aa
-    aaaa = abab - np.einsum('pqrs -> pqsr',abab)
-    rdm2_sf[...] = 2.0*(abab + aaaa) 
-    aaaaaa[...] = aabaab -np.einsum('pqrstu -> prqstu', aabaab) - np.einsum('pqrstu -> rqpstu', aabaab)
-    rdm3_sf[...] = 2.0*(aabaab + aaaaaa) + 2*np.einsum('pqrstu -> prqsut', aabaab)  + 2*np.einsum('pqrstu -> rqputs', aabaab)
-    baabaa =  np.einsum('pqrstu -> rqputs', aabaab)
-    abaaba =  np.einsum('pqrstu -> prqsut', aabaab)
-    aabaab_aux, abaaba_aux, baabaa_aux  =spin_free_rdms_aux(d1, d2, d3, d4)
-    print('aabaab equal to aabaab_aux:',np.allclose(aabaab, aabaab_aux))
-    print('aabaab equal to aabaab_aux:',np.linalg.norm(aabaab- aabaab_aux))
-    print((aabaab[1][2][2][1][2][2]- aabaab_aux[1][2][2][1][2][2]))
-    print('abaaba equal to abaaba_aux:',np.allclose(abaaba, abaaba_aux))
-    print('baabaa equal to baabaa_aux:',np.allclose(baabaa, baabaa_aux))
-    #print('aabaab_aux has antisymmetry:',np.allclose(aabaab_aux, -np.einsum('pqrstu -> qprstu', aabaab_aux)))
-    #print('aabaab_aux has qprtsu symmetry:',np.allclose(aabaab_aux, np.einsum('pqrstu -> qprtsu', aabaab_aux)))
-
-    return rdm1_sf, rdm2_sf, rdm3_sf
-
-
-def spin_free_rdms_aux(d1, d2, d3=None, d4=None, d5=None, d6=None, d7=None, flag= '3RDM'):
-    r"""
-
-    Wrapper of spinze_rdms function that sums over the spin degree of freedom 
-    to obtain spinless rdms.
-
-    Parameters
-    ----------
-    d1 : numpy.ndarray
-       math: d_1 = \left<pp|qq\right>
-    d2 : numpy.ndarray
-       math: d_2 = \left<pq|pq\right>
-    d3 : numpy.ndarray, default = None
-       math: d_3 = \left<pqr|pqr\right>
-    d4 : numpy.ndarray, default = None
-       math: d_4 = \left<pqq|prr\right>
-    d5 : numpy.ndarray, default = None
-       math: d_5 = \left<pqrs|pqrs\right>
-    d6 : numpy.ndarray, default = None
-       math: d_6 = \left<pqrr|pqss\right>
-    d7 : numpy.ndarray, default = None
-       math: d_7 = \left<pprr|qqss\right>
-    flag : ('3RDM' | '34RDM'), default='3RDM'
-            RDM selection
-    Returns  
-    -------
-    rdm1 : numpy.ndarray
-        Spin traced one-particle RDM.
-    rdm2 : numpy.ndarray
-        Spin traced two-particle RDM.
-    rdm3 : numpy.ndarray
-        Spin traced three-particle RDM.
-    rdm4 : numpy.ndarray or None
-        Spin traced four-particle RDM.
-    """
-    nbasis = d1.shape[1]
-    if d1.ndim == 2:
-    # DOCI matrices
-        rdm1_sf = np.zeros((nbasis, nbasis), dtype=np.double)
-        rdm2_sf = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
-        rdm3_sf = np.zeros((nbasis, nbasis, nbasis, nbasis, nbasis, nbasis), dtype=np.double)
-        rdm1, rdm2, rdm3, _ = spinize_rdms_1234(d1, d2, d3, d4, d5, d6, d7, flag)
-        aa = rdm1[:nbasis, :nbasis]
-        bb = rdm1[nbasis:, nbasis:]
-        aaaa = rdm2[:nbasis, :nbasis, :nbasis, :nbasis]
-        bbbb = rdm2[nbasis:, nbasis:, nbasis:, nbasis:]
-        abab = rdm2[:nbasis, nbasis:, :nbasis, nbasis:]
-        baba = rdm2[nbasis:, :nbasis, nbasis:, :nbasis]
-        aaaaaa= rdm3[:nbasis, :nbasis, :nbasis, :nbasis, :nbasis, :nbasis]
-        bbbbbb= rdm3[nbasis:, nbasis:, nbasis:, nbasis:, nbasis:, nbasis:]
-        bbabba= rdm3[nbasis:, nbasis:, :nbasis, nbasis:, nbasis:, :nbasis]
-        abbabb= rdm3[:nbasis, nbasis:, nbasis:, :nbasis, nbasis:, nbasis:]
-        babbab = rdm3[nbasis:, :nbasis, nbasis:, nbasis:, :nbasis, nbasis:]
-        aabaab = rdm3[:nbasis, :nbasis, nbasis:, :nbasis, :nbasis, nbasis:]
-        abaaba = rdm3[:nbasis, nbasis:, :nbasis, :nbasis, nbasis:, :nbasis]
-        baabaa = rdm3[nbasis:, :nbasis, :nbasis, nbasis:, :nbasis, :nbasis]
-        rdm1_sf = aa + bb
-        rdm2_sf = aaaa + abab+ baba+ bbbb
-        rdm3_sf = aaaaaa + bbbbbb + aabaab + abaaba + baabaa + bbabba + babbab + abbabb
-        return aabaab, abaaba, baabaa
+def spin_free_rdms_123_new_version(d1, d2, d3 = None, d4 = None, flag = '12RDM'):
+    if flag == '3RDM':
+        aa, abab, aabaab = non_redundant_spin_block_123(d1, d2, d3, d4)
+        rdm1_sf = np.zeros((aa.shape[0], aa.shape[1]), dtype=np.double)
+        rdm2_sf = np.zeros((abab.shape[0], abab.shape[1], abab.shape[2], abab.shape[3]), dtype=np.double)
+        rdm3_sf = np.zeros((aabaab.shape[0], aabaab.shape[1], aabaab.shape[2], aabaab.shape[3], aabaab.shape[4], aabaab.shape[5]), dtype=np.double)
+        rdm1_sf[...] = (2.0)*aa
+        aaaa = abab - np.einsum('pqrs -> pqsr',abab)
+        rdm2_sf[...] = 2.0*(abab + aaaa) 
+        aaaaaa = aabaab -np.einsum('pqrstu -> prqstu', aabaab) - np.einsum('pqrstu -> rqpstu', aabaab)
+        rdm3_sf[...] = 2.0*(aabaab + aaaaaa) + 2*np.einsum('pqrstu -> prqsut', aabaab)  + 2*np.einsum('pqrstu -> rqputs', aabaab)
+        return rdm1_sf, rdm2_sf, rdm3_sf
+    elif flag == '12RDM':
+        aa, abab = non_redundant_spin_block_12(d1, d2)
+        rdm1_sf = np.zeros((aa.shape[0], aa.shape[1]), dtype=np.double)
+        rdm2_sf = np.zeros((abab.shape[0], abab.shape[1], abab.shape[2], abab.shape[3]), dtype=np.double)
+        rdm1_sf[...] = (2.0)*aa
+        aaaa = abab - np.einsum('pqrs -> pqsr',abab)
+        rdm2_sf[...] = 2.0*(abab + aaaa) 
+        return rdm1_sf, rdm2_sf, rdm3_sf
 
 
 def spin_free_rdms(d1, d2, d3=None, d4=None, d5=None, d6=None, d7=None, flag= '3RDM'):
