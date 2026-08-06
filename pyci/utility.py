@@ -446,9 +446,19 @@ def non_redundant_spin_block_1234(d1, d2, d3, d4, d5, d6, d7):
                 aabaab[q, q, p, r, r, p] += d4[p, q, r] 
                 aabaab[p, q, r, p, q, r] += d3[p, q, r]
                 aaabaaab[q, r, p, p, q, r, p, p] += d3[p, q, r]
+                aaabaaab[q, p, r, p, q, p, r, p] += d3[p, q, r]
+                aaabaaab[p, q, r, p, p, q, r, p] += d3[p, q, r]
+                aaabaaab[q, p, p, r, q, p, p, r] += d3[p, q, r]
+                aaabaaab[p, q, p, r, p, q, p, r] += d3[p, q, r]
+                aaabaaab[p, p, q, r, p, p, q, r] += d3[p, q, r]
                 for s in range(nbasis):
                     aaabaaab[p, q, r, s, p, q, r, s] += d5[p, q, r, s]
-                    aaabaaab[p, q, r, r, p, q, s, s] += 2*d6[p, q, r, s]
+                    aaabaaab[p, q, r, r, p, q, s, s] += d6[p, q, r, s]
+                    aaabaaab[p, r, q, r, p, s, q, s] += d6[p, q, r, s]
+                    aaabaaab[r, q, p, r, s, q, p, s] += d6[p, q, r, s]
+                    aaabaaab[p, r, r, q, p, s, s, q] += d6[p, q, r, s]
+                    aaabaaab[r, p, r, q, s, p, s, q] += d6[p, q, r, s]
+                    aaabaaab[r, r, p, q, s, s, p, q] += d6[p, q, r, s]
     abab = 0.5* (abab + np.einsum('pqrs -> rspq',abab))
     aabaab[...] -= np.einsum('pqrstu -> qprstu', aabaab)
     aabaab[...] -= np.einsum('pqrstu -> pqrtsu', aabaab)
