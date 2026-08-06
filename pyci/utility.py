@@ -402,6 +402,60 @@ def non_redundant_spin_block_123(d1, d2, d3, d4):
     aabaab *= 0.5
     return aa, abab, aabaab
 
+def non_redundant_spin_block_1234(d1, d2, d3, d4, d5, d6, d7):
+    r"""
+    Convert the DOCI matrices or FullCI RDM spin-blocks to full, generalized RDMs.
+
+    Parameters
+    ----------
+    d1 : numpy.ndarray
+       math: d_1 = \left<pp|qq\right>
+    d2 : numpy.ndarray
+       math: d_2 = \left<pq|pq\right>
+    d3 : numpy.ndarray
+       math: d_3 = \left<pqr|pqr\right>
+    d4 : numpy.ndarray
+       math: d_4 = \left<pqq|prr\right>
+    Returns
+    -------
+    aa : numpy.ndarray
+        all-alpha spin-block of one-particle RDM.
+    abab : numpy.ndarray
+        Mixed spin-block of two-particle RDM.
+    aabaab : numpy.ndarray
+        Mixed spin-block of three-particle RDM.
+    """
+    if d1.ndim != 2:
+        raise TypeError('wfn must be a DOCI')
+    nbasis = d1.shape[1]
+    aa =  np.zeros((nbasis, nbasis), dtype=np.double)
+    abab = np.zeros((nbasis, nbasis, nbasis, nbasis), dtype=np.double)
+    aabaab = np.zeros((nbasis, nbasis, nbasis, nbasis,nbasis,nbasis), dtype=np.double)
+    aaabaaab = np.zeros((nbasis, nbasis, nbasis, nbasis,nbasis,nbasis,nbasis,nbasis), dtype=np.double)
+    for p in range(nbasis):
+        aa[p, p] = d1[p, p]
+        for q in range(nbasis):
+            abab[p, p, q, q] += d1[p, q]
+            abab[p, q, p, q] += d2[p, q]
+            aabaab[p, q, q, p, q, q] += d2[p, q] 
+            aabaab[q, p, q, q, p, q] += d2[p, q] 
+            aabaab[q, q, p, q, q, p] += d2[p, q] 
+            for r in range(nbasis):               
+                aabaab[p, q, q, p, r, r] += d4[p, q, r]
+                aabaab[q, p, q, r, p, r] += d4[p, q, r]
+                aabaab[q, q, p, r, r, p] += d4[p, q, r] 
+                aabaab[p, q, r, p, q, r] += d3[p, q, r]
+                aaabaaab[q, r, p, p, q, r, p, p] += d3[p, q, r]
+                for s in range(nbasis):
+                    aaabaaab[p, q, r, s, p, q, r, s] += d5[p, q, r, s]
+                    aaabaaab[p, q, r, r, p, q, s, s] += 2*d6[p, q, r, s]
+    abab = 0.5* (abab + np.einsum('pqrs -> rspq',abab))
+    aabaab[...] -= np.einsum('pqrstu -> qprstu', aabaab)
+    aabaab[...] -= np.einsum('pqrstu -> pqrtsu', aabaab)
+    aabaab *= 0.5
+    return aa, abab, aabaab
+
+
 def spin_free_rdms_123_new_version(d1, d2, d3 = None, d4 = None, flag = '12RDM'):
     if flag == '3RDM':
         aa, abab, aabaab = non_redundant_spin_block_123(d1, d2, d3, d4)
